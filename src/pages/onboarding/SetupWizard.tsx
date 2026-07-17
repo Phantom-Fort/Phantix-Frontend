@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, clearDcSession, setDualControlConfigured } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { SubPageNav } from '@/components/shared/SubPageNav'
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep'
@@ -90,9 +90,15 @@ export function SetupWizard() {
     return idx === -1 ? STEPS.length - 1 : idx
   }
 
-  // Update active step when setup data arrives
+  // Update active step when setup data arrives; keep dual-control flags in sync
   useEffect(() => {
     if (setup) {
+      const configured = !!setup.dual_control_configured
+      setDualControlConfigured(configured)
+      // Stale dc_session breaks bootstrap (POST /org-users) — clear until unlocked
+      if (!configured) {
+        clearDcSession()
+      }
       const idx = getInitialStep()
       setActiveStep(idx)
     }

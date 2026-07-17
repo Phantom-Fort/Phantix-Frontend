@@ -75,6 +75,7 @@ export const useAuthStore = create<AuthState>((set) => {
     logout: () => {
       localStorage.removeItem('org_jwt')
       sessionStorage.removeItem('dc_session')
+      localStorage.removeItem('dual_control_configured')
       queryClient.clear()
       set({ orgToken: null, dcSession: null, isAuthenticated: false, authExpired: false, orgName: 'Organization', orgUser: null })
     },
