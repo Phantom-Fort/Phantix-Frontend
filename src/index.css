@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 28% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 215 28% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 28% 17%;
+    --primary: 230 70% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 230 60% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 230 70% 22%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 230 70% 22%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 213 40% 8%;       /* deep navy like Command */
+    --foreground: 210 20% 96%;
+    --card: 215 35% 12%;
+    --card-foreground: 210 20% 96%;
+    --popover: 215 35% 12%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 230 70% 22%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 213 35% 10%;
+    --secondary-foreground: 210 20% 96%;
+    --muted: 215 25% 16%;
+    --muted-foreground: 215 15% 65%;
+    --accent: 215 30% 18%;
+    --accent-foreground: 200 90% 70%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 20% 96%;
+    --border: 215 25% 20%;
+    --input: 215 25% 18%;
+    --ring: 200 90% 65%;
+    --cyan: #38BDF8;
+    --glow: rgba(37, 99, 235, 0.35);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  .card {
+    @apply bg-card text-card-foreground border border-border/60 shadow-sm hover:shadow-md transition-all duration-200;
+  }
+}
+
+/* Plain background - no grid/tiny boxes */
+body {
+  background: var(--background);
+}
+
+/* Command-style accents */
+.dark .text-brand-700 { color: var(--cyan); }
+.dark .bg-brand-700 { background: #2563EB; } /* solid color, no gradient */
+.dark .border-brand-700 { border-color: rgba(56,189,248,0.3); }
+
+.btn-glow {
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.2), 0 0 20px var(--glow);
+}
+.dark .btn-glow:hover {
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.4), 0 0 28px var(--glow);
+}
+
+/* Command-inspired global buttons */
+.dark button:not([class*="ghost"]):not([class*="outline"]) {
+  transition: all 0.15s ease;
+}
+.dark .btn, .dark button[type="submit"] {
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.15);
+}
+.dark .btn:hover, .dark button[type="submit"]:hover {
+  box-shadow: 0 0 0 1px rgba(56,189,248,0.3), 0 4px 14px var(--glow);
+  transform: translateY(-0.5px);
+}
+
+/* Alert badge blink for critical scan attention */
+.scan-alert-blink {
+  animation: scan-blink 1.2s infinite ease-in-out;
+}
+@keyframes scan-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
