@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, formatApiError } from '@/lib/api'
+import { toastError, toastSuccess } from '@/lib/toast'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,7 +14,12 @@ interface MfaChallengeProps {
   mfaEndpoint?: string
 }
 
-export function MfaChallenge({ mfaToken, onSuccess, onBack, mfaEndpoint = '/organizations/login/mfa' }: MfaChallengeProps) {
+export function MfaChallenge({
+  mfaToken,
+  onSuccess,
+  onBack,
+  mfaEndpoint = '/organizations/login/mfa',
+}: MfaChallengeProps) {
   const [code, setCode] = useState('')
 
   const mfaMutation = useMutation({
@@ -24,9 +30,13 @@ export function MfaChallenge({ mfaToken, onSuccess, onBack, mfaEndpoint = '/orga
     onSuccess: (data) => {
       if (data.access_token) {
         useAuthStore.getState().setOrgAuth(data.access_token)
+        toastSuccess('Verified')
         onSuccess()
+      } else {
+        toastError(data.detail || 'Verification failed')
       }
     },
+    onError: (err: any) => toastError(formatApiError(err, 'Verification failed')),
   })
 
   return (
@@ -45,12 +55,15 @@ export function MfaChallenge({ mfaToken, onSuccess, onBack, mfaEndpoint = '/orga
             maxLength={6}
           />
         </div>
-        {mfaMutation.isError && (
-          <p className="text-sm text-red-600">{(mfaMutation.error as any)?.response?.data?.detail || 'Verification failed'}</p>
-        )}
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onBack} className="flex-1">Back</Button>
-          <Button onClick={() => mfaMutation.mutate()} disabled={code.length < 4 || mfaMutation.isPending} className="flex-1">
+          <Button variant="outline" onClick={onBack} className="flex-1">
+            Back
+          </Button>
+          <Button
+            onClick={() => mfaMutation.mutate()}
+            disabled={code.length < 4 || mfaMutation.isPending}
+            className="flex-1"
+          >
             {mfaMutation.isPending ? 'Verifying...' : 'Verify'}
           </Button>
         </div>

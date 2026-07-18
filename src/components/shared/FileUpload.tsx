@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, formatApiError } from '@/lib/api'
+import { toastError, toastSuccess } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
-import { Upload, File, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Upload, File, X, Loader2, CheckCircle2 } from 'lucide-react'
 
 interface FileUploadProps {
   endpoint: string
@@ -25,7 +26,7 @@ export function FileUpload({
 }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
-  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
@@ -41,21 +42,23 @@ export function FileUpload({
     onSuccess: (data) => {
       onSuccess?.(data)
       setFile(null)
+      setDone(true)
+      toastSuccess('Upload complete')
       if (inputRef.current) inputRef.current.value = ''
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.detail || 'Upload failed'
-      setError(msg)
+      const msg = formatApiError(err, 'Upload failed')
+      toastError(msg)
       onError?.(msg)
     },
   })
 
   const handleFile = (f: File | null) => {
-    setError('')
+    setDone(false)
     if (!f) return
     const maxBytes = maxSizeMB * 1024 * 1024
     if (f.size > maxBytes) {
-      setError(`File exceeds ${maxSizeMB} MB limit`)
+      toastError(`File exceeds ${maxSizeMB} MB limit`)
       return
     }
     setFile(f)
@@ -65,7 +68,10 @@ export function FileUpload({
     <div className="space-y-3">
       <div
         onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => { e.preventDefault(); handleFile(e.dataTransfer.files[0]) }}
+        onDrop={(e) => {
+          e.preventDefault()
+          handleFile(e.dataTransfer.files[0])
+        }}
         onClick={() => inputRef.current?.click()}
         className="border-2 border-dashed border-input rounded-lg p-6 text-center cursor-pointer hover:border-brand-300 transition-colors"
       >
@@ -81,7 +87,14 @@ export function FileUpload({
             <File className="h-4 w-4 text-brand-700" />
             <span className="font-medium truncate max-w-[200px]">{file.name}</span>
             <span className="text-muted-foreground">({(file.size / 1024 / 1024).toFixed(1)} MB)</span>
-            <button onClick={(e) => { e.stopPropagation(); setFile(null); if (inputRef.current) inputRef.current.value = '' }} className="p-0.5 text-muted-foreground hover:text-destructive">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setFile(null)
+                if (inputRef.current) inputRef.current.value = ''
+              }}
+              className="p-0.5 text-muted-foreground hover:text-foreground"
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -94,31 +107,24 @@ export function FileUpload({
         )}
       </div>
 
-      {error && (
-        <div className="flex items-center gap-1.5 text-xs text-destructive">
-          <AlertCircle className="h-3.5 w-3.5" />
-          {error}
-        </div>
-      )}
-
       {file && (
-        <Button
-          onClick={() => uploadMutation.mutate()}
-          disabled={uploadMutation.isPending}
-          className="w-full"
-        >
+        <Button onClick={() => uploadMutation.mutate()} disabled={uploadMutation.isPending} className="w-full">
           {uploadMutation.isPending ? (
-            <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Uploading...</>
+            <>
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Uploading...
+            </>
           ) : (
-            <><Upload className="mr-1.5 h-4 w-4" /> Upload {file.name}</>
+            <>
+              <Upload className="mr-1.5 h-4 w-4" /> Upload {file.name}
+            </>
           )}
         </Button>
       )}
 
-      {uploadMutation.data && (
-        <div className="flex items-center gap-1.5 text-xs text-green-600">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Upload complete
+      {done && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+          Ready for next file
         </div>
       )}
     </div>

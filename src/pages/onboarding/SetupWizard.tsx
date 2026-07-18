@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { api, clearDcSession, setDualControlConfigured } from '@/lib/api'
+import { api, clearDcSession, isDualControlConfigured } from '@/lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 import { SubPageNav } from '@/components/shared/SubPageNav'
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep'
@@ -15,7 +15,8 @@ import { CompleteStep } from '@/components/onboarding/CompleteStep'
 import { CheckCircle2, Circle, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const STEPS = [
   { key: 'welcome', label: 'Welcome' },
@@ -49,60 +50,61 @@ export function SetupWizard() {
 
   const getInitialStep = () => {
     if (!setup) return 0
-    // Always start at the first pending setup step.
-    // If privacy not accepted (new org), it will be the privacy step.
-    // If already accepted, skip it and move to other pending setups.
-    const hasDc = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('dc_session')
-    const completedMap: Record<string, boolean> = {
-      welcome: true,
-      privacy: setup.privacy_notice_accepted ?? false,
-      otp: setup.email_verified ?? false,
-      explain: setup.dual_control_configured ?? false,
-      create_initiator: setup.completed_steps?.includes('users') ?? false,
-      create_authorizer: setup.completed_steps?.includes('users') ?? false,
-      review: setup.dual_control_configured ?? false,
-      unlock: (setup.dual_control_configured && hasDc) ?? false,
-      db: setup.security_db_connected ?? false,
-      asset: setup.has_assets ?? false,
-    }
+    const completedMap = buildCompletedMap()
     const idx = STEPS.findIndex((s) => !completedMap[s.key])
     return idx === -1 ? STEPS.length - 1 : idx
   }
 
   const [activeStep, setActiveStep] = useState(0)
 
-  const hasDcSession = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('dc_session')
-  const completed: Record<string, boolean> = {
-    welcome: true,
-    privacy: setup?.privacy_notice_accepted ?? false,
-    otp: setup?.email_verified ?? false,
-    explain: setup?.dual_control_configured ?? false,
-    create_initiator: setup?.completed_steps?.includes('users') ?? false,
-    create_authorizer: setup?.completed_steps?.includes('users') ?? false,
-    review: setup?.dual_control_configured ?? false,
-    unlock: (setup?.dual_control_configured && hasDcSession) ?? false,
-    db: setup?.security_db_connected ?? false,
-    asset: setup?.has_assets ?? false,
+  function ss(key: string): string | null {
+    return typeof sessionStorage !== 'undefined' ? sessionStorage.getItem(key) : null
   }
+
+  function buildCompletedMap(): Record<string, boolean> {
+    // Backend /organizations/me/setup only returns privacy_notice_accepted
+    // and email_verified reliably. All other steps tracked via sessionStorage
+    // because the backend doesn't expose dual_control, security_db, or has_assets
+    // in this endpoint.
+    return {
+      welcome: true,
+      privacy: setup?.privacy_notice_accepted ?? false,
+      otp: setup?.email_verified ?? false,
+      explain: !!ss('phantix_wizard_explain_done'),
+      create_initiator: !!ss('phantix_wizard_initiator_id'),
+      create_authorizer: !!ss('phantix_wizard_authorizer_id'),
+      review: !!ss('phantix_wizard_review_done'),
+      unlock: !!ss('dc_session'),
+      db: !!ss('phantix_wizard_db_done'),
+      asset: !!ss('phantix_wizard_asset_done'),
+    }
+  }
+  const completed: Record<string, boolean> = buildCompletedMap()
+  const allDone = STEPS.every((s) => completed[s.key])
 
   const findNextIncomplete = (): number => {
     const idx = STEPS.findIndex((s) => !completed[s.key])
     return idx === -1 ? STEPS.length - 1 : idx
   }
 
-  // Update active step when setup data arrives; keep dual-control flags in sync
+  const initialised = useRef(false)
+
+  // Clear stale dc_session when no dual-control flag is set locally;
+  // set active step only on first load
   useEffect(() => {
     if (setup) {
-      const configured = !!setup.dual_control_configured
-      setDualControlConfigured(configured)
-      // Stale dc_session breaks bootstrap (POST /org-users) — clear until unlocked
-      if (!configured) {
+      if (!isDualControlConfigured()) {
         clearDcSession()
       }
-      const idx = getInitialStep()
-      setActiveStep(idx)
+      if (!initialised.current) {
+        initialised.current = true
+        const idx = getInitialStep()
+        setActiveStep(idx)
+      }
     }
   }, [setup])
+
+  const navigate = useNavigate()
 
   // Defensive: never stay on privacy step if already accepted
   useEffect(() => {
@@ -112,20 +114,28 @@ export function SetupWizard() {
     }
   }, [activeStep, setup, completed.privacy])
 
+  // Auto-navigate to dashboard when the wizard completes
+  const completedRef = useRef(false)
+  useEffect(() => {
+    if (initialised.current && allDone && !completedRef.current) {
+      completedRef.current = true
+      const t = setTimeout(() => navigate('/dashboard', { replace: true }), 1500)
+      return () => clearTimeout(t)
+    }
+  }, [allDone, navigate])
+
   const progress = Math.round(
     (STEPS.filter((s) => completed[s.key]).length / STEPS.length) * 100
   )
 
+  const firstIncompleteIdx = () => STEPS.findIndex((s) => !completed[s.key])
+
   const goToStep = (idx: number) => {
     const step = STEPS[idx]
-    // Never re-visit privacy acceptance once done
-    if (step.key === 'privacy' && completed.privacy) {
-      return
-    }
-    const lastCompleted = STEPS.reduce((acc, s, i) => (completed[s.key] ? i : acc), -1)
-    // Allow going to completed steps or sequential forward one at a time (for sub-steps)
-    const maxAllowed = Math.max(lastCompleted + 1, activeStep + 1)
-    if (idx <= maxAllowed) {
+    if (step.key === 'privacy' && completed.privacy) return
+    const fi = firstIncompleteIdx()
+    // Allow: back to any visited step, forward only to first incomplete step
+    if (idx <= activeStep || idx === fi) {
       setActiveStep(idx)
     }
   }
@@ -151,8 +161,6 @@ export function SetupWizard() {
     )
   }
 
-  const allDone = STEPS.every((s) => completed[s.key])
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
@@ -176,8 +184,8 @@ export function SetupWizard() {
              {STEPS.map((step, i) => {
             const done = completed[step.key]
             const isActive = activeStep === i
-            const firstIncomplete = STEPS.findIndex((s) => !completed[s.key])
-            let canNavigate = done || i <= firstIncomplete + 1 || i <= activeStep + 1
+            const fi = firstIncompleteIdx()
+            let canNavigate = done || i === fi
             // Prevent navigating back to privacy once accepted
             if (step.key === 'privacy' && done) canNavigate = false
             return (
@@ -262,7 +270,7 @@ export function SetupWizard() {
             ) : activeStep === 7 ? (
               <UnlockInitiatorStep onComplete={advance} />
             ) : activeStep === 8 ? (
-              <DbConnectionStep onComplete={advance} connected={completed.db} />
+              <DbConnectionStep onComplete={advance} />
             ) : activeStep === 9 ? (
               <FirstAssetStep onComplete={advance} />
             ) : (

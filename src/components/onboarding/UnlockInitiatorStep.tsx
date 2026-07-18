@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api, formatApiError, saveDcSession, setDualControlConfigured } from '@/lib/api'
+import { toastError } from '@/lib/toast'
 import { useAuthStore } from '@/store/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +25,6 @@ export function UnlockInitiatorStep({ onComplete }: UnlockInitiatorStepProps) {
   const [password, setPassword] = useState('TempPass123!')
   const [mfaToken, setMfaToken] = useState<string | null>(null)
   const [mfaCode, setMfaCode] = useState('')
-  const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [devOtp, setDevOtp] = useState('')
 
@@ -89,13 +89,12 @@ export function UnlockInitiatorStep({ onComplete }: UnlockInitiatorStepProps) {
       } else if (data.mfa_required && data.mfa_token) {
         setMfaToken(data.mfa_token)
         setDevOtp(data.dev_otp || '')
-        setError('')
       } else {
-        setError(data.message || data.detail || 'Authentication failed')
+        toastError(data.message || data.detail || 'Authentication failed')
       }
     },
     onError: (err: any) => {
-      setError(formatApiError(err, 'Failed to start unlock'))
+      toastError(formatApiError(err, 'Failed to start unlock'))
     },
   })
 
@@ -120,13 +119,13 @@ export function UnlockInitiatorStep({ onComplete }: UnlockInitiatorStepProps) {
       if (data.session_token) {
         persistSession(data)
       } else if (data.device_verification_required && data.device_token) {
-        setError('New device verification required — complete device step or try again from this browser.')
+        toastError('New device verification required — complete device step or try again from this browser.')
       } else {
-        setError(data.message || 'Verification failed')
+        toastError(data.message || 'Verification failed')
       }
     },
     onError: (err: any) => {
-      setError(formatApiError(err, 'Verification failed'))
+      toastError(formatApiError(err, 'Verification failed'))
     },
   })
 
@@ -174,7 +173,6 @@ export function UnlockInitiatorStep({ onComplete }: UnlockInitiatorStepProps) {
               Same temp password used when creating the initiator (then email OTP).
             </p>
           </div>
-          {error && <p className="text-sm text-destructive">{typeof error === 'string' ? error : String(error)}</p>}
           <Button onClick={() => loginMutation.mutate()} disabled={loginMutation.isPending || !email.trim() || !password}>
             {loginMutation.isPending ? (
               <>
@@ -203,14 +201,12 @@ export function UnlockInitiatorStep({ onComplete }: UnlockInitiatorStepProps) {
               className="font-mono text-lg tracking-widest max-w-[220px]"
             />
           </div>
-          {error && <p className="text-sm text-destructive">{typeof error === 'string' ? error : String(error)}</p>}
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => {
                 setMfaToken(null)
                 setMfaCode('')
-                setError('')
                 setDevOtp('')
               }}
             >

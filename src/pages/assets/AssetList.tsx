@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toastApiError, toastSuccess } from '@/lib/toast'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -183,7 +184,9 @@ export function AssetList() {
       queryClient.invalidateQueries({ queryKey: ['assets'] })
       setShowForm(false)
       setForm({ asset_type: 'domain', value: '', name: '', criticality: 'medium', environment: '', owner: '' })
+      toastSuccess('Asset created')
     },
+    onError: (err: any) => toastApiError(err, 'Failed to create asset'),
   })
 
   const githubSave = useMutation({
@@ -191,9 +194,10 @@ export function AssetList() {
       await api.post('/assets/integrations/github', { personal_access_token: githubPat, label: githubLabel })
     },
     onSuccess: () => {
-      alert('GitHub PAT saved')
+      toastSuccess('GitHub PAT saved')
       setShowGithub(false)
     },
+    onError: (err: any) => toastApiError(err, 'Failed to save GitHub PAT'),
   })
 
   const githubImport = useMutation({
@@ -201,6 +205,8 @@ export function AssetList() {
       await api.post('/assets/import/github', githubImportRepo ? { repo: githubImportRepo } : { discover_all: true })
       queryClient.invalidateQueries({ queryKey: ['assets'] })
     },
+    onSuccess: () => toastSuccess('GitHub import started'),
+    onError: (err: any) => toastApiError(err, 'GitHub import failed'),
   })
 
   const apiImport = useMutation({
@@ -214,6 +220,8 @@ export function AssetList() {
       setShowApiImport(false)
       setApiContent('')
     },
+    onSuccess: () => toastSuccess('API import complete'),
+    onError: (err: any) => toastApiError(err, 'API import failed'),
   })
 
   const createDb = useMutation({
@@ -243,6 +251,8 @@ export function AssetList() {
       queryClient.invalidateQueries({ queryKey: ['assets'] })
       setShowDbForm(false)
     },
+    onSuccess: () => toastSuccess('Database connected and bootstrapped'),
+    onError: (err: any) => toastApiError(err, 'Database setup failed'),
   })
 
   const verifyAsset = useMutation({
@@ -250,6 +260,7 @@ export function AssetList() {
       await api.post(`/assets/${id}/verify`, { confirm_ownership: true })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['assets'] }),
+    onError: (err: any) => toastApiError(err, 'Verify failed'),
   })
 
   const deleteAsset = useMutation({
@@ -364,7 +375,7 @@ export function AssetList() {
                 <Input placeholder="team@company" value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} />
               </div>
             </div>
-            {createAsset.isError && <p className="text-sm text-destructive">Failed to create asset. Try again.</p>}
+
             <Button onClick={() => createAsset.mutate()} disabled={!form.value || createAsset.isPending}>
               {createAsset.isPending ? 'Creating...' : 'Create Asset'}
             </Button>
@@ -434,9 +445,7 @@ export function AssetList() {
              <Button onClick={() => setupDb.mutate()} disabled={setupDb.isPending || createDb.isPending || testDb.isPending || bootstrapDb.isPending}>
                {(setupDb.isPending || createDb.isPending || testDb.isPending || bootstrapDb.isPending) ? 'Setting up...' : 'Connect, Test & Bootstrap'}
              </Button>
-             {(setupDb.isError || createDb.isError) && <p className="text-xs text-destructive">Create failed. Check credentials.</p>}
-             {testDb.isError && <p className="text-xs text-destructive">Test failed.</p>}
-             {bootstrapDb.isError && <p className="text-xs text-destructive">Bootstrap failed (check logs).</p>}
+
           </CardContent>
         </Card>
       )}

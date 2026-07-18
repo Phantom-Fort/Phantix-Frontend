@@ -20,6 +20,8 @@ import { TrackerBoard } from '@/pages/reports/TrackerBoard'
 import { ComplianceDashboard } from '@/pages/compliance/ComplianceDashboard'
 import { AlertSettings } from '@/pages/alerts/AlertSettings'
 import { AuditLog } from '@/pages/audit/AuditLog'
+import { RiskList } from '@/pages/risks/RiskList'
+import { RiskDetail } from '@/pages/risks/RiskDetail'
 import { AlertsNotifier } from '@/components/alerts/AlertsNotifier'
 
 export default function App() {
@@ -40,6 +42,8 @@ export default function App() {
               <Route path="/scans/results" element={<ScanResults />} />
               <Route path="/vapt" element={<CampaignList />} />
               <Route path="/vapt/:id" element={<CampaignDetail />} />
+              <Route path="/risks" element={<RiskList />} />
+              <Route path="/risks/:id" element={<RiskDetail />} />
               <Route path="/reports" element={<ReportList />} />
               <Route path="/tracker" element={<TrackerBoard />} />
               <Route path="/compliance" element={<ComplianceDashboard />} />

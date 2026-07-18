@@ -249,6 +249,115 @@ export interface TrackerEntry {
   created_at: string
 }
 
+// === Risk ===
+export interface Risk {
+  id: number
+  organization_id: number
+  title: string
+  description?: string | null
+  asset_id?: number | null
+  asset_tags?: unknown[]
+  likelihood?: string | null
+  impact?: string | null
+  risk_score?: number | null
+  risk_level?: string | null
+  threat_event?: string | null
+  vulnerability?: string | null
+  asset_criticality?: string | null
+  status: string
+  owner_department?: string | null
+  owner_user_id?: number | null
+  treatment_plan?: string | null
+  residual_risk_score?: number | null
+  residual_risk_level?: string | null
+  treatment_status?: string | null
+  approved_by_user_id?: number | null
+  approved_at?: string | null
+  source?: string | null
+  scoring_breakdown?: Record<string, unknown>
+  vulnerability_key?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  priority_rank?: number | null
+  priority_score?: number | null
+  priority_band?: string | null
+  priority_label?: string | null
+  priority_factors?: Record<string, unknown> | null
+  priority_algorithm?: string | null
+}
+
+export interface RiskListResponse {
+  items: Risk[]
+  total: number
+  limit: number
+  offset: number
+  sort?: string | null
+  priority_summary?: Record<string, unknown> | null
+}
+
+export interface PrioritizedRiskListResponse {
+  items: Risk[]
+  total: number
+  limit: number
+  offset: number
+  algorithm?: string
+  summary?: Record<string, unknown>
+  formula?: string
+}
+
+export interface RiskTreatment {
+  id: number
+  risk_id: number
+  organization_id: number
+  treatment_type: string
+  treatment_plan: string
+  estimated_cost?: number | null
+  estimated_effort_days?: number | null
+  target_completion_date?: string | null
+  status: string
+  approved_by_user_id?: number | null
+  approved_at?: string | null
+  rejection_reason?: string | null
+  residual_likelihood?: string | null
+  residual_impact?: string | null
+  residual_risk_score?: number | null
+  residual_risk_level?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export interface RiskAssessment {
+  id: number
+  risk_id: number
+  organization_id: number
+  assessment_type: string
+  performed_by?: string | null
+  likelihood_score?: number | null
+  impact_score?: number | null
+  calculated_risk_score?: number | null
+  risk_level?: string | null
+  scoring_method?: string | null
+  findings_count?: number | null
+  critical_findings?: number | null
+  high_findings?: number | null
+  medium_findings?: number | null
+  low_findings?: number | null
+  notes?: string | null
+  scoring_breakdown?: Record<string, unknown>
+  created_at?: string | null
+}
+
+export interface RiskHistory {
+  id: number
+  risk_id: number
+  organization_id: number
+  changed_by?: string | null
+  change_type?: string | null
+  previous_value?: Record<string, unknown> | null
+  new_value?: Record<string, unknown> | null
+  created_at?: string | null
+}
+
 // === Compliance ===
 export interface ComplianceFramework {
   id: number

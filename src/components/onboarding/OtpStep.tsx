@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckCircle2, ArrowRight } from 'lucide-react'
@@ -30,6 +31,7 @@ export function OtpStep({ onComplete, verified }: OtpStepProps) {
       await api.post('/organizations/me/setup/otp/verify', { channel: 'email', code })
     },
     onSuccess: onComplete,
+    onError: (err: any) => toastApiError(err, 'Invalid or expired code. Try sending again.'),
   })
 
   if (verified) {
@@ -72,9 +74,6 @@ export function OtpStep({ onComplete, verified }: OtpStepProps) {
               className="max-w-[200px] font-mono text-lg tracking-widest"
             />
           </div>
-          {verifyMutation.isError && (
-            <p className="text-sm text-destructive">Invalid or expired code. Try sending again.</p>
-          )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => { setSent(false); setCode('') }}>
               Resend

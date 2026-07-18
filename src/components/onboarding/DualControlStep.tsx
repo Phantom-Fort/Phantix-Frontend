@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, clearDcSession, formatApiError, isDualControlConfigured, setDualControlConfigured } from '@/lib/api'
+import { toastError, toastWarning } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, ArrowRight, Loader2, Key } from 'lucide-react'
-import { useState } from 'react'
+
 
 interface DualControlStepProps {
   onComplete: () => void
@@ -11,7 +12,6 @@ interface DualControlStepProps {
 
 export function DualControlStep({ onComplete, configured }: DualControlStepProps) {
   const queryClient = useQueryClient()
-  const [error, setError] = useState('')
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['org-users'],
@@ -84,17 +84,22 @@ export function DualControlStep({ onComplete, configured }: DualControlStepProps
     },
     onSuccess: async () => {
       setDualControlConfigured(true)
-      setError('')
+      try { sessionStorage.setItem('phantix_wizard_review_done', '1') } catch { /* noop */ }
       await queryClient.invalidateQueries({ queryKey: ['org-users'] })
       await queryClient.invalidateQueries({ queryKey: ['org', 'setup'] })
       onComplete()
     },
     onError: (err: any) => {
-      setError(formatApiError(err, 'Assignment failed'))
+      toastError(formatApiError(err, 'Assignment failed'))
     },
   })
 
   const alreadyConfigured = configured || !!dcStatus?.configured
+
+  const handleContinue = () => {
+    try { sessionStorage.setItem('phantix_wizard_review_done', '1') } catch { /* noop */ }
+    onComplete()
+  }
 
   if (alreadyConfigured) {
     return (
@@ -119,7 +124,7 @@ export function DualControlStep({ onComplete, configured }: DualControlStepProps
             </div>
           </div>
         )}
-        <Button onClick={onComplete} variant="outline">
+        <Button onClick={handleContinue} variant="outline">
           Continue <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
@@ -181,16 +186,18 @@ export function DualControlStep({ onComplete, configured }: DualControlStepProps
         </div>
       </div>
 
-      {!initiator || !authorizer ? (
-        <p className="text-sm text-destructive">Need at least two org users. Complete the previous steps first.</p>
-      ) : initiator.id === authorizer.id ? (
-        <p className="text-sm text-destructive">Initiator and authorizer must be different users.</p>
-      ) : null}
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
       <Button
-        onClick={() => assignMutation.mutate()}
+        onClick={() => {
+          if (!initiator || !authorizer) {
+            toastWarning('Need at least two org users. Complete the previous steps first.')
+            return
+          }
+          if (initiator.id === authorizer.id) {
+            toastError('Initiator and authorizer must be different users.')
+            return
+          }
+          assignMutation.mutate()
+        }}
         disabled={
           !initiator ||
           !authorizer ||

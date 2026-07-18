@@ -6,7 +6,7 @@ import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { CardSkeleton } from '@/components/shared/Skeleton'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { formatRelativeTime } from '@/lib/format'
-import { Activity, Shield, Swords, AlertTriangle, ArrowRight, Globe, FileText } from 'lucide-react'
+import { Activity, Shield, Swords, AlertTriangle, ArrowRight, Globe, FileText, ShieldAlert } from 'lucide-react'
 import { SubPageNav } from '@/components/shared/SubPageNav'
 
 export function OrgDashboardPage() {
@@ -61,7 +61,7 @@ export function OrgDashboardPage() {
         <p className="text-muted-foreground mt-1">Organization security overview</p>
       </div>
 
-      <SubPageNav items={[{ label: 'Assets', to: '/assets' }, { label: 'Scans', to: '/scans' }, { label: 'VAPT', to: '/vapt' }, { label: 'Reports', to: '/reports' }]} />
+      <SubPageNav items={[{ label: 'Assets', to: '/assets' }, { label: 'Scans', to: '/scans' }, { label: 'VAPT', to: '/vapt' }, { label: 'Risks', to: '/risks' }, { label: 'Reports', to: '/reports' }]} />
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,6 +208,7 @@ export function OrgDashboardPage() {
               { href: '/assets', icon: Shield, label: 'Add Assets', desc: 'Manage inventory' },
               { href: '/scans', icon: AlertTriangle, label: 'Run Scan', desc: 'Vulnerability scan' },
               { href: '/vapt', icon: Swords, label: 'Start VAPT', desc: 'Full assessment' },
+              { href: '/risks', icon: ShieldAlert, label: 'Risk Register', desc: 'Treatments & priority' },
               { href: '/reports', icon: FileText, label: 'Generate Report', desc: 'PDF, XLSX, DOCX' },
             ].map((item) => (
               <a key={item.href} href={item.href} className="rounded-lg border p-4 hover:border-brand-300 hover:bg-brand-50/50 dark:hover:bg-brand-900/20 transition-colors text-center space-y-1">

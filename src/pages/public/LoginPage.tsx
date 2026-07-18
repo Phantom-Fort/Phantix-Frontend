@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { formLogin, api } from '@/lib/api'
+import { formLogin, api, formatApiError } from '@/lib/api'
+import { toastError } from '@/lib/toast'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore } from '@/store/theme'
 import { Button } from '@/components/ui/button'
@@ -22,7 +23,6 @@ export function LoginPage() {
   const [userCode, setUserCode] = useState('')
   const [mfaToken, setMfaToken] = useState<string | null>(null)
   const [mfaType, setMfaType] = useState<'org' | 'user'>('org')
-  const [error, setError] = useState('')
 
   const orgLoginMutation = useMutation({
     mutationFn: async () => {
@@ -37,16 +37,15 @@ export function LoginPage() {
           return
         }
         setHasOrgSession(true)
-        setError('')
       } else if (data.mfa_required && data.mfa_token) {
         setMfaType('org')
         setMfaToken(data.mfa_token)
       } else {
-        setError(data.detail || 'Organization login failed')
+        toastError(typeof data.detail === 'string' ? data.detail : 'Organization login failed')
       }
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.detail || 'Organization login failed. Check your credentials.')
+      toastError(formatApiError(err, 'Organization login failed. Check your credentials.'))
     },
   })
 
@@ -76,13 +75,12 @@ export function LoginPage() {
         window.location.href = '/dashboard'
       } else if (data.mfa_required && data.mfa_token) {
         setUserMfaToken(data.mfa_token)
-        setError('')
       } else {
-        setError(data.detail || 'Sign in failed')
+        toastError(typeof data.detail === 'string' ? data.detail : 'Sign in failed')
       }
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.detail || 'User sign in failed. Check your org email.')
+      toastError(formatApiError(err, 'User sign in failed. Check your org email.'))
     },
   })
 
@@ -104,7 +102,7 @@ export function LoginPage() {
       }
     },
     onError: (err: any) => {
-      setError(err?.response?.data?.detail || 'Verification failed')
+      toastError(formatApiError(err, 'Verification failed'))
     },
   })
 
@@ -116,7 +114,6 @@ export function LoginPage() {
         return
       }
       setHasOrgSession(true)
-      setError('')
     } else {
       // For user MFA, the MfaChallenge already saved the token via its onSuccess
       // but ensure store is updated and force refresh to clear stale state
@@ -186,7 +183,6 @@ export function LoginPage() {
                   Organization created successfully! Sign in with your credentials.
                 </div>
               )}
-              {error && <p className="text-sm text-destructive">{error}</p>}
               <Button
                 className="w-full"
                 onClick={() => orgLoginMutation.mutate()}
@@ -228,11 +224,9 @@ export function LoginPage() {
                   Email verification required. Click send to receive OTP.
                 </div>
               )}
-              {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => { 
                   setHasOrgSession(false); 
-                  setError(''); 
                   setUserEmail(''); 
                   setUserMfaToken(null); 
                   setUserCode(''); 

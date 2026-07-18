@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowRight, Globe, Loader2 } from 'lucide-react'
+import { CheckCircle2, ArrowRight, Globe, Loader2 } from 'lucide-react'
 
 interface FirstAssetStepProps {
   onComplete: () => void
@@ -12,6 +13,9 @@ interface FirstAssetStepProps {
 export function FirstAssetStep({ onComplete }: FirstAssetStepProps) {
   const queryClient = useQueryClient()
   const [asset, setAsset] = useState({ asset_type: 'domain', value: '', name: '', criticality: 'medium' })
+
+  const alreadyDone =
+    typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('phantix_wizard_asset_done')
 
   const createAsset = useMutation({
     mutationFn: async () => {
@@ -25,13 +29,29 @@ export function FirstAssetStep({ onComplete }: FirstAssetStepProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['org', 'setup'] })
+      try { sessionStorage.setItem('phantix_wizard_asset_done', '1') } catch { /* noop */ }
       onComplete()
     },
+    onError: (err: any) => toastApiError(err, 'Failed to add asset. Please try again.'),
   })
 
   const handleSubmit = () => {
     if (!asset.value) return
     createAsset.mutate()
+  }
+
+  if (alreadyDone) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-green-600">
+          <CheckCircle2 className="h-5 w-5" />
+          <p className="font-medium">First asset added</p>
+        </div>
+        <Button onClick={onComplete} variant="outline">
+          Continue <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    )
   }
 
   return (
@@ -89,10 +109,6 @@ export function FirstAssetStep({ onComplete }: FirstAssetStepProps) {
           </select>
         </div>
       </div>
-
-      {createAsset.isError && (
-        <p className="text-sm text-destructive">Failed to add asset. Please try again.</p>
-      )}
 
       <Button
         onClick={handleSubmit}

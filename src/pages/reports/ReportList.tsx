@@ -126,6 +126,12 @@ export function ReportList() {
     enabled: !!previewId,
   })
 
+  useEffect(() => {
+    if (reportDetail?.error_message) {
+      addToast({ type: 'error', title: 'Report generation failed', message: reportDetail.error_message })
+    }
+  }, [reportDetail?.id, reportDetail?.error_message])
+
   // Filtered client side (search + status)
   const filtered = reports.filter((r: any) => {
     const matchesSearch = !search || (r.title || '').toLowerCase().includes(search.toLowerCase()) || String(r.id).includes(search)
@@ -168,6 +174,10 @@ export function ReportList() {
       setShowGenerate(false)
       // reset form partially
       setGenForm((f) => ({ ...f, title: '', campaign_id: null }))
+      addToast({ type: 'success', title: 'Report generation started' })
+    },
+    onError: () => {
+      addToast({ type: 'error', title: 'Failed to start report generation' })
     },
   })
 
@@ -563,7 +573,6 @@ export function ReportList() {
                 Run inline (faster for small reports, blocks until finished)
               </label>
 
-              {generateMutation.isError && <p className="text-sm text-destructive">Failed to start report generation.</p>}
             </div>
 
             <div className="flex gap-2 p-4 border-t">
@@ -656,12 +665,7 @@ export function ReportList() {
                     </div>
                   )}
 
-                  {/* Error */}
-                  {reportDetail.error_message && (
-                    <div className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-                      {reportDetail.error_message}
-                    </div>
-                  )}
+
                 </>
               )}
             </div>

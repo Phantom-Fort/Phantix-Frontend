@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toastApiError, toastSuccess } from '@/lib/toast'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -56,7 +57,9 @@ export function DiscoveryJobs() {
       queryClient.invalidateQueries({ queryKey: ['discovery'] })
       setShowForm(false)
       setDomain('')
+      toastSuccess('Discovery job started')
     },
+    onError: (err: any) => toastApiError(err, 'Failed to start discovery job'),
   })
 
   const hasActive = jobs.some((j: any) => j.status === 'running' || j.status === 'pending')
@@ -89,7 +92,6 @@ export function DiscoveryJobs() {
                 {createJob.isPending ? 'Starting...' : 'Enumerate'}
               </Button>
             </div>
-            {createJob.isError && <p className="text-xs text-destructive">Failed to start job.</p>}
             <p className="text-xs text-muted-foreground">Runs subfinder, amass, ffuf/gobuster with soft-404 filtering. Results appear in Assets.</p>
           </CardContent>
         </Card>
@@ -115,7 +117,7 @@ export function DiscoveryJobs() {
               {j.result_summary?.tools_used && (
                 <p className="text-xs text-muted-foreground">{j.result_summary.tools_used.join(', ')}</p>
               )}
-              {j.error_message && <p className="text-xs text-destructive">{j.error_message}</p>}
+              {j.error_message && <p className="text-xs text-muted-foreground truncate" title={j.error_message}>{j.error_message}</p>}
             </div>
           )},
           { key: 'type', label: 'Type', width: '130px', render: (j: any) => <span className="text-xs text-muted-foreground">{normalizeEnum(j.job_type)}</span> },

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { api, clearDcSession, formatApiError, isDualControlConfigured } from '@/lib/api'
+import { toastError } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckCircle2, ArrowRight, UserPlus } from 'lucide-react'
@@ -16,8 +17,7 @@ export function CreateUsersStep({ onComplete, kind }: CreateUsersStepProps) {
   const defaultTitle = isInitiator ? 'IT Admin' : 'CISO'
   const defaultRole = isInitiator ? 'operator' : 'security_admin'
 
-  const [form, setForm] = useState({ email: '', name: '', password: 'TempPass123!' })
-  const [error, setError] = useState('')
+  const [form, setForm] = useState({ email: '', name: '', password: '' })
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -30,11 +30,12 @@ export function CreateUsersStep({ onComplete, kind }: CreateUsersStepProps) {
       if (!email || !full_name) {
         throw new Error('Email and full name are required')
       }
+      if (!form.password) throw new Error('Password is required')
       const { data } = await api.post(
         '/org-users',
         {
           email,
-          password: form.password || 'TempPass123!',
+          password: form.password,
           full_name,
           title: defaultTitle,
           role: defaultRole,
@@ -45,7 +46,6 @@ export function CreateUsersStep({ onComplete, kind }: CreateUsersStepProps) {
       return data as { id: number; email?: string }
     },
     onSuccess: (data) => {
-      setError('')
       try {
         const key = kind === 'initiator' ? 'phantix_wizard_initiator_id' : 'phantix_wizard_authorizer_id'
         if (data?.id) sessionStorage.setItem(key, String(data.id))
@@ -58,7 +58,7 @@ export function CreateUsersStep({ onComplete, kind }: CreateUsersStepProps) {
       } catch { /* ignore */ }
     },
     onError: (err: any) => {
-      setError(formatApiError(err, `Failed to create ${label.toLowerCase()}`))
+      toastError(formatApiError(err, `Failed to create ${label.toLowerCase()}`))
     },
   })
 
@@ -105,20 +105,19 @@ export function CreateUsersStep({ onComplete, kind }: CreateUsersStepProps) {
         />
         <Input
           type="password"
-          placeholder="Temp password (directory only)"
+          placeholder="Password (required)"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
+          required
         />
         <div className="text-xs text-muted-foreground">
           Title: {defaultTitle} • Role: {defaultRole}
         </div>
       </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
       <Button
         onClick={() => createMutation.mutate()}
-        disabled={createMutation.isPending || !form.email.trim() || !form.name.trim()}
+        disabled={createMutation.isPending || !form.email.trim() || !form.name.trim() || !form.password}
       >
         {createMutation.isPending ? 'Creating...' : `Create ${label}`}
       </Button>

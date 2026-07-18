@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { useDualControlStore } from '@/store/dualControl'
 import { useAuthStore } from '@/store/auth'
+import { useToastStore } from '@/store/toast'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const API_PREFIX = '/api/v1'
@@ -103,7 +104,38 @@ api.interceptors.response.use(
     }
 
     const detail = (error.response?.data as any)?.detail
-    if (error.response?.status === 403 && detail?.required_header === 'X-Dual-Control-Session') {
+    const msg = typeof detail === 'string' ? detail : detail?.message || ''
+    const needsDcHeader =
+      error.response?.status === 403 &&
+      (detail?.required_header === 'X-Dual-Control-Session' ||
+        /X-Dual-Control-Session|Authenticator session|dual-control session|assigned initiator|assigned authorizer/i.test(
+          msg,
+        ))
+
+    // Dual-control not configured at all → redirect to setup wizard
+    // (case 1 in org_operate_middleware: configured=false, no bootstrap path)
+    if (
+      error.response?.status === 403 &&
+      detail &&
+      typeof detail === 'object' &&
+      (detail as Record<string, unknown>).dual_control_configured === false
+    ) {
+      setDualControlConfigured(false)
+      clearDcSession()
+      useToastStore.getState().addToast({
+        type: 'error',
+        title: 'Setup Required',
+        message:
+          'Dual-control has not been configured. Complete the organization setup wizard first.',
+        duration: 8000,
+      })
+      if (!window.location.pathname.startsWith('/onboarding')) {
+        window.location.href = '/onboarding'
+      }
+      return Promise.reject(error)
+    }
+
+    if (needsDcHeader) {
       const hadDcSession = !!sessionStorage.getItem('dc_session')
       sessionStorage.removeItem('dc_session')
       useAuthStore.setState({ dcSession: null })
@@ -112,10 +144,35 @@ api.interceptors.response.use(
         dcStore.signalSessionExpired()
       }
       const config = error.config
-      if (config) {
-        dcStore.requireDcSession({
-          retry: () => api.request(config).then((r) => r.data),
-          label: `${config.method?.toUpperCase()} ${config.url}`,
+      if (config && !(config as any)._dcPrompted) {
+        ;(config as any)._dcPrompted = true
+        let role: 'initiator' | 'authorizer' | 'any' = 'any'
+        if (/authorizer/i.test(msg) && !/initiator/i.test(msg)) role = 'authorizer'
+        else if (/initiator/i.test(msg) && !/authorizer/i.test(msg)) role = 'initiator'
+        // Approve/reject paths always need authorizer
+        const url = String(config.url || '')
+        if (url.includes('/approve') || url.includes('/reject')) role = 'authorizer'
+        if (url.includes('/submit') || (url.includes('/treatments') && config.method === 'post' && !url.includes('/treatments/'))) {
+          role = 'initiator'
+        }
+        // Planning → initiator, execution → authorizer
+        if (url.endsWith('/vapt/plan') && config.method?.toLowerCase() === 'post') role = 'initiator'
+        if (url.includes('/plan/execute')) role = 'authorizer'
+        // Return a pending Promise that resolves after DC unlock + retry
+        // so the original caller (mutation/query) sees success, not error.
+        // Resolve with full AxiosResponse so `const { data } = await api.xx()` works.
+        return new Promise((resolve, reject) => {
+          dcStore.requireDcSession({
+            retry: () =>
+              api.request(config).then((r) => {
+                resolve(r)
+                return r
+              }),
+            label: `${(config.method || 'GET').toUpperCase()} ${config.url}`,
+            role,
+            _resolve: resolve,
+            _reject: reject,
+          })
         })
       }
     }

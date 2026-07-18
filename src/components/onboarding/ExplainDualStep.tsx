@@ -6,6 +6,11 @@ interface ExplainDualStepProps {
 }
 
 export function ExplainDualStep({ onComplete }: ExplainDualStepProps) {
+  const handleContinue = () => {
+    try { sessionStorage.setItem('phantix_wizard_explain_done', '1') } catch { /* noop */ }
+    onComplete()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -30,7 +35,7 @@ export function ExplainDualStep({ onComplete }: ExplainDualStepProps) {
 
       <p className="text-xs text-muted-foreground">This protects your organization. You will create two users next, assign the roles, then unlock as the initiator to enable writes.</p>
 
-      <Button onClick={onComplete} className="w-full max-w-xs">
+      <Button onClick={handleContinue} className="w-full max-w-xs">
         I understand — Continue <ArrowRight className="ml-2 h-4 w-4" />
       </Button>
     </div>

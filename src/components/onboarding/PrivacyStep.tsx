@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
+import { toastApiError } from '@/lib/toast'
 import { Button } from '@/components/ui/button'
 import { CheckCircle2, Loader2, ArrowRight } from 'lucide-react'
 
@@ -26,6 +27,7 @@ export function PrivacyStep({ onComplete, accepted }: PrivacyStepProps) {
       })
     },
     onSuccess: onComplete,
+    onError: (err: any) => toastApiError(err, 'Failed to accept privacy policy'),
   })
 
   if (accepted) {
@@ -54,9 +56,6 @@ export function PrivacyStep({ onComplete, accepted }: PrivacyStepProps) {
           <p>Phantix Security Solutions processes your organization's asset and vulnerability data solely for the purpose of providing security assessment services. Data is encrypted at rest and in transit. We do not share your data with third parties without explicit consent. By accepting, you agree to the terms outlined in the full privacy policy (v{privacy?.notice_version || privacy?.version || '1.0'}).</p>
         )}
       </div>
-      {acceptMutation.isError && (
-        <p className="text-sm text-destructive">Failed to accept. Please try again.</p>
-      )}
       <Button onClick={() => acceptMutation.mutate()} disabled={acceptMutation.isPending}>
         {acceptMutation.isPending ? 'Accepting...' : 'Accept & Continue'}
       </Button>

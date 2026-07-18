@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ListChecks,
   AlertTriangle,
+  ShieldAlert,
   User,
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
@@ -28,6 +29,7 @@ const navLinks = [
   { to: '/discovery', icon: Search, label: 'Discovery' },
   { to: '/scans', icon: AlertTriangle, label: 'Scans' },
   { to: '/vapt', icon: Swords, label: 'VAPT Campaigns' },
+  { to: '/risks', icon: ShieldAlert, label: 'Risks' },
   { to: '/reports', icon: FileText, label: 'Reports' },
   { to: '/tracker', icon: ListChecks, label: 'Tracker' },
   { to: '/compliance', icon: ClipboardCheck, label: 'Compliance' },
@@ -69,6 +71,7 @@ export function Sidebar() {
     const path = location.pathname
     if (path.startsWith('/scans')) markCategoryAttended('scans')
     else if (path.startsWith('/vapt')) markCategoryAttended('vapt')
+    else if (path.startsWith('/risks')) markCategoryAttended('risks')
     else if (path.startsWith('/reports') || path.startsWith('/tracker')) markCategoryAttended('reports')
     else if (path === '/alerts') markCategoryAttended('alerts')
     else if (path === '/dashboard') markCategoryAttended('dashboard')
@@ -92,8 +95,9 @@ export function Sidebar() {
   const matchesCategory = (alert: any, cat: string) => {
     const et = alert.event_type || ''
     if (cat === 'scans') return et.includes('scan')
-    if (cat === 'vapt') return et.includes('vapt') || et.includes('campaign') || et.includes('risk')
-    if (cat === 'reports') return et.includes('risk') || et.includes('report') || et.includes('treatment')
+    if (cat === 'vapt') return et.includes('vapt') || et.includes('campaign')
+    if (cat === 'risks') return et.includes('risk') || et.includes('treatment')
+    if (cat === 'reports') return et.includes('report')
     if (cat === 'alerts') return true
     if (cat === 'dashboard') return true
     if (cat === 'audit') return et.includes('audit')
@@ -104,6 +108,7 @@ export function Sidebar() {
     if (to === '/dashboard') return unreadCritical.length
     if (to === '/scans') return unreadCritical.filter(a => matchesCategory(a, 'scans')).length
     if (to === '/vapt') return unreadCritical.filter(a => matchesCategory(a, 'vapt')).length
+    if (to === '/risks') return unreadCritical.filter(a => matchesCategory(a, 'risks')).length
     if (to === '/reports' || to === '/tracker') return unreadCritical.filter(a => matchesCategory(a, 'reports')).length
     if (to === '/alerts') return unreadCritical.length
     if (to === '/audit') return unreadCritical.filter(a => matchesCategory(a, 'audit')).length

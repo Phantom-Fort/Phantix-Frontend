@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
+import { toastApiError, toastSuccess } from '@/lib/toast'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -64,7 +65,9 @@ export function ScanJobs() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scans'] })
       setShowForm(false)
+      toastSuccess('Scan started')
     },
+    onError: (err: any) => toastApiError(err, 'Failed to start scan'),
   })
 
   const runJob = useMutation({
@@ -74,7 +77,9 @@ export function ScanJobs() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['scans'] })
+      toastSuccess('Scan run requested')
     },
+    onError: (err: any) => toastApiError(err, 'Failed to run scan'),
   })
 
   const hasActive = jobs.some((j: any) => j.status === 'running' || j.status === 'pending') || !!activeJob
@@ -140,7 +145,6 @@ export function ScanJobs() {
                 ))}
               </div>
             </div>
-            {createJob.isError && <p className="text-xs text-destructive">{(createJob.error as any)?.response?.data?.detail || 'Failed to start scan.'}</p>}
             <Button onClick={() => createJob.mutate()} disabled={selectedTools.length === 0 || createJob.isPending}>
               {createJob.isPending ? 'Starting...' : 'Start Scan'}
             </Button>
@@ -196,7 +200,7 @@ export function ScanJobs() {
             <div className="text-xs text-muted-foreground">
               {j.started_at && <div>Started: {new Date(j.started_at).toLocaleTimeString()}</div>}
               {j.completed_at && <div>Done: {new Date(j.completed_at).toLocaleTimeString()}</div>}
-              {j.error_message && <div className="text-red-600 truncate">{j.error_message}</div>}
+              {j.error_message && <div className="text-muted-foreground truncate" title={j.error_message}>{j.error_message}</div>}
             </div>
           )},
           { key: 'actions', label: '', width: '120px', render: (j: any) => (

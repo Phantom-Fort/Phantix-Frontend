@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { publicApi, formLogin } from '@/lib/api'
+import { publicApi, formLogin, formatApiError } from '@/lib/api'
+import { toastError, toastSuccess } from '@/lib/toast'
 import { useAuthStore } from '@/store/auth'
 import { useThemeStore } from '@/store/theme'
 import { Button } from '@/components/ui/button'
@@ -41,8 +42,6 @@ const COUNTRIES = [
 ]
 
 export function RegisterPage() {
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const { theme } = useThemeStore()
   const logoSrc = theme === 'dark' ? '/logo-white.png' : '/logo-transparent.png'
@@ -121,7 +120,7 @@ export function RegisterPage() {
       return data
     },
     onSuccess: async () => {
-      setSuccess('Organization created! Logging you in and starting setup...')
+      toastSuccess('Organization created! Logging you in and starting setup...')
       try {
         // Auto-login after registration to immediately show onboarding (privacy acceptance)
         const loginRes = await formLogin('/organizations/login', form.email, form.password)
@@ -144,28 +143,18 @@ export function RegisterPage() {
       }
     },
     onError: (err: any) => {
-      const detail = err?.response?.data?.detail
-      if (Array.isArray(detail)) {
-        const msgs = detail.map((d: any) => d.msg || d.message || JSON.stringify(d)).join('; ')
-        setError(msgs)
-      } else if (typeof detail === 'string') {
-        setError(detail)
-      } else {
-        setError('Registration failed. Check your input.')
-      }
+      toastError(formatApiError(err, 'Registration failed. Check your input.'))
     },
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-    setSuccess('')
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match')
+      toastError('Passwords do not match')
       return
     }
     if (form.password.length < 8) {
-      setError('Password must be at least 8 characters')
+      toastError('Password must be at least 8 characters')
       return
     }
     registerMutation.mutate()
@@ -342,8 +331,7 @@ export function RegisterPage() {
               </>
             )}
 
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            {success && <p className="text-sm text-green-600">{success}</p>}
+
 
             <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
               {registerMutation.isPending ? 'Creating organization...' : 'Create Organization'}

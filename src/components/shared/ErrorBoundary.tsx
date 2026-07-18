@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
-import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
+import { toastError } from '@/lib/toast'
 
 interface Props {
   children: ReactNode
@@ -21,22 +22,23 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error }
   }
 
+  componentDidCatch(error: Error) {
+    toastError('Something went wrong', error.message || 'An unexpected error occurred.')
+  }
+
   render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <AlertTriangle className="h-8 w-8 text-destructive mb-3" />
-          <h2 className="text-lg font-semibold text-foreground mb-1">Something went wrong</h2>
-          <p className="text-sm text-muted-foreground mb-4 max-w-md">
-            {this.state.error?.message || 'An unexpected error occurred.'}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline"
-          >
-            <RefreshCw className="h-3.5 w-3.5" /> Reload page
-          </button>
-        </div>
+      return (
+        this.props.fallback || (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Reload page
+            </button>
+          </div>
+        )
       )
     }
     return this.props.children
