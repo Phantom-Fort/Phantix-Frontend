@@ -1,0 +1,3177 @@
+[
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ai/activate",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_activate_ai",
+    "summary": "Seed prompts + enable DeepSeek on all org AI settings when key is present."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/audit-logs",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_audit_logs",
+    "summary": "admin_audit_logs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ai/consensus/test",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_consensus_test",
+    "summary": "Dry-run coordinator against provided evidence (uses mock/real providers)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/costs",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_costs",
+    "summary": "admin_costs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/data-scopes",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_list_data_scopes",
+    "summary": "Platform catalog of max evidence fields the AI may receive (cannot exceed)."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/ai/data-scopes/{prompt_key}",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_set_data_scope",
+    "summary": "Set data allowlist for a prompt (new version; cannot exceed catalog)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/prompts",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_list_prompts",
+    "summary": "admin_list_prompts"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ai/prompts",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_create_prompt",
+    "summary": "Create a new prompt version (optionally activate as default)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/prompts/{prompt_key}",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_get_prompt",
+    "summary": "admin_get_prompt"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/ai/prompts/{prompt_key}",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_update_prompt",
+    "summary": "Modify the active prompt by creating a new version (immutable history)."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/ai/prompts/{prompt_key}/activate",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_activate_prompt",
+    "summary": "Set an existing version as the default active prompt."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/ai/settings",
+    "tags": [
+      "admin-ai"
+    ],
+    "name": "admin_global_ai_info",
+    "summary": "admin_global_ai_info"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/billing/pricing-preview",
+    "tags": [
+      "control-plane",
+      "admin-billing"
+    ],
+    "name": "pricing_preview",
+    "summary": "pricing_preview"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/billing/run-renewals",
+    "tags": [
+      "control-plane",
+      "admin-billing"
+    ],
+    "name": "run_renewals",
+    "summary": "Cron-friendly: creates pending renewal payments when period ends."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/billing/settings",
+    "tags": [
+      "control-plane",
+      "admin-billing"
+    ],
+    "name": "get_billing_settings",
+    "summary": "get_billing_settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/billing/settings",
+    "tags": [
+      "control-plane",
+      "admin-billing"
+    ],
+    "name": "put_billing_settings",
+    "summary": "Set monthly list price in Naira. Yearly is auto-calculated as"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/bus/events",
+    "tags": [
+      "engine-bus",
+      "engine-bus"
+    ],
+    "name": "list_event_catalog",
+    "summary": "list_event_catalog"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/clients",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "list_clients",
+    "summary": "list_clients"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/clients/{client_id}",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "get_client",
+    "summary": "get_client"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/clients/{client_id}",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "patch_client",
+    "summary": "patch_client"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/clients/{client_id}/connections",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "client_connections",
+    "summary": "client_connections"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/clients/{client_id}/experience",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "client_experience",
+    "summary": "client_experience"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/clients/{client_id}/verification/manual-review",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "resolve_client_manual_review",
+    "summary": "Staff resolves pending manual company verification for an organization."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/compliance/frameworks",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_list_frameworks",
+    "summary": "Platform catalog for the admin portal. Includes seed + admin-uploaded frameworks."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/compliance/frameworks",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_upload_framework",
+    "summary": "Add a new framework to the **global** catalog (or update an existing one)."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/compliance/frameworks/upload",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_upload_framework_file",
+    "summary": "Multipart upload of the same JSON schema used by seed files."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/compliance/frameworks/{framework_id}",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_get_framework",
+    "summary": "admin_get_framework"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/compliance/frameworks/{framework_id}",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_set_framework_active",
+    "summary": "admin_set_framework_active"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/compliance/frameworks/{framework_id}/questions",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_list_questions_for_framework",
+    "summary": "admin_list_questions_for_framework"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/compliance/questionnaire/questions",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_list_questionnaire_questions",
+    "summary": "admin_list_questionnaire_questions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/compliance/questionnaire/questions",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_create_questionnaire_question",
+    "summary": "Create a question curated by a GRC expert. Linked to one or more frameworks."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/compliance/questionnaire/questions/{question_id}",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_deactivate_questionnaire_question",
+    "summary": "admin_deactivate_questionnaire_question"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/compliance/questionnaire/questions/{question_id}",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_get_questionnaire_question",
+    "summary": "admin_get_questionnaire_question"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/compliance/questionnaire/questions/{question_id}",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_update_questionnaire_question",
+    "summary": "Edit prompt, frameworks, help text, etc. Marks the question as expert-managed."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/compliance/questionnaire/rebuild",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_rebuild_questionnaire",
+    "summary": "admin_rebuild_questionnaire"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/compliance/seed",
+    "tags": [
+      "control-plane",
+      "admin-compliance"
+    ],
+    "name": "admin_reload_seed_frameworks",
+    "summary": "Re-import ``seed/frameworks/*.json`` into the platform DB. Does not delete admin uploads."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/dashboard/stats",
+    "tags": [
+      "control-plane",
+      "admin-clients"
+    ],
+    "name": "admin_dashboard_stats",
+    "summary": "admin_dashboard_stats"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/discovery/nmap/preview",
+    "tags": [
+      "control-plane",
+      "admin-discovery"
+    ],
+    "name": "preview_nmap_command",
+    "summary": "preview_nmap_command"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/discovery/settings",
+    "tags": [
+      "control-plane",
+      "admin-discovery"
+    ],
+    "name": "get_discovery_settings",
+    "summary": "get_discovery_settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/discovery/settings",
+    "tags": [
+      "control-plane",
+      "admin-discovery"
+    ],
+    "name": "put_discovery_settings",
+    "summary": "Configure the real Nmap binary and **admin-specified scanning flags**."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/experience-services",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "list_experience_services",
+    "summary": "list_experience_services"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/experience-services",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "create_experience_service",
+    "summary": "create_experience_service"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/experience-services/seed",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "seed_experience_services",
+    "summary": "Populate DB from code defaults once. After that, edit via admin API only."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/experience-services/{service_key}",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "delete_experience_service",
+    "summary": "delete_experience_service"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/experience-services/{service_key}",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "get_experience_service",
+    "summary": "get_experience_service"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/experience-services/{service_key}",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "patch_experience_service",
+    "summary": "patch_experience_service"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/admin/experience-services/{service_key}",
+    "tags": [
+      "control-plane",
+      "admin-experience"
+    ],
+    "name": "put_experience_service",
+    "summary": "Update modules, nav, widgets, onboarding for a service without code deploy."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/logs",
+    "tags": [
+      "operations-engine",
+      "developer-logs"
+    ],
+    "name": "staff_list_logs",
+    "summary": "staff_list_logs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/logs",
+    "tags": [
+      "operations-engine",
+      "developer-logs"
+    ],
+    "name": "staff_create_log",
+    "summary": "staff_create_log"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/logs/issues/{issue_id}",
+    "tags": [
+      "operations-engine",
+      "developer-logs"
+    ],
+    "name": "staff_issue_timeline",
+    "summary": "staff_issue_timeline"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/scanner-tools",
+    "tags": [
+      "admin-scanner",
+      "scanner-engine"
+    ],
+    "name": "list_scanner_tools",
+    "summary": "list_scanner_tools"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/scanner-tools/update",
+    "tags": [
+      "admin-scanner",
+      "scanner-engine"
+    ],
+    "name": "update_scanner_tools",
+    "summary": "update_scanner_tools"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/scanner-tools/wordlists/ensure",
+    "tags": [
+      "admin-scanner",
+      "scanner-engine"
+    ],
+    "name": "ensure_wordlists",
+    "summary": "ensure_wordlists"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/server/optimize",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_optimize",
+    "summary": "Apply safe in-process optimisations:"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/server/overview",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_overview",
+    "summary": "Full operational picture of this API process and related workers:"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/server/processes",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_processes",
+    "summary": "server_processes"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/server/recommendations",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_recommendations",
+    "summary": "server_recommendations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/server/resources",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_resources",
+    "summary": "server_resources"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/server/runtime",
+    "tags": [
+      "operations-engine",
+      "admin-server"
+    ],
+    "name": "server_runtime",
+    "summary": "server_runtime"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/support/tickets",
+    "tags": [
+      "control-plane",
+      "admin-support"
+    ],
+    "name": "admin_list_tickets",
+    "summary": "admin_list_tickets"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/support/tickets/{ticket_id}",
+    "tags": [
+      "control-plane",
+      "admin-support"
+    ],
+    "name": "admin_get_ticket",
+    "summary": "admin_get_ticket"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/support/tickets/{ticket_id}",
+    "tags": [
+      "control-plane",
+      "admin-support"
+    ],
+    "name": "admin_update_ticket",
+    "summary": "admin_update_ticket"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/support/tickets/{ticket_id}/messages",
+    "tags": [
+      "control-plane",
+      "admin-support"
+    ],
+    "name": "admin_reply_ticket",
+    "summary": "admin_reply_ticket"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tooling/provisions",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_list_provisions",
+    "summary": "admin_list_provisions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tooling/provisions",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_create_provision",
+    "summary": "admin_create_provision"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/tooling/provisions/{provision_id}",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_patch_provision",
+    "summary": "admin_patch_provision"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tooling/stats",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "tooling_stats",
+    "summary": "tooling_stats"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tooling/tools",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_list_tools",
+    "summary": "admin_list_tools"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tooling/tools",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_create_tool",
+    "summary": "admin_create_tool"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/tooling/tools/seed",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_seed_tools",
+    "summary": "admin_seed_tools"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/tooling/tools/{tool_id}",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_delete_tool",
+    "summary": "admin_delete_tool"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/tooling/tools/{tool_id}",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_get_tool",
+    "summary": "admin_get_tool"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/tooling/tools/{tool_id}",
+    "tags": [
+      "control-plane",
+      "admin-tooling"
+    ],
+    "name": "admin_patch_tool",
+    "summary": "admin_patch_tool"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/correlation-rules",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_upsert_rule",
+    "summary": "admin_upsert_rule"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/vapt/correlation-rules/builtin",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_list_builtin_rules",
+    "summary": "admin_list_builtin_rules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/procedures",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_upsert_procedure",
+    "summary": "admin_upsert_procedure"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/vapt/schedules",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_list_schedules",
+    "summary": "admin_list_schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/schedules",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_create_schedule",
+    "summary": "admin_create_schedule"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_delete_schedule",
+    "summary": "admin_delete_schedule"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_get_schedule",
+    "summary": "admin_get_schedule"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_patch_schedule",
+    "summary": "admin_patch_schedule"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}/pause-until",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_pause_until",
+    "summary": "admin_pause_until"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}/run-now",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_run_now",
+    "summary": "admin_run_now"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/vapt/schedules/{schedule_id}/skip-next",
+    "tags": [
+      "vapt-engine",
+      "admin-vapt"
+    ],
+    "name": "admin_skip_next",
+    "summary": "admin_skip_next"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/settings",
+    "tags": [
+      "ai"
+    ],
+    "name": "get_org_ai_settings",
+    "summary": "get_org_ai_settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/ai/settings",
+    "tags": [
+      "ai"
+    ],
+    "name": "update_org_ai_settings",
+    "summary": "update_org_ai_settings"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/usage",
+    "tags": [
+      "ai"
+    ],
+    "name": "get_org_ai_usage",
+    "summary": "get_org_ai_usage"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alerts/events",
+    "tags": [
+      "alert-engine",
+      "alerts"
+    ],
+    "name": "list_alert_events",
+    "summary": "list_alert_events"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/alerts/events/{event_id}/process",
+    "tags": [
+      "alert-engine",
+      "alerts"
+    ],
+    "name": "process_one",
+    "summary": "process_one"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/alerts/settings",
+    "tags": [
+      "alert-engine",
+      "alerts"
+    ],
+    "name": "get_alert_settings",
+    "summary": "get_alert_settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/alerts/settings",
+    "tags": [
+      "alert-engine",
+      "alerts"
+    ],
+    "name": "put_alert_settings",
+    "summary": "Configure **client** alert SMTP (separate from Phantix registration OTP SMTP)."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/alerts/test",
+    "tags": [
+      "alert-engine",
+      "alerts"
+    ],
+    "name": "test_alert",
+    "summary": "test_alert"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/app/auth/challenge",
+    "tags": [
+      "control-plane",
+      "application-access"
+    ],
+    "name": "app_login_challenge",
+    "summary": "app_login_challenge"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/app/auth/me",
+    "tags": [
+      "control-plane",
+      "application-access"
+    ],
+    "name": "app_auth_me",
+    "summary": "Validate dual tokens and return tenant-safe identity."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/app/auth/mfa",
+    "tags": [
+      "control-plane",
+      "application-access"
+    ],
+    "name": "app_login_mfa",
+    "summary": "app_login_mfa"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/app/auth/password",
+    "tags": [
+      "control-plane",
+      "application-access"
+    ],
+    "name": "app_login_password",
+    "summary": "app_login_password"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/app/auth/resolve-key",
+    "tags": [
+      "control-plane",
+      "application-access"
+    ],
+    "name": "resolve_service_key",
+    "summary": "Validate pk_live_* service key; return company id/slug (no secrets)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/asset-tags",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "list_tags",
+    "summary": "list_tags"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/asset-tags",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "create_tag",
+    "summary": "create_tag"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/asset-tags/assets/{asset_id}",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "list_tags_for_asset",
+    "summary": "list_tags_for_asset"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/asset-tags/assets/{asset_id}/assign",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "assign_tag",
+    "summary": "assign_tag"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/asset-tags/assets/{asset_id}/{tag_id}",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "unassign_tag",
+    "summary": "unassign_tag"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/asset-tags/{tag_id}",
+    "tags": [
+      "asset-engine",
+      "asset-tags"
+    ],
+    "name": "delete_tag",
+    "summary": "delete_tag"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "list_assets",
+    "summary": "list_assets"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "create_asset",
+    "summary": "create_asset"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/discovery/jobs",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "list_discovery_jobs",
+    "summary": "list_discovery_jobs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/discovery/jobs",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "create_discovery_job",
+    "summary": "create_discovery_job"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/discovery/jobs/{job_id}",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "get_discovery_job",
+    "summary": "get_discovery_job"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/discovery/jobs/{job_id}/run",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "run_discovery_job",
+    "summary": "run_discovery_job"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/import/api",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "import_api_spec",
+    "summary": "import_api_spec"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/import/github",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "import_github_repos",
+    "summary": "import_github_repos"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/integrations/github",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "list_github_integrations",
+    "summary": "list_github_integrations"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/integrations/github",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "upsert_github_integration",
+    "summary": "upsert_github_integration"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/upload/apk",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "upload_apk",
+    "summary": "Accept an APK upload, store it on the platform, run static inventory analysis,"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/assets/{asset_id}",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "delete_asset",
+    "summary": "delete_asset"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/{asset_id}",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "get_asset",
+    "summary": "get_asset"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/assets/{asset_id}",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "update_asset",
+    "summary": "update_asset"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/{asset_id}/apk/reanalyze",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "reanalyze_apk_asset",
+    "summary": "reanalyze_apk_asset"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/{asset_id}/verify",
+    "tags": [
+      "asset-engine",
+      "assets"
+    ],
+    "name": "verify_asset",
+    "summary": "verify_asset"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit/control-roles",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "get_control_roles",
+    "summary": "get_control_roles"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/audit/control-roles",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "put_control_roles",
+    "summary": "Assign dual-control by organization user ids (preferred)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit/events",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "list_audit_events",
+    "summary": "list_audit_events"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit/events",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "create_audit_event",
+    "summary": "create_audit_event"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit/events/{event_id}",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "get_audit_event",
+    "summary": "get_audit_event"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit/export",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "export_audit_trail",
+    "summary": "export_audit_trail"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit/pending",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "list_pending_actions",
+    "summary": "list_pending_actions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit/pending",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "initiate_pending_action",
+    "summary": "initiate_pending_action"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit/pending/{pending_id}/authorize",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "authorize_pending",
+    "summary": "authorize_pending"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit/pending/{pending_id}/reject",
+    "tags": [
+      "audit-engine",
+      "audit"
+    ],
+    "name": "reject_pending",
+    "summary": "reject_pending"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing/payments",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "list_my_payments",
+    "summary": "list_my_payments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing/payments/{payment_id}",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "get_my_payment",
+    "summary": "get_my_payment"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/billing/payments/{payment_id}/pay",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "pay_invoice",
+    "summary": "pay_invoice"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing/pricing",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "get_pricing",
+    "summary": "Example: monthly \u20a61,000 \u2192 first month \u20a6500 (50% off), then \u20a61,000/month."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/billing/subscribe",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "subscribe",
+    "summary": "subscribe"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/billing/subscription",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "get_my_subscription",
+    "summary": "get_my_subscription"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/billing/subscription/cancel",
+    "tags": [
+      "control-plane",
+      "billing"
+    ],
+    "name": "cancel_subscription",
+    "summary": "cancel_subscription"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/admin/seed",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "reload_seeds",
+    "summary": "reload_seeds"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/assessments",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_assessments_api",
+    "summary": "list_assessments_api"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/assessments",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "create_assessment",
+    "summary": "Run a merged assessment: questionnaire self-attestation + asset/scan posture."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/assessments/{assessment_id}/results",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_assessment_results",
+    "summary": "get_assessment_results"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/connectors",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_evidence_connectors",
+    "summary": "list_evidence_connectors"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/compliance/connectors/{connector_id}/config",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "put_connector_config",
+    "summary": "put_connector_config"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/evidence",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_evidence_api",
+    "summary": "list_evidence_api"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/evidence",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "create_evidence",
+    "summary": "create_evidence"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/evidence/collect",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "collect_evidence",
+    "summary": "collect_evidence"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/evidence/summary",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "evidence_summary_api",
+    "summary": "evidence_summary_api"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/compliance/evidence/{evidence_id}",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "delete_evidence_api",
+    "summary": "delete_evidence_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/frameworks",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_frameworks_api",
+    "summary": "list_frameworks_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/frameworks/{framework_id}",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_framework_api",
+    "summary": "get_framework_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/gaps",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "gap_analysis",
+    "summary": "gap_analysis"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/map",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "map_findings_api",
+    "summary": "map_findings_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/profile",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_profile",
+    "summary": "get_profile"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/compliance/profile",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "put_profile",
+    "summary": "put_profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/questionnaire/answers",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_questionnaire_answers_audit",
+    "summary": "list_questionnaire_answers_audit"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/compliance/questionnaire/answers",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "submit_questionnaire_answer",
+    "summary": "submit_questionnaire_answer"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/questionnaire/progress",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "questionnaire_progress",
+    "summary": "questionnaire_progress"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/questionnaire/questions",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_questionnaire_questions",
+    "summary": "list_questionnaire_questions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/questionnaire/rebuild",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "rebuild_questionnaire",
+    "summary": "rebuild_questionnaire"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/compliance/questionnaire/session",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "start_questionnaire_session",
+    "summary": "start_questionnaire_session"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/recommendations",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "framework_recommendations",
+    "summary": "framework_recommendations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/compliance/status",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "compliance_status",
+    "summary": "compliance_status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "list_db_connections",
+    "summary": "list_db_connections"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/db-connections",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "create_db_connection",
+    "summary": "create_db_connection"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections/connection-option-hints",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "connection_option_hints",
+    "summary": "Document that connections need more than username/password."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections/drivers",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "list_drivers",
+    "summary": "Show which DB engines have live-probe drivers installed vs optional."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections/primary-security-storage",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "get_primary_security_storage",
+    "summary": "get_primary_security_storage"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/db-connections/provision",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "provision_security_database",
+    "summary": "Placeholder for optional Phantix-hosted dedicated security DB."
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/db-connections/{connection_id}",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "delete_db_connection",
+    "summary": "delete_db_connection"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections/{connection_id}",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "get_db_connection",
+    "summary": "get_db_connection"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/db-connections/{connection_id}",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "update_db_connection",
+    "summary": "update_db_connection"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/db-connections/{connection_id}/bootstrap",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "bootstrap_connection_schema",
+    "summary": "bootstrap_connection_schema"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/db-connections/{connection_id}/status",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "get_connection_status",
+    "summary": "get_connection_status"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/db-connections/{connection_id}/test",
+    "tags": [
+      "control-plane",
+      "customer-db-connections"
+    ],
+    "name": "test_db_connection",
+    "summary": "test_db_connection"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines",
+    "tags": [
+      "engines"
+    ],
+    "name": "list_all_engines",
+    "summary": "list_all_engines"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/_meta/summary",
+    "tags": [
+      "engines"
+    ],
+    "name": "engines_summary",
+    "summary": "engines_summary"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/ai/status",
+    "tags": [
+      "ai-engine"
+    ],
+    "name": "ai_engine_status",
+    "summary": "AI Engine Phase 1\u20132: governance foundation + core agents."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/admin/seed",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "reload_seeds",
+    "summary": "reload_seeds"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/assessments",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_assessments_api",
+    "summary": "list_assessments_api"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/assessments",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "create_assessment",
+    "summary": "Run a merged assessment: questionnaire self-attestation + asset/scan posture."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/assessments/{assessment_id}/results",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_assessment_results",
+    "summary": "get_assessment_results"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/connectors",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_evidence_connectors",
+    "summary": "list_evidence_connectors"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/engines/compliance/connectors/{connector_id}/config",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "put_connector_config",
+    "summary": "put_connector_config"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/evidence",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_evidence_api",
+    "summary": "list_evidence_api"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/evidence",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "create_evidence",
+    "summary": "create_evidence"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/evidence/collect",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "collect_evidence",
+    "summary": "collect_evidence"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/evidence/summary",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "evidence_summary_api",
+    "summary": "evidence_summary_api"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/engines/compliance/evidence/{evidence_id}",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "delete_evidence_api",
+    "summary": "delete_evidence_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/frameworks",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_frameworks_api",
+    "summary": "list_frameworks_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/frameworks/{framework_id}",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_framework_api",
+    "summary": "get_framework_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/gaps",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "gap_analysis",
+    "summary": "gap_analysis"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/map",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "map_findings_api",
+    "summary": "map_findings_api"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/profile",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "get_profile",
+    "summary": "get_profile"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/engines/compliance/profile",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "put_profile",
+    "summary": "put_profile"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/questionnaire/answers",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_questionnaire_answers_audit",
+    "summary": "list_questionnaire_answers_audit"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/engines/compliance/questionnaire/answers",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "submit_questionnaire_answer",
+    "summary": "submit_questionnaire_answer"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/questionnaire/progress",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "questionnaire_progress",
+    "summary": "questionnaire_progress"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/questionnaire/questions",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "list_questionnaire_questions",
+    "summary": "list_questionnaire_questions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/questionnaire/rebuild",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "rebuild_questionnaire",
+    "summary": "rebuild_questionnaire"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/engines/compliance/questionnaire/session",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "start_questionnaire_session",
+    "summary": "start_questionnaire_session"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/recommendations",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "framework_recommendations",
+    "summary": "framework_recommendations"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/compliance/status",
+    "tags": [
+      "compliance-engine"
+    ],
+    "name": "compliance_status",
+    "summary": "compliance_status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/reporting/status",
+    "tags": [
+      "reporting-engine"
+    ],
+    "name": "reporting_engine_status",
+    "summary": "reporting_engine_status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/engines/{engine_id}",
+    "tags": [
+      "engines"
+    ],
+    "name": "get_one_engine",
+    "summary": "get_one_engine"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/logs",
+    "tags": [
+      "operations-engine",
+      "org-logs"
+    ],
+    "name": "org_list_logs",
+    "summary": "org_list_logs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/logs",
+    "tags": [
+      "operations-engine",
+      "org-logs"
+    ],
+    "name": "org_create_log",
+    "summary": "org_create_log"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/logs/issues/{issue_id}",
+    "tags": [
+      "operations-engine",
+      "org-logs"
+    ],
+    "name": "org_issue_timeline",
+    "summary": "org_issue_timeline"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/openapi.json",
+    "tags": [],
+    "name": "openapi",
+    "summary": "openapi"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "list_org_users",
+    "summary": "list_org_users"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/org-users",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "create_org_user",
+    "summary": "Create user. Bootstrap (pre dual-control) via company JWT; else initiator/authorizer session."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/org-users/auth/login",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "org_user_login",
+    "summary": "Passwordless login for any registered organization user."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/org-users/auth/login/device",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "org_user_login_device",
+    "summary": "Second factor when signing in from a new browser/device with an active session."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/org-users/auth/login/mfa",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "org_user_login_mfa",
+    "summary": "Verify the domain-email OTP."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/org-users/auth/logout",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "org_user_dual_control_logout",
+    "summary": "org_user_dual_control_logout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users/auth/me",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "org_user_session_me",
+    "summary": "org_user_session_me"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users/dual-control",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "get_dual_control_assignment",
+    "summary": "get_dual_control_assignment"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/org-users/dual-control",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "put_dual_control_assignment",
+    "summary": "Example:"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users/me/permissions",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "my_permissions",
+    "summary": "my_permissions"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users/roles",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "list_rbac_roles",
+    "summary": "list_rbac_roles"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/org-users/{user_id}",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "deactivate_org_user",
+    "summary": "deactivate_org_user"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/org-users/{user_id}",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "get_org_user",
+    "summary": "get_org_user"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/org-users/{user_id}",
+    "tags": [
+      "control-plane",
+      "organization-users"
+    ],
+    "name": "patch_org_user",
+    "summary": "patch_org_user"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/companies/{company_id}/service-key",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "get_company_service_key",
+    "summary": "get_company_service_key"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/companies/{company_id}/service-key",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "rotate_company_service_key",
+    "summary": "rotate_company_service_key"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/login",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "login_for_access_token",
+    "summary": "login_for_access_token"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/login/mfa",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "login_mfa_verify",
+    "summary": "login_mfa_verify"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "read_current_organization",
+    "summary": "read_current_organization"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/organizations/me",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "update_current_organization",
+    "summary": "update_current_organization"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/companies",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "list_companies",
+    "summary": "list_companies"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/companies",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "create_company",
+    "summary": "create_company"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/experience",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "get_my_experience",
+    "summary": "get_my_experience"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/identity",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "get_platform_identity",
+    "summary": "get_platform_identity"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/login-links",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "list_login_links",
+    "summary": "list_login_links"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/organizations/me/logo",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "delete_organization_logo",
+    "summary": "delete_organization_logo"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/logo",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "upload_organization_logo",
+    "summary": "Store company logo used on report cover pages and footers."
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/organizations/me/preferred-services",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "update_my_preferred_services",
+    "summary": "Change which services shape this org's product experience."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/service-key",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "get_my_service_key",
+    "summary": "get_my_service_key"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/service-key",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "create_or_rotate_my_service_key",
+    "summary": "create_or_rotate_my_service_key"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/organizations/me/service-key/{key_id}",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "revoke_my_service_key",
+    "summary": "revoke_my_service_key"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/service-keys",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "list_my_service_keys",
+    "summary": "list_my_service_keys"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/me/setup",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "get_organization_setup",
+    "summary": "get_organization_setup"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/cac",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "submit_cac_details",
+    "summary": "submit_cac_details"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/complete",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "complete_organization_setup",
+    "summary": "complete_organization_setup"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/identity",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "update_setup_identity",
+    "summary": "update_setup_identity"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/otp/send",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "send_setup_otp",
+    "summary": "send_setup_otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/otp/verify",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "verify_setup_otp",
+    "summary": "verify_setup_otp"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/privacy/accept",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "accept_privacy_notice",
+    "summary": "accept_privacy_notice"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/verify/domain/check",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "check_domain_verification",
+    "summary": "check_domain_verification"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/verify/domain/start",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "start_domain_verification",
+    "summary": "start_domain_verification"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/setup/verify/manual-review",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "request_manual_company_review",
+    "summary": "request_manual_company_review"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/organizations/me/users/{user_id}/device",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "clear_user_device",
+    "summary": "clear_user_device"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/me/users/{user_id}/login-link",
+    "tags": [
+      "control-plane",
+      "platform-service-keys"
+    ],
+    "name": "create_login_link",
+    "summary": "create_login_link"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/privacy",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "public_privacy_notice",
+    "summary": "public_privacy_notice"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/organizations/register",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "register_organization",
+    "summary": "register_organization"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/organizations/services-catalog",
+    "tags": [
+      "control-plane",
+      "organizations"
+    ],
+    "name": "services_catalog",
+    "summary": "Catalog from admin-editable experience configs (what preferred_services unlock)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "list_reports",
+    "summary": "list_reports"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/reports",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "create_report",
+    "summary": "create_report"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/reports/export",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "ad_hoc_export",
+    "summary": "ad_hoc_export"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/tracker",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "list_tracker",
+    "summary": "list_tracker"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/reports/tracker/{finding_key}",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "patch_tracker",
+    "summary": "patch_tracker"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/{report_id}",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "get_report",
+    "summary": "get_report"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/reports/{report_id}/download",
+    "tags": [
+      "reporting-engine",
+      "reports"
+    ],
+    "name": "download_report",
+    "summary": "download_report"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "list_risks",
+    "summary": "list_risks"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/export",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "export_risks",
+    "summary": "export_risks"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/prioritized",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "list_prioritized_risks",
+    "summary": "list_prioritized_risks"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/risks/treatments/{treatment_id}/approve",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "approve_treatment",
+    "summary": "approve_treatment"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/risks/treatments/{treatment_id}/complete",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "complete_treatment",
+    "summary": "complete_treatment"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/risks/treatments/{treatment_id}/reject",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "reject_treatment",
+    "summary": "reject_treatment"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/risks/treatments/{treatment_id}/submit",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "submit_treatment",
+    "summary": "submit_treatment"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/{risk_id}",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "get_risk",
+    "summary": "get_risk"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/risks/{risk_id}",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "patch_risk",
+    "summary": "patch_risk"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/{risk_id}/assessments",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "list_assessments",
+    "summary": "list_assessments"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/{risk_id}/history",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "risk_history",
+    "summary": "risk_history"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/risks/{risk_id}/treatments",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "list_treatments",
+    "summary": "list_treatments"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/risks/{risk_id}/treatments",
+    "tags": [
+      "risk-engine",
+      "risks"
+    ],
+    "name": "create_treatment",
+    "summary": "create_treatment"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scans/jobs",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "list_jobs",
+    "summary": "list_jobs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scans/jobs",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "create_scan_job",
+    "summary": "create_scan_job"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scans/jobs/active",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "get_active_job",
+    "summary": "get_active_job"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scans/jobs/{job_id}",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "get_job",
+    "summary": "get_job"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scans/jobs/{job_id}/cancel",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "cancel_job",
+    "summary": "Cancel an active scan job for this organization."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/scans/jobs/{job_id}/run",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "run_job",
+    "summary": "run_job"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scans/results",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "list_results",
+    "summary": "list_results"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/scans/yaml/catalog",
+    "tags": [
+      "scanner-engine",
+      "scans"
+    ],
+    "name": "yaml_scan_catalog",
+    "summary": "Catalog of Nettacker-style YAML checks auto-discovered from scans/."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search",
+    "tags": [
+      "operations-engine",
+      "search"
+    ],
+    "name": "org_search",
+    "summary": "Search Elasticsearch indices for this organization only."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/status",
+    "tags": [
+      "operations-engine",
+      "search"
+    ],
+    "name": "search_status",
+    "summary": "search_status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/staff",
+    "tags": [
+      "control-plane",
+      "staff-auth"
+    ],
+    "name": "list_staff",
+    "summary": "list_staff"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/staff",
+    "tags": [
+      "control-plane",
+      "staff-auth"
+    ],
+    "name": "create_staff_user",
+    "summary": "create_staff_user"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/staff/login",
+    "tags": [
+      "control-plane",
+      "staff-auth"
+    ],
+    "name": "staff_login",
+    "summary": "staff_login"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/staff/me",
+    "tags": [
+      "control-plane",
+      "staff-auth"
+    ],
+    "name": "staff_me",
+    "summary": "staff_me"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/staff/{staff_id}",
+    "tags": [
+      "control-plane",
+      "staff-auth"
+    ],
+    "name": "update_staff_user",
+    "summary": "update_staff_user"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/status",
+    "tags": [
+      "ops"
+    ],
+    "name": "status_v1",
+    "summary": "status_v1"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets",
+    "tags": [
+      "control-plane",
+      "support-customer"
+    ],
+    "name": "list_my_tickets",
+    "summary": "list_my_tickets"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets",
+    "tags": [
+      "control-plane",
+      "support-customer"
+    ],
+    "name": "submit_ticket",
+    "summary": "submit_ticket"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/support/tickets/{ticket_id}",
+    "tags": [
+      "control-plane",
+      "support-customer"
+    ],
+    "name": "get_my_ticket",
+    "summary": "get_my_ticket"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/support/tickets/{ticket_id}/messages",
+    "tags": [
+      "control-plane",
+      "support-customer"
+    ],
+    "name": "reply_my_ticket",
+    "summary": "reply_my_ticket"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tools/catalog",
+    "tags": [
+      "control-plane",
+      "tools-client"
+    ],
+    "name": "org_tool_catalog",
+    "summary": "org_tool_catalog"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tools/my-tools",
+    "tags": [
+      "control-plane",
+      "tools-client"
+    ],
+    "name": "my_tools",
+    "summary": "my_tools"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tools/request",
+    "tags": [
+      "control-plane",
+      "tools-client"
+    ],
+    "name": "request_tool",
+    "summary": "request_tool"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tools/subscribe",
+    "tags": [
+      "control-plane",
+      "tools-client"
+    ],
+    "name": "subscribe_tool",
+    "summary": "Paid tooling subscription (separate from platform membership)."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tools/subscriptions",
+    "tags": [
+      "control-plane",
+      "tools-client"
+    ],
+    "name": "my_tool_subscriptions",
+    "summary": "my_tool_subscriptions"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/approvals/{request_id}/decide",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "decide_approval",
+    "summary": "Only assigned initiator/authorizer with authenticator session may decide."
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/campaigns",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_campaigns",
+    "summary": "list_campaigns"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/campaigns",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "create_campaign",
+    "summary": "create_campaign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "get_campaign",
+    "summary": "get_campaign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/approvals",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_campaign_approvals",
+    "summary": "list_campaign_approvals"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/cancel",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "cancel_campaign",
+    "summary": "cancel_campaign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/findings",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_findings",
+    "summary": "list_findings"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/pause",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "pause_campaign",
+    "summary": "pause_campaign"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/resume",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "resume_campaign",
+    "summary": "resume_campaign"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/campaigns/{campaign_id}/start",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "start_campaign",
+    "summary": "start_campaign"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/correlation-rules",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_rules",
+    "summary": "list_rules"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/mining/candidates",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_mined_candidates",
+    "summary": "list_mined_candidates"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/plan",
+    "tags": [
+      "vapt-engine",
+      "vapt-orchestrator"
+    ],
+    "name": "generate_plan",
+    "summary": "Analyze org profile + asset inventory and return a recommended campaign plan."
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/plan/execute",
+    "tags": [
+      "vapt-engine",
+      "vapt-orchestrator"
+    ],
+    "name": "execute_plan_endpoint",
+    "summary": "execute_plan_endpoint"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/plan/{plan_id}",
+    "tags": [
+      "vapt-engine",
+      "vapt-orchestrator"
+    ],
+    "name": "get_plan",
+    "summary": "get_plan"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/procedures",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_procedures",
+    "summary": "list_procedures"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/procedures/{procedure_key}",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "get_procedure",
+    "summary": "get_procedure"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/schedules",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "list_org_schedules",
+    "summary": "list_org_schedules"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/schedules",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "create_org_schedule",
+    "summary": "create_org_schedule"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/vapt/schedules/{schedule_id}/blackout",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "add_blackout",
+    "summary": "add_blackout"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/vapt/settings",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "get_settings",
+    "summary": "get_settings"
+  },
+  {
+    "method": "PUT",
+    "path": "/api/v1/vapt/settings",
+    "tags": [
+      "vapt-engine",
+      "vapt"
+    ],
+    "name": "put_settings",
+    "summary": "put_settings"
+  },
+  {
+    "method": "GET",
+    "path": "/docs",
+    "tags": [],
+    "name": "swagger_ui_html",
+    "summary": "swagger_ui_html"
+  },
+  {
+    "method": "GET",
+    "path": "/docs/oauth2-redirect",
+    "tags": [],
+    "name": "swagger_ui_redirect",
+    "summary": "swagger_ui_redirect"
+  },
+  {
+    "method": "GET",
+    "path": "/health",
+    "tags": [
+      "ops"
+    ],
+    "name": "health",
+    "summary": "Cheap liveness for load balancers / orchestrators. Does not probe dependencies."
+  },
+  {
+    "method": "GET",
+    "path": "/redoc",
+    "tags": [],
+    "name": "redoc_html",
+    "summary": "redoc_html"
+  },
+  {
+    "method": "GET",
+    "path": "/status",
+    "tags": [
+      "ops"
+    ],
+    "name": "status_root",
+    "summary": "Full operational status: DB, Redis, migrations, tools, engines, routes."
+  }
+]

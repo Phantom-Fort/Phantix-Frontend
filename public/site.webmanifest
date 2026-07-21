@@ -1,0 +1,26 @@
+{
+  "name": "Phantix Command Centre",
+  "short_name": "Phantix",
+  "description": "Phantix Security Solutions — Product Delivery Command Centre",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D1B3D",
+  "theme_color": "#16265C",
+  "icons": [
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-16x16.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

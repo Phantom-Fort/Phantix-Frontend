@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-phantix-950 text-slate-200 font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(51, 85, 181, 0.22), transparent),
+      radial-gradient(ellipse 50% 40% at 90% 110%, rgba(232, 181, 77, 0.06), transparent);
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    @apply bg-gold-400/30 text-gold-300;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-phantix-700/60 rounded-full border-2 border-solid border-transparent bg-clip-padding;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-phantix-600/70;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-phantix-900/60 backdrop-blur-xl border border-phantix-700/40;
+  }
+
+  .glass-bright {
+    @apply bg-phantix-800/50 backdrop-blur-xl border border-phantix-600/40;
+  }
+
+  .card {
+    @apply glass rounded-2xl shadow-card;
+  }
+
+  .input {
+    @apply w-full rounded-xl bg-phantix-950/70 border border-phantix-700/60 px-3.5 py-2.5 text-sm text-slate-200
+      placeholder:text-slate-500 outline-none transition-all
+      focus:border-gold-400/60 focus:ring-2 focus:ring-gold-400/15;
+  }
+
+  .label {
+    @apply block text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+      transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-400/40
+      disabled:opacity-50 disabled:pointer-events-none select-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-phantix-950 shadow-glow
+      hover:brightness-110 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply btn bg-phantix-700/50 text-slate-200 border border-phantix-600/50
+      hover:bg-phantix-700/80 hover:border-phantix-500/60 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn text-slate-300 hover:bg-phantix-800/70 hover:text-white;
+  }
+
+  .btn-danger {
+    @apply btn bg-severity-critical/15 text-severity-critical border border-severity-critical/30
+      hover:bg-severity-critical/25;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border;
+  }
+
+  .th {
+    @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+  }
+
+  .td {
+    @apply px-4 py-3.5 text-sm text-slate-300;
+  }
+
+  .skeleton {
+    @apply rounded-lg bg-phantix-800/60 relative overflow-hidden;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-phantix-600/25 to-transparent;
+    animation: shimmer 1.8s infinite;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400
+      transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
+  }
+  .nav-item.active {
+    @apply text-gold-300 bg-gradient-to-r from-gold-400/15 to-transparent border-l-2 border-gold-400 -ml-0.5 pl-[14px];
+  }
+
+  .prose-doc h1 {
+    @apply font-display text-3xl font-bold text-white mt-2 mb-4 pb-3 border-b border-phantix-700/50;
+  }
+  .prose-doc h2 {
+    @apply font-display text-xl font-semibold text-gold-300 mt-10 mb-3 scroll-mt-24;
+  }
+  .prose-doc h3 {
+    @apply font-display text-base font-semibold text-slate-100 mt-7 mb-2 scroll-mt-24;
+  }
+  .prose-doc h4 {
+    @apply text-sm font-semibold text-slate-200 mt-5 mb-2;
+  }
+  .prose-doc p {
+    @apply text-sm leading-7 text-slate-300 my-3;
+  }
+  .prose-doc ul, .prose-doc ol {
+    @apply my-3 pl-5 space-y-1.5 text-sm text-slate-300 leading-6;
+  }
+  .prose-doc ul {
+    @apply list-disc marker:text-gold-500;
+  }
+  .prose-doc ol {
+    @apply list-decimal marker:text-gold-500;
+  }
+  .prose-doc a {
+    @apply text-gold-400 underline decoration-gold-400/30 underline-offset-2 hover:decoration-gold-400;
+  }
+  .prose-doc strong {
+    @apply text-slate-100 font-semibold;
+  }
+  .prose-doc code {
+    @apply font-mono text-[12.5px] bg-phantix-800/80 text-gold-300 rounded-md px-1.5 py-0.5 border border-phantix-700/50;
+  }
+  .prose-doc pre {
+    @apply my-4 rounded-xl bg-phantix-950/90 border border-phantix-700/50 p-4 overflow-x-auto text-[12.5px] leading-6;
+  }
+  .prose-doc pre code {
+    @apply bg-transparent border-0 p-0 text-slate-300;
+  }
+  .prose-doc table {
+    @apply w-full my-4 text-[13px] border-collapse overflow-hidden rounded-xl;
+  }
+  .prose-doc thead th {
+    @apply bg-phantix-800/80 text-slate-200 font-semibold text-left px-3 py-2.5 border border-phantix-700/50;
+  }
+  .prose-doc tbody td {
+    @apply px-3 py-2.5 border border-phantix-700/40 text-slate-300 align-top;
+  }
+  .prose-doc tbody tr:nth-child(even) {
+    @apply bg-phantix-900/40;
+  }
+  .prose-doc blockquote {
+    @apply border-l-2 border-gold-400/60 pl-4 my-4 text-slate-400 italic;
+  }
+  .prose-doc hr {
+    @apply border-phantix-700/50 my-8;
+  }
+  .prose-doc img {
+    @apply rounded-xl my-4;
+  }
+}
