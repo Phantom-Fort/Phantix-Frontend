@@ -9,11 +9,10 @@ import {
   Boxes, ShieldAlert, Radar, Crosshair, ArrowRight, ArrowUpRight,
   BellRing, ScrollText, ShieldCheck, Zap,
 } from "lucide-react";
-import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, ProgressBar } from "@/components/ui";
-import {
-  assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents,
-  postureTrend, severityDistribution, complianceAssessments, reports,
-} from "@/lib/demo-data";
+import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, ProgressBar, Spinner } from "@/components/ui";
+import SecurityDbBanner from "@/components/SecurityDbBanner";
+import { loadDashboardBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { priorityBandMeta, timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
@@ -25,16 +24,46 @@ const ttStyle = {
   color: "#e2e8f0",
 };
 
+const emptyDash = {
+  assets: [],
+  risks: [],
+  scanJobs: [],
+  vaptCampaigns: [],
+  alertEvents: [],
+  auditEvents: [],
+  complianceAssessments: [],
+  reports: [],
+  postureTrend: [] as { day: string; score: number; findings: number }[],
+  severityDistribution: [] as { name: string; value: number; color: string }[],
+  securityDbBlocked: false,
+  error: null as string | null,
+};
+
 export default function Dashboard() {
-  const { org, operate } = useStore();
+  const { org, operate, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadDashboardBundle, emptyDash);
+  const {
+    assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents,
+    postureTrend, severityDistribution, complianceAssessments, reports,
+    securityDbBlocked, error: loadError,
+  } = data;
   const activeScan = scanJobs.find((j) => j.status === "running" || j.status === "queued");
   const activeCampaign = vaptCampaigns.find((c) => c.status === "active");
   const openRisks = risks.filter((r) => !["closed", "accepted"].includes(r.status));
-  const posture = postureTrend[postureTrend.length - 1].score;
+  const posture = postureTrend[postureTrend.length - 1]?.score ?? 0;
   const generating = reports.find((r) => r.status === "generating");
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading live posture…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
+      {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
@@ -325,12 +354,19 @@ export default function Dashboard() {
 
       {/* Operate hint */}
       {!operate.unlocked && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-6 flex items-center gap-3 rounded-2xl border border-gold-400/20 bg-gold-400/5 px-5 py-3.5">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/20 bg-gold-400/5 px-5 py-3.5">
           <Zap size={16} className="shrink-0 text-gold-400" />
-          <p className="text-xs leading-5 text-slate-400">
-            You're browsing read-only. <strong className="text-slate-200">Unlock operate mode</strong> from the sidebar
-            to run scans, start campaigns, and approve treatments — mutations require a dual-control session.
+          <p className="min-w-0 flex-1 text-xs leading-5 text-slate-400">
+            You're browsing read-only. Unlock operate mode to run scans, start campaigns, and approve treatments —
+            mutations require a dual-control session.
           </p>
+          <button
+            type="button"
+            className="btn-primary !py-2 !text-xs"
+            onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
+          >
+            Unlock operate
+          </button>
         </motion.div>
       )}
     </div>

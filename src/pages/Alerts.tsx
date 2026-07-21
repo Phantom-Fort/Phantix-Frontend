@@ -1,15 +1,36 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs } from "@/components/ui";
-import { alertEvents, alertSettings } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner } from "@/components/ui";
+import { loadAlertsBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import type { AlertSettings } from "@/lib/types";
+
+const emptySettings: AlertSettings = {
+  alerts_enabled: false,
+  smtp: { enabled: false, host: "", port: 587, from_email: "", from_name: "", use_tls: true },
+  email_recipients: [],
+  whatsapp: { enabled: false, provider: "", recipients: [] },
+  telegram: { enabled: false, provider: "", recipients: [] },
+  notify: {},
+};
 
 export default function Alerts() {
-  const { toast } = useStore();
+  const { toast, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadAlertsBundle, { events: [], settings: emptySettings });
+  const alertEvents = data.events;
+  const s = data.settings;
   const [tab, setTab] = useState("events");
-  const s = alertSettings;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading alerts…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -17,7 +38,15 @@ export default function Alerts() {
         title="Alerts"
         description="Severity-routed client notifications. Critical → email + WhatsApp + Telegram; everything else → email only. Routing is enforced server-side, not just configured."
         actions={
-          <button className="btn-primary" onClick={() => toast("success", "Test alert queued", "POST /alerts/test — enqueues and processes a custom.test event.")}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              void (async () => {
+                if (!(await requireDualControl("Sending a test alert requires a dual-control operate session."))) return;
+                toast("success", "Test alert queued", "POST /alerts/test");
+              })()
+            }
+          >
             <FlaskConical size={15} /> Send test alert
           </button>
         }
@@ -78,7 +107,17 @@ export default function Alerts() {
               <p className="text-[11px] leading-4 text-slate-500">
                 Passwords are Fernet-encrypted on the platform DB and never re-displayed.
               </p>
-              <button className="btn-secondary w-full" onClick={() => toast("info", "SMTP settings", "PUT /alerts/settings")}>Update SMTP</button>
+              <button
+                className="btn-secondary w-full"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Updating alert settings requires a dual-control operate session."))) return;
+                    toast("info", "SMTP settings", "PUT /alerts/settings");
+                  })()
+                }
+              >
+                Update SMTP
+              </button>
             </div>
           </Card>
 

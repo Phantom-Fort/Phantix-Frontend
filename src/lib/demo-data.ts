@@ -28,8 +28,9 @@ import type {
   VaptFinding,
 } from "./types";
 
-// Demo tenant — mirrors what the real API returns for an organization in
-// production. Data shapes follow the endpoint catalog exactly.
+// Demo tenant ONLY — consumed via src/lib/data.ts when isDemoMode() is true
+// (/demo, ?demo=1, or VITE_API_BASE unset). Live mode must never import this
+// from pages; shapes still mirror the endpoint catalog.
 
 export const organization: Organization = {
   id: 11,

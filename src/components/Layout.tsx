@@ -11,8 +11,8 @@ import {
   FileText,
   BellRing,
   ScrollText,
-  Settings,
   BookOpen,
+  ExternalLink,
   Search,
   LogOut,
   Lock,
@@ -30,8 +30,11 @@ import {
   Building2,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
 import { cx, timeAgo } from "@/lib/utils";
-import { Modal } from "./ui";
+
+// Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() — no Modal here.
+// Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
 
 const navSections: {
   label: string;
@@ -71,7 +74,6 @@ const navSections: {
   {
     label: "System",
     items: [
-      { to: "/settings", label: "Settings", icon: <Settings size={17} /> },
       { to: "/docs", label: "Documentation", icon: <BookOpen size={17} /> },
     ],
   },
@@ -93,71 +95,6 @@ function OperateCountdown({ expiresAt }: { expiresAt: number }) {
       <Timer size={12} />
       {mm}:{ss}
     </span>
-  );
-}
-
-function OperateUnlockModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { unlockOperate, toast, dualControl } = useStore();
-  const [email, setEmail] = useState(dualControl.initiator?.email ?? "");
-  const [code, setCode] = useState("");
-  const [stage, setStage] = useState<"email" | "otp">("email");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      if (stage === "email") {
-        setStage("otp");
-      } else {
-        await unlockOperate(email, code);
-        toast("success", "Operate mode unlocked", "Dual-control session active — mutations enabled for ~3 minutes of idle time.");
-        onClose();
-        setStage("email");
-        setCode("");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unlock failed");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <Modal open={open} onClose={onClose} title="Unlock operate mode">
-      <div className="mb-4 rounded-xl border border-gold-400/25 bg-gold-400/8 p-3.5 text-xs leading-5 text-gold-300/90">
-        Mutations are protected by <strong>dual control</strong>. Sign in as the assigned{" "}
-        <strong>{dualControl.initiator?.full_name} (initiator)</strong> or{" "}
-        <strong>{dualControl.authorizer?.full_name} (authorizer)</strong> — a one-time code is emailed to the
-        work address.
-      </div>
-      <form onSubmit={submit} className="space-y-4">
-        {stage === "email" ? (
-          <div>
-            <label className="label">Work email</label>
-            <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ada@acme.ng" />
-          </div>
-        ) : (
-          <div>
-            <label className="label">One-time code</label>
-            <input
-              className="input font-mono tracking-[0.4em] text-center text-lg"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="••••••"
-              autoFocus
-            />
-            <p className="mt-2 text-xs text-slate-500">Code sent to {email.replace(/(.{2}).+(@.+)/, "$1***$2")}</p>
-          </div>
-        )}
-        {error && <p className="text-sm text-severity-critical">{error}</p>}
-        <button className="btn-primary w-full" disabled={busy}>
-          {busy ? "Verifying…" : stage === "email" ? "Email me a code" : "Unlock operate mode"}
-        </button>
-      </form>
-    </Modal>
   );
 }
 
@@ -231,9 +168,8 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
 }
 
 export default function Layout() {
-  const { session, org, operate, lockOperate, logout, dualControl, demoActive, hasLiveApi, switchToRealOrg } = useStore();
+  const { session, org, operate, lockOperate, logout, dualControl, demoActive, hasLiveApi, switchToRealOrg, requireDualControl, securityDbReady } = useStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [unlockOpen, setUnlockOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -285,6 +221,20 @@ export default function Layout() {
               </div>
             </div>
           ))}
+          <div>
+            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+              Tenant admin
+            </p>
+            <a
+              href={PLATFORM_URL}
+              className="nav-item"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink size={17} />
+              Platform settings
+            </a>
+          </div>
         </nav>
 
         {/* Dual-control widget */}
@@ -316,7 +266,10 @@ export default function Layout() {
                     ? `${dualControl.initiator?.full_name?.split(" ")[0]} + ${dualControl.authorizer?.full_name?.split(" ")[0]} assigned`
                     : "Not configured"}
                 </p>
-                <button onClick={() => setUnlockOpen(true)} className="btn-primary mt-2 w-full !px-3 !py-1.5 !text-[11px]">
+                <button
+                  onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
+                  className="btn-primary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
+                >
                   <Unlock size={12} /> Unlock operate
                 </button>
               </div>
@@ -342,7 +295,7 @@ export default function Layout() {
 
           <div className="ml-auto flex items-center gap-2.5">
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
-              <Database size={12} /> Security DB · ready
+              <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>
             <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
               <KeyRound size={12} className="text-gold-400" /> {org.slug}
@@ -387,12 +340,12 @@ export default function Layout() {
                           <Building2 size={15} /> Switch to real organization
                         </button>
                       )}
-                      <button
-                        onClick={() => navigate("/settings")}
+                      <a
+                        href={PLATFORM_IDENTITY_URL}
                         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-phantix-700/50"
                       >
-                        <Settings size={15} /> Settings
-                      </button>
+                        <ExternalLink size={15} /> Platform settings
+                      </a>
                       <button
                         onClick={() => navigate("/docs")}
                         className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-phantix-700/50"
@@ -459,7 +412,6 @@ export default function Layout() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <OperateUnlockModal open={unlockOpen} onClose={() => setUnlockOpen(false)} />
     </div>
   );
 }

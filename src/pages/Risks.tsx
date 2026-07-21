@@ -1,14 +1,20 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs } from "@/components/ui";
-import { risks } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
+import SecurityDbBanner from "@/components/SecurityDbBanner";
+import { loadRisksBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { Risk } from "@/lib/types";
 
 export default function Risks() {
-  const { toast, operate } = useStore();
+  const { toast, requireDualControl, dualControl } = useStore();
+  const { data, loading } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
+  const risks = data.risks;
+  const securityDbBlocked = data.securityDbBlocked;
+  const loadError = data.error;
   const [tab, setTab] = useState("priority");
   const [band, setBand] = useState("all");
   const [selected, setSelected] = useState<Risk | null>(null);
@@ -18,11 +24,20 @@ export default function Risks() {
       [...risks]
         .filter((r) => band === "all" || r.priority_band === band)
         .sort((a, b) => (tab === "priority" ? b.priority_score - a.priority_score : b.inherent_score - a.inherent_score)),
-    [band, tab],
+    [risks, band, tab],
   );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading risks…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
+      {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Risk register"
         description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned — Phantix never owns them."
@@ -156,10 +171,26 @@ export default function Risks() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2.5 border-t border-phantix-700/40 pt-4">
-              <button className="btn-primary" onClick={() => toast("success", "Treatment proposed", "propose → submit → approve → complete; approve needs the authorizer session.")}>
+              <button
+                className="btn-primary"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Proposing risk treatment requires a dual-control operate session."))) return;
+                    toast("success", "Treatment proposed", "propose → submit → approve → complete; approve needs the authorizer session.");
+                  })()
+                }
+              >
                 Propose treatment
               </button>
-              <button className="btn-secondary" onClick={() => (operate.unlocked ? toast("info", "Owner assigned", "PATCH /risks/{id}") : toast("warning", "Operate mode required"))}>
+              <button
+                className="btn-secondary"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Assigning a risk owner requires a dual-control operate session."))) return;
+                    toast("info", "Owner assigned", "PATCH /risks/{id}");
+                  })()
+                }
+              >
                 Assign owner
               </button>
               <button className="btn-ghost" onClick={() => toast("info", "History", "GET /risks/{id}/history — every score change is audited.")}>
@@ -167,7 +198,8 @@ export default function Risks() {
               </button>
             </div>
             <p className="text-[11px] leading-4 text-slate-500">
-              Treatment approve/reject requires the <strong>authorizer</strong> (Chidi Eze) dual-control session.
+              Treatment approve/reject requires the <strong>authorizer</strong>
+              {dualControl.authorizer?.full_name ? ` (${dualControl.authorizer.full_name})` : ""} dual-control session.
               Residual risk is recalculated on propose/approve/complete.
             </p>
           </div>

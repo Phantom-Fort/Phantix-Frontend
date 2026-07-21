@@ -60,20 +60,42 @@ export function deviceId(): string {
   return id;
 }
 
+function detailMessage(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((d: { msg?: string }) => d?.msg ?? "validation error").join(", ");
+  }
+  if (detail && typeof detail === "object") {
+    const d = detail as Record<string, unknown>;
+    if (typeof d.message === "string") return d.message;
+    if (typeof d.detail === "string") return d.detail;
+    if (typeof d.error === "string") return d.error;
+  }
+  return "Request failed";
+}
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
   constructor(status: number, detail: unknown) {
-    const msg =
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail.map((d: { msg?: string }) => d?.msg ?? "validation error").join(", ")
-          : "Request failed";
-    super(msg);
+    super(detailMessage(detail));
     this.status = status;
     this.detail = detail;
   }
+}
+
+/** 409 on product modules usually means security storage is not bootstrapped. */
+export function isSecurityDbBlocked(err: unknown): boolean {
+  if (!(err instanceof ApiError) || err.status !== 409) return false;
+  const msg = `${err.message} ${JSON.stringify(err.detail ?? "")}`.toLowerCase();
+  return (
+    msg.includes("security") ||
+    msg.includes("bootstrap") ||
+    msg.includes("storage") ||
+    msg.includes("schema") ||
+    msg.includes("not ready") ||
+    msg.includes("connection")
+  );
 }
 
 type Realm = "platform" | "application" | "staff";

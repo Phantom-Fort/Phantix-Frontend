@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Tabs, ProgressBar } from "@/components/ui";
-import { assets, assetTags, discoveryJobs } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
+import SecurityDbBanner from "@/components/SecurityDbBanner";
+import { loadAssetsBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import type { Asset } from "@/lib/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
   domain: <Globe size={15} />,
@@ -19,27 +22,51 @@ const typeIcon: Record<string, React.ReactNode> = {
 };
 
 export default function Assets() {
-  const { toast, operate } = useStore();
+  const { toast, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadAssetsBundle, {
+    assets: [],
+    assetTags: [],
+    discoveryJobs: [],
+    securityDbBlocked: false,
+    error: null,
+  });
+  const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [tab, setTab] = useState("inventory");
   const [addOpen, setAddOpen] = useState(false);
-  const [selected, setSelected] = useState<(typeof assets)[number] | null>(null);
+  const [selected, setSelected] = useState<Asset | null>(null);
 
-  const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], []);
+  const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], [assets]);
   const filtered = assets.filter(
     (a) =>
       (typeFilter === "all" || a.asset_type === typeFilter) &&
       (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
   );
 
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading assets…
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-[1400px]">
+      {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Attack-surface inventory"
         description="Every row lives only in your dedicated security database — schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
         actions={
-          <button className="btn-primary" onClick={() => (operate.unlocked ? setAddOpen(true) : toast("warning", "Operate mode required", "Unlock dual-control to add assets."))}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              void (async () => {
+                if (await requireDualControl("Adding assets requires a dual-control operate session.")) setAddOpen(true);
+              })()
+            }
+          >
             <Plus size={15} /> Add asset
           </button>
         }
@@ -124,12 +151,12 @@ export default function Assets() {
                       </td>
                       <td className="td">
                         <div className="flex flex-wrap gap-1">
-                          {a.tags.slice(0, 2).map((t) => (
+                          {(a.tags ?? []).slice(0, 2).map((t) => (
                             <span key={t.id} className="rounded-md px-1.5 py-0.5 text-[10px] font-medium" style={{ background: `${t.color}22`, color: t.color }}>
                               {t.name}
                             </span>
                           ))}
-                          {a.tags.length > 2 && <span className="text-[10px] text-slate-500">+{a.tags.length - 2}</span>}
+                          {(a.tags?.length ?? 0) > 2 && <span className="text-[10px] text-slate-500">+{(a.tags?.length ?? 0) - 2}</span>}
                         </div>
                       </td>
                       <td className="td"><span className="font-mono text-xs text-slate-500">{a.source}</span></td>
@@ -203,7 +230,15 @@ export default function Assets() {
             </Card>
           ))}
           <Card className="flex items-center justify-center border-dashed">
-            <button className="btn-ghost text-slate-400" onClick={() => toast("info", "Tag creation", "POST /asset-tags — unlock operate mode first.")}>
+            <button
+              className="btn-ghost text-slate-400"
+              onClick={() =>
+                void (async () => {
+                  if (!(await requireDualControl("Creating asset tags requires a dual-control operate session."))) return;
+                  toast("info", "Tag creation", "POST /asset-tags");
+                })()
+              }
+            >
               <Plus size={15} /> New tag
             </button>
           </Card>
@@ -222,7 +257,15 @@ export default function Assets() {
               <h3 className="font-display text-[15px] font-semibold text-slate-100">{c.title}</h3>
               <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">{c.desc}</p>
               <p className="mt-3 font-mono text-[11px] text-slate-500">{c.endpoint}</p>
-              <button className="btn-secondary mt-4 w-full" onClick={() => toast("info", c.title, "Imports require an unlocked dual-control session.")}>
+              <button
+                className="btn-secondary mt-4 w-full"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl(`${c.title} requires a dual-control operate session.`))) return;
+                    toast("info", c.title, c.endpoint);
+                  })()
+                }
+              >
                 Import
               </button>
             </Card>
@@ -256,13 +299,21 @@ export default function Assets() {
             <div>
               <p className="label">Tags</p>
               <div className="flex flex-wrap gap-1.5">
-                {selected.tags.length ? selected.tags.map((t) => (
+                {(selected.tags?.length ?? 0) ? selected.tags!.map((t) => (
                   <span key={t.id} className="rounded-lg px-2 py-1 text-xs font-medium" style={{ background: `${t.color}22`, color: t.color }}>{t.name}</span>
                 )) : <span className="text-sm text-slate-500">No manual tags — auto-tags (type/source/verified) apply.</span>}
               </div>
             </div>
             <div className="flex gap-2.5">
-              <button className="btn-primary flex-1" onClick={() => toast("success", "Verification queued", `POST /assets/${selected.id}/verify`)}>
+              <button
+                className="btn-primary flex-1"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Asset verification requires a dual-control operate session."))) return;
+                    toast("success", "Verification queued", `POST /assets/${selected.id}/verify`);
+                  })()
+                }
+              >
                 Re-verify ownership
               </button>
               <button className="btn-secondary" onClick={() => toast("info", "History", "asset_history tracks every change in your security DB.")}>
@@ -293,7 +344,7 @@ export default function Assets() {
           </div>
           <div>
             <label className="label">Value</label>
-            <input className="input font-mono" placeholder="api.acme.ng" />
+            <input className="input font-mono" placeholder="api.example.com" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>

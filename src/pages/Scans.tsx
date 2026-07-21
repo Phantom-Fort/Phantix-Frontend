@@ -1,14 +1,23 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs } from "@/components/ui";
-import { scanJobs, scanResults } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
+import SecurityDbBanner from "@/components/SecurityDbBanner";
+import { loadScansBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, formatDateTime, cx, severityHex } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { VerificationStatus } from "@/lib/types";
 
 export default function Scans() {
-  const { toast, operate } = useStore();
+  const { toast, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadScansBundle, {
+    scanJobs: [],
+    scanResults: [],
+    securityDbBlocked: false,
+    error: null,
+  });
+  const { scanJobs, scanResults, securityDbBlocked, error: loadError } = data;
   const [tab, setTab] = useState("jobs");
   const [verFilter, setVerFilter] = useState<"all" | VerificationStatus>("all");
   const [newOpen, setNewOpen] = useState(false);
@@ -16,22 +25,33 @@ export default function Scans() {
 
   const results = useMemo(
     () => scanResults.filter((r) => verFilter === "all" || r.verification_status === verFilter),
-    [verFilter],
+    [scanResults, verFilter],
   );
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading scans…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
+      {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Scans"
         description="On-demand Nmap + Nuclei jobs. One active job per organization — the lock is enforced with a unique partial index, so 409 means someone else is scanning."
         actions={
           <button
             className="btn-primary"
-            onClick={() => {
-              if (!operate.unlocked) return toast("warning", "Operate mode required", "Unlock dual-control to launch scans.");
-              if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${active.status} — wait or cancel it first.`);
-              setNewOpen(true);
-            }}
+            onClick={() =>
+              void (async () => {
+                if (!(await requireDualControl("Launching scans requires a dual-control operate session."))) return;
+                if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${active.status} — wait or cancel it first.`);
+                setNewOpen(true);
+              })()
+            }
           >
             <Plus size={15} /> New scan job
           </button>
@@ -61,7 +81,15 @@ export default function Scans() {
                 <p className="font-display text-2xl font-bold text-white">{active.progress}%</p>
                 <p className="text-[10px] uppercase tracking-wider text-slate-500">{active.findings_count} findings</p>
               </div>
-              <button className="btn-danger !py-2" onClick={() => toast("info", "Cancel requested", `POST /scans/jobs/${active.id}/cancel`)}>
+              <button
+                className="btn-danger !py-2"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Cancelling a scan requires a dual-control operate session."))) return;
+                    toast("info", "Cancel requested", `POST /scans/jobs/${active.id}/cancel`);
+                  })()
+                }
+              >
                 <XCircle size={14} /> Cancel
               </button>
             </div>

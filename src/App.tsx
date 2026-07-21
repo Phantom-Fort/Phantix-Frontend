@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
 import Layout from "@/components/Layout";
+import DualControlOverlay from "@/components/DualControlOverlay";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -14,10 +15,10 @@ import Reports from "@/pages/Reports";
 import Alerts from "@/pages/Alerts";
 import Audit from "@/pages/Audit";
 import People from "@/pages/People";
-import Settings from "@/pages/Settings";
 import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
+import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session } = useStore();
@@ -26,6 +27,18 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   return <>{children}</>;
+}
+
+/** Bookmarks to /settings go to platform identity & keys. */
+function PlatformSettingsRedirect() {
+  useEffect(() => {
+    window.location.replace(PLATFORM_IDENTITY_URL);
+  }, []);
+  return (
+    <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
+      Opening Platform settings…
+    </div>
+  );
 }
 
 // app.phantix.site/demo — landing-page entry into the guided demo tenant
@@ -65,13 +78,14 @@ export default function App() {
             <Route path="/alerts" element={<RequireAuth><Alerts /></RequireAuth>} />
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />
             <Route path="/people" element={<RequireAuth><People /></RequireAuth>} />
-            <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+            <Route path="/settings" element={<PlatformSettingsRedirect />} />
             <Route path="/support" element={<RequireAuth><Support /></RequireAuth>} />
             <Route path="/docs" element={<Docs />} />
             <Route path="/docs/:docId" element={<DocPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
+        <DualControlOverlay />
         <ToastViewport />
       </BrowserRouter>
     </StoreProvider>

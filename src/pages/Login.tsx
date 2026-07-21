@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ShieldCheck, Mail, KeyRound, ArrowRight, PlayCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { isDemoMode, isDemoFlagSet, exitDemoMode, API_BASE } from "@/lib/api";
+import { PLATFORM_URL } from "@/lib/links";
 
 export default function Login() {
   const { login, verifyMfa, enterDemo } = useStore();
@@ -16,8 +17,8 @@ export default function Login() {
   }, []);
 
   const demoMode = isDemoMode();
-  const [email, setEmail] = useState("ada@acme.ng");
-  const [password, setPassword] = useState("••••••••••");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [stage, setStage] = useState<"password" | "mfa">("password");
   const [busy, setBusy] = useState(false);
@@ -105,7 +106,10 @@ export default function Login() {
                   {busy ? "Checking…" : "Continue"} <ArrowRight size={15} />
                 </button>
                 <p className="text-center text-xs text-slate-500">
-                  New tenant? <span className="text-gold-400">Register your organization</span>
+                  New tenant?{" "}
+                  <a href={`${PLATFORM_URL}/register`} className="text-gold-400 hover:text-gold-300">
+                    Register your organization
+                  </a>
                 </p>
               </motion.form>
             ) : (

@@ -1,14 +1,24 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { LifeBuoy, Plus, MessageSquare } from "lucide-react";
-import { PageHeader, Card, StatusBadge, Modal, EmptyState } from "@/components/ui";
-import { supportTickets } from "@/lib/demo-data";
+import { PageHeader, Card, StatusBadge, Modal, EmptyState, Spinner } from "@/components/ui";
+import { loadSupportTickets } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 export default function Support() {
   const { toast } = useStore();
+  const { data: supportTickets, loading } = useResource(loadSupportTickets, []);
   const [open, setOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading support…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1000px]">

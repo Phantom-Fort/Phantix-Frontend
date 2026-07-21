@@ -1,15 +1,28 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, ShieldCheck, Link2, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal } from "@/components/ui";
-import { orgUsers, dualControl } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner } from "@/components/ui";
+import { loadPeopleBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
+import { emptyDualControl } from "@/lib/data";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 export default function People() {
-  const { toast, operate } = useStore();
+  const { toast, requireDualControl, dualControl: storeDc } = useStore();
+  const { data, loading } = useResource(loadPeopleBundle, { users: [], dualControl: emptyDualControl });
+  const orgUsers = data.users;
+  const dualControl = data.dualControl.configured ? data.dualControl : storeDc;
   const [inviteOpen, setInviteOpen] = useState(false);
   const [linkFor, setLinkFor] = useState<string | null>(null);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading people…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -17,7 +30,16 @@ export default function People() {
         title="People & dual control"
         description="Named org users with domain-email OTP identity. Writes require the initiator or authorizer slot plus a 3-minute idle operate session — roles alone grant no writes."
         actions={
-          <button className="btn-primary" onClick={() => (operate.unlocked || !dualControl.configured ? setInviteOpen(true) : toast("warning", "Operate mode required", "Creating users post-bootstrap needs an initiator/authorizer session."))}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              void (async () => {
+                if (!dualControl.configured || (await requireDualControl("Creating users post-bootstrap needs an initiator/authorizer session."))) {
+                  setInviteOpen(true);
+                }
+              })()
+            }
+          >
             <UserPlus size={15} /> Add user
           </button>
         }
@@ -38,7 +60,7 @@ export default function People() {
             ].map((s) => (
               <div key={s.slot} className="flex items-center gap-4 rounded-2xl border border-phantix-700/40 bg-phantix-950/50 p-4">
                 <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 font-display text-base font-bold text-phantix-950">
-                  {s.user?.full_name.slice(0, 1)}
+                  {(s.user?.full_name ?? "?").slice(0, 1)}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -112,7 +134,12 @@ export default function People() {
                   <td className="td">
                     <button
                       className="btn-ghost !px-2.5 !py-1.5 !text-xs"
-                      onClick={() => setLinkFor(u.full_name)}
+                      onClick={() =>
+                        void (async () => {
+                          if (!(await requireDualControl("Issuing login links requires a dual-control operate session."))) return;
+                          setLinkFor(u.full_name);
+                        })()
+                      }
                     >
                       <Link2 size={13} /> Login link
                     </button>
@@ -133,20 +160,28 @@ export default function People() {
             service key does not invalidate it.
           </p>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/70 p-3.5 font-mono text-xs leading-6 text-gold-300/90 break-all">
-            https://app.phantix.site/login?org=acme-financial&u=3&t=ll_9f4c…e21a
+            Login link will appear here after POST /organizations/me/users/{"{id}"}/login-link
           </div>
           <div className="flex gap-2.5">
             <button
               className="btn-primary flex-1"
               onClick={() => {
-                navigator.clipboard?.writeText("https://app.phantix.site/login?org=acme-financial&u=3&t=ll_9f4c…e21a").catch(() => {});
-                toast("success", "Link copied", "POST /organizations/me/users/{id}/login-link — shown once.");
+                toast("info", "Issue login link", "POST /organizations/me/users/{id}/login-link — shown once.");
                 setLinkFor(null);
               }}
             >
-              Copy link
+              Done
             </button>
-            <button className="btn-secondary" onClick={() => { setLinkFor(null); toast("info", "Device bind cleared", "DELETE /organizations/me/users/{id}/device"); }}>
+            <button
+              className="btn-secondary"
+              onClick={() =>
+                void (async () => {
+                  if (!(await requireDualControl("Clearing a device bind requires a dual-control operate session."))) return;
+                  setLinkFor(null);
+                  toast("info", "Device bind cleared", "DELETE /organizations/me/users/{id}/device");
+                })()
+              }
+            >
               Clear device bind
             </button>
           </div>
@@ -166,16 +201,16 @@ export default function People() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Full name</label>
-              <input className="input" placeholder="Ada Okonkwo" />
+              <input className="input" placeholder="Full name" />
             </div>
             <div>
               <label className="label">Title (shows on audit)</label>
-              <input className="input" placeholder="SOC Analyst" />
+              <input className="input" placeholder="e.g. SOC Analyst" />
             </div>
           </div>
           <div>
             <label className="label">Work email</label>
-            <input className="input" placeholder="name@acme.ng" />
+            <input className="input" placeholder="you@company.com" />
             <p className="mt-1.5 text-[11px] text-slate-500">
               Prefer the work domain — free-mail only if it matches a registration contact (domain-exempt).
             </p>

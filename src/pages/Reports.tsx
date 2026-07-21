@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar } from "@/components/ui";
-import { reports, trackerFindings } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner } from "@/components/ui";
+import { loadReportsBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
@@ -10,8 +11,18 @@ const trackerStatuses = ["open", "in_progress", "resolved", "accepted", "verifie
 
 export default function Reports() {
   const { toast } = useStore();
+  const { data, loading } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] });
+  const { reports, trackerFindings } = data;
   const [tab, setTab] = useState("reports");
   const [genOpen, setGenOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading reports…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">

@@ -1,32 +1,71 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState } from "@/components/ui";
-import { vaptCampaigns, vaptFindings, vaptApprovals } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
+import SecurityDbBanner from "@/components/SecurityDbBanner";
+import { loadVaptBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { VaptCampaign } from "@/lib/types";
 
 export default function Vapt() {
-  const { toast, operate } = useStore();
+  const { toast, requireDualControl, dualControl } = useStore();
+  const { data, loading } = useResource(loadVaptBundle, {
+    campaigns: [],
+    findings: [],
+    approvals: [],
+    securityDbBlocked: false,
+    error: null,
+  });
+  const vaptCampaigns = data.campaigns;
+  const vaptFindings = data.findings;
+  const vaptApprovals = data.approvals;
+  const securityDbBlocked = data.securityDbBlocked;
+  const loadError = data.error;
   const [tab, setTab] = useState("campaigns");
-  const [selected, setSelected] = useState<VaptCampaign | null>(vaptCampaigns[0]);
+  const [selected, setSelected] = useState<VaptCampaign | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const campaignFindings = selected ? vaptFindings.filter((f) => f.campaign_id === selected.id) : [];
+  const activeSelected = selected && vaptCampaigns.some((c) => c.id === selected.id) ? selected : vaptCampaigns[0] ?? null;
+  const campaignFindings = activeSelected ? vaptFindings.filter((f) => f.campaign_id === activeSelected.id) : [];
   const pending = vaptApprovals.filter((a) => a.status === "pending");
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading campaigns…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
+      {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="VAPT campaigns"
         description="Guided campaigns over the web-scanner pipeline (subfinder → katana → nuclei → sqlmap → gowitness) with rule-based correlation and dual-control gates."
         actions={
           <>
-            <button className="btn-secondary" onClick={() => toast("info", "Intelligent plan", "POST /vapt/plan analyzes your inventory and proposes a campaign (Redis-backed, 1h TTL).")}>
+            <button
+              className="btn-secondary"
+              onClick={() =>
+                void (async () => {
+                  if (!(await requireDualControl("Intelligent plan creation requires a dual-control operate session."))) return;
+                  toast("info", "Intelligent plan", "POST /vapt/plan analyzes your inventory and proposes a campaign.");
+                })()
+              }
+            >
               <Sparkles size={15} /> Plan with orchestrator
             </button>
-            <button className="btn-primary" onClick={() => (operate.unlocked ? setCreateOpen(true) : toast("warning", "Operate mode required", "Campaign creation needs a dual-control session."))}>
+            <button
+              className="btn-primary"
+              onClick={() =>
+                void (async () => {
+                  if (await requireDualControl("Campaign creation needs a dual-control operate session.")) setCreateOpen(true);
+                })()
+              }
+            >
               <Crosshair size={15} /> New campaign
             </button>
           </>
@@ -44,14 +83,37 @@ export default function Vapt() {
               <div className="flex-1">
                 <p className="font-semibold text-slate-100">{pending.length} approval{pending.length > 1 ? "s" : ""} waiting</p>
                 <p className="text-xs text-slate-400">
-                  {pending[0].step} — requires the <strong>{pending[0].role_required}</strong> ({pending[0].role_required === "authorizer" ? "Chidi Eze" : "Ada Okonkwo"})
+                  {pending[0].step} — requires the <strong>{pending[0].role_required}</strong>
+                  {(pending[0].role_required === "authorizer"
+                    ? dualControl.authorizer?.full_name
+                    : dualControl.initiator?.full_name) && (
+                    <> ({pending[0].role_required === "authorizer" ? dualControl.authorizer?.full_name : dualControl.initiator?.full_name})</>
+                  )}
                 </p>
               </div>
               <div className="flex gap-2">
-                <button className="btn-primary !py-2" onClick={() => toast("success", "Decision recorded", "POST /vapt/approvals/{id}/decide — only the assigned user with an authenticator session may decide.")}>
+                <button
+                  className="btn-primary !py-2"
+                  onClick={() =>
+                    void (async () => {
+                      if (!(await requireDualControl("Approving a VAPT step requires the assigned controller's dual-control session."))) return;
+                      toast("success", "Decision recorded", "POST /vapt/approvals/{id}/decide");
+                    })()
+                  }
+                >
                   Approve
                 </button>
-                <button className="btn-danger !py-2" onClick={() => toast("info", "Rejected", "The campaign step remains blocked.")}>Reject</button>
+                <button
+                  className="btn-danger !py-2"
+                  onClick={() =>
+                    void (async () => {
+                      if (!(await requireDualControl("Rejecting a VAPT step requires the assigned controller's dual-control session."))) return;
+                      toast("info", "Rejected", "The campaign step remains blocked.");
+                    })()
+                  }
+                >
+                  Reject
+                </button>
               </div>
             </div>
           </Card>
@@ -74,7 +136,7 @@ export default function Vapt() {
             {vaptCampaigns.map((c, i) => (
               <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
                 <button onClick={() => setSelected(c)} className={cx("w-full text-left")}>
-                  <Card hover className={cx("!p-4 transition-all", selected?.id === c.id && "border-gold-400/50 shadow-glow")}>
+                  <Card hover className={cx("!p-4 transition-all", activeSelected?.id === c.id && "border-gold-400/50 shadow-glow")}>
                     <div className="flex items-center gap-3">
                       <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", c.status === "active" ? "bg-severity-low/12 text-severity-low" : c.status === "completed" ? "bg-emerald-400/12 text-emerald-400" : "bg-phantix-800/70 text-slate-400")}>
                         <Crosshair size={17} />
@@ -102,18 +164,18 @@ export default function Vapt() {
 
           {/* Campaign detail */}
           <div className="xl:col-span-3">
-            {selected ? (
+            {activeSelected ? (
               <Card>
                 <CardHeader
-                  title={<span>#{selected.id} · {selected.name}</span>}
-                  subtitle={`Created by ${selected.created_by} · ${timeAgo(selected.created_at)}`}
-                  action={<StatusBadge status={selected.status} />}
+                  title={<span>#{activeSelected.id} · {activeSelected.name}</span>}
+                  subtitle={`Created by ${activeSelected.created_by} · ${timeAgo(activeSelected.created_at)}`}
+                  action={<StatusBadge status={activeSelected.status} />}
                 />
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    [selected.asset_count, "Assets in scope"],
-                    [selected.findings_count, "Findings"],
-                    [selected.requires_approval ? "Yes" : "No", "Approval gate"],
+                    [activeSelected.asset_count, "Assets in scope"],
+                    [activeSelected.findings_count, "Findings"],
+                    [activeSelected.requires_approval ? "Yes" : "No", "Approval gate"],
                   ].map(([v, l]) => (
                     <div key={String(l)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5 text-center">
                       <p className="font-display text-xl font-bold text-white">{v}</p>
@@ -125,22 +187,68 @@ export default function Vapt() {
                 <div className="mt-5">
                   <p className="label">Lifecycle</p>
                   <div className="flex flex-wrap gap-2">
-                    {selected.status === "draft" && (
-                      <button className="btn-primary !py-2" onClick={() => toast("success", "Campaign starting", "POST /vapt/campaigns/{id}/start → 202 Accepted; poll the campaign. Auto-start 400s when no matching assets or DB not bootstrapped.")}>
+                    {activeSelected.status === "draft" && (
+                      <button
+                        className="btn-primary !py-2"
+                        onClick={() =>
+                          void (async () => {
+                            if (!(await requireDualControl("Starting a campaign requires a dual-control operate session."))) return;
+                            toast("success", "Campaign starting", "POST /vapt/campaigns/{id}/start → 202 Accepted");
+                          })()
+                        }
+                      >
                         <Play size={14} /> Start
                       </button>
                     )}
-                    {selected.status === "active" && (
+                    {activeSelected.status === "active" && (
                       <>
-                        <button className="btn-secondary !py-2" onClick={() => toast("info", "Paused", "POST …/pause")}><Pause size={14} /> Pause</button>
-                        <button className="btn-danger !py-2" onClick={() => toast("info", "Cancel requested", "POST …/cancel clears the per-org slot")}><XCircle size={14} /> Cancel</button>
+                        <button
+                          className="btn-secondary !py-2"
+                          onClick={() =>
+                            void (async () => {
+                              if (!(await requireDualControl("Pausing a campaign requires a dual-control operate session."))) return;
+                              toast("info", "Paused", "POST …/pause");
+                            })()
+                          }
+                        >
+                          <Pause size={14} /> Pause
+                        </button>
+                        <button
+                          className="btn-danger !py-2"
+                          onClick={() =>
+                            void (async () => {
+                              if (!(await requireDualControl("Cancelling a campaign requires a dual-control operate session."))) return;
+                              toast("info", "Cancel requested", "POST …/cancel clears the per-org slot");
+                            })()
+                          }
+                        >
+                          <XCircle size={14} /> Cancel
+                        </button>
                       </>
                     )}
-                    {selected.status === "paused" && (
-                      <button className="btn-primary !py-2" onClick={() => toast("success", "Resuming", "POST …/resume (async by default)")}><Play size={14} /> Resume</button>
+                    {activeSelected.status === "paused" && (
+                      <button
+                        className="btn-primary !py-2"
+                        onClick={() =>
+                          void (async () => {
+                            if (!(await requireDualControl("Resuming a campaign requires a dual-control operate session."))) return;
+                            toast("success", "Resuming", "POST …/resume (async by default)");
+                          })()
+                        }
+                      >
+                        <Play size={14} /> Resume
+                      </button>
                     )}
-                    {selected.status === "completed" && (
-                      <button className="btn-primary !py-2" onClick={() => toast("success", "Report queued", "POST /reports { report_type: vapt_campaign, campaign_id: " + selected.id + " }")}>
+                    {activeSelected.status === "completed" && (
+                      <button
+                        className="btn-primary !py-2"
+                        onClick={() =>
+                          void (async () => {
+                            if (!(await requireDualControl("Generating a campaign report requires a dual-control operate session."))) return;
+                            toast("success", "Report queued", "POST /reports { report_type: vapt_campaign, campaign_id: " + activeSelected.id + " }");
+                          })()
+                        }
+                      >
                         Generate report
                       </button>
                     )}

@@ -1,17 +1,36 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal } from "@/components/ui";
-import { complianceFrameworks, complianceAssessments, complianceControlResults, evidenceItems } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner } from "@/components/ui";
+import { loadComplianceBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 const statusIcon = { pass: CheckCircle2, gap: XCircle, unknown: HelpCircle };
 
 export default function Compliance() {
-  const { toast } = useStore();
+  const { toast, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadComplianceBundle, {
+    frameworks: [],
+    assessments: [],
+    controlResults: [],
+    evidence: [],
+  });
+  const complianceFrameworks = data.frameworks;
+  const complianceAssessments = data.assessments;
+  const complianceControlResults = data.controlResults;
+  const evidenceItems = data.evidence;
   const [tab, setTab] = useState("overview");
   const [assessOpen, setAssessOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading compliance…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -19,7 +38,16 @@ export default function Compliance() {
         title="Compliance"
         description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit — gaps show human review status."
         actions={
-          <button className="btn-primary" onClick={() => setAssessOpen(true)}>
+          <button
+            className="btn-primary"
+            onClick={() =>
+              void (async () => {
+                if (await requireDualControl("Running a compliance assessment requires a dual-control operate session.")) {
+                  setAssessOpen(true);
+                }
+              })()
+            }
+          >
             <Play size={15} /> Run assessment
           </button>
         }
@@ -80,7 +108,15 @@ export default function Compliance() {
                   </div>
                 ))}
               </div>
-              <button className="btn-secondary mt-4 w-full" onClick={() => toast("success", "Collection started", "POST /compliance/evidence/collect — runs configured connectors.")}>
+              <button
+                className="btn-secondary mt-4 w-full"
+                onClick={() =>
+                  void (async () => {
+                    if (!(await requireDualControl("Evidence collection requires a dual-control operate session."))) return;
+                    toast("success", "Collection started", "POST /compliance/evidence/collect");
+                  })()
+                }
+              >
                 <Database size={14} /> Collect evidence now
               </button>
             </Card>
@@ -175,7 +211,15 @@ export default function Compliance() {
       {tab === "evidence" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
           <div className="mb-1 flex justify-end">
-            <button className="btn-secondary !py-2" onClick={() => toast("info", "Manual evidence", "POST /compliance/evidence — attach policy documents and attestations.")}>
+            <button
+              className="btn-secondary !py-2"
+              onClick={() =>
+                void (async () => {
+                  if (!(await requireDualControl("Uploading evidence requires a dual-control operate session."))) return;
+                  toast("info", "Manual evidence", "POST /compliance/evidence");
+                })()
+              }
+            >
               <FileUp size={14} /> Add manual evidence
             </button>
           </div>

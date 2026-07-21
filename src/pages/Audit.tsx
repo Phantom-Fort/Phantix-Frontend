@@ -1,14 +1,26 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, UserCheck, ArrowRight, Hourglass } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Tabs } from "@/components/ui";
-import { auditEvents, pendingActions } from "@/lib/demo-data";
+import { PageHeader, Card, CardHeader, StatusBadge, Tabs, Spinner } from "@/components/ui";
+import { loadAuditBundle } from "@/lib/data";
+import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 export default function Audit() {
-  const { toast, dualControl } = useStore();
+  const { toast, dualControl, requireDualControl } = useStore();
+  const { data, loading } = useResource(loadAuditBundle, { events: [], pending: [] });
+  const auditEvents = data.events;
+  const pendingActions = data.pending;
   const [tab, setTab] = useState("trail");
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
+        <Spinner className="h-5 w-5" /> Loading audit trail…
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -107,10 +119,26 @@ export default function Audit() {
                   </div>
                   <StatusBadge status={p.status} />
                   <div className="flex gap-2">
-                    <button className="btn-primary !px-3.5 !py-1.5 !text-xs" onClick={() => toast("success", "Authorized", `POST /audit/pending/${p.id}/authorize with authorizer session — writes the immutable trail + AuditRecorded event.`)}>
+                    <button
+                      className="btn-primary !px-3.5 !py-1.5 !text-xs"
+                      onClick={() =>
+                        void (async () => {
+                          if (!(await requireDualControl("Authorizing pending actions requires the authorizer dual-control session."))) return;
+                          toast("success", "Authorized", `POST /audit/pending/${p.id}/authorize`);
+                        })()
+                      }
+                    >
                       Authorize
                     </button>
-                    <button className="btn-danger !px-3.5 !py-1.5 !text-xs" onClick={() => toast("info", "Rejected", "POST …/reject with reason")}>
+                    <button
+                      className="btn-danger !px-3.5 !py-1.5 !text-xs"
+                      onClick={() =>
+                        void (async () => {
+                          if (!(await requireDualControl("Rejecting pending actions requires the authorizer dual-control session."))) return;
+                          toast("info", "Rejected", "POST …/reject with reason");
+                        })()
+                      }
+                    >
                       Reject
                     </button>
                   </div>
