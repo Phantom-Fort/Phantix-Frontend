@@ -106,7 +106,7 @@ async function request<T>(
   opts: { body?: unknown; realm?: Realm; dualControl?: boolean; form?: Record<string, string> } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {};
-  const realm = opts.realm ?? "platform";
+  const realm = opts.realm ?? (tokens.appSession ? "application" : "platform");
 
   const bearer =
     realm === "staff" ? tokens.staff : realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;

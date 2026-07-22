@@ -80,6 +80,26 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   );
   const [securityDbReady, setSecurityDbReady] = useState(isDemoMode());
   const [demoTick, setDemoTick] = useState(0);
+
+  // Sync session with token state (handles 401-induced token clearing)
+  useEffect(() => {
+    const onStorage = () => {
+      if (!tokens.appSession && !tokens.platform && !isDemoFlagSet()) {
+        setSession(null);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    // Also poll for direct token clearing (api.ts clears tokens synchronously)
+    const interval = setInterval(() => {
+      if (session?.authenticated && !tokens.appSession && !tokens.platform && !isDemoFlagSet()) {
+        setSession(null);
+      }
+    }, 2000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      clearInterval(interval);
+    };
+  }, [session?.authenticated]);
   const [operate, setOperate] = useState<OperateState>({
     unlocked: !!tokens.dualControl,
     actingUser: tokens.dualControl ? (isDemoMode() ? "Ada Okonkwo" : null) : null,

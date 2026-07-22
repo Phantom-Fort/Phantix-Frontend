@@ -9,8 +9,6 @@ import {
   ShieldAlert,
   Scale,
   FileText,
-  BellRing,
-  ScrollText,
   BookOpen,
   ExternalLink,
   Search,
@@ -20,7 +18,6 @@ import {
   Database,
   ChevronDown,
   Command,
-  Users,
   KeyRound,
   Sparkles,
   LifeBuoy,
@@ -61,14 +58,6 @@ const navSections: {
       { to: "/risks", label: "Risks", icon: <ShieldAlert size={17} /> },
       { to: "/compliance", label: "Compliance", icon: <Scale size={17} /> },
       { to: "/reports", label: "Reports", icon: <FileText size={17} /> },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { to: "/alerts", label: "Alerts", icon: <BellRing size={17} /> },
-      { to: "/audit", label: "Audit Trail", icon: <ScrollText size={17} /> },
-      { to: "/people", label: "People & Control", icon: <Users size={17} /> },
     ],
   },
   {
@@ -226,7 +215,7 @@ export default function Layout() {
               Tenant admin
             </p>
             <a
-              href={PLATFORM_URL}
+              href={PLATFORM_IDENTITY_URL}
               className="nav-item"
               target="_blank"
               rel="noreferrer"
