@@ -93,7 +93,7 @@ function AppLoginFlow({
   const [challenged, setChallenged] = useState(false);
   const [nextStep, setNextStep] = useState<"otp" | "password" | null>(null);
 
-  // Step 1: validate the login link
+  // Step 1: validate the login link — per 03_APPLICATION_IMPLEMENTATION.md §2.3
   useEffect(() => {
     if (demoMode || challenged) return;
     (async () => {
@@ -106,11 +106,15 @@ function AppLoginFlow({
           destination_masked?: string;
           user_email?: string;
           user_name?: string;
+          otp_only?: boolean;
+          password_required?: boolean;
+          organization_id?: number;
+          organization_name?: string;
           message?: string;
         }>("/app/auth/challenge", {
-          organization_slug: org,
-          user_id: Number(userId),
           login_token: loginToken,
+          organization_slug: org,
+          organization_user_id: Number(userId),
         }, { realm: "application" });
         setChallenged(true);
         setEmail(res.user_email ?? "");
@@ -120,8 +124,6 @@ function AppLoginFlow({
           setNextStep("password");
         } else {
           setNextStep("otp");
-          // Auto-trigger OTP send
-          await sendOtp(res.mfa_token ?? "");
         }
       } catch (err) {
         const msg = err instanceof ApiError && err.status === 403
@@ -135,25 +137,27 @@ function AppLoginFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const sendOtp = async (token: string) => {
+  const sendOtp = async () => {
     setBusy(true);
     setError(null);
     try {
+      // Per §2.3 Step C1: no mfa_token yet — send login_token, org slug, user_id
       const res = await api.post<{
+        mfa_required?: boolean;
         mfa_token?: string;
         destination_masked?: string;
         dev_otp?: string;
         message?: string;
       }>("/app/auth/otp", {
-        mfa_token: token,
-        organization_slug: org,
-        user_id: Number(userId),
         login_token: loginToken,
+        organization_slug: org,
+        organization_user_id: Number(userId),
       }, { realm: "application" });
-      setMfaToken(res.mfa_token ?? token);
+      setMfaToken(res.mfa_token ?? "");
       setMaskedDest(res.destination_masked ?? maskedDest);
       setDevOtp(res.dev_otp ?? null);
       setStage("mfa");
+      setCode("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send verification code");
     } finally {
@@ -165,6 +169,7 @@ function AppLoginFlow({
     setBusy(true);
     setError(null);
     try {
+      // Per §2.3 Step C2
       const res = await api.post<{
         mfa_token?: string;
         destination_masked?: string;
@@ -172,9 +177,9 @@ function AppLoginFlow({
         message?: string;
       }>("/app/auth/password", {
         login_token: loginToken,
-        organization_slug: org,
-        user_id: Number(userId),
         password,
+        organization_slug: org,
+        organization_user_id: Number(userId),
       }, { realm: "application" });
       setMfaToken(res.mfa_token ?? "");
       setMaskedDest(res.destination_masked ?? maskedDest);
@@ -194,11 +199,12 @@ function AppLoginFlow({
     try {
       const res = await api.post<{
         access_token?: string;
-        app_session_token?: string;
-        session_token?: string;
+        token_type?: string;
         device_token?: string;
         device_verification_required?: boolean;
         user?: { full_name?: string; email?: string };
+        user_email?: string;
+        role?: string;
       }>("/app/auth/mfa", {
         mfa_token: mfaToken,
         code,
@@ -211,10 +217,12 @@ function AppLoginFlow({
         return;
       }
 
-      tokens.appSession = res.app_session_token ?? res.session_token ?? res.access_token ?? "";
+      tokens.appSession = res.access_token ?? "";
       tokens.device = res.device_token ?? "";
-      completeAppLogin(res.user?.email ?? "", res.user?.full_name ?? "");
-      toast("success", "Signed in", `Welcome${res.user?.full_name ? ` ${res.user.full_name}` : " back"}`);
+      const devId2 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
+      localStorage.setItem("phantix_device_id", devId2);
+      completeAppLogin(res.user_email ?? res.user?.email ?? "", res.user?.full_name ?? "");
+      toast("success", "Signed in", "Welcome" + (res.user?.full_name ? " " + res.user.full_name : " back"));
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -230,20 +238,22 @@ function AppLoginFlow({
     try {
       const res = await api.post<{
         access_token?: string;
-        app_session_token?: string;
-        session_token?: string;
+        token_type?: string;
         device_token?: string;
         user?: { full_name?: string; email?: string };
+        user_email?: string;
       }>("/app/auth/mfa", {
         device_token: deviceToken,
         code,
         device_id: localStorage.getItem("phantix_device_id") ?? crypto.randomUUID(),
       }, { realm: "application" });
 
-      tokens.appSession = res.app_session_token ?? res.session_token ?? res.access_token ?? "";
+      tokens.appSession = res.access_token ?? "";
       tokens.device = res.device_token ?? "";
-      completeAppLogin(res.user?.email ?? "", res.user?.full_name ?? "");
-      toast("success", "Device confirmed", `Welcome${res.user?.full_name ? ` ${res.user.full_name}` : " back"}`);
+      const devId3 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
+      localStorage.setItem("phantix_device_id", devId3);
+      completeAppLogin(res.user_email ?? res.user?.email ?? "", res.user?.full_name ?? "");
+      toast("success", "Device confirmed", "Welcome" + (res.user?.full_name ? " " + res.user.full_name : " back"));
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Device verification failed");
@@ -362,7 +372,7 @@ function AppLoginFlow({
                   <ShieldCheck size={22} className="mx-auto text-gold-400" />
                   <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {maskedDest ? `A code was sent to ${maskedDest}` : "Enter the verification code from your email"}
+                    {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
                 </div>
 
@@ -389,7 +399,7 @@ function AppLoginFlow({
                 </button>
                 <button
                   type="button"
-                  onClick={() => sendOtp(mfaToken)}
+                  onClick={() => sendOtp()}
                   disabled={busy}
                   className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50"
                 >
@@ -443,7 +453,7 @@ function AppLoginFlow({
                   </p>
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy} onClick={() => sendOtp(mfaToken)}>
+                <button className="btn-primary w-full !py-3" disabled={busy} onClick={() => sendOtp()}>
                   {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Sending…</>) : (<> Send verification code <ArrowRight size={15} /></>)}
                 </button>
               </motion.div>
