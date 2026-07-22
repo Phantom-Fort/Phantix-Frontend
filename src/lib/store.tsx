@@ -209,6 +209,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
           setSecurityDbReady(true);
         } catch { /* keep demo/empty */ }
+
+        // Fallback: also try fetching dual control directly (if auth/me didn't include it)
+        try {
+          const dc = await api.get<Record<string, unknown>>("/org-users/dual-control", { realm: "application" });
+          if (dc && !dualControl.configured) {
+            setDualControl(normalizeDualControl(dc));
+            const initName = String((dc.initiator as Record<string, unknown> | undefined)?.full_name ?? "Initiator");
+            const authName = String((dc.authorizer as Record<string, unknown> | undefined)?.full_name ?? "Authorizer");
+            setSession((s) => s ? { ...s, initiatorName: initName, authorizerName: authName } : s);
+          }
+        } catch { /* backend may not support this */ }
         return;
       }
       try {
