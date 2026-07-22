@@ -8,6 +8,7 @@ import {
   loadDualControl,
   loadOrganization,
   loadOrgUsers,
+  normalizeOrganization,
 } from "./data";
 import * as demo from "./demo-data";
 import type { DualControlState, Organization } from "./types";
@@ -174,6 +175,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setOrg(demo.organization);
         setDualControl(demo.dualControl);
         setSecurityDbReady(true);
+        return;
+      }
+      // App login: use GET /app/auth/me (tenant-safe identity via app_session)
+      if (tokens.appSession && !tokens.platform) {
+        try {
+          const appIdentity = await api.get<{
+            organization?: Record<string, unknown>;
+            user?: Record<string, unknown>;
+          }>("/app/auth/me", { realm: "application" });
+          if (cancelled) return;
+          if (appIdentity?.organization) {
+            setOrg(normalizeOrganization(appIdentity.organization));
+          }
+          if (appIdentity?.user) {
+            const u = appIdentity.user as Record<string, unknown>;
+            setSession((s) => s ? { ...s, userEmail: String(u.email ?? s.userEmail), userName: String(u.full_name ?? u.name ?? s.userName) } : s);
+          }
+          setSecurityDbReady(true);
+        } catch { /* keep demo/empty */ }
         return;
       }
       try {
