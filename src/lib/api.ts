@@ -114,7 +114,13 @@ async function request<T>(
   if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
   // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
   if (realm === "application") headers["X-Device-Id"] = deviceId();
-  if (opts.dualControl && tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+  // Per §2.4/§5.3: send dual-control session on ALL mutations when session exists
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  if (isMutation && tokens.dualControl) {
+    headers["X-Dual-Control-Session"] = tokens.dualControl;
+  } else if (opts.dualControl && tokens.dualControl) {
+    headers["X-Dual-Control-Session"] = tokens.dualControl;
+  }
 
   let body: BodyInit | undefined;
   if (opts.form) {

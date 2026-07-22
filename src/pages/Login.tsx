@@ -205,6 +205,22 @@ function AppLoginFlow({
         user?: { full_name?: string; email?: string };
         user_email?: string;
         role?: string;
+        effective_role?: string;
+        can_operate?: boolean;
+        is_initiator?: boolean;
+        is_authorizer?: boolean;
+        dual_control?: {
+          configured?: boolean;
+          eligible?: boolean;
+          is_initiator?: boolean;
+          is_authorizer?: boolean;
+          session_token?: string;
+          header_name?: string;
+          inactivity_minutes?: number;
+          can_operate?: boolean;
+        };
+        dual_control_session_token?: string;
+        dual_control_header?: string;
       }>("/app/auth/mfa", {
         mfa_token: mfaToken,
         code,
@@ -221,8 +237,23 @@ function AppLoginFlow({
       tokens.device = res.device_token ?? "";
       const devId2 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
       localStorage.setItem("phantix_device_id", devId2);
-      completeAppLogin(res.user_email ?? res.user?.email ?? "", res.user?.full_name ?? "");
-      toast("success", "Signed in", "Welcome" + (res.user?.full_name ? " " + res.user.full_name : " back"));
+
+      // Per §2.4/§5.2: store dual-control session from MFA response (auto-issued for initiator/authorizer)
+      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
+      if (dcSessionToken) {
+        tokens.dualControl = dcSessionToken;
+      }
+
+      const email = res.user_email ?? res.user?.email ?? "";
+      const name = res.user?.full_name ?? "";
+      const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
+      const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
+      completeAppLogin(email, name, isInit, isAuth);
+
+      const roleLabel = res.effective_role ?? res.role ?? "";
+      const canOperate = res.can_operate === true || res.dual_control?.can_operate === true;
+      const dcInfo = canOperate && isInit && !isAuth ? " · operate as initiator" : canOperate && isAuth && !isInit ? " · operate as authorizer" : "";
+      toast("success", "Signed in", "Welcome" + (name ? " " + name : " back") + dcInfo);
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -242,6 +273,23 @@ function AppLoginFlow({
         device_token?: string;
         user?: { full_name?: string; email?: string };
         user_email?: string;
+        role?: string;
+        effective_role?: string;
+        can_operate?: boolean;
+        is_initiator?: boolean;
+        is_authorizer?: boolean;
+        dual_control?: {
+          configured?: boolean;
+          eligible?: boolean;
+          is_initiator?: boolean;
+          is_authorizer?: boolean;
+          session_token?: string;
+          header_name?: string;
+          inactivity_minutes?: number;
+          can_operate?: boolean;
+        };
+        dual_control_session_token?: string;
+        dual_control_header?: string;
       }>("/app/auth/mfa", {
         device_token: deviceToken,
         code,
@@ -252,8 +300,17 @@ function AppLoginFlow({
       tokens.device = res.device_token ?? "";
       const devId3 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
       localStorage.setItem("phantix_device_id", devId3);
-      completeAppLogin(res.user_email ?? res.user?.email ?? "", res.user?.full_name ?? "");
-      toast("success", "Device confirmed", "Welcome" + (res.user?.full_name ? " " + res.user.full_name : " back"));
+
+      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
+      if (dcSessionToken) tokens.dualControl = dcSessionToken;
+
+      const email = res.user_email ?? res.user?.email ?? "";
+      const name = res.user?.full_name ?? "";
+      const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
+      const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
+      completeAppLogin(email, name, isInit, isAuth);
+
+      toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Device verification failed");

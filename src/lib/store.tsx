@@ -369,6 +369,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const requireDualControl = useCallback(
     (reason = "This action requires an active dual-control operate session.") => {
+      // Already have an active DC session token and operate is unlocked
       if (operate.unlocked && tokens.dualControl) {
         if (operate.expiresAt && operate.expiresAt <= Date.now()) {
           tokens.dualControl = null;
@@ -376,6 +377,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         } else {
           return Promise.resolve(true);
         }
+      }
+      // Have DC session token from MFA but operate not marked as unlocked
+      if (tokens.dualControl && !operate.unlocked) {
+        setOperate({ unlocked: true, actingUser: session?.userName ?? "Operate user", actingRole: session?.isInitiator ? "initiator" : "authorizer", expiresAt: Date.now() + 3 * 60_000 });
+        return Promise.resolve(true);
       }
       if (!dualControl.configured && !isDemoMode()) {
         toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control — set up initiator + authorizer on the Platform to unlock writes.");
