@@ -41,13 +41,19 @@ Requires org Bearer. Mutating routes use bootstrap-or-operator (dual-control whe
 
 ## Application APIs (`/api/v1/app/…`)
 
+**Public** (no company JWT). Login links are independent of **key rotation**, but the company must have an **active** `pk_live_*` service key for redeem to succeed.
+
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST | `/auth/challenge` | Validate sign-in link → public metadata |
-| POST | `/auth/password` | Password → email OTP (`mfa_token`) |
-| POST | `/auth/mfa` | OTP + device → **session + device tokens** |
+| POST | `/auth/challenge` | Validate link; **403** if no active service key |
+| POST | `/auth/otp` | Link → email OTP (OTP-only users) |
+| POST | `/auth/password` | Password → email OTP (if user has a password) |
+| POST | `/auth/mfa` | OTP + device → **app_session + device_token** |
 | GET | `/auth/me` | Dual-token identity check |
-| POST | `/auth/resolve-key` | Resolve `X-Org-Api-Key` → company id/slug |
+| POST | `/auth/resolve-key` | Resolve `X-Org-Api-Key` → company id/slug (integrations) |
+
+**Human app login does not use** `POST /organizations/login` (platform-only).  
+**App access gate:** active service key via `POST /organizations/me/service-key` on platform.
 
 ### Dual tokens (application security)
 

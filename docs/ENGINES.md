@@ -12,7 +12,8 @@
 | ID | Name | Status | Product API |
 |----|------|--------|-------------|
 | `control_plane` | Control Plane | implemented | orgs, staff, billing, support, admin… |
-| `asset_engine` | Asset Engine | implemented | `/assets`, `/asset-tags` |
+| `asset_engine` | Asset Engine | implemented v0.3 (Intelligence P2: graph + SSE + AI posture) | `/assets`, `/asset-tags`, `/assets/intelligence/*` |
+| `soc_engine` | SOC Engine | **scaffold** | `/soc/*`, `/soc/dashboard/*` (monitoring shell; live data via Asset Intelligence) |
 | `scanner_engine` | Scanner Engine | implemented | `/scans` |
 | `vapt_engine` | VAPT Engine | **implemented** | `/vapt/*`, `/admin/vapt/*` (+ subsidiaries `web_scanner/`, `orchestrator/` — not separate registry entries) |
 | `risk_engine` | Risk Engine | implemented | `/risks` |

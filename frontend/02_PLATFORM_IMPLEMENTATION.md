@@ -33,13 +33,15 @@ platform_dual_control     // session string for X-Dual-Control-Session
 device_id                 // stable UUID for org-user login
 ```
 
-### 2.2 Company login
+### 2.2 Company registration & login
 
 | Step | Endpoint | Notes |
 |------|----------|-------|
-| Password | `POST /organizations/login` | form-urlencoded `username` + `password` |
-| MFA | `POST /organizations/login/mfa` | `{ mfa_token, code }` |
-| Me | `GET /organizations/me` | Profile shell |
+| Register | `POST /organizations/register` | JSON company payload; **no JWT** — then login |
+| Password | `POST /organizations/login` | form-urlencoded `username` (primary email) + `password` |
+| MFA | `POST /organizations/login/mfa` | JSON `{ mfa_token, code }` |
+| Setup wizard | `GET /organizations/me/setup` … | See [01_ORG_SETUP_IMPLEMENTATION.md](./01_ORG_SETUP_IMPLEMENTATION.md) |
+| Me | `GET /organizations/me` | Profile shell after setup |
 
 ### 2.3 Org-user login (named identity)
 
@@ -123,27 +125,72 @@ Reports use org name + logo in PDF/DOCX templates.
 
 ## 4. Security database connections (blocking for scans/VAPT)
 
-**Without a ready security DB, scans/VAPT/findings will fail.**
+**Without a ready security DB, scans/VAPT/findings/intelligence will fail (often HTTP 409).**
+
+Complete **org setup** first ([01_ORG_SETUP_IMPLEMENTATION.md](./01_ORG_SETUP_IMPLEMENTATION.md)), then dual-control, then connections.
 
 | Method | Path | Use case |
 |--------|------|----------|
 | `GET` | `/db-connections` | List connections |
-| `POST` | `/db-connections` | Add Postgres security storage |
+| `GET` | `/db-connections/drivers` | Live-probe driver status (MSSQL needs ODBC 18) |
+| `GET` | `/db-connections/connection-option-hints` | Engine-specific option examples |
+| `POST` | `/db-connections` | Add connection (see bodies below) |
 | `GET` | `/db-connections/{id}` | Detail |
-| `POST` | `/db-connections/{id}/test` | Connectivity test |
-| `POST` | `/db-connections/{id}/bootstrap` | Create schema tables |
-| `GET` | `/db-connections/drivers` | Driver availability |
-| Status fields | `bootstrap_status=ready` | Gate product modules |
+| `POST` | `/db-connections/{id}/test?auto_bootstrap=true` | Probe (+ bootstrap security schema) |
+| `POST` | `/db-connections/{id}/bootstrap` | Explicit schema apply |
+| `GET` | `/db-connections/primary-security-storage` | Primary security store |
 
-**FE gates**
+### 4.1 Postgres security storage (required for product)
+
+```json
+{
+  "name": "Phantix Security Storage",
+  "connection_purpose": "security_data_storage",
+  "db_type": "postgresql",
+  "host": "127.0.0.1",
+  "port": 5432,
+  "database_name": "phantix_security",
+  "username": "phantix",
+  "password": "…",
+  "ssl_mode": "disable",
+  "target_schema": "phantix",
+  "is_primary": true,
+  "environment": "development"
+}
+```
+
+`security_data_storage` allows **`postgresql` / `supabase` only**.
+
+### 4.2 MSSQL config inspection (optional)
+
+```json
+{
+  "name": "Prod MSSQL Config Inspection",
+  "connection_purpose": "config_inspection",
+  "db_type": "mssql",
+  "host": "sql.customer.internal",
+  "port": 1433,
+  "database_name": "AppDb",
+  "username": "phantix_ro",
+  "password": "…",
+  "connection_options": {
+    "odbc_driver": "ODBC Driver 18 for SQL Server",
+    "encrypt": true,
+    "trust_server_certificate": true
+  }
+}
+```
+
+### 4.3 FE gates
 
 ```
-if bootstrap_status !== 'ready':
+if no healthy primary security_data_storage (or bootstrap not ready):
   show banner → Connect security database
-  disable Scans / VAPT start
+  disable Scans / VAPT / Asset Intelligence refresh
 ```
 
-Full detail: [CONNECTIONS.md](../CONNECTIONS.md).
+Auth: after dual-control is configured, mutations need `X-Dual-Control-Session`.  
+Full detail: [CONNECTIONS.md](../CONNECTIONS.md) · Postman folder **04 – Control Plane**.
 
 ---
 
@@ -160,7 +207,7 @@ Full detail: [CONNECTIONS.md](../CONNECTIONS.md).
 
 ---
 
-## 6. Product module — Assets
+## 6. Product module — Assets (+ Asset Intelligence)
 
 | Method | Path | Use case |
 |--------|------|----------|
@@ -171,14 +218,33 @@ Full detail: [CONNECTIONS.md](../CONNECTIONS.md).
 | APK / GitHub / API import | asset import routes | Specialized ingest |
 | `GET/POST` | `/asset-tags` | Tag taxonomy |
 | Assign tags | asset-tag assignment routes | Criticality / scope for compliance |
+| **Intelligence** | | |
+| `POST` | `/assets/integrations/github` | Store GitHub PAT (encrypted; never returned) |
+| `GET` | `/assets/integrations/github` | List integrations (`github_login`, `token_configured`) |
+| `POST` | `/assets/import/github` | Import repos → `github_repo` assets (`discover_all` or `repo`) |
+| `POST` | `/db-connections` | Register MSSQL `config_inspection` or Postgres `security_data_storage` — see CONNECTIONS.md |
+| `GET` | `/db-connections/drivers` | Driver install status (`mssql` needs ODBC 18 on host) |
+| `GET` | `/assets/intelligence/dashboard` | Posture score, critical-at-risk, never scanned |
+| `GET` | `/assets/intelligence/prioritized` | Risk-prioritized list (filters: risk_level, exposure, tag, unverified, unscanned) |
+| `POST` | `/assets/intelligence/refresh` | Recompute enrichment for org |
+| `GET` | `/assets/intelligence/graph` | Org relationship graph (nodes/edges) |
+| `GET` | `/assets/intelligence/stream` | SSE live feed (`assetUpdated`, `riskScoreChanged`, …) |
+| `GET` | `/assets/{id}/intelligence` | Full context; `?ai=true` for AI narrative |
+| `GET` | `/assets/{id}/graph` | Ego multi-hop graph |
+| `GET` | `/assets/{id}/related` | Relationship neighbors |
+| `POST` | `/assets/{id}/intelligence/refresh` | Recompute one asset |
+| `POST` | `/assets/{id}/intelligence/ai-summary` | On-demand AI posture summary |
+| `GET` | `/soc/dashboard` | Monitoring dashboard scaffold (SOC engine) |
 
 **Use cases**
 
 1. Onboard in-scope hosts before VAPT  
 2. Mark crown jewels (`criticality=high`)  
 3. Trigger discovery → review proposed assets → verify  
+4. **Dashboard**: posture + “critical assets at risk” + “never scanned”  
+5. **Asset drawer**: open findings, related graph edges, recommended next actions  
 
-Doc: [ASSET_DISCOVERY.md](../ASSET_DISCOVERY.md).
+Docs: [ASSET_DISCOVERY.md](../ASSET_DISCOVERY.md) · [ASSET_INTELLIGENCE.md](../ASSET_INTELLIGENCE.md).
 
 ---
 

@@ -1115,6 +1115,60 @@
     "summary": "upsert_github_integration"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/assets/intelligence/dashboard",
+    "name": "intelligence_dashboard",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/intelligence/events/recent",
+    "name": "recent_intelligence_events",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/intelligence/graph",
+    "name": "org_relationship_graph",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/intelligence/prioritized",
+    "name": "list_prioritized",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/intelligence/refresh",
+    "name": "refresh_intelligence",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/intelligence/stream",
+    "name": "intelligence_stream",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
     "method": "POST",
     "path": "/api/v1/assets/upload/apk",
     "tags": [
@@ -1163,6 +1217,51 @@
     ],
     "name": "reanalyze_apk_asset",
     "summary": "reanalyze_apk_asset"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/{asset_id}/graph",
+    "name": "asset_ego_graph",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/{asset_id}/intelligence",
+    "name": "get_asset_intelligence",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/{asset_id}/intelligence/ai-summary",
+    "name": "ai_posture_summary",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/assets/{asset_id}/intelligence/refresh",
+    "name": "refresh_one_asset",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/assets/{asset_id}/related",
+    "name": "get_related_assets",
+    "tags": [
+      "asset-engine",
+      "asset-intelligence"
+    ]
   },
   {
     "method": "POST",
@@ -2765,6 +2864,42 @@
     ],
     "name": "search_status",
     "summary": "search_status"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/soc/dashboard",
+    "name": "monitoring_dashboard",
+    "tags": [
+      "soc-engine",
+      "soc-dashboard"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/soc/dashboard/events/recent",
+    "name": "recent_events",
+    "tags": [
+      "soc-engine",
+      "soc-dashboard"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/soc/dashboard/stream-info",
+    "name": "stream_info",
+    "tags": [
+      "soc-engine",
+      "soc-dashboard"
+    ]
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/soc/status",
+    "name": "soc_status",
+    "tags": [
+      "soc-engine",
+      "soc"
+    ]
   },
   {
     "method": "GET",

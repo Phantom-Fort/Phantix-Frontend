@@ -67,6 +67,21 @@ OpenAPI: `GET /docs` · `GET /openapi.json` (if mounted) · runtime inventory: `
 | `DELETE` | `/api/v1/asset-tags/{tag_id}` | delete_tag | asset-engine, asset-tags |
 | `GET` | `/api/v1/assets` | list_assets | asset-engine, assets |
 | `POST` | `/api/v1/assets` | create_asset | asset-engine, assets |
+| `GET` | `/api/v1/assets/intelligence/dashboard` | intelligence_dashboard (posture + critical lists) | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/intelligence/prioritized` | list_prioritized (risk/tag/exposure filters) | asset-engine, asset-intelligence |
+| `POST` | `/api/v1/assets/intelligence/refresh` | refresh_intelligence (batch recompute) | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/intelligence/graph` | org_relationship_graph | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/intelligence/stream` | intelligence_stream (SSE) | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/intelligence/events/recent` | recent_intelligence_events | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/{asset_id}/intelligence` | get_asset_intelligence (full context; ?ai=true) | asset-engine, asset-intelligence |
+| `POST` | `/api/v1/assets/{asset_id}/intelligence/refresh` | refresh_one_asset | asset-engine, asset-intelligence |
+| `POST` | `/api/v1/assets/{asset_id}/intelligence/ai-summary` | ai_posture_summary | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/{asset_id}/related` | get_related_assets | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/assets/{asset_id}/graph` | asset_ego_graph | asset-engine, asset-intelligence |
+| `GET` | `/api/v1/soc/status` | soc_status (scaffold) | soc-engine |
+| `GET` | `/api/v1/soc/dashboard` | monitoring_dashboard (scaffold) | soc-engine, soc-dashboard |
+| `GET` | `/api/v1/soc/dashboard/events/recent` | recent_events | soc-engine, soc-dashboard |
+| `GET` | `/api/v1/soc/dashboard/stream-info` | stream_info | soc-engine, soc-dashboard |
 | `GET` | `/api/v1/assets/discovery/jobs` | list_discovery_jobs | asset-engine, assets |
 | `POST` | `/api/v1/assets/discovery/jobs` | create_discovery_job | asset-engine, assets |
 | `GET` | `/api/v1/assets/discovery/jobs/{job_id}` | get_discovery_job | asset-engine, assets |

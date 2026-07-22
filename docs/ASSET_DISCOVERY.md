@@ -104,9 +104,9 @@ If the connection was previously on 1.0.0, bootstrap upgrades automatically when
 | `PATCH` | `/api/v1/assets/{id}` | Update |
 | `DELETE` | `/api/v1/assets/{id}` | Soft-delete (`?hard=true` hard) |
 | `POST` | `/api/v1/assets/{id}/verify` | Re-verify ownership |
-| `POST` | `/api/v1/assets/integrations/github` | Store GitHub PAT (encrypted) |
-| `GET` | `/api/v1/assets/integrations/github` | List integrations (no secrets) |
-| `POST` | `/api/v1/assets/import/github` | Import repos as assets |
+| `POST` | `/api/v1/assets/integrations/github` | Validate + store GitHub PAT (encrypted on platform DB) |
+| `GET` | `/api/v1/assets/integrations/github` | List integrations (login only; never the PAT) |
+| `POST` | `/api/v1/assets/import/github` | Import one or all visible repos as `github_repo` assets |
 | `POST` | `/api/v1/assets/import/api` | OpenAPI / Postman → `api` asset |
 | `POST` | `/api/v1/assets/upload/apk` | Upload APK → `mobile_apk` asset + analysis |
 | `POST` | `/api/v1/assets/{id}/apk/reanalyze` | Re-run static analysis on stored APK |
@@ -133,17 +133,32 @@ Unverified assets are still stored when confirmation is provided; `is_verified=f
 
 ## GitHub (PAT)
 
+Full flow, scopes, and security notes: **[CONNECTIONS.md §6 — GitHub PAT connection](./CONNECTIONS.md#6-github-pat-connection-asset-discovery)**.
+
+### Quick reference
+
 ```http
 POST /api/v1/assets/integrations/github
 { "personal_access_token": "ghp_…", "label": "default" }
 
+GET /api/v1/assets/integrations/github
+# → login + token_configured (never the PAT)
+
 POST /api/v1/assets/import/github
 { "discover_all": true }
-# or { "repo": "owner/name" }
+# or { "repo": "owner/name" } or full github.com URL
 ```
 
-Tokens are Fernet-encrypted in platform table `organization_integrations`.
-Repo inventory is written only to the security DB as `github_repo` assets.
+**What happens**
+
+1. Backend validates the PAT with GitHub `GET /user` and stores it **encrypted** on the platform DB (`organization_integrations`).
+2. Import lists repos via `/user/repos` (or one `/repos/{owner}/{repo}`).
+3. Each repo becomes a `github_repo` asset in the **security DB** only (`value` = HTML URL, rich `metadata`).
+4. Verification: owner login matches linked `github_login` → `is_verified=true`.
+
+**Scopes**: classic `repo` / `public_repo`, or fine-grained Contents Read on target repos.
+
+GitHub App installation tokens are not supported yet (PAT only).
 
 ---
 

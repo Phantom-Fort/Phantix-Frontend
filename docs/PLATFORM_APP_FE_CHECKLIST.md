@@ -73,17 +73,23 @@ Use **two separate apps** (or two route trees with different auth stores). Do no
 ### 1.7 Platform route map (suggested)
 
 ```
-/login
-/setup                    # org setup / verification
+/register                 # company registration (no JWT until login)
+/login                    # company password + MFA → company JWT
+/setup                    # privacy → email OTP → optional domain/CAC → complete
 /dashboard
-/identity                 # id, slug, creator
+/identity                 # id, slug, creator  (GET /organizations/me/identity)
+/connections              # security Postgres + optional MSSQL inspection
 /companies                # list + create startups
 /companies/:id/key        # service key for company
 /users
 /users/:id/login-link
 /billing
 /dual-control
+/assets                   # inventory + intelligence drawer
+/monitoring               # SOC scaffold + live intel stream (optional)
 ```
+
+Setup contract: [frontend/01_ORG_SETUP_IMPLEMENTATION.md](./frontend/01_ORG_SETUP_IMPLEMENTATION.md)
 
 ---
 

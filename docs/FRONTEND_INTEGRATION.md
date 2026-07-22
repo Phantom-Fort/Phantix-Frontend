@@ -198,20 +198,23 @@ Long work **must not** block the browser request:
 
 ## 3. Onboarding checklist (product UI)
 
+**Detailed register/setup payloads:** [frontend/01_ORG_SETUP_IMPLEMENTATION.md](./frontend/01_ORG_SETUP_IMPLEMENTATION.md)
+
 ```text
-1. Register / login (company JWT + MFA)
-2. Org setup (privacy, OTP) — GET /organizations/me/setup
-3. Create initiator + authorizer org users
+1. POST /organizations/register (JSON) → then login (form) + MFA → company JWT
+2. Org setup: privacy accept → email OTP → optional company modes → POST …/setup/complete
+3. Create initiator + authorizer org users (bootstrap; no dual session yet)
 4. PUT dual-control assignment
-5. Dual-control session login
-6. Create + bootstrap security_data_storage (Postgres)
+5. Dual-control session login (X-Dual-Control-Session)
+6. Create + test/bootstrap security_data_storage (Postgres schema 1.5.1+)
 7. Create domain assets → wait for domain_enum job
 8. VAPT plan → execute → poll campaign
-9. Show raw scan_results + correlated findings
+9. Asset Intelligence dashboard / asset drawer
+10. Show verified findings + reports
 ```
 
 Security DB is **required** before assets/scans/VAPT.  
-`POST /api/v1/db-connections` → `POST .../{id}/test` → `POST .../{id}/bootstrap` (schema **1.4.1+**).
+`POST /api/v1/db-connections` → `POST .../{id}/test?auto_bootstrap=true` (schema **1.5.1+**).
 
 ---
 

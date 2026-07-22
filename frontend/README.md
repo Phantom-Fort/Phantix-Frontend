@@ -3,7 +3,7 @@
 **Audience**: Frontend / full-stack engineers building Phantix UIs  
 **API base**: `{API_BASE}` + `/api/v1` (staging: `https://staging.phantix.site`, local: `http://localhost:8000`)  
 **Live contract**: `GET /docs` (Swagger) · **Generated route table**: [API_ENDPOINT_CATALOG.md](./API_ENDPOINT_CATALOG.md) · `api_routes.json`  
-**Last major update**: July 2026 (verification gate, compliance evidence, VAPT report templates)
+**Last major update**: 21 July 2026 (org setup payloads, Asset Intelligence P2, SOC scaffold, MSSQL/GitHub docs)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Surface | Product host | Doc | Primary tokens |
 |---------|--------------|-----|----------------|
-| **Org setup** | `platform.phantix.site` (onboarding) | [01_ORG_SETUP_IMPLEMENTATION.md](./01_ORG_SETUP_IMPLEMENTATION.md) | Company JWT (`type=access`) during setup |
+| **Org setup** | `platform.phantix.site` (onboarding) | [01_ORG_SETUP_IMPLEMENTATION.md](./01_ORG_SETUP_IMPLEMENTATION.md) | Register (public) → company login/MFA → setup with company JWT (`type=access`) |
 | **Platform** | `platform.phantix.site` | [02_PLATFORM_IMPLEMENTATION.md](./02_PLATFORM_IMPLEMENTATION.md) | Company JWT and/or org-user JWT + dual-control session |
 | **Application** | `app.phantix.site` | [03_APPLICATION_IMPLEMENTATION.md](./03_APPLICATION_IMPLEMENTATION.md) | `app_session` + `X-Device-Token` (+ dual-control when operating) |
 | **Staff / Admin** | staff console | [04_STAFF_ADMIN_IMPLEMENTATION.md](./04_STAFF_ADMIN_IMPLEMENTATION.md) | Staff JWT only (`type=staff`) |
@@ -23,6 +23,8 @@
 | Full endpoint catalog (326 routes) | [API_ENDPOINT_CATALOG.md](./API_ENDPOINT_CATALOG.md) |
 | Auth realms overview | [../TWO_PLATFORM_AUTH.md](../TWO_PLATFORM_AUTH.md) · [../RBAC_MFA.md](../RBAC_MFA.md) |
 | Dual-control operate UX | [../DUAL_CONTROL_SETUP_FE.md](../DUAL_CONTROL_SETUP_FE.md) |
+| DB connections / MSSQL / GitHub PAT | [../CONNECTIONS.md](../CONNECTIONS.md) |
+| Asset Intelligence + monitoring FE | [ASSET_INTELLIGENCE_AND_MONITORING_FE.md](./ASSET_INTELLIGENCE_AND_MONITORING_FE.md) |
 | Legacy single guide (still valid) | [../FRONTEND_INTEGRATION.md](../FRONTEND_INTEGRATION.md) |
 | Engine maturity | [../ENGINES.md](../ENGINES.md) |
 | Postman | [../../API Testing/phantix_postman_collection.json](../../API%20Testing/phantix_postman_collection.json) |
@@ -96,6 +98,8 @@ Or FastAPI validation:
 | Module | Doc |
 |--------|-----|
 | Assets / discovery | [../ASSET_DISCOVERY.md](../ASSET_DISCOVERY.md) |
+| Asset Intelligence (backend) | [../ASSET_INTELLIGENCE.md](../ASSET_INTELLIGENCE.md) |
+| **Asset Intelligence + monitoring FE handoff** | [ASSET_INTELLIGENCE_AND_MONITORING_FE.md](./ASSET_INTELLIGENCE_AND_MONITORING_FE.md) |
 | Scanner | [../VAPT.md](../VAPT.md) (campaigns) + scans under Platform guide |
 | Risk | [../RISK.md](../RISK.md) |
 | Compliance | [../COMPLIANCE.md](../COMPLIANCE.md) |
