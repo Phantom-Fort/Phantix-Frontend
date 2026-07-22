@@ -45,6 +45,7 @@ type Store = {
   switchToRealOrg: () => void;
   login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
   verifyMfa: (code: string) => Promise<void>;
+  completeAppLogin: (email: string, name: string) => void;
   logout: () => void;
   unlockOperate: (email: string, code: string) => Promise<void>;
   lockOperate: () => void;
@@ -67,9 +68,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session>(() =>
     isDemoFlagSet()
       ? demoSession
-      : tokens.platform
-        ? { authenticated: true, realm: "platform", userEmail: "", userName: "" }
-        : null,
+      : tokens.appSession
+        ? { authenticated: true, realm: "application", userEmail: "", userName: "" }
+        : tokens.platform
+          ? { authenticated: true, realm: "platform", userEmail: "", userName: "" }
+          : null,
   );
   const [org, setOrg] = useState<Organization>(() => (isDemoMode() ? demo.organization : emptyOrganization));
   const [dualControl, setDualControl] = useState<DualControlState>(() =>
@@ -250,12 +253,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     tokens.platform = null;
     tokens.orgUser = null;
     tokens.dualControl = null;
+    tokens.appSession = null;
+    tokens.device = null;
     exitDemoMode();
     setSession(null);
     setOrg(emptyOrganization);
     setDualControl(emptyDualControl);
     setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
     setDemoTick((t) => t + 1);
+  }, []);
+
+  const completeAppLogin = useCallback((email: string, name: string) => {
+    setSession({ authenticated: true, realm: "application", userEmail: email, userName: name || email });
   }, []);
 
   const enterDemo = useCallback(() => {
@@ -471,6 +480,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       switchToRealOrg,
       login,
       verifyMfa,
+      completeAppLogin,
       logout,
       unlockOperate: unlockOperateStable,
       lockOperate,
@@ -487,7 +497,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       session, org, dualControl, operate, securityDbReady, toasts, toast, dismissToast,
-      login, verifyMfa, logout, unlockOperateStable, lockOperate, enterDemo, switchToRealOrg,
+      login, verifyMfa, completeAppLogin, logout, unlockOperateStable, lockOperate, enterDemo, switchToRealOrg,
       requireDualControl, dualControlPrompt, closeDualControlPrompt,
       requestDualControlOtp, verifyDualControlOtp, confirmDualControlDevice, demoTick,
     ],

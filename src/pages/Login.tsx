@@ -79,6 +79,7 @@ function AppLoginFlow({
   enterDemo: () => void; navigate: (path: string) => void;
   toast: (kind: "success" | "error" | "info" | "warning", title: string, body?: string) => void;
 }) {
+  const { completeAppLogin } = useStore();
   const [stage, setStage] = useState<Stage>("password");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
@@ -212,6 +213,7 @@ function AppLoginFlow({
 
       tokens.appSession = res.app_session_token ?? res.session_token ?? res.access_token ?? "";
       tokens.device = res.device_token ?? "";
+      completeAppLogin(res.user?.email ?? "", res.user?.full_name ?? "");
       toast("success", "Signed in", `Welcome${res.user?.full_name ? ` ${res.user.full_name}` : " back"}`);
       navigate("/dashboard");
     } catch (err) {
@@ -240,6 +242,7 @@ function AppLoginFlow({
 
       tokens.appSession = res.app_session_token ?? res.session_token ?? res.access_token ?? "";
       tokens.device = res.device_token ?? "";
+      completeAppLogin(res.user?.email ?? "", res.user?.full_name ?? "");
       toast("success", "Device confirmed", `Welcome${res.user?.full_name ? ` ${res.user.full_name}` : " back"}`);
       navigate("/dashboard");
     } catch (err) {
