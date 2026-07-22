@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, ProgressBar, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadDashboardBundle } from "@/lib/data";
+import { loadDashboardBundle, loadIntelligenceDashboard } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { priorityBandMeta, timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -42,6 +42,7 @@ const emptyDash = {
 export default function Dashboard() {
   const { org, operate, requireDualControl } = useStore();
   const { data, loading } = useResource(loadDashboardBundle, emptyDash);
+  const { data: intel } = useResource(loadIntelligenceDashboard, null);
   const {
     assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents,
     postureTrend, severityDistribution, complianceAssessments, reports,
@@ -50,7 +51,9 @@ export default function Dashboard() {
   const activeScan = scanJobs.find((j) => j.status === "running" || j.status === "queued");
   const activeCampaign = vaptCampaigns.find((c) => c.status === "active");
   const openRisks = risks.filter((r) => !["closed", "accepted"].includes(r.status));
-  const posture = postureTrend[postureTrend.length - 1]?.score ?? 0;
+  // Use API intelligence score if available, fall back to client-side heuristic
+  const posture = intel?.posture_score ?? postureTrend[postureTrend.length - 1]?.score ?? 0;
+  const intelTrend = intel?.posture_trend ?? postureTrend;
   const generating = reports.find((r) => r.status === "generating");
 
   if (loading) {
@@ -105,7 +108,7 @@ export default function Dashboard() {
               </ProgressRing>
               <div className="min-w-0 flex-1">
                 <ResponsiveContainer width="100%" height={132}>
-                  <AreaChart data={postureTrend} margin={{ top: 6, right: 4, bottom: 0, left: -22 }}>
+                  <AreaChart data={intelTrend} margin={{ top: 6, right: 4, bottom: 0, left: -22 }}>
                     <defs>
                       <linearGradient id="postureFill" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#E8B54D" stopOpacity={0.35} />

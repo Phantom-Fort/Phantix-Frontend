@@ -5,6 +5,7 @@ import type {
   AlertEvent,
   AlertSettings,
   Asset,
+  AssetIntelligence,
   AssetTag,
   AuditEvent,
   ComplianceAssessment,
@@ -13,9 +14,11 @@ import type {
   DiscoveryJob,
   DualControlState,
   EvidenceItem,
+  IntelligenceDashboard,
   OrgUser,
   Organization,
   PendingAction,
+  PrioritizedAsset,
   Report,
   Risk,
   ScanJob,
@@ -414,6 +417,101 @@ function postureFromRisks(risks: Risk[]): { trend: PosturePoint[]; score: number
     };
   });
   return { trend, score };
+}
+
+// ── Asset Intelligence loaders ────────────────────────────────────────────────
+export async function loadIntelligenceDashboard(): Promise<IntelligenceDashboard | null> {
+  if (isDemoMode()) {
+    await delay();
+    return {
+      posture_score: 78,
+      posture_trend: Array.from({ length: 14 }, (_, i) => ({
+        day: `Jul ${10 + i}`,
+        score: 70 + Math.floor(Math.random() * 20),
+      })),
+      total_assets: demo.assets.length,
+      verified_count: demo.assets.filter((a) => a.is_verified).length,
+      unscanned_count: 3,
+      critical_assets_at_risk: demo.assets.slice(0, 3).map((a, i) => ({
+        id: a.id,
+        name: a.name,
+        value: a.value,
+        risk_score: 80 + i * 5,
+        open_findings: 3 + i,
+      })),
+      newly_discovered: demo.assets.slice(-2).map((a) => ({
+        id: a.id,
+        name: a.name,
+        value: a.value,
+        asset_type: a.asset_type,
+      })),
+      severity_distribution: [
+        { severity: "critical", count: 2 },
+        { severity: "high", count: 5 },
+        { severity: "medium", count: 8 },
+        { severity: "low", count: 12 },
+      ],
+      top_exposures: [
+        { exposure: "public_web", count: 15 },
+        { exposure: "internal_api", count: 8 },
+        { exposure: "cloud_storage", count: 5 },
+      ],
+    };
+  }
+  return await softOne<IntelligenceDashboard>("/assets/intelligence/dashboard");
+}
+
+export async function loadPrioritizedAssets(): Promise<PrioritizedAsset[]> {
+  if (isDemoMode()) {
+    await delay();
+    return demo.assets.map((a, i) => ({
+      id: a.id,
+      asset_type: a.asset_type,
+      value: a.value,
+      name: a.name,
+      criticality: a.criticality,
+      risk_score: 30 + Math.floor(Math.random() * 60),
+      risk_level: ["low", "medium", "high", "critical"][i % 4],
+      open_findings: i,
+      exposure: ["public_web", "internal_api", "cloud_storage"][i % 3],
+      is_verified: a.is_verified,
+      last_seen_at: a.last_seen_at,
+    }));
+  }
+  const raw = await api.get<unknown>("/assets/intelligence/prioritized");
+  return (asList(raw) as PrioritizedAsset[]).map((a) => ({
+    ...a,
+    id: Number(a.id),
+    risk_score: Number(a.risk_score ?? 0),
+    open_findings: Number(a.open_findings ?? 0),
+  }));
+}
+
+export async function loadAssetIntelligence(assetId: number): Promise<AssetIntelligence | null> {
+  if (isDemoMode()) {
+    await delay();
+    const a = demo.assets.find((x) => x.id === assetId) ?? demo.assets[0];
+    return {
+      asset: { id: a.id, name: a.name, value: a.value, asset_type: a.asset_type },
+      risk_score: 62,
+      risk_level: "medium",
+      previous_risk_score: 78,
+      risk_score_delta: -16,
+      open_findings_count: 4,
+      exposure_level: "external_facing",
+      posture_summary: "Moderate risk due to exposed public API endpoints. The asset has been scanned 3 times in the past 30 days with 4 open findings, 2 of which are high severity.",
+      recommended_actions: [
+        { action_key: "scan_now", label: "Run a new scan", description: "Check for newly introduced vulnerabilities", priority: "high" },
+        { action_key: "review_findings", label: "Review open findings", description: "4 findings need verification or remediation", priority: "high" },
+        { action_key: "update_firewall", label: "Review firewall rules", description: "Public-facing asset — ensure WAF rules are current", priority: "medium" },
+      ],
+      related_assets: demo.assets.filter((x) => x.id !== a.id).slice(0, 3).map((r) => ({
+        id: r.id, name: r.name, value: r.value, asset_type: r.asset_type, risk_score: 30 + Math.floor(Math.random() * 40),
+      })),
+      active_threats: ["CVE-2026-12345", "OWASP A03-Injection"],
+    };
+  }
+  return await softOne<AssetIntelligence>(`/assets/${assetId}/intelligence`);
 }
 
 export async function loadDashboardBundle() {

@@ -6,6 +6,7 @@ import orgSetupFe from "@docs/frontend/01_ORG_SETUP_IMPLEMENTATION.md?raw";
 import platformFe from "@docs/frontend/02_PLATFORM_IMPLEMENTATION.md?raw";
 import applicationFe from "@docs/frontend/03_APPLICATION_IMPLEMENTATION.md?raw";
 import staffFe from "@docs/frontend/04_STAFF_ADMIN_IMPLEMENTATION.md?raw";
+import assetIntelFe from "@docs/frontend/ASSET_INTELLIGENCE_AND_MONITORING_FE.md?raw";
 import apiCatalog from "@docs/frontend/API_ENDPOINT_CATALOG.md?raw";
 import twoPlatformAuth from "@docs/docs/TWO_PLATFORM_AUTH.md?raw";
 import dualControlFe from "@docs/docs/DUAL_CONTROL_SETUP_FE.md?raw";
@@ -16,6 +17,7 @@ import engines from "@docs/docs/ENGINES.md?raw";
 import orgSetup from "@docs/docs/ORG_SETUP.md?raw";
 import connections from "@docs/docs/CONNECTIONS.md?raw";
 import assetDiscovery from "@docs/docs/ASSET_DISCOVERY.md?raw";
+import assetIntel from "@docs/docs/ASSET_INTELLIGENCE.md?raw";
 import vapt from "@docs/docs/VAPT.md?raw";
 import risk from "@docs/docs/RISK.md?raw";
 import compliance from "@docs/docs/COMPLIANCE.md?raw";
@@ -27,6 +29,9 @@ import staffPortal from "@docs/docs/STAFF_PORTAL.md?raw";
 import serverOps from "@docs/docs/SERVER_OPS.md?raw";
 import search from "@docs/docs/SEARCH.md?raw";
 import localDev from "@docs/docs/LOCAL_DEV.md?raw";
+import migrations from "@docs/docs/MIGRATIONS.md?raw";
+import contributorGuide from "@docs/docs/CONTRIBUTOR_GUIDE.md?raw";
+import frontendIntegration from "@docs/docs/FRONTEND_INTEGRATION.md?raw";
 import securityBacklog from "@docs/docs/SECURITY_AND_BACKLOG.md?raw";
 
 export interface DocEntry {
@@ -52,6 +57,8 @@ export const docs: DocEntry[] = [
   { id: "fe-readme", title: "Frontend README", description: "Document map, global conventions, headers, status-code handling for every Phantix frontend.", category: "start", content: readme, badge: "Start here" },
   { id: "local-dev", title: "Local development", description: "Run the backend locally and point the frontend at it.", category: "start", content: localDev },
   { id: "fe-checklist", title: "Platform vs Application checklist", description: "Token stores, sign-in journeys, route maps and the QA security checklist.", category: "start", content: checklistFe },
+  { id: "fe-integration", title: "Frontend integration guide", description: "How the three frontend surfaces (platform, application, landing) connect to the backend.", category: "start", content: frontendIntegration },
+  { id: "contributor-guide", title: "Contributor guide", description: "Development workflow, PR conventions and code review checklist for the engineering team.", category: "start", content: contributorGuide },
 
   // Auth & access
   { id: "two-platform-auth", title: "Two-platform auth", description: "Management vs application access, service keys, multi-company groups, IDOR and rate-limit rules.", category: "auth", content: twoPlatformAuth, badge: "Core model" },
@@ -66,6 +73,8 @@ export const docs: DocEntry[] = [
 
   // Modules
   { id: "mod-assets", title: "Asset discovery", description: "Inventory, tags, history, domain_enum pipeline, GitHub/OpenAPI/APK imports.", category: "modules", content: assetDiscovery },
+  { id: "mod-asset-intel", title: "Asset intelligence & monitoring", description: "Dashboards, posture monitoring, alerts and metrics after inventory exists — the FE implementation guide.", category: "modules", content: assetIntelFe, badge: "FE guide" },
+  { id: "mod-asset-intel-backend", title: "Asset intelligence (backend)", description: "Posture scoring, monitoring service and intelligence aggregation engine.", category: "modules", content: assetIntel },
   { id: "mod-vapt", title: "VAPT engine", description: "Campaign lifecycle, web scanner pipeline, correlation, orchestrator, schedules.", category: "modules", content: vapt },
   { id: "mod-risk", title: "Risk engine", description: "Hybrid scoring, prioritization algorithm, treatments and expert export.", category: "modules", content: risk },
   { id: "mod-compliance", title: "Compliance engine", description: "Frameworks, merged questionnaire, assessments, evidence connectors.", category: "modules", content: compliance },
@@ -85,6 +94,7 @@ export const docs: DocEntry[] = [
   { id: "org-setup-model", title: "Org setup model", description: "Verification modes and what 'setup complete' requires.", category: "ops", content: orgSetup },
   { id: "staff-portal", title: "Staff portal", description: "Internal admin surface capabilities.", category: "ops", content: staffPortal },
   { id: "server-ops", title: "Server ops", description: "Process management, resources, optimization.", category: "ops", content: serverOps },
+  { id: "migrations", title: "Database migrations", description: "Schema versioning, migration commands and the schema_migrations table lifecycle.", category: "ops", content: migrations },
   { id: "security-backlog", title: "Security & backlog", description: "Security posture notes and the product backlog.", category: "ops", content: securityBacklog },
 ];
 

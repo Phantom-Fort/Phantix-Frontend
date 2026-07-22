@@ -1,13 +1,13 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
+import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles } from "lucide-react";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadAssetsBundle } from "@/lib/data";
+import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import type { Asset } from "@/lib/types";
+import type { Asset, AssetIntelligence } from "@/lib/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
   domain: <Globe size={15} />,
@@ -30,12 +30,21 @@ export default function Assets() {
     securityDbBlocked: false,
     error: null,
   });
+  const { data: prioritized } = useResource(loadPrioritizedAssets, []);
   const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [tab, setTab] = useState("inventory");
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
+  const [selectedIntel, setSelectedIntel] = useState<AssetIntelligence | null>(null);
+
+  useEffect(() => {
+    if (!selected) { setSelectedIntel(null); return; }
+    let cancelled = false;
+    loadAssetIntelligence(selected.id).then((i) => { if (!cancelled) setSelectedIntel(i); });
+    return () => { cancelled = true; };
+  }, [selected?.id]);
 
   const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], [assets]);
   const filtered = assets.filter(
@@ -75,6 +84,7 @@ export default function Assets() {
       <Tabs
         tabs={[
           { id: "inventory", label: "Inventory", count: assets.length },
+          { id: "prioritized", label: "Prioritized", count: prioritized?.length ?? 0 },
           { id: "discovery", label: "Discovery jobs", count: discoveryJobs.length },
           { id: "tags", label: "Tags", count: assetTags.length },
           { id: "imports", label: "Imports" },
@@ -82,6 +92,51 @@ export default function Assets() {
         active={tab}
         onChange={setTab}
       />
+
+      {tab === "prioritized" && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="!p-0 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-phantix-700/40 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                  <th className="px-5 py-3 font-medium">Asset</th>
+                  <th className="px-5 py-3 font-medium">Type</th>
+                  <th className="px-5 py-3 font-medium">Risk score</th>
+                  <th className="px-5 py-3 font-medium">Risk level</th>
+                  <th className="px-5 py-3 font-medium">Exposure</th>
+                  <th className="px-5 py-3 font-medium">Findings</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prioritized!.map((a, i) => (
+                  <tr key={a.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 text-sm", i % 2 === 1 && "bg-phantix-950/30")}>
+                    <td className="px-5 py-3">
+                      <p className="font-medium text-slate-200">{a.name || a.value}</p>
+                      <p className="text-xs text-slate-500 font-mono">{a.value}</p>
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className="chip text-xs">{titleCase(a.asset_type)}</span>
+                    </td>
+                    <td className="px-5 py-3 font-mono text-sm">
+                      <span className={cx(a.risk_score >= 75 ? "text-severity-critical" : a.risk_score >= 50 ? "text-severity-high" : a.risk_score >= 25 ? "text-severity-medium" : "text-severity-low")}>
+                        {a.risk_score}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <SeverityBadge severity={a.risk_level as never} />
+                    </td>
+                    <td className="px-5 py-3 text-xs text-slate-400">{titleCase(a.exposure)}</td>
+                    <td className="px-5 py-3 font-mono text-xs text-slate-400">{a.open_findings}</td>
+                  </tr>
+                ))}
+                {(!prioritized || prioritized.length === 0) && (
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet — run scans to populate risk data.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </Card>
+        </motion.div>
+      )}
 
       {tab === "inventory" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
@@ -304,6 +359,48 @@ export default function Assets() {
                 )) : <span className="text-sm text-slate-500">No manual tags — auto-tags (type/source/verified) apply.</span>}
               </div>
             </div>
+            {selectedIntel && (
+              <>
+                <div>
+                  <p className="label">Intelligence</p>
+                  <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                    {[
+                      ["Risk score", String(selectedIntel.risk_score)],
+                      ["Risk level", selectedIntel.risk_level],
+                      ["Open findings", String(selectedIntel.open_findings_count)],
+                      ["Exposure", selectedIntel.exposure_level],
+                    ].map(([k, v]) => (
+                      <div key={k} className="rounded-xl bg-phantix-950/60 border border-phantix-700/40 p-3">
+                        <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                        <p className="mt-1 font-medium text-slate-200 capitalize">{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedIntel.posture_summary && (
+                    <div className="mt-3 rounded-xl border border-gold-400/20 bg-gold-400/5 p-3.5 text-xs leading-5 text-slate-300">
+                      <p className="mb-1 font-medium text-gold-300"><Sparkles size={12} className="inline mr-1" />Posture summary</p>
+                      {selectedIntel.posture_summary}
+                    </div>
+                  )}
+                </div>
+                {selectedIntel.recommended_actions.length > 0 && (
+                  <div>
+                    <p className="label">Recommended actions</p>
+                    <div className="space-y-2">
+                      {selectedIntel.recommended_actions.map((ra) => (
+                        <div key={ra.action_key} className="flex items-start gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
+                          <SeverityBadge severity={ra.priority as never} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-slate-200">{ra.label}</p>
+                            <p className="text-xs text-slate-500">{ra.description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
             <div className="flex gap-2.5">
               <button
                 className="btn-primary flex-1"

@@ -74,6 +74,69 @@ export interface Asset {
   first_discovered_at: string;
   last_seen_at: string;
   metadata?: Record<string, unknown>;
+  // Intelligence fields (populated by GET /assets/intelligence/*)
+  risk_score?: number;
+  risk_level?: "critical" | "high" | "medium" | "low" | "info";
+  open_findings?: number;
+  exposure?: string;
+}
+
+export interface IntelligenceDashboard {
+  posture_score: number;
+  posture_trend: { day: string; score: number }[];
+  total_assets: number;
+  verified_count: number;
+  unscanned_count: number;
+  critical_assets_at_risk: { id: number; name: string; value: string; risk_score: number; open_findings: number }[];
+  newly_discovered: { id: number; name: string; value: string; asset_type: string }[];
+  severity_distribution: { severity: string; count: number }[];
+  top_exposures: { exposure: string; count: number }[];
+}
+
+export interface PrioritizedAsset {
+  id: number;
+  asset_type: string;
+  value: string;
+  name: string;
+  criticality: string;
+  risk_score: number;
+  risk_level: string;
+  open_findings: number;
+  exposure: string;
+  is_verified: boolean;
+  last_seen_at: string;
+}
+
+export interface AssetIntelligence {
+  asset: {
+    id: number;
+    name: string;
+    value: string;
+    asset_type: string;
+  };
+  risk_score: number;
+  risk_level: string;
+  previous_risk_score: number | null;
+  risk_score_delta: number | null;
+  open_findings_count: number;
+  exposure_level: string;
+  posture_summary: string | null;
+  recommended_actions: { action_key: string; label: string; description: string; priority: string }[];
+  related_assets: { id: number; name: string; value: string; asset_type: string; risk_score: number }[];
+  active_threats: string[];
+}
+
+export interface RecommendedAction {
+  action_key: string;
+  label: string;
+  description: string;
+  priority: string;
+}
+
+export interface AiPostureSummary {
+  summary: string;
+  generated_at: string;
+  model: string;
 }
 
 export interface AssetTag {
