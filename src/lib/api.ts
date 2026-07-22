@@ -112,6 +112,8 @@ async function request<T>(
     realm === "staff" ? tokens.staff : realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;
   if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
   if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
+  // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
+  if (realm === "application") headers["X-Device-Id"] = deviceId();
   if (opts.dualControl && tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
 
   let body: BodyInit | undefined;

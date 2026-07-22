@@ -23,6 +23,8 @@ export default function DualControlOverlay() {
     toast,
   } = useStore();
 
+  const { session } = useStore();
+
   const open = dualControlPrompt.open;
   const reason = dualControlPrompt.reason;
   const initiator = dualControl.initiator;
@@ -40,14 +42,15 @@ export default function DualControlOverlay() {
   useEffect(() => {
     if (!open) return;
     setStage("email");
-    setEmail("");
+    // Per 03_APPLICATION_IMPLEMENTATION.md §5.2: use app session email, never ask to re-enter
+    setEmail(session?.userEmail ?? "");
     setCode("");
     setDeviceCode("");
     setMasked("");
     setError(null);
     setDevOtp(null);
     setBusy(false);
-  }, [open]);
+  }, [open, session?.userEmail]);
 
   const cancel = () => closeDualControlPrompt(false);
 
@@ -186,19 +189,17 @@ export default function DualControlOverlay() {
               {stage === "email" && (
                 <>
                   <div>
-                    <label className="label">Initiator or authorizer email</label>
+                    <label className="label">Signing in as</label>
                     <div className="relative">
                       <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                       <input
-                        className="input !pl-10"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
+                        className="input !pl-10 !opacity-70"
+                        value={email || session?.userEmail || "…"}
+                        readOnly
                         autoFocus
-                        autoComplete="username"
-                        onKeyDown={(e) => e.key === "Enter" && void sendCode()}
                       />
                     </div>
+                    <p className="mt-1 text-[11px] text-slate-500">Your email from the login link — no re-entry needed.</p>
                   </div>
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy} onClick={() => void sendCode()}>
