@@ -8,6 +8,7 @@ import {
   loadDualControl,
   loadOrganization,
   loadOrgUsers,
+  normalizeDualControl,
   normalizeOrganization,
 } from "./data";
 import * as demo from "./demo-data";
@@ -18,6 +19,10 @@ export type Session = {
   realm: "platform" | "application";
   userEmail: string;
   userName: string;
+  isInitiator: boolean;
+  isAuthorizer: boolean;
+  initiatorName: string;
+  authorizerName: string;
 } | null;
 
 type ToastKind = "success" | "error" | "info" | "warning";
@@ -46,7 +51,7 @@ type Store = {
   switchToRealOrg: () => void;
   login: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
   verifyMfa: (code: string) => Promise<void>;
-  completeAppLogin: (email: string, name: string) => void;
+  completeAppLogin: (email: string, name: string, isInitiator?: boolean, isAuthorizer?: boolean) => void;
   logout: () => void;
   unlockOperate: (email: string, code: string) => Promise<void>;
   lockOperate: () => void;
@@ -65,14 +70,14 @@ type Store = {
 const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const demoSession: Session = { authenticated: true, realm: "platform", userEmail: "demo@acme.ng", userName: "Demo Explorer" };
+  const demoSession: Session = { authenticated: true, realm: "platform", userEmail: "demo@acme.ng", userName: "Demo Explorer", isInitiator: true, isAuthorizer: false, initiatorName: "Ada Okonkwo", authorizerName: "Chidi Eze" };
   const [session, setSession] = useState<Session>(() =>
     isDemoFlagSet()
       ? demoSession
       : tokens.appSession
-        ? { authenticated: true, realm: "application", userEmail: "", userName: "" }
+        ? { authenticated: true, realm: "application", userEmail: "", userName: "", isInitiator: false, isAuthorizer: false, initiatorName: "", authorizerName: "" }
         : tokens.platform
-          ? { authenticated: true, realm: "platform", userEmail: "", userName: "" }
+          ? { authenticated: true, realm: "platform", userEmail: "", userName: "", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" }
           : null,
   );
   const [org, setOrg] = useState<Organization>(() => (isDemoMode() ? demo.organization : emptyOrganization));
@@ -183,6 +188,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const appIdentity = await api.get<{
             organization?: Record<string, unknown>;
             user?: Record<string, unknown>;
+            dual_control?: Record<string, unknown>;
           }>("/app/auth/me", { realm: "application" });
           if (cancelled) return;
           if (appIdentity?.organization) {
@@ -190,7 +196,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }
           if (appIdentity?.user) {
             const u = appIdentity.user as Record<string, unknown>;
-            setSession((s) => s ? { ...s, userEmail: String(u.email ?? s.userEmail), userName: String(u.full_name ?? u.name ?? s.userName) } : s);
+            const isInit = u.is_initiator === true || u.role === "initiator";
+            const isAuth = u.is_authorizer === true || u.role === "authorizer";
+            setSession((s) => s ? { ...s, userEmail: String(u.email ?? s.userEmail), userName: String(u.full_name ?? u.name ?? s.userName), isInitiator: isInit, isAuthorizer: isAuth, initiatorName: "", authorizerName: "" } : s);
+          }
+          if (appIdentity?.dual_control) {
+            const dc = appIdentity.dual_control as Record<string, unknown>;
+            setDualControl(normalizeDualControl(dc));
+            const initName = String((dc.initiator as Record<string, unknown> | undefined)?.full_name ?? "Initiator");
+            const authName = String((dc.authorizer as Record<string, unknown> | undefined)?.full_name ?? "Authorizer");
+            setSession((s) => s ? { ...s, initiatorName: initName, authorizerName: authName } : s);
           }
           setSecurityDbReady(true);
         } catch { /* keep demo/empty */ }
@@ -261,7 +276,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       );
       if (res.access_token) {
         tokens.platform = res.access_token;
-        setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email });
+        setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email, isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
         return { mfaRequired: false };
       }
       sessionStorage.setItem("mfa_token", res.mfa_token ?? "");
@@ -276,7 +291,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await delay(700);
       if (code.length !== 6) throw new Error("Enter the 6-digit code");
       tokens.platform = "demo.company.jwt";
-      setSession({ authenticated: true, realm: "platform", userEmail: "ada@acme.ng", userName: "Ada Okonkwo" });
+      setSession({ authenticated: true, realm: "platform", userEmail: "ada@acme.ng", userName: "Ada Okonkwo", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
       return;
     }
     const email = sessionStorage.getItem("pending_login_email") ?? "";
@@ -286,7 +301,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     tokens.platform = res.access_token;
     sessionStorage.removeItem("pending_login_email");
-    setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email });
+    setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email, isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
   }, []);
 
   const logout = useCallback(() => {
@@ -303,8 +318,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setDemoTick((t) => t + 1);
   }, []);
 
-  const completeAppLogin = useCallback((email: string, name: string) => {
-    setSession({ authenticated: true, realm: "application", userEmail: email, userName: name || email });
+  const completeAppLogin = useCallback((email: string, name: string, isInitiator = false, isAuthorizer = false) => {
+    setSession({ authenticated: true, realm: "application", userEmail: email, userName: name || email, isInitiator, isAuthorizer, initiatorName: "", authorizerName: "" });
   }, []);
 
   const enterDemo = useCallback(() => {
@@ -312,7 +327,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setOrg(demo.organization);
     setDualControl(demo.dualControl);
     setSecurityDbReady(true);
-    setSession({ authenticated: true, realm: "platform", userEmail: "demo@acme.ng", userName: "Demo Explorer" });
+    setSession({ authenticated: true, realm: "platform", userEmail: "demo@acme.ng", userName: "Demo Explorer", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
     setDemoTick((t) => t + 1);
   }, []);
 
@@ -352,7 +367,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
       if (!dualControl.configured && !isDemoMode()) {
-        toast("warning", "Set up dual control first", "Assign initiator + authorizer under People & Control.");
+        toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control — set up initiator + authorizer on the Platform to unlock writes.");
+        return Promise.resolve(false);
+      }
+      if (dualControl.configured && !session?.isInitiator && !session?.isAuthorizer && !isDemoMode()) {
+        toast("warning", "Read-only access", `You have view/report access. Contact ${session?.initiatorName || "the initiator"} or ${session?.authorizerName || "the authorizer"} to perform this action.`);
         return Promise.resolve(false);
       }
       return new Promise<boolean>((resolve) => {
@@ -360,7 +379,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setDualControlPrompt({ open: true, reason });
       });
     },
-    [operate.unlocked, operate.expiresAt, dualControl.configured, toast],
+    [operate.unlocked, operate.expiresAt, dualControl.configured, session?.isInitiator, session?.isAuthorizer, session?.initiatorName, session?.authorizerName, toast],
   );
 
   // Auto-lock when the dual-control idle window expires.

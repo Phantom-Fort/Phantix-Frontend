@@ -250,17 +250,38 @@ export default function Layout() {
               </div>
             ) : (
               <div className="mt-2">
-                <p className="text-[11px] leading-4 text-slate-500">
-                  {dualControl.configured
-                    ? `${dualControl.initiator?.full_name?.split(" ")[0]} + ${dualControl.authorizer?.full_name?.split(" ")[0]} assigned`
-                    : "Not configured"}
-                </p>
-                <button
-                  onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
-                  className="btn-primary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
-                >
-                  <Unlock size={12} /> Unlock operate
-                </button>
+                {dualControl.configured ? (
+                  <>
+                    <p className="text-[11px] leading-4 text-slate-500">
+                      {session?.isInitiator || session?.isAuthorizer ? (
+                        <>Your role: <span className="text-gold-300">{session.isInitiator ? "Initiator" : "Authorizer"}</span></>
+                      ) : (
+                        <>Read-only — contact {session?.initiatorName || "the initiator"} or {session?.authorizerName || "the authorizer"} for actions</>
+                      )}
+                    </p>
+                    {(session?.isInitiator || session?.isAuthorizer) && (
+                      <button
+                        onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
+                        className="btn-primary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
+                      >
+                        <Unlock size={12} /> Unlock operate
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="text-[11px] leading-4 text-slate-500">Dual control not set up</p>
+                    <p className="mt-1 text-[10px] leading-4 text-slate-600">Reports & views work without it. Mutations require setup on the Platform.</p>
+                    <a
+                      href={PLATFORM_IDENTITY_URL}
+                      className="btn-secondary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Lock size={12} /> Configure on Platform
+                    </a>
+                  </>
+                )}
               </div>
             )}
           </div>
