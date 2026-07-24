@@ -25,6 +25,8 @@ import {
   Timer,
   FlaskConical,
   Building2,
+  Shield,
+  Activity,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
@@ -48,6 +50,8 @@ const navSections: {
     label: "Attack Surface",
     items: [
       { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
+      { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
+      { to: "/soc", label: "SOC Monitor", icon: <Activity size={17} /> },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
       { to: "/vapt", label: "VAPT Campaigns", icon: <Crosshair size={17} /> },
     ],

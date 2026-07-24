@@ -18,6 +18,8 @@ import People from "@/pages/People";
 import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
+import AssetIntelligence from "@/pages/AssetIntelligence";
+import SocDashboard from "@/pages/SocDashboard";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -70,6 +72,8 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
+            <Route path="/assets/intelligence" element={<RequireAuth><AssetIntelligence /></RequireAuth>} />
+            <Route path="/soc" element={<RequireAuth><SocDashboard /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/risks" element={<RequireAuth><Risks /></RequireAuth>} />

@@ -3,6 +3,7 @@ import type {
   AlertEvent,
   AlertSettings,
   Asset,
+  AssetIntelligence,
   AssetTag,
   AuditEvent,
   ComplianceAssessment,
@@ -13,9 +14,12 @@ import type {
   DualControlState,
   EngineInfo,
   EvidenceItem,
+  IntelligenceDashboard,
   OrgUser,
   Organization,
   PendingAction,
+  PrioritizedAsset,
+  RelationshipGraph,
   Report,
   Risk,
   ScanJob,
@@ -411,3 +415,9 @@ export const severityDistribution = [
   { name: "Low", value: 4, color: "#38BDF8" },
   { name: "Info", value: 1, color: "#94A3B8" },
 ];
+
+export const intelligenceDashboard: IntelligenceDashboard = { organizationId: 11, postureScore: 68, posture_score: 68, totals: { activeAssets: 1423, verified: 892, unverified: 531, neverScanned: 204, highRiskAssets: 47, externalAssets: 312, openFindings: 184 }, total_assets: 1423, verified_count: 892, unscanned_count: 204, criticalAssetsAtRisk: [{ id: 1, value: "api.acme-financial.com", assetType: "domain", riskLevel: "critical", riskScore: 92, openFindingsCount: 12, priorityScore: 94, exposureLevel: "external", isVerified: true }, { id: 2, value: "db-prod.internal", assetType: "host", riskLevel: "high", riskScore: 78, openFindingsCount: 7, priorityScore: 85, exposureLevel: "internal", isVerified: true }], newlyDiscoveredUnscanned: [{ id: 201, value: "new-sub.acme-financial.com", assetType: "subdomain", firstSeenAt: new Date(Date.now() - 86400000).toISOString(), isVerified: false, source: "subfinder" }], generatedAt: new Date().toISOString() };
+
+export const relationshipGraph: RelationshipGraph = { nodes: [{ id: 1, value: "acme-financial.com", name: "acme-financial.com", assetType: "domain", riskLevel: "low", riskScore: 15, openFindingsCount: 2, isVerified: true, exposureLevel: "external", priorityScore: 25 }, { id: 2, value: "api.acme-financial.com", name: "API Gateway", assetType: "subdomain", riskLevel: "high", riskScore: 74, openFindingsCount: 8, isVerified: true, exposureLevel: "external", priorityScore: 85 }], edges: [{ id: 1, source: 1, target: 2, relationshipType: "domain_to_subdomain", confidence: 1 }], rootAssetId: null, depth: 2, truncated: false, nodeCount: 2, edgeCount: 1 };
+
+export const socDashboard = { organizationId: 0, status: "scaffold" as const, generatedAt: new Date().toISOString(), panels: [{ id: "live-assets", title: "Live Asset Events", source: "asset_intelligence", ready: true, endpoint: "/assets/intelligence/stream", stream: "/assets/intelligence/stream" }, { id: "risk-panel", title: "Risk Overview", source: "asset_intelligence", ready: true, endpoint: "/assets/intelligence/dashboard" }, { id: "detections", title: "SOC Detections", source: "soc_engine", ready: false, endpoint: null, note: "Coming when SOC detections ship" }], liveSubscribers: 1, message: "SOC monitoring scaffold" };

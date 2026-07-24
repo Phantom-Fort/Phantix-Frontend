@@ -19,10 +19,12 @@ import type {
   Organization,
   PendingAction,
   PrioritizedAsset,
+  RelationshipGraph,
   Report,
   Risk,
   ScanJob,
   ScanResult,
+  SocDashboardScaffold,
   SupportTicket,
   TrackerFinding,
   VaptApproval,
@@ -564,4 +566,32 @@ export async function loadDashboardBundle() {
     securityDbBlocked: !!meta.securityDbBlocked,
     error: meta.error ?? null,
   };
+}
+
+export async function loadRelationshipGraph(params?: { max_nodes?: number; relationship_type?: string }): Promise<RelationshipGraph | null> {
+  if (isDemoMode()) { await delay(400); return demo.relationshipGraph; }
+  return softOne<RelationshipGraph>("/assets/intelligence/graph");
+}
+
+export async function loadAssetGraph(id: number, depth = 2): Promise<RelationshipGraph | null> {
+  if (isDemoMode()) { await delay(300); return demo.relationshipGraph; }
+  return softOne<RelationshipGraph>(`/assets/${id}/graph`);
+}
+
+export async function requestAiSummary(id: number): Promise<{ postureSummary: string; whyPrioritized: string; summarySource: string }> {
+  if (isDemoMode()) {
+    await delay(1500);
+    return { postureSummary: "This asset appears to be a production API endpoint...", whyPrioritized: "External exposure...", summarySource: "ai" };
+  }
+  return api.post(`/assets/${id}/intelligence/ai-summary`);
+}
+
+export async function refreshIntelligence(limit = 500): Promise<{ updated: number; errors: number }> {
+  if (isDemoMode()) { await delay(800); return { updated: 42, errors: 0 }; }
+  return api.post("/assets/intelligence/refresh");
+}
+
+export async function loadSocDashboard(): Promise<SocDashboardScaffold | null> {
+  if (isDemoMode()) { await delay(300); return demo.socDashboard; }
+  return softOne<SocDashboardScaffold>("/soc/dashboard");
 }

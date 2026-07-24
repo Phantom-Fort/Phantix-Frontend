@@ -15,6 +15,20 @@ export function SeverityBadge({ severity, className }: { severity: Severity; cla
   );
 }
 
+export function RiskBadge({ level }: { level: string }) {
+  const colors: Record<string, string> = {
+    critical: "text-severity-critical bg-severity-critical/10 border-severity-critical/30",
+    high: "text-severity-high bg-severity-high/10 border-severity-high/30",
+    medium: "text-severity-medium bg-severity-medium/10 border-severity-medium/30",
+    low: "text-severity-low bg-severity-low/10 border-severity-low/30",
+  };
+  return (
+    <span className={cx("chip capitalize", colors[level] ?? "text-slate-400 bg-slate-400/10 border-slate-500/30")}>
+      {level || "unknown"}
+    </span>
+  );
+}
+
 export function VerificationBadge({ status }: { status: VerificationStatus }) {
   const m = verificationMeta[status];
   return (

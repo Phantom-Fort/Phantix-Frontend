@@ -82,15 +82,29 @@ export interface Asset {
 }
 
 export interface IntelligenceDashboard {
-  posture_score: number;
-  posture_trend: { day: string; score: number }[];
-  total_assets: number;
-  verified_count: number;
-  unscanned_count: number;
-  critical_assets_at_risk: { id: number; name: string; value: string; risk_score: number; open_findings: number }[];
-  newly_discovered: { id: number; name: string; value: string; asset_type: string }[];
-  severity_distribution: { severity: string; count: number }[];
-  top_exposures: { exposure: string; count: number }[];
+  organizationId?: number;
+  postureScore?: number;
+  posture_score?: number;
+  posture_trend?: { day: string; score: number }[];
+  totals?: {
+    activeAssets?: number;
+    verified?: number;
+    unverified?: number;
+    neverScanned?: number;
+    highRiskAssets?: number;
+    externalAssets?: number;
+    openFindings?: number;
+  };
+  total_assets?: number;
+  verified_count?: number;
+  unscanned_count?: number;
+  critical_assets_at_risk?: { id: number; name: string; value: string; risk_score: number; open_findings: number }[];
+  criticalAssetsAtRisk?: { id: number; value: string; assetType: string; riskLevel: string; riskScore: number; openFindingsCount: number; priorityScore: number; exposureLevel: string; isVerified: boolean }[];
+  newly_discovered?: { id: number; name: string; value: string; asset_type: string }[];
+  newlyDiscoveredUnscanned?: { id: number; value: string; assetType: string; firstSeenAt?: string; isVerified: boolean; source: string }[];
+  generatedAt?: string;
+  severity_distribution?: { severity: string; count: number }[];
+  top_exposures?: { exposure: string; count: number }[];
 }
 
 export interface PrioritizedAsset {
@@ -124,6 +138,22 @@ export interface AssetIntelligence {
   recommended_actions: { action_key: string; label: string; description: string; priority: string }[];
   related_assets: { id: number; name: string; value: string; asset_type: string; risk_score: number }[];
   active_threats: string[];
+}
+
+export interface RelationshipGraph {
+  nodes: Array<{
+    id: number; value: string | null; name: string | null; assetType: string | null;
+    riskLevel: string | null; riskScore: number | null; openFindingsCount: number;
+    isVerified: boolean; exposureLevel: string; priorityScore: number;
+  }>;
+  edges: Array<{ id: number; source: number; target: number; relationshipType: string; confidence: number; }>;
+  rootAssetId: number | null; depth: number; truncated: boolean; nodeCount: number; edgeCount: number;
+}
+
+export interface SocDashboardScaffold {
+  organizationId: number; status: "scaffold"; generatedAt: string;
+  panels: Array<{ id: string; title: string; source: string; ready: boolean; endpoint: string | null; stream?: string; note?: string; }>;
+  liveSubscribers: number; message: string;
 }
 
 export interface RecommendedAction {
