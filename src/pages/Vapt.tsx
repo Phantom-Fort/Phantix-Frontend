@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
@@ -88,19 +88,24 @@ export default function Vapt() {
     finally { setPlanning(false); }
   };
 
-  // Poll active campaigns — stable dependency
-  const LIVE = new Set(["active", "pending_approval", "paused"]);
-  const liveCount = vaptCampaigns.filter((c) => LIVE.has(c.status)).length;
-  const liveRef = React.useRef(liveCount);
+  // Poll when campaigns are live — stable single-interval pattern
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wasLive = useRef(false);
+  const isLive = vaptCampaigns.some((c) => c.status === "active" || c.status === "pending_approval" || c.status === "paused");
 
   useEffect(() => {
-    if (liveCount === 0) return;
-    liveRef.current = liveCount;
-    const t = setInterval(() => {
-      if (liveRef.current > 0) reload();
-    }, 5000);
-    return () => clearInterval(t);
-  }, [liveCount]);
+    if (isLive && !pollTimer.current) {
+      pollTimer.current = setInterval(() => reload(), 5000);
+    } else if (!isLive && pollTimer.current) {
+      clearInterval(pollTimer.current);
+      pollTimer.current = null;
+    }
+    wasLive.current = isLive;
+  });
+
+  useEffect(() => () => {
+    if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
+  }, []);
 
   if (loading) {
     return (
