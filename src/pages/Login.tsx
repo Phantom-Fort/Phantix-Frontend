@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2
 import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
+import { cx } from "@/lib/utils";
 
 type Stage = "password" | "otp" | "mfa" | "device";
 
@@ -568,55 +569,70 @@ function AppLoginFlow({
 }
 
 // ── Paste link box ────────────────────────────────────────────────────────────
+const MAX_LINK_LENGTH = 600;
+
 function PasteLinkBox() {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
   const [error, setError] = useState("");
 
-  const handlePaste = () => {
+  const validateAndGo = () => {
     setError("");
     const trimmed = link.trim();
-    if (!trimmed) { setError("Paste your login link"); return; }
+    if (!trimmed) { setError("Paste your login link from the platform"); return; }
+    if (trimmed.length > MAX_LINK_LENGTH) { setError(`Link is too long — max ${MAX_LINK_LENGTH} characters`); return; }
     try {
       const url = new URL(trimmed);
+      if (!url.hostname.includes("phantix") && !url.hostname.includes("localhost")) {
+        setError("This doesn't look like a Phantix login link. Expected domain: app.phantix.site");
+        return;
+      }
+      if (!url.pathname.startsWith("/login")) {
+        setError("This URL doesn't point to the login page. Expected path: /login");
+        return;
+      }
       const params = url.searchParams;
       const org = params.get("org");
       const u = params.get("u");
       const t = params.get("t");
-      if (org && u && t) {
-        navigate(`/login?org=${encodeURIComponent(org)}&u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}`, { replace: true });
-      } else {
-        setError("This link is missing required parameters. Make sure it's a complete login link from the platform.");
-      }
+      if (!org) { setError("Missing organization slug (org=...)"); return; }
+      if (!u) { setError("Missing user ID (u=...)"); return; }
+      if (!t) { setError("Missing login token (t=...)"); return; }
+      if (t.length < 10) { setError("Login token appears too short or invalid"); return; }
+      navigate(`/login?org=${encodeURIComponent(org)}&u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}`, { replace: true });
     } catch {
-      setError("Invalid URL. Paste the full login link from the platform page.");
+      setError("Invalid URL format. Paste the full login link from the platform (should start with https://).");
     }
   };
 
   return (
-    <div className="space-y-3 text-left">
+    <div className="space-y-2.5 text-left">
       <p className="text-xs text-slate-500 text-center flex items-center justify-center gap-1">
         <Link2 size={12} /> Paste your login link below
       </p>
       <textarea
         className="input resize-none font-mono text-xs"
         rows={2}
-        placeholder="https://app.phantix.site/login?org=acme&u=42&t=abc123..."
+        maxLength={MAX_LINK_LENGTH}
+        placeholder="https://app.phantix.site/login?org=acme&u=42&t=..."
         value={link}
         onChange={(e) => { setLink(e.target.value); setError(""); }}
-        onPaste={(e) => {
-          const pasted = e.clipboardData.getData("text");
-          // Auto-parse on paste
+        onPaste={() => {
           setTimeout(() => {
-            if (pasted?.includes("?org=")) {
-              setLink(pasted);
-              // slight delay then submit
+            const pasted = link.trim();
+            if (pasted && pasted.includes("?org=") && pasted.includes("&u=") && pasted.includes("&t=")) {
+              validateAndGo();
             }
-          }, 50);
+          }, 100);
         }}
       />
+      <div className="flex items-center justify-between text-[10px]">
+        <span className={cx(link.length > MAX_LINK_LENGTH * 0.9 ? "text-severity-medium" : "text-slate-600", link.length > 10 && "visible")}>
+          {link.length > 10 ? `${link.length}/${MAX_LINK_LENGTH}` : ""}
+        </span>
+      </div>
       {error && <p className="text-xs text-severity-critical">{error}</p>}
-      <button onClick={handlePaste} disabled={!link.trim()} className="btn-secondary w-full text-sm">
+      <button onClick={validateAndGo} disabled={!link.trim()} className="btn-secondary w-full text-sm">
         Continue with link <ArrowRight size={14} />
       </button>
     </div>
