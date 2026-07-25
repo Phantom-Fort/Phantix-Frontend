@@ -1,13 +1,14 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles } from "lucide-react";
+import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import type { Asset, AssetIntelligence } from "@/lib/types";
+import { api } from "@/lib/api";
+import type { Asset, AssetIntelligence, DiscoveryJob } from "@/lib/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
   domain: <Globe size={15} />,
@@ -23,7 +24,7 @@ const typeIcon: Record<string, React.ReactNode> = {
 
 export default function Assets() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadAssetsBundle, {
+  const { data, loading, reload } = useResource(loadAssetsBundle, {
     assets: [],
     assetTags: [],
     discoveryJobs: [],
@@ -38,6 +39,11 @@ export default function Assets() {
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
   const [selectedIntel, setSelectedIntel] = useState<AssetIntelligence | null>(null);
+  const [verifyStep, setVerifyStep] = useState<{ message: string; hint: string } | null>(null);
+  const [addConfirmOwnership, setAddConfirmOwnership] = useState(false);
+  const [addForm, setAddForm] = useState({ type: "domain", value: "", name: "", environment: "production", criticality: "medium" });
+  const [adding, setAdding] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!selected) { setSelectedIntel(null); return; }
@@ -46,12 +52,97 @@ export default function Assets() {
     return () => { cancelled = true; };
   }, [selected?.id]);
 
-  const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], [assets]);
-  const filtered = assets.filter(
-    (a) =>
-      (typeFilter === "all" || a.asset_type === typeFilter) &&
-      (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
+  // Merge discovery status into asset rows
+  const assetsWithDiscovery = useMemo(() => {
+    return assets.map((a) => {
+      const job = discoveryJobs.find(
+        (j: DiscoveryJob) => {
+          const domain = (j.config as any)?.domain || (j.config as any)?.target || "";
+          return domain.toLowerCase() === (a.value || "").toLowerCase();
+        }
+      );
+      return { ...a, discoveryStatus: job?.status as string | undefined, discoveryJobId: job?.id };
+    });
+  }, [assets, discoveryJobs]);
+
+  // Auto-poll discovery when active jobs exist
+  const activeJobs = useMemo(() =>
+    discoveryJobs.filter((j: DiscoveryJob) => ["pending", "queued", "running"].includes(j.status)),
+    [discoveryJobs]
   );
+
+  const pollDiscovery = useCallback(async () => {
+    try {
+      const raw = await api.get<any>("/assets/discovery/jobs?limit=30");
+      const jobs = Array.isArray(raw) ? raw : (raw?.items ?? raw?.value ?? []);
+      const stillActive = jobs.filter((j: any) => ["pending", "queued", "running"].includes(j.status));
+      if (stillActive.length === 0) {
+        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+        reload();
+      }
+    } catch { /* silent */ }
+  }, [reload]);
+
+  useEffect(() => {
+    if (activeJobs.length > 0 && !pollRef.current) {
+      pollRef.current = setInterval(pollDiscovery, 3000);
+    } else if (activeJobs.length === 0 && pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    return () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
+  }, [activeJobs.length, pollDiscovery]);
+
+  const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], [assets]);
+
+  const handleAddAsset = async () => {
+    if (!addForm.value) { toast("error", "Enter a value"); return; }
+    if (!(await requireDualControl("Adding assets requires a dual-control operate session."))) return;
+    setAdding(true);
+    setVerifyStep(null);
+    try {
+      await api.post("/assets", {
+        asset_type: addForm.type,
+        value: addForm.value.trim(),
+        name: addForm.name || addForm.value.trim(),
+        environment: addForm.environment,
+        criticality: addForm.criticality,
+        confirm_ownership: addConfirmOwnership,
+      });
+      toast("success", "Asset added", "Discovery queued in background");
+      setAddOpen(false);
+      setAddConfirmOwnership(false);
+      setVerifyStep(null);
+      setAddForm({ type: "domain", value: "", name: "", environment: "production", criticality: "medium" });
+      reload();
+    } catch (e: any) {
+      if (e.status === 422 && e.detail?.verification) {
+        setVerifyStep({
+          message: e.detail.message || "Domain verification required",
+          hint: e.detail.verification?.hint || "Check the domain and confirm ownership",
+        });
+      } else {
+        toast("error", "Failed", e.message || "Could not add asset");
+      }
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleRunDiscovery = async (domain: string) => {
+    if (!(await requireDualControl("Starting discovery requires a dual-control operate session."))) return;
+    try {
+      await api.post("/assets/discovery/jobs", {
+        job_type: "domain_enum",
+        config: { domain, include_subdomains: true, include_directories: true },
+        run_inline: false,
+      });
+      toast("success", "Discovery started", `Enumerating ${domain}`);
+      reload();
+    } catch (e: any) {
+      toast("error", "Discovery failed", e.message || "");
+    }
+  };
 
   if (loading) {
     return (
@@ -68,16 +159,29 @@ export default function Assets() {
         title="Attack-surface inventory"
         description="Every row lives only in your dedicated security database — schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
         actions={
-          <button
-            className="btn-primary"
-            onClick={() =>
-              void (async () => {
-                if (await requireDualControl("Adding assets requires a dual-control operate session.")) setAddOpen(true);
-              })()
-            }
-          >
-            <Plus size={15} /> Add asset
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              className="btn-ghost text-sm px-3 py-1.5"
+              onClick={() => reload()}
+              disabled={loading}
+            >
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() =>
+                void (async () => {
+                  if (await requireDualControl("Adding assets requires a dual-control operate session.")) {
+                    setVerifyStep(null);
+                    setAddConfirmOwnership(false);
+                    setAddOpen(true);
+                  }
+                })()
+              }
+            >
+              <Plus size={15} /> Add asset
+            </button>
+          </div>
         }
       />
 
@@ -162,7 +266,11 @@ export default function Assets() {
               </div>
             </div>
 
-            {filtered.length === 0 ? (
+            {assetsWithDiscovery.filter(
+              (a) =>
+                (typeFilter === "all" || a.asset_type === typeFilter) &&
+                (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
+            ).length === 0 ? (
               <EmptyState icon={<Boxes size={22} />} title="No assets match" body="Adjust filters or add your first in-scope host." />
             ) : (
               <table className="w-full">
@@ -170,15 +278,18 @@ export default function Assets() {
                   <tr className="border-b border-phantix-700/40">
                     <th className="th">Asset</th>
                     <th className="th">Type</th>
+                    <th className="th">Discovery</th>
                     <th className="th">Criticality</th>
-                    <th className="th">Tags</th>
-                    <th className="th">Source</th>
                     <th className="th">Verified</th>
                     <th className="th">Last seen</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((a, i) => (
+                  {assetsWithDiscovery.filter(
+                    (a) =>
+                      (typeFilter === "all" || a.asset_type === typeFilter) &&
+                      (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
+                  ).map((a, i) => (
                     <motion.tr
                       key={a.id}
                       initial={{ opacity: 0 }}
@@ -194,27 +305,26 @@ export default function Assets() {
                           </span>
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-200">{a.value}</p>
-                            <p className="text-xs text-slate-500">{a.name}</p>
+                            <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
                           </div>
                         </div>
                       </td>
                       <td className="td"><span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span></td>
                       <td className="td">
+                        {a.discoveryStatus ? (
+                          <span className="flex items-center gap-1.5">
+                            <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-blue-400 animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
+                            <StatusBadge status={a.discoveryStatus} />
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="td">
                         <span className={cx("text-xs font-semibold capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
                           {a.criticality}
                         </span>
                       </td>
-                      <td className="td">
-                        <div className="flex flex-wrap gap-1">
-                          {(a.tags ?? []).slice(0, 2).map((t) => (
-                            <span key={t.id} className="rounded-md px-1.5 py-0.5 text-[10px] font-medium" style={{ background: `${t.color}22`, color: t.color }}>
-                              {t.name}
-                            </span>
-                          ))}
-                          {(a.tags?.length ?? 0) > 2 && <span className="text-[10px] text-slate-500">+{(a.tags?.length ?? 0) - 2}</span>}
-                        </div>
-                      </td>
-                      <td className="td"><span className="font-mono text-xs text-slate-500">{a.source}</span></td>
                       <td className="td">
                         {a.is_verified ? (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald-400"><ShieldCheck size={13} /> Verified</span>
@@ -234,6 +344,15 @@ export default function Assets() {
 
       {tab === "discovery" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-slate-400">
+              {activeJobs.length > 0 ? (
+                <span className="flex items-center gap-2"><Spinner className="h-3 w-3" /> {activeJobs.length} active job{activeJobs.length > 1 ? "s" : ""}</span>
+              ) : (
+                "No active discovery jobs"
+              )}
+            </p>
+          </div>
           {discoveryJobs.map((j) => (
             <Card key={j.id} hover>
               <div className="flex flex-wrap items-center gap-4">
@@ -422,42 +541,67 @@ export default function Assets() {
       </Modal>
 
       {/* Add asset modal */}
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add asset">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setAddOpen(false);
-            toast("success", "Asset submitted", "Domains queue an async domain_enum discovery job automatically.");
-          }}
-        >
-          <div>
-            <label className="label">Type</label>
-            <select className="input">
-              {["domain", "subdomain", "ip_address", "api", "web_app", "github_repo", "other"].map((t) => (
-                <option key={t} value={t}>{titleCase(t)}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Value</label>
-            <input className="input font-mono" placeholder="api.example.com" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Environment</label>
-              <select className="input"><option>production</option><option>staging</option></select>
+      <Modal open={addOpen} onClose={() => { setAddOpen(false); setVerifyStep(null); }} title="Add asset">
+        <div className="space-y-4">
+          {verifyStep && (
+            <div className="rounded-lg bg-severity-medium/10 border border-severity-medium/30 p-3 text-xs space-y-2">
+              <p className="text-severity-medium font-semibold">Verification Required</p>
+              <p className="text-slate-300">{verifyStep.message}</p>
+              <p className="text-slate-500">{verifyStep.hint}</p>
+              <label className="flex items-center gap-2 text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={addConfirmOwnership}
+                  onChange={(e) => setAddConfirmOwnership(e.target.checked)}
+                  className="rounded accent-gold-400"
+                />
+                I confirm my organization owns this asset
+              </label>
+              <button onClick={handleAddAsset} disabled={adding || !addConfirmOwnership} className="btn-primary w-full text-sm">
+                {adding && <Spinner className="h-3 w-3" />} Retry with confirmation
+              </button>
+              <button onClick={() => setVerifyStep(null)} className="btn-ghost w-full text-xs">Cancel</button>
             </div>
-            <div>
-              <label className="label">Criticality</label>
-              <select className="input"><option>high</option><option>critical</option><option>medium</option><option>low</option></select>
-            </div>
-          </div>
-          <label className="flex items-center gap-2.5 text-sm text-slate-300">
-            <input type="checkbox" className="h-4 w-4 rounded accent-gold-400" /> I confirm ownership of this asset
-          </label>
-          <button className="btn-primary w-full">Create asset</button>
-        </form>
+          )}
+
+          {!verifyStep && (
+            <>
+              <div>
+                <label className="label">Type</label>
+                <select className="input" value={addForm.type} onChange={(e) => setAddForm((f) => ({ ...f, type: e.target.value }))}>
+                  {["domain", "subdomain", "ip_address", "api", "web_app", "github_repo", "other"].map((t) => (
+                    <option key={t} value={t}>{titleCase(t)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Value</label>
+                <input className="input font-mono" placeholder="api.example.com" value={addForm.value} onChange={(e) => setAddForm((f) => ({ ...f, value: e.target.value, name: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Environment</label>
+                  <select className="input" value={addForm.environment} onChange={(e) => setAddForm((f) => ({ ...f, environment: e.target.value }))}>
+                    <option>production</option><option>staging</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Criticality</label>
+                  <select className="input" value={addForm.criticality} onChange={(e) => setAddForm((f) => ({ ...f, criticality: e.target.value }))}>
+                    <option>high</option><option>critical</option><option>medium</option><option>low</option>
+                  </select>
+                </div>
+              </div>
+              <div className="text-xs text-slate-500 p-2 rounded-lg bg-phantix-800/40">
+                Domains/subdomains are verified against your organization name. Discovery runs automatically in the background after a successful add.
+              </div>
+              <button onClick={handleAddAsset} disabled={adding || !addForm.value} className="btn-primary w-full">
+                {adding ? <Spinner className="h-4 w-4" /> : null}
+                Create asset
+              </button>
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   );
