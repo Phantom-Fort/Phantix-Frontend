@@ -141,31 +141,58 @@ export default function Risks() {
 
             {/* Scoring breakdown */}
             <div>
-              <p className="label flex items-center gap-1.5"><Info size={12} /> Explainable scoring — scoring_breakdown</p>
+              <p className="label flex items-center gap-1.5"><Info size={12} /> Risk scoring breakdown</p>
               <div className="space-y-2">
-                {selected.scoring_breakdown.map((b) => (
-                  <div key={b.component} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-slate-200">{b.component}</span>
-                      <span className="font-mono text-gold-300">+{b.contribution}</span>
+                {(() => {
+                  const sb = selected.scoring_breakdown;
+                  if (!sb) return <p className="text-xs text-slate-500">No breakdown data</p>;
+                  // Handle old array format vs new object format
+                  const rulesFactors = Array.isArray(sb) ? sb.map((b: any) => ({ component: b.component, contribution: b.contribution, detail: b.detail }))
+                    : ((sb as any).rules_factors || []).map((rf: any) => ({ component: rf.factor, contribution: rf.points, detail: rf.note || "" }));
+                  return rulesFactors.length > 0 ? rulesFactors.map((b: any) => (
+                    <div key={b.component} className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-slate-200 truncate">{b.component}</span>
+                        <span className="font-mono text-gold-300 shrink-0 ml-2">+{b.contribution}</span>
+                      </div>
+                      {b.detail && <p className="mt-0.5 text-[10px] text-slate-500">{b.detail}</p>}
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-500">{b.detail}</p>
-                    <div className="mt-2"><ProgressBar value={b.contribution} color="#E8B54D" /></div>
+                  )) : (
+                    <p className="text-xs text-slate-500">No rule factors</p>
+                  );
+                })()}
+                {selected.scoring_breakdown && !Array.isArray(selected.scoring_breakdown) && (selected.scoring_breakdown as any).findings_counts && (
+                  <div className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-2.5">
+                    <p className="text-xs text-slate-400 mb-1">Findings by severity</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries((selected.scoring_breakdown as any).findings_counts as Record<string, number>).map(([sev, count]) => (
+                        <span key={sev} className={cx("chip text-[10px] capitalize", sev === "critical" ? "text-severity-critical bg-severity-critical/10 border-severity-critical/20" : sev === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/20" : sev === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/20" : "text-severity-low bg-severity-low/10 border-severity-low/20")}>
+                          {sev}: {count}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
             {/* Priority factors */}
             <div>
-              <p className="label">Priority factors — 0.35·severity + 0.25·treatment + 0.15·status + 0.15·asset + 0.10·age</p>
+              <p className="label">Priority factors</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                {Object.entries(selected.priority_factors).map(([k, v]) => (
-                  <div key={k} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-2.5 text-center">
-                    <p className="font-mono text-sm font-semibold text-slate-200">{v}</p>
-                    <p className="mt-0.5 text-[9px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
-                  </div>
-                ))}
+                {(() => {
+                  const pf = selected.priority_factors;
+                  const comps = (pf as any)?.components ?? pf;
+                  if (typeof comps !== "object" || !comps) return null;
+                  return Object.entries(comps as Record<string, any>)
+                    .filter(([, v]) => typeof v === "number" || typeof v === "string")
+                    .map(([k, v]) => (
+                      <div key={k} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-2.5 text-center">
+                        <p className="font-mono text-sm font-semibold text-slate-200">{typeof v === "number" ? v.toFixed(1) : v}</p>
+                        <p className="mt-0.5 text-[8px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
+                      </div>
+                    ));
+                })()}
               </div>
             </div>
 
