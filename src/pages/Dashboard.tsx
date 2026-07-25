@@ -239,9 +239,9 @@ export default function Dashboard() {
             <CardHeader title="Verification gate" subtitle="REPORT_REQUIRE_VERIFIED_FINDINGS" action={<ShieldCheck size={17} className="text-gold-400" />} />
             <div className="space-y-3">
               {[
-                { v: reports[0]?.stats.after_dedupe ?? 14, l: "After dedupe", c: "text-phantix-300", bar: 100, bg: "#5A7BD6" },
-                { v: reports[0]?.stats.after_verification ?? 11, l: "After verification", c: "text-emerald-400", bar: 76, bg: "#34D399" },
-                { v: reports[0]?.stats.excluded_from_report ?? 3, l: "Excluded noise", c: "text-severity-critical", bar: 24, bg: "#F43F5E" },
+                { v: reports[0]?.stats?.after_dedupe ?? 0, l: "After dedupe", c: "text-phantix-300", bar: 100, bg: "#5A7BD6" },
+                { v: reports[0]?.stats?.after_verification ?? 0, l: "After verification", c: "text-emerald-400", bar: 76, bg: "#34D399" },
+                { v: reports[0]?.stats?.excluded_from_report ?? 0, l: "Excluded noise", c: "text-severity-critical", bar: 24, bg: "#F43F5E" },
               ].map((s) => (
                 <div key={s.l} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5">
                   <div className="flex items-baseline justify-between">

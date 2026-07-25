@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle, Link2, Building2, User } from "lucide-react";
 import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
@@ -21,7 +21,7 @@ export default function Login() {
 
   const demoMode = isDemoMode();
 
-  // If no login link params, redirect to platform
+  // If no login link params, show landing with paste-able link box
   if (!demoMode && (!org || !userId || !loginToken)) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
@@ -32,27 +32,34 @@ export default function Login() {
         <motion.div
           initial={{ opacity: 0, y: 26 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative w-full max-w-[420px] text-center"
+          className="relative w-full max-w-[440px] text-center"
         >
           <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 object-contain" />
           <h1 className="mt-5 font-display text-2xl font-bold text-white">Application Access</h1>
           <p className="mt-3 text-sm leading-6 text-slate-400">
             Sign in to <strong>app.phantix.site</strong> using a login link from your organization administrator.
-            Visit <strong className="text-gold-300">platform.phantix.site</strong> to manage your organization.
           </p>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="mt-6"
+            transition={{ delay: 0.3 }}
+            className="mt-5"
           >
-            <a href={PLATFORM_URL} className="btn-primary inline-flex items-center gap-2 !py-3">
+            <PasteLinkBox />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="mt-5 space-y-3"
+          >
+            <a href={PLATFORM_URL} className="btn-primary inline-flex items-center gap-2 !py-3 px-8 w-auto">
               Go to Platform <ArrowRight size={15} />
             </a>
+            <p className="text-xs text-slate-500">
+              Admin? <a href={`${PLATFORM_URL}/login`} className="text-gold-400 hover:text-gold-300">Sign in to the platform</a>
+            </p>
           </motion.div>
-          <p className="mt-4 text-xs text-slate-500">
-            Admin? <a href={`${PLATFORM_URL}/login`} className="text-gold-400 hover:text-gold-300">Sign in to the platform</a>
-          </p>
         </motion.div>
       </div>
     );
@@ -92,6 +99,8 @@ function AppLoginFlow({
   const [error, setError] = useState<string | null>(null);
   const [challenged, setChallenged] = useState(false);
   const [nextStep, setNextStep] = useState<"otp" | "password" | null>(null);
+  const [orgName, setOrgName] = useState("");
+  const [userName, setUserName] = useState("");
 
   // Step 1: validate the login link — per 03_APPLICATION_IMPLEMENTATION.md §2.3
   useEffect(() => {
@@ -120,6 +129,8 @@ function AppLoginFlow({
         setEmail(res.user_email ?? "");
         setMfaToken(res.mfa_token ?? "");
         setMaskedDest(res.destination_masked ?? "");
+        setOrgName((res as any).organization_name || "Your Organization");
+        setUserName(res.user_name || res.user_email?.split("@")[0] || "");
         if (res.next_step === "password") {
           setNextStep("password");
         } else {
@@ -387,22 +398,34 @@ function AppLoginFlow({
           <p className="mt-1.5 text-sm text-slate-400">
             Application sign-in · <span className="font-mono text-xs">app.phantix.site</span>
           </p>
-          {email && <p className="mt-1 text-xs text-slate-500">{email}</p>}
+            {email && <p className="mt-1 text-xs text-slate-500">{email}</p>}
+            {orgName && (
+              <div className="flex items-center justify-center gap-3 mt-1.5 text-xs text-slate-500">
+                <span className="flex items-center gap-1"><Building2 size={11} /> {orgName}</span>
+                {userName && <span className="flex items-center gap-1"><User size={11} /> {userName}</span>}
+              </div>
+            )}
         </div>
 
         <div className="card p-7">
           <AnimatePresence mode="wait">
             {/* Stage: Password */}
-            {nextStep === "password" && stage === "password" && (
-              <motion.form
-                key="pw"
-                initial={{ opacity: 0, x: -14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -14 }}
-                onSubmit={async (e) => { e.preventDefault(); await handlePassword(); }}
-                className="space-y-4"
-              >
-                <div>
+              {nextStep === "password" && stage === "password" && (
+                <motion.form
+                  key="pw"
+                  initial={{ opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -14 }}
+                  onSubmit={async (e) => { e.preventDefault(); await handlePassword(); }}
+                  className="space-y-4"
+                >
+                  {(orgName || userName) && (
+                    <div className="text-center text-[10px] text-slate-600 flex items-center justify-center gap-2">
+                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                    </div>
+                  )}
+                  <div>
                   <label className="label">Your password</label>
                   <div className="relative">
                     <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -431,6 +454,12 @@ function AppLoginFlow({
                   <p className="mt-1 text-xs text-slate-500">
                     {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
+                  {(orgName || userName) && (
+                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2 flex-wrap">
+                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                    </p>
+                  )}
                 </div>
 
                 {devOtp && import.meta.env.DEV && (
@@ -478,6 +507,12 @@ function AppLoginFlow({
                   <Smartphone size={22} className="mx-auto text-severity-medium" />
                   <p className="mt-2 text-sm font-medium text-slate-200">New device detected</p>
                   <p className="mt-1 text-xs text-slate-500">A second code was emailed to confirm this browser.</p>
+                  {(orgName || userName) && (
+                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2">
+                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                    </p>
+                  )}
                 </div>
                 <input
                   className="input text-center font-mono !text-xl !tracking-[0.5em]"
@@ -508,6 +543,12 @@ function AppLoginFlow({
                   <p className="mt-1 text-xs text-slate-500">
                     This account uses email OTP — click below to receive a code.
                   </p>
+                  {(orgName || userName) && (
+                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2">
+                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                    </p>
+                  )}
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy} onClick={() => sendOtp()}>
@@ -521,7 +562,63 @@ function AppLoginFlow({
         <p className="mt-5 text-center text-xs text-slate-500">
           Signing in via <a href={PLATFORM_URL} className="text-gold-400 hover:text-gold-300">organization login link</a>
         </p>
-      </motion.div>
+        </motion.div>
+    </div>
+  );
+}
+
+// ── Paste link box ────────────────────────────────────────────────────────────
+function PasteLinkBox() {
+  const navigate = useNavigate();
+  const [link, setLink] = useState("");
+  const [error, setError] = useState("");
+
+  const handlePaste = () => {
+    setError("");
+    const trimmed = link.trim();
+    if (!trimmed) { setError("Paste your login link"); return; }
+    try {
+      const url = new URL(trimmed);
+      const params = url.searchParams;
+      const org = params.get("org");
+      const u = params.get("u");
+      const t = params.get("t");
+      if (org && u && t) {
+        navigate(`/login?org=${encodeURIComponent(org)}&u=${encodeURIComponent(u)}&t=${encodeURIComponent(t)}`, { replace: true });
+      } else {
+        setError("This link is missing required parameters. Make sure it's a complete login link from the platform.");
+      }
+    } catch {
+      setError("Invalid URL. Paste the full login link from the platform page.");
+    }
+  };
+
+  return (
+    <div className="space-y-3 text-left">
+      <p className="text-xs text-slate-500 text-center flex items-center justify-center gap-1">
+        <Link2 size={12} /> Paste your login link below
+      </p>
+      <textarea
+        className="input resize-none font-mono text-xs"
+        rows={2}
+        placeholder="https://app.phantix.site/login?org=acme&u=42&t=abc123..."
+        value={link}
+        onChange={(e) => { setLink(e.target.value); setError(""); }}
+        onPaste={(e) => {
+          const pasted = e.clipboardData.getData("text");
+          // Auto-parse on paste
+          setTimeout(() => {
+            if (pasted?.includes("?org=")) {
+              setLink(pasted);
+              // slight delay then submit
+            }
+          }, 50);
+        }}
+      />
+      {error && <p className="text-xs text-severity-critical">{error}</p>}
+      <button onClick={handlePaste} disabled={!link.trim()} className="btn-secondary w-full text-sm">
+        Continue with link <ArrowRight size={14} />
+      </button>
     </div>
   );
 }
