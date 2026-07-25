@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity } from "lucide-react";
+import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2 } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
@@ -273,40 +273,74 @@ export default function Vapt() {
                 {/* Intelligent plan steps */}
                 {((activeSelected as any).procedure_snapshot?.steps?.length > 0) && (
                   <div className="mb-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                      Plan: {(activeSelected as any).procedure_snapshot.display_name || "Assessment"}
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                      {(activeSelected as any).procedure_snapshot.display_name || "Assessment Plan"}
                     </p>
-                    <p className="text-[11px] text-slate-500 mb-3">{(activeSelected as any).procedure_snapshot.description}</p>
+                    {(activeSelected as any).procedure_snapshot.description && (
+                      <p className="text-[11px] text-slate-500 mb-3">{(activeSelected as any).procedure_snapshot.description}</p>
+                    )}
+
+                    {/* Progress for active campaigns */}
+                    {activeSelected.status === "active" && (
+                      <div className="mb-3 p-3 rounded-lg bg-blue-400/5 border border-blue-400/20">
+                        <div className="flex items-center gap-2 text-xs mb-2">
+                          <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse-soft" />
+                          <span className="text-blue-400 font-medium">Phase: {(activeSelected as any).current_phase || `Step ${((activeSelected as any).current_step_index || 0) + 1}`}</span>
+                          <span className="text-slate-500">
+                            Step {((activeSelected as any).current_step_index || 0) + 1} of {((activeSelected as any).procedure_snapshot.steps.length)}
+                          </span>
+                        </div>
+                        <ProgressBar value={(((activeSelected as any).current_step_index || 0) + 1) / (((activeSelected as any).procedure_snapshot.steps.length || 1)) * 100} color="#38BDF8" />
+                      </div>
+                    )}
+
                     <div className="space-y-0">
                       {((activeSelected as any).procedure_snapshot.steps || []).map((step: any, i: number) => {
                         const stepType = step.step_type as string;
-                        const icon = stepType === "scan" ? <Radar size={12} className="text-blue-400" />
-                          : stepType === "web_scan" ? <Globe size={12} className="text-emerald-400" />
-                          : stepType === "correlate" ? <GitBranch size={12} className="text-gold-400" />
-                          : stepType === "analyze" ? <Sparkles size={12} className="text-purple-400" />
-                          : <Activity size={12} className="text-slate-500" />;
+                        const stepIdx = (activeSelected as any).current_step_index ?? -1;
+                        const isCurrent = activeSelected.status === "active" && i === stepIdx;
+                        const isCompleted = activeSelected.status === "completed" || (activeSelected.status === "active" && i < stepIdx);
+                        const isFailed = activeSelected.status === "failed" && i === stepIdx;
+                        const icon = stepType === "scan" ? <Radar size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />
+                          : stepType === "web_scan" ? <Globe size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />
+                          : stepType === "correlate" ? <GitBranch size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-gold-400" : "text-slate-500"} />
+                          : stepType === "analyze" ? <Sparkles size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-purple-400" : "text-slate-500"} />
+                          : <Activity size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />;
                         return (
-                          <div key={i} className="flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0">
+                          <div key={i} className={cx("flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0", isCurrent && "bg-blue-400/5 -mx-2 px-2 rounded")}>
                             <div className="flex flex-col items-center shrink-0">
-                              <div className="w-6 h-6 rounded-full bg-phantix-800/70 flex items-center justify-center text-[10px] font-bold text-slate-300">{i + 1}</div>
-                              {i < ((activeSelected as any).procedure_snapshot.steps.length - 1) && <div className="w-px h-4 bg-phantix-700/50 mt-0.5" />}
+                              <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-blue-400/20 text-blue-400" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
+                                {isCompleted ? <CheckCircle2 size={12} /> : isFailed ? <XCircle size={12} /> : isCurrent ? <Loader2 size={12} className="animate-spin" /> : i + 1}
+                              </div>
+                              {i < ((activeSelected as any).procedure_snapshot.steps.length - 1) && (
+                                <div className={cx("w-px h-4 mt-0.5", isCompleted ? "bg-emerald-400/30" : "bg-phantix-700/50")} />
+                              )}
                             </div>
                             <div className="min-w-0 pb-1">
-                              <p className="text-sm text-slate-200 font-medium flex items-center gap-1.5">{icon} {step.step_name}</p>
-                              <p className="text-[11px] text-slate-500 leading-relaxed">{step.step_description}</p>
+                              <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-blue-300" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
+                                {icon} {step.step_name}
+                                {isCurrent && <span className="text-[10px] text-blue-400 font-normal">running</span>}
+                                {isCompleted && <span className="text-[10px] text-emerald-400 font-normal">complete</span>}
+                              </p>
+                              <p className={cx("text-[11px] leading-relaxed", isCurrent ? "text-slate-400" : "text-slate-500")}>{step.step_description}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
-                    {(activeSelected as any).asset_scope?.inventory_snapshot != null && (
-                      <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
-                        <span className="w-1 h-1 rounded-full bg-slate-500" />
-                        {(activeSelected as any).asset_scope.asset_types?.length || 0} asset types in scope
-                        <span className="text-slate-700">·</span>
-                        {(activeSelected as any).asset_scope.inventory_snapshot.total || 0} assets in inventory at plan time
-                      </div>
-                    )}
+
+                    {/* Plan metadata footer */}
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
+                      {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).asset_scope.asset_types.length} asset types</>
+                      )}
+                      {(activeSelected as any).procedure_snapshot?.source && (
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).procedure_snapshot.source.replace(/_/g, " ")}</>
+                      )}
+                      {activeSelected.campaign_type === "intelligent_assessment" && (
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />auto-generated plan</>
+                      )}
+                    </div>
                   </div>
                 )}
 
