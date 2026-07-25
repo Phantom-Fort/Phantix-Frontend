@@ -76,24 +76,31 @@ export default function Vapt() {
     try {
       const plan = await api.post<{ plan_id: string; recommended_scans?: string[] }>("/vapt/plan", {});
       if (plan.plan_id) {
-        const exec = await api.post("/vapt/plan/execute", { plan_id: plan.plan_id, start: true }).catch((e: any) => {
-          if (e.status === 400) toast("warning", "Plan saved as draft", "Add assets to inventory first, then start the campaign.");
+        // Execute but do NOT auto-start — let the initiator review the draft first
+        await api.post("/vapt/plan/execute", { plan_id: plan.plan_id, start: false }).catch((e: any) => {
+          if (e.status === 400) toast("warning", "Draft created", "Review the plan and start when ready.");
           else throw e;
         });
-        if (exec) { toast("success", "Assessment launched", "Running from intelligent plan"); reload(); }
+        toast("success", "Plan generated", "Review the draft and submit for approval or start");
+        reload();
       }
     } catch (e: any) { toast("error", "Plan failed", e.message || ""); }
     finally { setPlanning(false); }
   };
 
-  // Poll active campaigns
+  // Poll active campaigns — stable dependency
   const LIVE = new Set(["active", "pending_approval", "paused"]);
+  const liveCount = vaptCampaigns.filter((c) => LIVE.has(c.status)).length;
+  const liveRef = React.useRef(liveCount);
+
   useEffect(() => {
-    const hasLive = vaptCampaigns.some((c) => LIVE.has(c.status));
-    if (!hasLive) return;
-    const t = setInterval(() => reload(), 5000);
+    if (liveCount === 0) return;
+    liveRef.current = liveCount;
+    const t = setInterval(() => {
+      if (liveRef.current > 0) reload();
+    }, 5000);
     return () => clearInterval(t);
-  }, [vaptCampaigns.length, vaptCampaigns.some((c) => LIVE.has(c.status)) ? 1 : 0]);
+  }, [liveCount]);
 
   if (loading) {
     return (
@@ -108,7 +115,7 @@ export default function Vapt() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="VAPT campaigns"
-        description="Guided campaigns over the web-scanner pipeline (subfinder → katana → nuclei → sqlmap → gowitness) with rule-based correlation and dual-control gates."
+        description="Create VAPT campaigns manually or generate an intelligent assessment plan. Review the draft, then submit for authorizer approval or start directly."
         actions={
           <>
             <button
@@ -224,13 +231,56 @@ export default function Vapt() {
                   ))}
                 </div>
 
+                {/* Intelligent plan details */}
+                {((activeSelected as any).procedure_snapshot?.steps?.length > 0) && (
+                  <div className="mt-4 p-4 rounded-xl bg-phantix-800/30 border border-phantix-700/30">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Plan: {(activeSelected as any).procedure_snapshot.display_name || activeSelected.name}
+                      <span className="block font-normal normal-case text-[11px] text-slate-500 mt-0.5">
+                        {(activeSelected as any).procedure_snapshot.description || `${(activeSelected as any).procedure_snapshot.steps.length} assessment steps`}
+                      </span>
+                    </p>
+                    <div className="space-y-1.5">
+                      {((activeSelected as any).procedure_snapshot.steps || []).map((step: any, i: number) => (
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <span className="w-5 h-5 rounded-full bg-phantix-700/50 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 text-slate-300">{i + 1}</span>
+                          <div>
+                            <p className="text-slate-300 font-medium">{step.step_name}</p>
+                            <p className="text-slate-500">{step.step_description}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {(activeSelected as any).asset_scope?.inventory_snapshot && (
+                      <p className="text-[10px] text-slate-600 mt-2 border-t border-phantix-700/30 pt-2">
+                        Scope: {(activeSelected as any).asset_scope.asset_types?.length || 0} asset types · inventory had {(activeSelected as any).asset_scope.inventory_snapshot.total || 0} assets at execution
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="mt-5">
                   <p className="label">Lifecycle</p>
                   <div className="flex flex-wrap gap-2">
                     {activeSelected.status === "draft" && (
-                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
-                        <Play size={14} /> Start Campaign
-                      </button>
+                      <>
+                        <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
+                          <Play size={14} /> Start Campaign
+                        </button>
+                        <p className="w-full text-[10px] text-slate-500 mt-1.5">
+                          Review the plan details above, then start. Full VAPT procedures will require authorizer approval before execution.
+                        </p>
+                      </>
+                    )}
+                    {activeSelected.status === "pending_approval" && (
+                      <div className="w-full rounded-lg bg-severity-medium/5 border border-severity-medium/30 p-3 text-xs space-y-1.5">
+                        <p className="text-severity-medium font-semibold flex items-center gap-1"><UserCheck size={14} /> Awaiting Authorizer Approval</p>
+                        <p className="text-slate-300">This campaign has been submitted and is waiting for the authorizer to approve it. The campaign will start automatically once approved.</p>
+                        <p className="text-slate-500">Authorizers can approve or reject this from the <a href="/authorizations" className="text-gold-400 hover:text-gold-300">Authorizations inbox</a>.</p>
+                        <button className="btn-danger !py-1.5 text-xs" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
+                          <XCircle size={12} /> Cancel Request
+                        </button>
+                      </div>
                     )}
                     {activeSelected.status === "active" && (
                       <>
