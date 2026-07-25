@@ -88,24 +88,36 @@ export default function Vapt() {
     finally { setPlanning(false); }
   };
 
-  // Poll when campaigns are live — stable single-interval pattern
+  // Poll when campaigns are live — follows same pattern as Assets discovery polling
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wasLive = useRef(false);
-  const isLive = vaptCampaigns.some((c) => c.status === "active" || c.status === "pending_approval" || c.status === "paused");
+  const activeCampaigns = React.useMemo(() =>
+    vaptCampaigns.filter((c) => c.status === "active" || c.status === "pending_approval" || c.status === "paused"),
+    [vaptCampaigns]
+  );
+
+  const pollCampaigns = React.useCallback(async () => {
+    try {
+      const raw = await api.get<any>("/vapt/campaigns?limit=50");
+      const campaigns = Array.isArray(raw) ? raw : (raw?.items ?? raw?.value ?? []);
+      const stillActive = campaigns.filter((c: any) =>
+        c.status === "active" || c.status === "pending_approval" || c.status === "paused"
+      );
+      if (stillActive.length === 0) {
+        if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
+        reload();
+      }
+    } catch { /* silent */ }
+  }, [reload]);
 
   useEffect(() => {
-    if (isLive && !pollTimer.current) {
-      pollTimer.current = setInterval(() => reload(), 5000);
-    } else if (!isLive && pollTimer.current) {
+    if (activeCampaigns.length > 0 && !pollTimer.current) {
+      pollTimer.current = setInterval(pollCampaigns, 5000);
+    } else if (activeCampaigns.length === 0 && pollTimer.current) {
       clearInterval(pollTimer.current);
       pollTimer.current = null;
     }
-    wasLive.current = isLive;
-  });
-
-  useEffect(() => () => {
-    if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
-  }, []);
+    return () => { if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; } };
+  }, [activeCampaigns.length, pollCampaigns]);
 
   if (loading) {
     return (
