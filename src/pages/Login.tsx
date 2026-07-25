@@ -569,7 +569,7 @@ function AppLoginFlow({
 }
 
 // ── Paste link box ────────────────────────────────────────────────────────────
-const MAX_LINK_LENGTH = 600;
+const MAX_LINK_LENGTH = 250;
 
 function PasteLinkBox() {
   const navigate = useNavigate();
