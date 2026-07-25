@@ -185,9 +185,20 @@ export default function Scans() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="hidden font-mono text-xs text-slate-500 sm:block">{r.confidence}% conf</span>
-                      <SeverityBadge severity={r.severity} />
-                      <VerificationBadge status={r.verification_status} />
+                      {(() => {
+                        const conf = (r as any).evidence?.verification?.confidence ?? r.confidence;
+                        const reportable = (r as any).evidence?.verification?.reportable;
+                        const verStatus = (r as any).evidence?.verification?.verification_status ?? r.verification_status;
+                        return (
+                          <>
+                            {conf != null && <span className="hidden font-mono text-xs text-slate-500 sm:block">{conf}% conf</span>}
+                            {reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
+                            {reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
+                            <SeverityBadge severity={r.severity} />
+                            <VerificationBadge status={verStatus} />
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </Card>

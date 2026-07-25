@@ -264,7 +264,7 @@ export default function Vapt() {
                     [activeSelected.requires_approval ? "Yes" : "No", "Approval", activeSelected.requires_approval ? "text-severity-medium" : "text-slate-400"],
                   ].map(([v, l, c]) => (
                     <div key={String(l)} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2.5 text-center">
-                      <p className={cx("font-display text-lg font-bold", c as string)}>{v}</p>
+                      <p className={cx("font-display text-lg font-bold", c)}>{v}</p>
                       <p className="text-[9px] uppercase tracking-wider text-slate-500">{l}</p>
                     </div>
                   ))}
