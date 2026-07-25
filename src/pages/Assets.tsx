@@ -212,27 +212,35 @@ export default function Assets() {
                 </tr>
               </thead>
               <tbody>
-                {prioritized!.map((a, i) => (
+                {prioritized!.map((a: any, i: number) => {
+                  const score = a.riskScore ?? a.risk_score ?? 0;
+                  const level = a.riskLevel ?? a.risk_level ?? "low";
+                  const findings = a.openFindingsCount ?? a.open_findings ?? 0;
+                  const exposure = a.exposureLevel ?? a.exposure ?? "";
+                  const assetType = a.assetType ?? a.asset_type ?? "";
+                  const displayName = a.name || a.value || `#${a.id}`;
+                  return (
                   <tr key={a.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 text-sm", i % 2 === 1 && "bg-phantix-950/30")}>
                     <td className="px-5 py-3">
-                      <p className="font-medium text-slate-200">{a.name || a.value}</p>
-                      <p className="text-xs text-slate-500 font-mono">{a.value}</p>
+                      <p className="font-medium text-slate-200">{displayName}</p>
+                      <p className="text-xs text-slate-500 font-mono">{a.value || `#${a.id}`}</p>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="chip text-xs">{titleCase(a.asset_type)}</span>
+                      <span className="chip text-xs">{titleCase(assetType)}</span>
                     </td>
                     <td className="px-5 py-3 font-mono text-sm">
-                      <span className={cx(a.risk_score >= 75 ? "text-severity-critical" : a.risk_score >= 50 ? "text-severity-high" : a.risk_score >= 25 ? "text-severity-medium" : "text-severity-low")}>
-                        {a.risk_score}
+                      <span className={cx(score >= 75 ? "text-severity-critical" : score >= 50 ? "text-severity-high" : score >= 25 ? "text-severity-medium" : "text-severity-low")}>
+                        {score || "—"}
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <SeverityBadge severity={a.risk_level as never} />
+                      <SeverityBadge severity={level as never} />
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-400">{titleCase(a.exposure)}</td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-400">{a.open_findings}</td>
+                    <td className="px-5 py-3 text-xs text-slate-400">{titleCase(exposure)}</td>
+                    <td className="px-5 py-3 font-mono text-xs text-slate-400">{findings}</td>
                   </tr>
-                ))}
+                  );
+                })}
                 {(!prioritized || prioritized.length === 0) && (
                   <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet — run scans to populate risk data.</td></tr>
                 )}
