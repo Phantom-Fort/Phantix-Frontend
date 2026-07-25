@@ -351,48 +351,108 @@ export default function Assets() {
       )}
 
       {tab === "discovery" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          <div className="flex items-center justify-between mb-2">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <div className="flex items-center justify-between">
             <p className="text-sm text-slate-400">
               {activeJobs.length > 0 ? (
                 <span className="flex items-center gap-2"><Spinner className="h-3 w-3" /> {activeJobs.length} active job{activeJobs.length > 1 ? "s" : ""}</span>
               ) : (
-                "No active discovery jobs"
+                `${discoveryJobs.length} discovery job${discoveryJobs.length !== 1 ? "s" : ""}`
               )}
             </p>
           </div>
-          {discoveryJobs.map((j) => (
-            <Card key={j.id} hover>
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
-                  <Radar size={17} className={j.status === "running" ? "animate-pulse-soft" : ""} />
+          {discoveryJobs.map((j: any) => {
+            const cfg = j.config || {};
+            const rs = j.result_summary || {};
+            const subdomains: string[] = rs.subdomains || [];
+            const endpoints: string[] = rs.endpoints || [];
+            const priorityEndpoints: string[] = rs.priority_endpoints || [];
+            const errors: string[] = rs.errors || [];
+            const tools: string[] = rs.tools_used || [];
+            return (
+            <Card key={j.id}>
+              {/* Header */}
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className={cx("flex h-9 w-9 items-center justify-center rounded-xl", j.status === "running" ? "bg-blue-400/20 text-blue-400" : j.status === "completed" ? "bg-emerald-400/20 text-emerald-400" : j.status === "failed" ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-gold-400")}>
+                  <Radar size={16} className={j.status === "running" ? "animate-pulse-soft" : ""} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2.5">
-                    <p className="font-medium text-slate-200">{titleCase(j.job_type)} · #{j.id}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-display text-sm font-semibold text-slate-100">{titleCase(j.job_type)}</p>
+                    <span className="text-xs font-mono text-slate-500">#{j.id}</span>
                     <StatusBadge status={j.status} />
                   </div>
-                  <p className="mt-0.5 font-mono text-xs text-slate-500">{JSON.stringify(j.config)}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Domain: <span className="text-slate-300 font-mono">{cfg.domain || "—"}</span>
+                    {j.assets_discovered != null && <span className="ml-3">{j.assets_discovered} assets discovered</span>}
+                    {rs.assets_upserted != null && <span className="ml-2">{rs.assets_upserted} upserted</span>}
+                  </p>
                 </div>
-                {j.result_summary && (
-                  <div className="flex gap-4 text-center">
-                    {Object.entries(j.result_summary).map(([k, v]) => (
-                      <div key={k}>
-                        <p className="font-display text-lg font-bold text-white">{String(v)}</p>
-                        <p className="text-[10px] uppercase tracking-wider text-slate-500">{titleCase(k)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <span className="text-xs text-slate-500">{timeAgo(j.created_at)}</span>
+                <div className="text-right shrink-0">
+                  <div className="text-xs text-slate-500">{timeAgo(j.created_at)}</div>
+                  {j.completed_at && <div className="text-[10px] text-slate-600">Completed {timeAgo(j.completed_at)}</div>}
+                </div>
               </div>
-              {j.status === "running" && <div className="mt-3"><ProgressBar value={64} color="#38BDF8" /></div>}
+
+              {j.status === "running" && <ProgressBar value={64} color="#38BDF8" />}
+
+              {/* Subdomains */}
+              {subdomains.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-phantix-700/40">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Subdomains ({subdomains.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {subdomains.slice(0, 20).map((s: string) => (
+                      <span key={s} className="chip text-[10px] text-phantix-300 bg-phantix-500/10 border-phantix-500/20 font-mono">{s}</span>
+                    ))}
+                    {subdomains.length > 20 && <span className="text-[10px] text-slate-500">+{subdomains.length - 20} more</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* Priority endpoints */}
+              {priorityEndpoints.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-phantix-700/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                    Priority Endpoints ({priorityEndpoints.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {priorityEndpoints.slice(0, 15).map((e: string) => (
+                      <span key={e} className="text-[10px] text-severity-medium bg-severity-medium/10 border border-severity-medium/20 rounded px-1.5 py-0.5 font-mono truncate max-w-[280px]">{e}</span>
+                    ))}
+                    {priorityEndpoints.length > 15 && <span className="text-[10px] text-slate-500">+{priorityEndpoints.length - 15} more</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* Tools used */}
+              {tools.length > 0 && (
+                <div className="mt-2 text-[10px] text-slate-500">
+                  Tools: {tools.join(", ")}
+                  {rs.method && <span className="ml-2">· Method: {rs.method}</span>}
+                </div>
+              )}
+
+              {/* Errors */}
+              {errors.length > 0 && (
+                <div className="mt-2 rounded-lg bg-severity-critical/5 border border-severity-critical/20 p-2.5">
+                  <p className="text-[10px] font-semibold text-severity-critical mb-1">Errors ({errors.length})</p>
+                  {errors.slice(0, 3).map((e: string, i: number) => (
+                    <p key={i} className="text-[10px] text-severity-critical/80 leading-relaxed">{e}</p>
+                  ))}
+                  {errors.length > 3 && <p className="text-[10px] text-slate-500 mt-0.5">+{errors.length - 3} more errors</p>}
+                </div>
+              )}
+
+              {j.error_message && (
+                <div className="mt-2 rounded-lg bg-severity-critical/5 border border-severity-critical/20 p-2.5 text-[10px] text-severity-critical">{j.error_message}</div>
+              )}
             </Card>
-          ))}
-          <p className="text-xs text-slate-500">
-            domain_enum runs subfinder + amass, ffuf/gobuster directory brute force, then upserts verified
-            subdomains, web apps and API endpoints only. Prefer run_inline=false so Cloudflare doesn't 504.
-          </p>
+          )})}
+          {discoveryJobs.length === 0 && (
+            <EmptyState icon={<Radar size={24} />} title="No discovery jobs" body="Add a domain or subdomain asset to start automatic discovery." />
+          )}
         </motion.div>
       )}
 

@@ -369,14 +369,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const requireDualControl = useCallback(
     (reason = "This action requires an active dual-control operate session.") => {
+      // Check expiry first — clear if token is stale (tab hidden, setTimeout delayed)
+      if (operate.unlocked && operate.expiresAt && operate.expiresAt <= Date.now()) {
+        tokens.dualControl = null;
+        setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
+        toast("warning", "Operate session expired", "Unlock dual-control again to continue.");
+      }
       // Already have an active DC session token and operate is unlocked
       if (operate.unlocked && tokens.dualControl) {
-        if (operate.expiresAt && operate.expiresAt <= Date.now()) {
-          tokens.dualControl = null;
-          setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-        } else {
-          return Promise.resolve(true);
-        }
+        return Promise.resolve(true);
       }
       // Have DC session token from MFA but operate not marked as unlocked
       if (tokens.dualControl && !operate.unlocked) {
@@ -402,18 +403,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   // Auto-lock when the dual-control idle window expires.
   useEffect(() => {
     if (!operate.unlocked || !operate.expiresAt) return;
+    const lock = () => {
+      tokens.dualControl = null;
+      setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
+    };
+    const checkAndLock = () => {
+      if (Date.now() >= operate.expiresAt!) {
+        lock();
+        toast("warning", "Operate session expired", "Unlock dual-control again to continue mutations.");
+      }
+    };
+    // Immediate check (handles tab-hidden setTimeout delay)
     const ms = operate.expiresAt - Date.now();
-    if (ms <= 0) {
-      tokens.dualControl = null;
-      setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      return;
-    }
-    const t = window.setTimeout(() => {
-      tokens.dualControl = null;
-      setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      toast("warning", "Operate session expired", "Unlock dual-control again to continue mutations.");
-    }, ms);
-    return () => window.clearTimeout(t);
+    if (ms <= 0) { checkAndLock(); return; }
+    // Primary timer
+    const t = window.setTimeout(checkAndLock, ms);
+    // Poll fallback — catches delayed setTimeout in background tabs
+    const fallback = window.setInterval(() => {
+      if (Date.now() >= operate.expiresAt!) { checkAndLock(); }
+    }, 10000);
+    // Visibility change — check when tab returns to foreground
+    const onVisible = () => { if (document.visibilityState === "visible") checkAndLock(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearTimeout(t);
+      window.clearInterval(fallback);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [operate.unlocked, operate.expiresAt, toast]);
 
   const requestDualControlOtp = useCallback(
