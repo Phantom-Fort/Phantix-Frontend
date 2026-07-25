@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck } from "lucide-react";
+import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
@@ -246,69 +246,89 @@ export default function Vapt() {
             {activeSelected ? (
               <Card>
                 <CardHeader
-                  title={<span>#{activeSelected.id} · {activeSelected.name}</span>}
-                  subtitle={`Created by ${activeSelected.created_by} · ${timeAgo(activeSelected.created_at)}`}
+                  title={<span className="text-base font-display font-semibold">{activeSelected.name}</span>}
+                  subtitle={
+                    <span className="text-xs">
+                      #{activeSelected.id} · {titleCase(activeSelected.campaign_type)} · {activeSelected.procedure_key} · {timeAgo(activeSelected.created_at)}
+                    </span>
+                  }
                   action={<StatusBadge status={activeSelected.status} />}
                 />
-                <div className="grid grid-cols-3 gap-3">
+
+                {/* Stats row */}
+                <div className="grid grid-cols-4 gap-2 mb-4">
                   {[
-                    [activeSelected.asset_count, "Assets in scope"],
-                    [activeSelected.findings_count, "Findings"],
-                    [activeSelected.requires_approval ? "Yes" : "No", "Approval gate"],
-                  ].map(([v, l]) => (
-                    <div key={String(l)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5 text-center">
-                      <p className="font-display text-xl font-bold text-white">{v}</p>
-                      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-slate-500">{l}</p>
+                    [activeSelected.asset_count ?? "—", "Assets", "text-blue-400"],
+                    [activeSelected.findings_count ?? "—", "Findings", "text-emerald-400"],
+                    [(activeSelected as any).procedure_snapshot?.steps?.length ?? "—", "Steps", "text-phantix-300"],
+                    [activeSelected.requires_approval ? "Yes" : "No", "Approval", activeSelected.requires_approval ? "text-severity-medium" : "text-slate-400"],
+                  ].map(([v, l, c]) => (
+                    <div key={String(l)} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2.5 text-center">
+                      <p className={cx("font-display text-lg font-bold", c as string)}>{v}</p>
+                      <p className="text-[9px] uppercase tracking-wider text-slate-500">{l}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Intelligent plan details */}
+                {/* Intelligent plan steps */}
                 {((activeSelected as any).procedure_snapshot?.steps?.length > 0) && (
-                  <div className="mt-4 p-4 rounded-xl bg-phantix-800/30 border border-phantix-700/30">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                      Plan: {(activeSelected as any).procedure_snapshot.display_name || activeSelected.name}
-                      <span className="block font-normal normal-case text-[11px] text-slate-500 mt-0.5">
-                        {(activeSelected as any).procedure_snapshot.description || `${(activeSelected as any).procedure_snapshot.steps.length} assessment steps`}
-                      </span>
+                  <div className="mb-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Plan: {(activeSelected as any).procedure_snapshot.display_name || "Assessment"}
                     </p>
-                    <div className="space-y-1.5">
-                      {((activeSelected as any).procedure_snapshot.steps || []).map((step: any, i: number) => (
-                        <div key={i} className="flex items-start gap-2 text-xs">
-                          <span className="w-5 h-5 rounded-full bg-phantix-700/50 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 text-slate-300">{i + 1}</span>
-                          <div>
-                            <p className="text-slate-300 font-medium">{step.step_name}</p>
-                            <p className="text-slate-500">{step.step_description}</p>
+                    <p className="text-[11px] text-slate-500 mb-3">{(activeSelected as any).procedure_snapshot.description}</p>
+                    <div className="space-y-0">
+                      {((activeSelected as any).procedure_snapshot.steps || []).map((step: any, i: number) => {
+                        const stepType = step.step_type as string;
+                        const icon = stepType === "scan" ? <Radar size={12} className="text-blue-400" />
+                          : stepType === "web_scan" ? <Globe size={12} className="text-emerald-400" />
+                          : stepType === "correlate" ? <GitBranch size={12} className="text-gold-400" />
+                          : stepType === "analyze" ? <Sparkles size={12} className="text-purple-400" />
+                          : <Activity size={12} className="text-slate-500" />;
+                        return (
+                          <div key={i} className="flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0">
+                            <div className="flex flex-col items-center shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-phantix-800/70 flex items-center justify-center text-[10px] font-bold text-slate-300">{i + 1}</div>
+                              {i < ((activeSelected as any).procedure_snapshot.steps.length - 1) && <div className="w-px h-4 bg-phantix-700/50 mt-0.5" />}
+                            </div>
+                            <div className="min-w-0 pb-1">
+                              <p className="text-sm text-slate-200 font-medium flex items-center gap-1.5">{icon} {step.step_name}</p>
+                              <p className="text-[11px] text-slate-500 leading-relaxed">{step.step_description}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                    {(activeSelected as any).asset_scope?.inventory_snapshot && (
-                      <p className="text-[10px] text-slate-600 mt-2 border-t border-phantix-700/30 pt-2">
-                        Scope: {(activeSelected as any).asset_scope.asset_types?.length || 0} asset types · inventory had {(activeSelected as any).asset_scope.inventory_snapshot.total || 0} assets at execution
-                      </p>
+                    {(activeSelected as any).asset_scope?.inventory_snapshot != null && (
+                      <div className="mt-3 flex items-center gap-2 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
+                        <span className="w-1 h-1 rounded-full bg-slate-500" />
+                        {(activeSelected as any).asset_scope.asset_types?.length || 0} asset types in scope
+                        <span className="text-slate-700">·</span>
+                        {(activeSelected as any).asset_scope.inventory_snapshot.total || 0} assets in inventory at plan time
+                      </div>
                     )}
                   </div>
                 )}
 
-                <div className="mt-5">
-                  <p className="label">Lifecycle</p>
+                {/* Lifecycle controls */}
+                <div className="border-t border-phantix-700/40 pt-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Actions</p>
                   <div className="flex flex-wrap gap-2">
                     {activeSelected.status === "draft" && (
                       <>
-                        <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
+                        <button className="btn-primary !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
                           <Play size={14} /> Start Campaign
                         </button>
-                        <p className="w-full text-[10px] text-slate-500 mt-1.5">
-                          Review the plan details above, then start. Full VAPT procedures will require authorizer approval before execution.
+                        <p className="w-full text-[10px] text-slate-500">
+                          Review the plan above, then start. Full VAPT requires authorizer approval before execution.
                         </p>
                       </>
                     )}
                     {activeSelected.status === "pending_approval" && (
                       <div className="w-full rounded-lg bg-severity-medium/5 border border-severity-medium/30 p-3 text-xs space-y-1.5">
                         <p className="text-severity-medium font-semibold flex items-center gap-1"><UserCheck size={14} /> Awaiting Authorizer Approval</p>
-                        <p className="text-slate-300">This campaign has been submitted and is waiting for the authorizer to approve it. The campaign will start automatically once approved.</p>
-                        <p className="text-slate-500">Authorizers can approve or reject this from the <a href="/authorizations" className="text-gold-400 hover:text-gold-300">Authorizations inbox</a>.</p>
+                        <p className="text-slate-300">Campaign submitted for approval — will start automatically once the authorizer approves.</p>
+                        <p className="text-slate-500">Authorize from the <a href="/authorizations" className="text-gold-400 hover:text-gold-300">Authorizations inbox</a>.</p>
                         <button className="btn-danger !py-1.5 text-xs" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
                           <XCircle size={12} /> Cancel Request
                         </button>
@@ -316,44 +336,44 @@ export default function Vapt() {
                     )}
                     {activeSelected.status === "active" && (
                       <>
-                        <button className="btn-secondary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "pause")}>
+                        <button className="btn-secondary !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "pause")}>
                           <Pause size={14} /> Pause
                         </button>
-                        <button className="btn-danger !py-2" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
+                        <button className="btn-danger !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
                           <XCircle size={14} /> Cancel
                         </button>
                       </>
                     )}
                     {activeSelected.status === "paused" && (
-                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "resume")}>
+                      <button className="btn-primary !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "resume")}>
                         <Play size={14} /> Resume
                       </button>
                     )}
-                    {(activeSelected.status === "failed" || activeSelected.status === "cancelled") && (
-                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
-                        <Play size={14} /> Restart
+                    {activeSelected.status === "failed" && (
+                      <button className="btn-primary !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
+                        <Play size={14} /> Retry
                       </button>
                     )}
+                    {activeSelected.status === "cancelled" && (
+                      <p className="text-xs text-slate-500">Campaign was cancelled. Create a new one.</p>
+                    )}
                     {activeSelected.status === "completed" && (
-                      <button className="btn-primary !py-2" onClick={() => toast("info", "Report", "Reports generation available from /reports page")}>
-                        Generate report
+                      <button className="btn-primary !py-2 text-sm" onClick={() => toast("info", "Report", "Available from /reports")}>
+                        Generate Report
                       </button>
                     )}
                   </div>
-                  <p className="mt-2.5 text-[11px] leading-4 text-slate-500">
-                    State machine: draft → (pending_approval) → active ⇄ paused → completed / failed / cancelled.
-                    Starts are async (run_inline=false) to avoid Cloudflare 504s — completion queues an alert.
-                  </p>
                 </div>
 
-                <div className="mt-5">
-                  <p className="label">Correlated findings ({campaignFindings.length})</p>
+                {/* Findings */}
+                <div className="border-t border-phantix-700/40 mt-4 pt-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Findings ({campaignFindings.length})</p>
                   <div className="space-y-2">
-                    {campaignFindings.length === 0 && <p className="text-sm text-slate-500">No correlated findings yet — raw tool rows live under Scans → Results.</p>}
+                    {campaignFindings.length === 0 && <p className="text-xs text-slate-500">No correlated attack paths yet. Raw findings are under Scans → Results.</p>}
                     {campaignFindings.slice(0, 4).map((f) => (
-                      <div key={f.id} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5">
+                      <div key={f.id} className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-3">
                         <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-200">{f.title}</p>
+                          <p className="min-w-0 flex-1 text-sm text-slate-200 truncate">{f.title}</p>
                           <SeverityBadge severity={f.severity} />
                           <VerificationBadge status={f.verification_status} />
                         </div>
