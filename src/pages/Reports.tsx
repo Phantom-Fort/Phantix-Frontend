@@ -68,20 +68,20 @@ export default function Reports() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-slate-100">{r.title}</p>
                       <StatusBadge status={r.status} />
-                      <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">v{r.version}</span>
+                      {(r as any).report_version != null && <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">v{(r as any).report_version ?? r.version}</span>}
                       <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)} · {formatBytes(r.size_bytes)}
+                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{r.size_bytes ? ` · ${formatBytes(r.size_bytes)}` : ""}
                     </p>
                   </div>
 
                   {/* Verification stats */}
                   <div className="hidden items-center gap-4 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-2.5 lg:flex">
                     {([
-                      [r.stats.after_dedupe, "deduped", "text-phantix-300"],
-                      [r.stats.after_verification, "verified", "text-emerald-400"],
-                      [r.stats.excluded_from_report, "excluded", "text-severity-critical"],
+                      [r.stats?.after_dedupe ?? 0, "deduped", "text-phantix-300"],
+                      [r.stats?.after_verification ?? 0, "verified", "text-emerald-400"],
+                      [r.stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
                     ] as [number, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="text-center">
                         <p className={cx("font-display text-lg font-bold", c)}>{v}</p>

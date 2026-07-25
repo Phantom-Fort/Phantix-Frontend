@@ -41,7 +41,13 @@ export default function Vapt() {
       await api.post(`/vapt/campaigns/${id}/${action}`, extra || {});
       toast("success", `${action}`, `Campaign #${id} ${action} requested`);
       reload();
-    } catch (e: any) { toast("error", `${action} failed`, e.message || ""); }
+    } catch (e: any) {
+      if (e.status === 409) {
+        toast("warning", "Concurrent campaign", "Another campaign is already running. Pause or cancel it first.");
+      } else {
+        toast("error", `${action} failed`, e.message || "");
+      }
+    }
   };
 
   const handleApprove = async (approvalId: number, approve: boolean) => {
@@ -67,7 +73,13 @@ export default function Vapt() {
       setCreateOpen(false);
       setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
       reload();
-    } catch (e: any) { toast("error", "Create failed", e.message || ""); }
+    } catch (e: any) {
+      if (e.status === 409) {
+        toast("warning", "Another campaign is already running", "Pause or cancel the active campaign before creating a new one.");
+      } else {
+        toast("error", "Create failed", e.message || "");
+      }
+    }
   };
 
   const handlePlan = async () => {
@@ -84,7 +96,10 @@ export default function Vapt() {
         toast("success", "Plan generated", "Review the draft and submit for approval or start");
         reload();
       }
-    } catch (e: any) { toast("error", "Plan failed", e.message || ""); }
+    } catch (e: any) {
+      if (e.status === 409) toast("warning", "Another campaign is already running", "Pause or cancel it first.");
+      else toast("error", "Plan failed", e.message || "");
+    }
     finally { setPlanning(false); }
   };
 
@@ -202,7 +217,7 @@ export default function Vapt() {
                 <button onClick={() => setSelected(c)} className={cx("w-full text-left")}>
                   <Card hover className={cx("!p-4 transition-all", activeSelected?.id === c.id && "border-gold-400/50 shadow-glow")}>
                     <div className="flex items-center gap-3">
-                      <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", c.status === "active" ? "bg-severity-low/12 text-severity-low" : c.status === "completed" ? "bg-emerald-400/12 text-emerald-400" : "bg-phantix-800/70 text-slate-400")}>
+                      <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", c.status === "active" ? "bg-emerald-400/12 text-emerald-400" : c.status === "pending_approval" ? "bg-severity-medium/12 text-severity-medium" : c.status === "completed" ? "bg-emerald-400/12 text-emerald-400" : "bg-phantix-800/70 text-slate-400")}>
                         <Crosshair size={17} />
                       </span>
                       <div className="min-w-0 flex-1">
