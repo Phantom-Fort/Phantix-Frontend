@@ -27,6 +27,7 @@ import {
   Building2,
   Shield,
   Activity,
+  UserCheck,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
@@ -214,6 +215,17 @@ export default function Layout() {
               </div>
             </div>
           ))}
+          {session?.isAuthorizer && (
+            <div>
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-400">
+                Authorizer
+              </p>
+              <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
+                <UserCheck size={17} />
+                Approvals
+              </NavLink>
+            </div>
+          )}
           <div>
             <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
               Tenant admin

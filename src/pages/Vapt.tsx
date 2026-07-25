@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
@@ -7,11 +7,12 @@ import { loadVaptBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
 import type { VaptCampaign } from "@/lib/types";
 
 export default function Vapt() {
   const { toast, requireDualControl, dualControl } = useStore();
-  const { data, loading } = useResource(loadVaptBundle, {
+  const { data, loading, reload } = useResource(loadVaptBundle, {
     campaigns: [],
     findings: [],
     approvals: [],
@@ -26,10 +27,73 @@ export default function Vapt() {
   const [tab, setTab] = useState("campaigns");
   const [selected, setSelected] = useState<VaptCampaign | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [planning, setPlanning] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
 
   const activeSelected = selected && vaptCampaigns.some((c) => c.id === selected.id) ? selected : vaptCampaigns[0] ?? null;
   const campaignFindings = activeSelected ? vaptFindings.filter((f) => f.campaign_id === activeSelected.id) : [];
   const pending = vaptApprovals.filter((a) => a.status === "pending");
+
+  // Campaign action handlers
+  const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
+    if (!(await requireDualControl(`${action} campaign requires a dual-control operate session.`))) return;
+    try {
+      await api.post(`/vapt/campaigns/${id}/${action}`, extra || {});
+      toast("success", `${action}`, `Campaign #${id} ${action} requested`);
+      reload();
+    } catch (e: any) { toast("error", `${action} failed`, e.message || ""); }
+  };
+
+  const handleApprove = async (approvalId: number, approve: boolean) => {
+    if (!(await requireDualControl("Approval requires the assigned controller's dual-control session."))) return;
+    try {
+      await api.post(`/vapt/approvals/${approvalId}/decide`, { approve, notes: approve ? "Approved" : "Rejected" });
+      toast("success", approve ? "Approved" : "Rejected");
+      reload();
+    } catch (e: any) { toast("error", "Decision failed", e.message || ""); }
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.name) { toast("error", "Enter a campaign name"); return; }
+    if (!(await requireDualControl("Campaign creation needs a dual-control operate session."))) return;
+    try {
+      const res = await api.post("/vapt/campaigns", {
+        campaign_name: createForm.name,
+        campaign_type: createForm.campaign_type,
+        procedure_key: createForm.procedure_key,
+        run_inline: false,
+      });
+      toast("success", "Campaign created", "draft → start when ready");
+      setCreateOpen(false);
+      setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
+      reload();
+    } catch (e: any) { toast("error", "Create failed", e.message || ""); }
+  };
+
+  const handlePlan = async () => {
+    if (!(await requireDualControl("Intelligent plan requires a dual-control operate session."))) return;
+    setPlanning(true);
+    try {
+      const plan = await api.post<{ plan_id: string; recommended_scans?: string[] }>("/vapt/plan", {});
+      if (plan.plan_id) {
+        const exec = await api.post("/vapt/plan/execute", { plan_id: plan.plan_id, start: true }).catch((e: any) => {
+          if (e.status === 400) toast("warning", "Plan saved as draft", "Add assets to inventory first, then start the campaign.");
+          else throw e;
+        });
+        if (exec) { toast("success", "Assessment launched", "Running from intelligent plan"); reload(); }
+      }
+    } catch (e: any) { toast("error", "Plan failed", e.message || ""); }
+    finally { setPlanning(false); }
+  };
+
+  // Poll active campaigns
+  const LIVE = new Set(["active", "pending_approval", "paused"]);
+  useEffect(() => {
+    const hasLive = vaptCampaigns.some((c) => LIVE.has(c.status));
+    if (!hasLive) return;
+    const t = setInterval(() => reload(), 5000);
+    return () => clearInterval(t);
+  }, [vaptCampaigns.length, vaptCampaigns.some((c) => LIVE.has(c.status)) ? 1 : 0]);
 
   if (loading) {
     return (
@@ -49,14 +113,10 @@ export default function Vapt() {
           <>
             <button
               className="btn-secondary"
-              onClick={() =>
-                void (async () => {
-                  if (!(await requireDualControl("Intelligent plan creation requires a dual-control operate session."))) return;
-                  toast("info", "Intelligent plan", "POST /vapt/plan analyzes your inventory and proposes a campaign.");
-                })()
-              }
+              onClick={handlePlan}
+              disabled={planning}
             >
-              <Sparkles size={15} /> Plan with orchestrator
+              <Sparkles size={15} /> {planning ? "Planning..." : "Intelligent Plan"}
             </button>
             <button
               className="btn-primary"
@@ -92,28 +152,8 @@ export default function Vapt() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <button
-                  className="btn-primary !py-2"
-                  onClick={() =>
-                    void (async () => {
-                      if (!(await requireDualControl("Approving a VAPT step requires the assigned controller's dual-control session."))) return;
-                      toast("success", "Decision recorded", "POST /vapt/approvals/{id}/decide");
-                    })()
-                  }
-                >
-                  Approve
-                </button>
-                <button
-                  className="btn-danger !py-2"
-                  onClick={() =>
-                    void (async () => {
-                      if (!(await requireDualControl("Rejecting a VAPT step requires the assigned controller's dual-control session."))) return;
-                      toast("info", "Rejected", "The campaign step remains blocked.");
-                    })()
-                  }
-                >
-                  Reject
-                </button>
+                <button className="btn-primary !py-2" onClick={() => handleApprove(pending[0].id, true)}>Approve</button>
+                <button className="btn-danger !py-2" onClick={() => handleApprove(pending[0].id, false)}>Reject</button>
               </div>
             </div>
           </Card>
@@ -188,67 +228,32 @@ export default function Vapt() {
                   <p className="label">Lifecycle</p>
                   <div className="flex flex-wrap gap-2">
                     {activeSelected.status === "draft" && (
-                      <button
-                        className="btn-primary !py-2"
-                        onClick={() =>
-                          void (async () => {
-                            if (!(await requireDualControl("Starting a campaign requires a dual-control operate session."))) return;
-                            toast("success", "Campaign starting", "POST /vapt/campaigns/{id}/start → 202 Accepted");
-                          })()
-                        }
-                      >
-                        <Play size={14} /> Start
+                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
+                        <Play size={14} /> Start Campaign
                       </button>
                     )}
                     {activeSelected.status === "active" && (
                       <>
-                        <button
-                          className="btn-secondary !py-2"
-                          onClick={() =>
-                            void (async () => {
-                              if (!(await requireDualControl("Pausing a campaign requires a dual-control operate session."))) return;
-                              toast("info", "Paused", "POST …/pause");
-                            })()
-                          }
-                        >
+                        <button className="btn-secondary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "pause")}>
                           <Pause size={14} /> Pause
                         </button>
-                        <button
-                          className="btn-danger !py-2"
-                          onClick={() =>
-                            void (async () => {
-                              if (!(await requireDualControl("Cancelling a campaign requires a dual-control operate session."))) return;
-                              toast("info", "Cancel requested", "POST …/cancel clears the per-org slot");
-                            })()
-                          }
-                        >
+                        <button className="btn-danger !py-2" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
                           <XCircle size={14} /> Cancel
                         </button>
                       </>
                     )}
                     {activeSelected.status === "paused" && (
-                      <button
-                        className="btn-primary !py-2"
-                        onClick={() =>
-                          void (async () => {
-                            if (!(await requireDualControl("Resuming a campaign requires a dual-control operate session."))) return;
-                            toast("success", "Resuming", "POST …/resume (async by default)");
-                          })()
-                        }
-                      >
+                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "resume")}>
                         <Play size={14} /> Resume
                       </button>
                     )}
+                    {(activeSelected.status === "failed" || activeSelected.status === "cancelled") && (
+                      <button className="btn-primary !py-2" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
+                        <Play size={14} /> Restart
+                      </button>
+                    )}
                     {activeSelected.status === "completed" && (
-                      <button
-                        className="btn-primary !py-2"
-                        onClick={() =>
-                          void (async () => {
-                            if (!(await requireDualControl("Generating a campaign report requires a dual-control operate session."))) return;
-                            toast("success", "Report queued", "POST /reports { report_type: vapt_campaign, campaign_id: " + activeSelected.id + " }");
-                          })()
-                        }
-                      >
+                      <button className="btn-primary !py-2" onClick={() => toast("info", "Report", "Reports generation available from /reports page")}>
                         Generate report
                       </button>
                     )}
@@ -333,47 +338,37 @@ export default function Vapt() {
 
       {/* Create modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New campaign">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setCreateOpen(false);
-            toast("success", "Campaign created", "draft → start when ready. full_vapt requires multi-party approval.");
-          }}
-        >
+        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
           <div>
             <label className="label">Name</label>
-            <input className="input" placeholder="Q4 external assessment" />
+            <input className="input" placeholder="Q4 external assessment" value={createForm.name} onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">Type</label>
-              <select className="input">
-                <option value="external">external</option>
-                <option value="internal">internal</option>
-                <option value="web_scan">web_scan</option>
-                <option value="mobile">mobile</option>
+              <select className="input" value={createForm.campaign_type} onChange={(e) => setCreateForm((f) => ({ ...f, campaign_type: e.target.value, procedure_key: e.target.value }))}>
+                <option value="web_scan">Web Scan</option>
+                <option value="infra_scan">Infra Scan</option>
+                <option value="api_scan">API Scan</option>
+                <option value="full_vapt">Full VAPT</option>
+                <option value="mobile_dynamic">Mobile Dynamic</option>
               </select>
             </div>
             <div>
               <label className="label">Procedure</label>
-              <select className="input">
+              <select className="input" value={createForm.procedure_key} onChange={(e) => setCreateForm((f) => ({ ...f, procedure_key: e.target.value }))}>
                 <option value="web_scan">web_scan — full web pipeline</option>
                 <option value="web_app_scan_only">web_app_scan_only</option>
                 <option value="full_vapt">full_vapt (infra + web + gates)</option>
                 <option value="infra_scan">infra_scan</option>
+                <option value="api_scan">api_scan</option>
               </select>
             </div>
           </div>
-          <div>
-            <label className="label">Asset scope</label>
-            <select className="input">
-              <option>tags = external (18 assets)</option>
-              <option>tags = pci-scope (4 assets)</option>
-              <option>manual selection…</option>
-            </select>
-          </div>
-          <button className="btn-primary w-full">Create campaign</button>
+          <p className="text-xs text-slate-500 p-2 rounded-lg bg-phantix-800/40">
+            Campaign starts as a <strong>draft</strong> — you can review and start it from the campaign detail view. Full VAPT requires dual-control approval.
+          </p>
+          <button className="btn-primary w-full" type="submit">Create campaign</button>
         </form>
       </Modal>
     </div>

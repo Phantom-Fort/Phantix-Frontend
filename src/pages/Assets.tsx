@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
+﻿import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
@@ -7,7 +7,7 @@ import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { api } from "@/lib/api";
+import { api, tokens, API_BASE } from "@/lib/api";
 import type { Asset, AssetIntelligence, DiscoveryJob } from "@/lib/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
@@ -42,6 +42,14 @@ export default function Assets() {
   const [verifyStep, setVerifyStep] = useState<{ message: string; hint: string } | null>(null);
   const [addConfirmOwnership, setAddConfirmOwnership] = useState(false);
   const [addForm, setAddForm] = useState({ type: "domain", value: "", name: "", environment: "production", criticality: "medium" });
+  const [showGithubModal, setShowGithubModal] = useState(false);
+  const [githubPat, setGithubPat] = useState("");
+  const [importingGithub, setImportingGithub] = useState(false);
+  const [githubStatus, setGithubStatus] = useState<{ github_login?: string; token_configured?: boolean } | null>(null);
+  const [showApiModal, setShowApiModal] = useState(false);
+  const [apiSpec, setApiSpec] = useState("");
+  const [apiFormat, setApiFormat] = useState("openapi");
+  const [importing, setImporting] = useState(false);
   const [adding, setAdding] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -129,25 +137,61 @@ export default function Assets() {
     }
   };
 
-  const handleRunDiscovery = async (domain: string) => {
-    if (!(await requireDualControl("Starting discovery requires a dual-control operate session."))) return;
+
+  const handleGithubConnect = async () => {
+    if (!githubPat) { toast("error", "Enter a PAT"); return; }
+    if (!(await requireDualControl("Connecting GitHub requires a dual-control operate session."))) return;
+    setImportingGithub(true);
     try {
-      await api.post("/assets/discovery/jobs", {
-        job_type: "domain_enum",
-        config: { domain, include_subdomains: true, include_directories: true },
-        run_inline: false,
-      });
-      toast("success", "Discovery started", `Enumerating ${domain}`);
-      reload();
+      await api.post("/assets/integrations/github", { personal_access_token: githubPat });
+      const status = await api.get<{ github_login: string; token_configured: boolean }>("/assets/integrations/github");
+      setGithubStatus(status);
+      toast("success", "GitHub connected", status.github_login ? `Logged in as ${status.github_login}` : "Token stored");
+      setGithubPat("");
     } catch (e: any) {
-      toast("error", "Discovery failed", e.message || "");
+      toast("error", "Connection failed", e.message || "Invalid token or network error");
+    } finally {
+      setImportingGithub(false);
     }
   };
 
+  const handleGithubImport = async () => {
+    if (!(await requireDualControl("Importing repos requires a dual-control operate session."))) return;
+    setImportingGithub(true);
+    try {
+      await api.post("/assets/import/github", { discover_all: true });
+      toast("success", "Import started", "Repos being imported as assets");
+      reload();
+    } catch (e: any) {
+      toast("error", "Import failed", e.message || "");
+    } finally {
+      setImportingGithub(false);
+    }
+  };
+
+  const handleApiImport = async () => {
+    if (!apiSpec) { toast("error", "Paste an OpenAPI spec"); return; }
+    if (!(await requireDualControl("API import requires a dual-control operate session."))) return;
+    setImporting(true);
+    try {
+      await api.post("/assets/import/api", { format: apiFormat, content: apiSpec, confirm_ownership: true });
+      toast("success", "API imported", "Endpoints added as assets");
+      setShowApiModal(false); setApiSpec("");
+      reload();
+    } catch (e: any) {
+      toast("error", "Import failed", e.message || "");
+    } finally { setImporting(false); }
+  };
+
+  // Check GitHub status on page load
+  useEffect(() => {
+    api.get<{ github_login: string; token_configured: boolean }>("/assets/integrations/github")
+      .then(setGithubStatus).catch(() => {});
+  }, []);
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading assets…
+        <Spinner className="h-5 w-5" /> Loading assetsâ€¦
       </div>
     );
   }
@@ -157,7 +201,7 @@ export default function Assets() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Attack-surface inventory"
-        description="Every row lives only in your dedicated security database — schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
+        description="Every row lives only in your dedicated security database â€” schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -230,7 +274,7 @@ export default function Assets() {
                     </td>
                     <td className="px-5 py-3 font-mono text-sm">
                       <span className={cx(score >= 75 ? "text-severity-critical" : score >= 50 ? "text-severity-high" : score >= 25 ? "text-severity-medium" : "text-severity-low")}>
-                        {score || "—"}
+                        {score || "â€”"}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -242,7 +286,7 @@ export default function Assets() {
                   );
                 })}
                 {(!prioritized || prioritized.length === 0) && (
-                  <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet — run scans to populate risk data.</td></tr>
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet â€” run scans to populate risk data.</td></tr>
                 )}
               </tbody>
             </table>
@@ -256,7 +300,7 @@ export default function Assets() {
             <div className="flex flex-wrap items-center gap-3 border-b border-phantix-700/40 p-4">
               <div className="relative w-72">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input className="input !pl-10" placeholder="Search value or name…" value={q} onChange={(e) => setQ(e.target.value)} />
+                <input className="input !pl-10" placeholder="Search value or nameâ€¦" value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {types.map((t) => (
@@ -325,7 +369,7 @@ export default function Assets() {
                             <StatusBadge status={a.discoveryStatus} />
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-600">—</span>
+                          <span className="text-xs text-slate-600">â€”</span>
                         )}
                       </td>
                       <td className="td">
@@ -383,7 +427,7 @@ export default function Assets() {
                     <StatusBadge status={j.status} />
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Domain: <span className="text-slate-300 font-mono">{cfg.domain || "—"}</span>
+                    Domain: <span className="text-slate-300 font-mono">{cfg.domain || "â€”"}</span>
                     {j.assets_discovered != null && <span className="ml-3">{j.assets_discovered} assets discovered</span>}
                     {rs.assets_upserted != null && <span className="ml-2">{rs.assets_upserted} upserted</span>}
                   </p>
@@ -430,7 +474,7 @@ export default function Assets() {
               {tools.length > 0 && (
                 <div className="mt-2 text-[10px] text-slate-500">
                   Tools: {tools.join(", ")}
-                  {rs.method && <span className="ml-2">· Method: {rs.method}</span>}
+                  {rs.method && <span className="ml-2">Â· Method: {rs.method}</span>}
                 </div>
               )}
 
@@ -466,7 +510,7 @@ export default function Assets() {
                 </span>
                 <div>
                   <p className="font-medium text-slate-200">{t.name}</p>
-                  <p className="text-xs text-slate-500">{t.asset_count} assets{t.description ? ` · ${t.description}` : ""}</p>
+                  <p className="text-xs text-slate-500">{t.asset_count} assets{t.description ? ` Â· ${t.description}` : ""}</p>
                 </div>
               </div>
             </Card>
@@ -487,31 +531,63 @@ export default function Assets() {
         </motion.div>
       )}
 
+
       {tab === "imports" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {[
-            { icon: <Github size={18} />, title: "GitHub repositories", desc: "Store a PAT (Fernet-encrypted) and import repos as github_repo assets.", endpoint: "POST /assets/import/github" },
-            { icon: <FileJson size={18} />, title: "OpenAPI / Postman", desc: "Import a spec; endpoints are categorized into metadata for API assets.", endpoint: "POST /assets/import/api" },
-            { icon: <Smartphone size={18} />, title: "Android APK", desc: "Upload an APK — static analysis maps a mobile_apk asset with permissions.", endpoint: "POST /assets/upload/apk" },
-          ].map((c) => (
-            <Card key={c.title} hover className="flex flex-col">
-              <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">{c.icon}</span>
-              <h3 className="font-display text-[15px] font-semibold text-slate-100">{c.title}</h3>
-              <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">{c.desc}</p>
-              <p className="mt-3 font-mono text-[11px] text-slate-500">{c.endpoint}</p>
-              <button
-                className="btn-secondary mt-4 w-full"
-                onClick={() =>
-                  void (async () => {
-                    if (!(await requireDualControl(`${c.title} requires a dual-control operate session.`))) return;
-                    toast("info", c.title, c.endpoint);
-                  })()
-                }
-              >
-                Import
+          <Card hover className="flex flex-col">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><Github size={18} /></span>
+            <h3 className="font-display text-[15px] font-semibold text-slate-100">GitHub repositories</h3>
+            <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">
+              {githubStatus?.token_configured ? `Connected as ${githubStatus.github_login || "GitHub"}. Import repos as assets.` : "Paste a Personal Access Token to list and import repositories."}
+            </p>
+            {githubStatus?.token_configured ? (
+              <button className="btn-secondary mt-4 w-full" onClick={handleGithubImport} disabled={importingGithub}>
+                {importingGithub ? <Spinner className="h-3 w-3" /> : <Github size={14} />} Import Repos
               </button>
-            </Card>
-          ))}
+            ) : (
+              <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("Connecting GitHub requires a dual-control operate session.")) setShowGithubModal(true); })(); }}>
+                <Github size={14} /> Connect GitHub
+              </button>
+            )}
+            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/integrations/github</p>
+          </Card>
+
+          <Card hover className="flex flex-col">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><FileJson size={18} /></span>
+            <h3 className="font-display text-[15px] font-semibold text-slate-100">OpenAPI / Postman</h3>
+            <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">Paste an OpenAPI JSON/YAML spec. Endpoints are imported as API assets with metadata.</p>
+            <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("API import requires a dual-control operate session.")) setShowApiModal(true); })(); }}>
+              Import Spec
+            </button>
+            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/import/api</p>
+          </Card>
+
+          <Card hover className="flex flex-col">
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><Smartphone size={18} /></span>
+            <h3 className="font-display text-[15px] font-semibold text-slate-100">Android APK</h3>
+            <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">Upload an APK for static analysis. Package mapped as a mobile_apk asset with permissions.</p>
+            <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("APK upload requires a dual-control operate session.")) { 
+              const input = document.createElement('input'); input.type = 'file'; input.accept = '.apk';
+              input.onchange = async (ev) => {
+                const file = (ev.target as HTMLInputElement).files?.[0];
+                if (!file) return;
+                if (!(await requireDualControl("APK upload requires a dual-control operate session."))) return;
+                setImporting(true);
+                try {
+                  const form = new FormData(); form.append("file", file); form.append("confirm_ownership", "true");
+                  const res = await fetch(`${API_BASE}/assets/upload/apk`, { method: "POST", headers: { Authorization: `Bearer ${tokens.appSession || ""}` }, body: form });
+                  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || "Upload failed");
+                  toast("success", "APK uploaded", "Analysis running in background");
+                  reload();
+                } catch (e: any) { toast("error", "Upload failed", e.message || ""); }
+                finally { setImporting(false); }
+              };
+              input.click();
+            }})(); }}>
+              Upload APK
+            </button>
+            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/upload/apk</p>
+          </Card>
         </motion.div>
       )}
 
@@ -543,7 +619,7 @@ export default function Assets() {
               <div className="flex flex-wrap gap-1.5">
                 {(selected.tags?.length ?? 0) ? selected.tags!.map((t) => (
                   <span key={t.id} className="rounded-lg px-2 py-1 text-xs font-medium" style={{ background: `${t.color}22`, color: t.color }}>{t.name}</span>
-                )) : <span className="text-sm text-slate-500">No manual tags — auto-tags (type/source/verified) apply.</span>}
+                )) : <span className="text-sm text-slate-500">No manual tags â€” auto-tags (type/source/verified) apply.</span>}
               </div>
             </div>
             {selectedIntel && (
@@ -669,6 +745,24 @@ export default function Assets() {
               </button>
             </>
           )}
+        </div>
+      </Modal>
+
+      <Modal open={showGithubModal} onClose={() => setShowGithubModal(false)} title="Connect GitHub">
+        <div className="space-y-3">
+          <p className="text-xs text-slate-400">Paste a GitHub Personal Access Token (classic or fine-grained) with <strong>repo</strong> or <strong>Contents: Read</strong> scope. The token is stored encrypted and never shown again.</p>
+          <div><label className="label">Personal Access Token</label><input className="input font-mono text-sm" type="password" placeholder="ghp_..." value={githubPat} onChange={(e) => setGithubPat(e.target.value)} /></div>
+          <p className="text-[10px] text-slate-500">Minimum scopes: <code>public_repo</code> (classic) or <code>Contents: Read</code> (fine-grained). Revoke anytime in GitHub → Settings → Developer settings.</p>
+          <button onClick={handleGithubConnect} disabled={importingGithub || !githubPat} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : null}Connect GitHub</button>
+        </div>
+      </Modal>
+
+      <Modal open={showApiModal} onClose={() => setShowApiModal(false)} title="Import OpenAPI / Postman">
+        <div className="space-y-3">
+          <div><label className="label">Format</label><select className="input" value={apiFormat} onChange={(e) => setApiFormat(e.target.value)}><option value="openapi">OpenAPI (JSON/YAML)</option><option value="postman">Postman Collection</option></select></div>
+          <div><label className="label">Spec Content</label><textarea className="input resize-none font-mono text-xs" rows={8} placeholder='{"openapi": "3.0.0", "info": {...}, ...}' value={apiSpec} onChange={(e) => setApiSpec(e.target.value)} /></div>
+          <p className="text-[10px] text-slate-500">Endpoints are imported as API assets with path, method, and auth metadata.</p>
+          <button onClick={handleApiImport} disabled={importing || !apiSpec} className="btn-primary w-full">{importing ? <Spinner className="h-4 w-4" /> : null}Import Endpoints</button>
         </div>
       </Modal>
     </div>
