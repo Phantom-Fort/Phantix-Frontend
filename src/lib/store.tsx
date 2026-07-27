@@ -110,7 +110,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     unlocked: !!tokens.dualControl,
     actingUser: tokens.dualControl ? (isDemoMode() ? "Ada Okonkwo" : null) : null,
     actingRole: tokens.dualControl ? "initiator" : null,
-    expiresAt: tokens.dualControl ? Date.now() + 3 * 60_000 : null,
+    expiresAt: tokens.dualControl ? Date.now() + 30 * 60_000 : null,
   });
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(0);
@@ -152,12 +152,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           dualControl.authorizer.full_name === name);
       const expiresAt = res.inactivity_expires_at
         ? Date.parse(res.inactivity_expires_at)
-        : Date.now() + 3 * 60_000;
+        : Date.now() + 30 * 60_000;
       setOperate({
         unlocked: !!tokens.dualControl,
         actingUser: name,
         actingRole: isAuthorizer ? "authorizer" : "initiator",
-        expiresAt: Number.isFinite(expiresAt) ? expiresAt : Date.now() + 3 * 60_000,
+        expiresAt: Number.isFinite(expiresAt) ? expiresAt : Date.now() + 30 * 60_000,
       });
     },
     [dualControl.authorizer],
@@ -381,7 +381,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       // Have DC session token from MFA but operate not marked as unlocked
       if (tokens.dualControl && !operate.unlocked) {
-        setOperate({ unlocked: true, actingUser: session?.userName ?? "Operate user", actingRole: session?.isInitiator ? "initiator" : "authorizer", expiresAt: Date.now() + 3 * 60_000 });
+        setOperate({ unlocked: true, actingUser: session?.userName ?? "Operate user", actingRole: session?.isInitiator ? "initiator" : "authorizer", expiresAt: Date.now() + 30 * 60_000 });
         return Promise.resolve(true);
       }
       if (!dualControl.configured && !isDemoMode()) {
@@ -491,7 +491,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           unlocked: true,
           actingUser: user?.full_name || email || "Operate user",
           actingRole: user?.is_authorizer && !user?.is_initiator ? "authorizer" : "initiator",
-          expiresAt: Date.now() + 3 * 60_000,
+          expiresAt: Date.now() + 30 * 60_000,
         });
         return { deviceRequired: false };
       }
@@ -528,7 +528,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           unlocked: true,
           actingUser: dcEmail.current || "Operate user",
           actingRole: "initiator",
-          expiresAt: Date.now() + 3 * 60_000,
+          expiresAt: Date.now() + 30 * 60_000,
         });
         return;
       }

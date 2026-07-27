@@ -258,7 +258,7 @@ export default function Assets() {
               <tbody>
                 {prioritized!.map((a: any, i: number) => {
                   const score = a.riskScore ?? a.risk_score ?? 0;
-                  const level = a.riskLevel ?? a.risk_level ?? "low";
+                  const level = (a.riskLevel ?? a.risk_level ?? "low").toLowerCase();
                   const findings = a.openFindingsCount ?? a.open_findings ?? 0;
                   const exposure = a.exposureLevel ?? a.exposure ?? "";
                   const assetType = a.assetType ?? a.asset_type ?? "";

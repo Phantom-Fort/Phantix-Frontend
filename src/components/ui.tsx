@@ -6,7 +6,8 @@ import type { Severity, VerificationStatus } from "@/lib/types";
 
 // ── Badges ────────────────────────────────────────────────────────────────────
 export function SeverityBadge({ severity, className }: { severity: Severity; className?: string }) {
-  const m = severityMeta[severity];
+  const key = (severity || "info").toLowerCase() as Severity;
+  const m = severityMeta[key] || severityMeta.info;
   return (
     <span className={cx("chip", m.bg, m.color, m.border, className)}>
       <span className={cx("h-1.5 w-1.5 rounded-full", m.color.replace("text-", "bg-"))} />
@@ -16,6 +17,7 @@ export function SeverityBadge({ severity, className }: { severity: Severity; cla
 }
 
 export function RiskBadge({ level }: { level: string }) {
+  const key = (level || "").toLowerCase();
   const colors: Record<string, string> = {
     critical: "text-severity-critical bg-severity-critical/10 border-severity-critical/30",
     high: "text-severity-high bg-severity-high/10 border-severity-high/30",
@@ -23,7 +25,7 @@ export function RiskBadge({ level }: { level: string }) {
     low: "text-severity-low bg-severity-low/10 border-severity-low/30",
   };
   return (
-    <span className={cx("chip capitalize", colors[level] ?? "text-slate-400 bg-slate-400/10 border-slate-500/30")}>
+    <span className={cx("chip capitalize", colors[key] ?? "text-slate-400 bg-slate-400/10 border-slate-500/30")}>
       {level || "unknown"}
     </span>
   );

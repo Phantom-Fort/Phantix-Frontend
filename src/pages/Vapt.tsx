@@ -275,9 +275,23 @@ export default function Vapt() {
                   <div className="mb-4">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                       {(activeSelected as any).procedure_snapshot.display_name || "Assessment Plan"}
+                      {activeSelected.campaign_type === "intelligent_assessment" && (activeSelected as any).procedure_snapshot.description && (
+                        <span className="block font-normal text-[11px] text-slate-500 normal-case tracking-normal mt-0.5">
+                          ~1.1 hours · network_scan, dns_scan, web_scan, vuln_scan
+                        </span>
+                      )}
                     </p>
                     {(activeSelected as any).procedure_snapshot.description && (
-                      <p className="text-[11px] text-slate-500 mb-3">{(activeSelected as any).procedure_snapshot.description}</p>
+                      <p className="text-[11px] text-slate-500 mb-2">{(activeSelected as any).procedure_snapshot.description}</p>
+                    )}
+
+                    {/* Plan summary: frameworks + duration */}
+                    {((activeSelected as any).asset_scope?.intelligent_plan_id) && (
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] text-slate-500">
+                        {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
+                          <span>{((activeSelected as any).asset_scope.asset_types as string[]).length} asset types</span>
+                        )}
+                      </div>
                     )}
 
                     {/* Progress for active campaigns */}
@@ -319,6 +333,9 @@ export default function Vapt() {
                             <div className="min-w-0 pb-1">
                               <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-blue-300" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
                                 {icon} {step.step_name}
+                                {step.config?.max_duration_minutes && (
+                                  <span className="text-[9px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
+                                )}
                                 {isCurrent && <span className="text-[10px] text-blue-400 font-normal">running</span>}
                                 {isCompleted && <span className="text-[10px] text-emerald-400 font-normal">complete</span>}
                               </p>
@@ -338,7 +355,13 @@ export default function Vapt() {
                         <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).procedure_snapshot.source.replace(/_/g, " ")}</>
                       )}
                       {activeSelected.campaign_type === "intelligent_assessment" && (
-                        <><span className="w-1 h-1 rounded-full bg-slate-500" />auto-generated plan</>
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />auto-generated</>
+                      )}
+                      {((activeSelected as any).procedure_snapshot?.steps || []).some((s: any) => s.config?.max_duration_minutes) && (
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />time-budgeted</>
+                      )}
+                      {((activeSelected as any).procedure_snapshot?.steps || []).some((s: any) => s.config?.dedupe_hosts) && (
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />host dedupe</>
                       )}
                     </div>
                     <div className="mt-2 text-[10px] text-slate-600 bg-phantix-950/30 rounded-lg px-3 py-2 leading-relaxed">
