@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2 } from "lucide-react";
+import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
@@ -341,6 +341,43 @@ export default function Vapt() {
                         <><span className="w-1 h-1 rounded-full bg-slate-500" />auto-generated plan</>
                       )}
                     </div>
+                    <div className="mt-2 text-[10px] text-slate-600 bg-phantix-950/30 rounded-lg px-3 py-2 leading-relaxed">
+                      Each subdomain scanned separately. Domain IPs not re-scanned on vuln steps. Time budgets apply — partial completion is not a failure.
+                    </div>
+                  </div>
+                )}
+
+                {/* Scan coverage — for completed/active campaigns with step output */}
+                {((activeSelected as any).status === "completed" || (activeSelected as any).status === "active") && (
+                  <div className="mb-4">
+                    {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).length > 0 && (
+                      <div className="p-3 rounded-lg bg-phantix-800/30 border border-phantix-700/30 space-y-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Scan Results</p>
+                        {((activeSelected as any).procedure_snapshot.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 3).map((step: any, i: number) => {
+                          const summary = step.output_summary || {};
+                          const isPartial = summary.budget_exhausted || summary.partial;
+                          const uniqueHosts = summary.unique_hosts;
+                          const skipped = summary.skipped_count || (summary.skipped_already_scanned?.length || 0);
+                          const scanned = summary.targets_scanned?.length || uniqueHosts || "—";
+                          return (
+                            <div key={i} className="flex items-start gap-2 text-xs border-t border-phantix-700/30 pt-2 first:border-0 first:pt-0">
+                              <div className={cx("w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5", isPartial ? "bg-severity-medium/20 text-severity-medium" : "bg-emerald-400/20 text-emerald-400")}>
+                                {isPartial ? <AlertTriangle size={10} /> : <CheckCircle2 size={12} />}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-slate-300 font-medium">{step.step_name}</p>
+                                <p className="text-slate-500">
+                                  {uniqueHosts != null ? `${uniqueHosts} hosts` : `${scanned} targets`}
+                                  {step.finding_count > 0 && <span className="text-slate-400"> · {step.finding_count} findings</span>}
+                                  {skipped > 0 && <span className="text-slate-500"> · {skipped} skipped (CDN IPs)</span>}
+                                </p>
+                                {isPartial && <p className="text-severity-medium text-[10px] mt-0.5">Partial — time budget reached</p>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
