@@ -309,7 +309,7 @@ export default function Vapt() {
                     )}
 
                     <div className="space-y-0">
-                      {((activeSelected as any).procedure_snapshot.steps || []).map((step: any, i: number) => {
+                      {((activeSelected as any).procedure_snapshot?.steps || []).map((step: any, i: number) => {
                         const stepType = step.step_type as string;
                         const stepIdx = (activeSelected as any).current_step_index ?? -1;
                         const isCurrent = activeSelected.status === "active" && i === stepIdx;
@@ -376,7 +376,7 @@ export default function Vapt() {
                     {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).length > 0 && (
                       <div className="p-3 rounded-lg bg-phantix-800/30 border border-phantix-700/30 space-y-2">
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Scan Results</p>
-                        {((activeSelected as any).procedure_snapshot.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 3).map((step: any, i: number) => {
+                        {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 3).map((step: any, i: number) => {
                           const summary = step.output_summary || {};
                           const isPartial = summary.budget_exhausted || summary.partial;
                           const uniqueHosts = summary.unique_hosts;
