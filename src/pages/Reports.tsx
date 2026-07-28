@@ -1,20 +1,134 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare } from "lucide-react";
+import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner } from "@/components/ui";
 import { loadReportsBundle } from "@/lib/data";
+import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
 const trackerStatuses = ["open", "in_progress", "resolved", "accepted", "verified", "false_positive"] as const;
 
+function JsonPre({ data }: { data: unknown }) {
+  return (
+    <pre className="mt-2 overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-[11px] leading-relaxed text-slate-300 max-h-[400px]">
+      {JSON.stringify(data, null, 2)}
+    </pre>
+  );
+}
+
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <div className="mt-2 rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4 text-xs leading-6 text-slate-300 max-h-[500px] overflow-auto whitespace-pre-wrap">
+      {content}
+    </div>
+  );
+}
+
+function SectionRenderer({ section }: { section: any }) {
+  if (!section) return <p className="text-xs text-slate-500">No data</p>;
+  const ct = section.content_type;
+  const content = section.content;
+
+  if (ct === "markdown" && typeof content === "string") {
+    return <MarkdownContent content={content} />;
+  }
+  if (ct === "json" || ct === "structured") {
+    if (Array.isArray(content)) {
+      return (
+        <div className="mt-2 space-y-2">
+          <p className="text-[10px] text-slate-600">{content.length} items</p>
+          {content.slice(0, 5).map((item: any, i: number) => (
+            <details key={i} className="rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-xs text-slate-300">
+              <summary className="cursor-pointer font-mono font-semibold text-gold-300 hover:text-gold-200">
+                {item.title ?? item.name ?? item.finding_key ?? `Item ${i + 1}`}
+                {item.severity && <SeverityBadge severity={item.severity} />}
+              </summary>
+              <JsonPre data={item} />
+            </details>
+          ))}
+          {content.length > 5 && <p className="text-[10px] text-slate-600">+{content.length - 5} more items</p>}
+        </div>
+      );
+    }
+    return <JsonPre data={content} />;
+  }
+  return <JsonPre data={content} />;
+}
+
 export default function Reports() {
   const { toast } = useStore();
-  const { data, loading } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] });
+  const { data, loading, reload } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] });
   const { reports, trackerFindings } = data;
   const [tab, setTab] = useState("reports");
   const [genOpen, setGenOpen] = useState(false);
+  const [genSubmitting, setGenSubmitting] = useState(false);
+  const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf"] as string[], run_inline: false });
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const fetchedCampaigns = useRef(false);
+
+  // Detail modal
+  const [detail, setDetail] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailTab, setDetailTab] = useState("");
+
+  useEffect(() => {
+    if (genOpen && !fetchedCampaigns.current && api) {
+      fetchedCampaigns.current = true;
+      api.get<any>("/vapt/campaigns?limit=50").then((r) => {
+        setCampaigns(r.items ?? r.campaigns ?? r ?? []);
+      }).catch(() => {});
+    }
+  }, [genOpen]);
+
+  const handleGenerate = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!genForm.campaign_id) {
+      toast("error", "Validation", "Please select a campaign.");
+      return;
+    }
+    setGenSubmitting(true);
+    try {
+      await api.post("/reports", {
+        report_type: genForm.report_type,
+        campaign_id: Number(genForm.campaign_id),
+        formats: genForm.formats,
+        run_inline: genForm.run_inline,
+      });
+      setGenOpen(false);
+      toast("success", "Report queued", "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
+      setTimeout(() => reload(), 800);
+    } catch (err: any) {
+      toast("error", "Failed", err.message ?? "Report generation failed");
+    } finally {
+      setGenSubmitting(false);
+    }
+  }, [genForm, toast, reload]);
+
+  const openDetail = useCallback(async (report: any) => {
+    setDetail(report);
+    setDetailLoading(true);
+    setDetailTab("");
+    try {
+      const full = await api.get<any>(`/reports/${report.id}`);
+      const merged = { ...report, ...full };
+      setDetail(merged);
+      const keys = Object.keys(merged.sections ?? {});
+      setDetailTab(keys[0] ?? "");
+    } catch {
+      // fallback – detail stays as the list item
+    } finally {
+      setDetailLoading(false);
+    }
+  }, []);
+
+  const toggleFormat = (f: string) => {
+    setGenForm((prev) => ({
+      ...prev,
+      formats: prev.formats.includes(f) ? prev.formats.filter((x) => x !== f) : [...prev.formats, f],
+    }));
+  };
 
   if (loading) {
     return (
@@ -47,7 +161,6 @@ export default function Reports() {
 
       {tab === "reports" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-          {/* Verification gate explainer */}
           <div className="flex items-start gap-3 rounded-2xl border border-gold-400/20 bg-gold-400/5 px-4 py-3">
             <ShieldCheck size={16} className="mt-0.5 shrink-0 text-gold-400" />
             <p className="text-xs leading-5 text-slate-400">
@@ -60,7 +173,7 @@ export default function Reports() {
           {reports.map((r, i) => (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card hover>
-                <div className="flex flex-wrap items-center gap-4">
+                <button onClick={() => openDetail(r)} className="flex w-full flex-wrap items-center gap-4 text-left">
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
                     <FileText size={20} />
                   </span>
@@ -68,20 +181,19 @@ export default function Reports() {
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-slate-100">{r.title}</p>
                       <StatusBadge status={r.status} />
-                      {(r as any).report_version != null && <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">v{(r as any).report_version ?? r.version}</span>}
+                      {(r as any).report_version != null && <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">v{(r as any).report_version ?? (r as any).version}</span>}
                       <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{r.size_bytes ? ` · ${formatBytes(r.size_bytes)}` : ""}
+                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` · ${formatBytes((r as any).size_bytes)}` : ""}
                     </p>
                   </div>
 
-                  {/* Verification stats */}
                   <div className="hidden items-center gap-4 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-2.5 lg:flex">
                     {([
-                      [r.stats?.after_dedupe ?? 0, "deduped", "text-phantix-300"],
-                      [r.stats?.after_verification ?? 0, "verified", "text-emerald-400"],
-                      [r.stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
+                      [(r as any).stats?.after_dedupe ?? 0, "deduped", "text-phantix-300"],
+                      [(r as any).stats?.after_verification ?? 0, "verified", "text-emerald-400"],
+                      [(r as any).stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
                     ] as [number, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="text-center">
                         <p className={cx("font-display text-lg font-bold", c)}>{v}</p>
@@ -97,10 +209,18 @@ export default function Reports() {
                     </div>
                   ) : (
                     <div className="flex gap-1.5">
-                      {(r.formats_requested || []).map((f) => (
+                      {(r.formats_requested || []).map((f: string) => (
                         <button
                           key={f}
-                          onClick={() => toast("info", `Downloading ${f.toUpperCase()}`, `GET /reports/${r.id}/download?format=${f} — bytes with Content-Disposition.`)}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = `${import.meta.env.VITE_API_BASE ?? ""}/reports/${r.id}/download?format=${f}`;
+                            const a = document.createElement("a");
+                            a.href = url;
+                            a.download = `report-${r.id}-v${(r as any).report_version ?? 1}.${f === "docx" ? "docx" : f === "markdown" ? "md" : f}`;
+                            a.click();
+                          }}
                           className={cx(
                             "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
                             f === "pdf" || f === "docx"
@@ -113,7 +233,7 @@ export default function Reports() {
                       ))}
                     </div>
                   )}
-                </div>
+                </button>
               </Card>
             </motion.div>
           ))}
@@ -164,7 +284,15 @@ export default function Reports() {
                     <td className="td">
                       <select
                         defaultValue={f.status}
-                        onChange={(e) => toast("success", "Tracker updated", `PATCH /reports/tracker/${f.finding_key} → ${e.target.value}`)}
+                        onChange={async (e) => {
+                          const newStatus = e.target.value;
+                          try {
+                            await api.patch(`/reports/tracker/${f.finding_key}`, { status: newStatus });
+                            toast("success", "Tracker updated", `PATCH /reports/tracker/${f.finding_key} → ${newStatus}`);
+                          } catch (err: any) {
+                            toast("error", "Failed", err.message ?? "Status update failed");
+                          }
+                        }}
                         className="rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 text-xs text-slate-300 outline-none focus:border-gold-400/50"
                       >
                         {trackerStatuses.map((s) => (
@@ -183,17 +311,10 @@ export default function Reports() {
 
       {/* Generate modal */}
       <Modal open={genOpen} onClose={() => setGenOpen(false)} title="Generate report">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setGenOpen(false);
-            toast("success", "Report queued", "POST /reports with run_inline=false — poll until complete. PDF/DOCX use the VAPT deliverable template.");
-          }}
-        >
+        <form className="space-y-4" onSubmit={handleGenerate}>
           <div>
             <label className="label">Report type</label>
-            <select className="input">
+            <select className="input" value={genForm.report_type} onChange={(e) => setGenForm((p) => ({ ...p, report_type: e.target.value }))}>
               <option value="vapt_campaign">vapt_campaign — full client package</option>
               <option value="executive">executive — board summary</option>
               <option value="compliance">compliance — framework-first</option>
@@ -202,31 +323,149 @@ export default function Reports() {
           </div>
           <div>
             <label className="label">Campaign</label>
-            <select className="input">
-              <option value="13">Q3 External Assessment (active)</option>
-              <option value="12">Payments API Deep Dive (completed)</option>
-              <option value="11">Monthly Infrastructure Sweep (completed)</option>
+            <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
+              <option value="">Select campaign…</option>
+              {campaigns.map((c: any) => (
+                <option key={c.id} value={c.id}>
+                  #{c.id} — {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
+                </option>
+              ))}
             </select>
           </div>
           <div>
             <label className="label">Formats</label>
             <div className="grid grid-cols-3 gap-2">
-              {["pdf", "docx", "markdown", "json", "xlsx", "csv"].map((f) => (
-                <label key={f} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-phantix-700/50 bg-phantix-950/50 py-2 font-mono text-xs text-slate-300 has-[:checked]:border-gold-400/50 has-[:checked]:bg-gold-400/10 has-[:checked]:text-gold-300">
-                  <input type="checkbox" defaultChecked={["pdf", "docx", "markdown", "json"].includes(f)} className="h-3 w-3 accent-gold-400" />
+              {["markdown", "json", "csv", "xlsx", "pdf", "docx"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => toggleFormat(f)}
+                  className={cx(
+                    "rounded-xl border px-2.5 py-2 font-mono text-xs font-semibold uppercase transition-colors",
+                    genForm.formats.includes(f)
+                      ? "border-gold-400/50 bg-gold-400/10 text-gold-300"
+                      : "border-phantix-700/50 bg-phantix-950/50 text-slate-400 hover:bg-phantix-800/60",
+                  )}
+                >
                   {f}
-                </label>
+                </button>
               ))}
             </div>
           </div>
+          <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={genForm.run_inline}
+              onChange={(e) => setGenForm((p) => ({ ...p, run_inline: e.target.checked }))}
+              className="h-3.5 w-3.5 accent-gold-400"
+            />
+            Run inline (waits for completion — may time out for large campaigns)
+          </label>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3.5 text-xs leading-5 text-slate-500">
             <FileDown size={12} className="mr-1.5 inline text-gold-400" />
             Executive PDF/DOCX follow the standard deliverable: cover → document control → §§1–9 (exec, scope,
             priority findings with confidence, attack paths, technical catalogue, risk split, compliance, roadmap,
             methodology) → Appendix A evidence IDs.
           </div>
-          <button className="btn-primary w-full"><Download size={15} /> Generate</button>
+          <button className="btn-primary w-full" disabled={genSubmitting}>
+            {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating…</> : <><Download size={15} /> Generate</>}
+          </button>
         </form>
+      </Modal>
+
+      {/* Report detail modal */}
+      <Modal open={!!detail} onClose={() => { setDetail(null); setDetailTab(""); }} title={detail?.title ?? ""} wide>
+        {detail && (
+          <div className="space-y-4">
+            {detailLoading && (
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Spinner className="h-4 w-4" /> Loading report sections…
+              </div>
+            )}
+
+            {/* AI narratives banner */}
+            {detail.ai_narratives && (
+              <div className="rounded-2xl border border-gold-400/20 bg-gold-400/5 px-4 py-3 space-y-3">
+                <p className="text-xs font-semibold text-gold-300">
+                  AI Executive Summary
+                  {detail.ai_narratives.model_name && <span className="ml-1.5 text-slate-500 font-normal">via {detail.ai_narratives.model_name}</span>}
+                  {detail.ai_narratives.confidence != null && <span className="ml-2 text-slate-500 font-normal">confidence {(detail.ai_narratives.confidence * 100).toFixed(0)}%</span>}
+                </p>
+                <div className="text-xs leading-5 text-slate-300 max-h-[300px] overflow-auto">
+                  <p>{detail.ai_narratives.executive_summary}</p>
+                  {detail.ai_narratives.overall_posture && (
+                    <p className="mt-3 text-slate-400 italic">Posture: {detail.ai_narratives.overall_posture}</p>
+                  )}
+                </div>
+                {detail.ai_narratives.remediation_guidance && (
+                  <details className="text-xs text-slate-400">
+                    <summary className="cursor-pointer font-semibold text-slate-300">Remediation Guidance</summary>
+                    <div className="mt-2 whitespace-pre-wrap leading-5">{detail.ai_narratives.remediation_guidance}</div>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {/* Output files */}
+            {(detail as any).output_files && (
+              <div className="flex flex-wrap items-center gap-2">
+                <FileCode size={13} className="text-slate-500" />
+                {Object.entries((detail as any).output_files as Record<string, string>).map(([fmt, _path]) => (
+                  <button
+                    key={fmt}
+                    onClick={() => {
+                      const url = `${import.meta.env.VITE_API_BASE ?? ""}/reports/${detail.id}/download?format=${fmt}`;
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `report-${detail.id}.${fmt === "docx" ? "docx" : fmt === "markdown" ? "md" : fmt === "xlsx" ? "xlsx" : fmt}`;
+                      a.click();
+                    }}
+                    className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
+                  >
+                    <Download size={10} className="mr-1 inline" /> {fmt}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Sections */}
+            {detail.sections && (
+              <div>
+                <div className="flex flex-wrap gap-1.5 mb-3 border-b border-phantix-700/40 pb-3">
+                  {Object.keys(detail.sections).filter((k) => !k.startsWith("_")).map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => setDetailTab(key)}
+                      className={cx(
+                        "rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                        detailTab === key
+                          ? "bg-gold-400/12 border border-gold-400/30 text-gold-200"
+                          : "border border-transparent text-slate-500 hover:text-slate-300 hover:bg-phantix-800/60",
+                      )}
+                    >
+                      {titleCase(detail.sections[key].title ?? key.replace(/_/g, " "))}
+                    </button>
+                  ))}
+                </div>
+                {detailTab && detail.sections[detailTab] && (
+                  <div className="space-y-3">
+                    {detail.sections[detailTab].metadata && (
+                      <div className="flex flex-wrap gap-2 text-[10px] text-slate-500">
+                        {detail.sections[detailTab].metadata.count != null && (
+                          <span className="chip border-phantix-600/50 bg-phantix-800/60">{detail.sections[detailTab].metadata.count} entries</span>
+                        )}
+                        {detail.sections[detailTab].metadata.ai_insight && (
+                          <span className="rounded-md border border-gold-400/20 bg-gold-400/5 px-2 py-1 text-gold-300/80">AI: {detail.sections[detailTab].metadata.ai_insight}</span>
+                        )}
+                      </div>
+                    )}
+                    <SectionRenderer section={detail.sections[detailTab]} />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   );

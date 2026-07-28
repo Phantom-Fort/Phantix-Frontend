@@ -4,6 +4,7 @@ import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadRisksBundle } from "@/lib/data";
+import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -19,6 +20,16 @@ export default function Risks() {
   const [band, setBand] = useState("all");
   const [selected, setSelected] = useState<Risk | null>(null);
 
+  // Submitting state for buttons
+  const [treating, setTreating] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [assignedOwner, setAssignedOwner] = useState("");
+
+  // History
+  const [history, setHistory] = useState<any[] | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
   const sorted = useMemo(
     () =>
       [...risks]
@@ -26,6 +37,58 @@ export default function Risks() {
         .sort((a, b) => (tab === "priority" ? b.priority_score - a.priority_score : b.inherent_score - a.inherent_score)),
     [risks, band, tab],
   );
+
+  const handleProposeTreatment = async () => {
+    if (!selected) return;
+    if (!(await requireDualControl("Proposing risk treatment requires a dual-control operate session."))) return;
+    setTreating(true);
+    try {
+      await api.post(`/risks/${selected.id}/treatments`, {
+        description: "Proposed treatment plan via Phantix UI",
+        strategy: "mitigate",
+      });
+      toast("success", "Treatment proposed", `POST /risks/${selected.id}/treatments — submit → approve → complete; approve needs the authorizer session.`);
+    } catch (err: any) {
+      toast("error", "Failed", err.message ?? "Proposal failed");
+    } finally {
+      setTreating(false);
+    }
+  };
+
+  const handleAssignOwner = async () => {
+    if (!selected) return;
+    if (!(await requireDualControl("Assigning a risk owner requires a dual-control operate session."))) return;
+    const owner = assignedOwner.trim();
+    if (!owner) {
+      toast("error", "Validation", "Enter an owner email or name.");
+      return;
+    }
+    setAssigning(true);
+    try {
+      await api.patch(`/risks/${selected.id}`, { owner });
+      toast("success", "Owner updated", `PATCH /risks/${selected.id} — ${owner}`);
+      setAssignedOwner("");
+    } catch (err: any) {
+      toast("error", "Failed", err.message ?? "Assignment failed");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  const handleViewHistory = async () => {
+    if (!selected) return;
+    setHistoryLoading(true);
+    setHistoryOpen(true);
+    setHistory(null);
+    try {
+      const res = await api.get<any>(`/risks/${selected.id}/history`);
+      setHistory(res.items ?? res.history ?? res ?? []);
+    } catch (err: any) {
+      toast("error", "Failed", err.message ?? "Could not load history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -42,7 +105,13 @@ export default function Risks() {
         title="Risk register"
         description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned — Phantix never owns them."
         actions={
-          <button className="btn-secondary" onClick={() => toast("info", "Export", "GET /risks/export?format=json — marked purpose: expert_review_billable.")}>
+          <button className="btn-secondary" onClick={() => {
+            const url = `${import.meta.env.VITE_API_BASE ?? ""}/risks/export?format=json`;
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "risks-export.json";
+            a.click();
+          }}>
             <Download size={15} /> Export for expert review
           </button>
         }
@@ -116,7 +185,7 @@ export default function Risks() {
       </div>
 
       {/* Detail modal */}
-      <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.title ?? ""} wide>
+      <Modal open={!!selected} onClose={() => { setSelected(null); setAssignedOwner(""); }} title={selected?.title ?? ""} wide>
         {selected && (
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +215,6 @@ export default function Risks() {
                 {(() => {
                   const sb = selected.scoring_breakdown;
                   if (!sb) return <p className="text-xs text-slate-500">No breakdown data</p>;
-                  // Handle old array format vs new object format
                   const rulesFactors = Array.isArray(sb) ? sb.map((b: any) => ({ component: b.component, contribution: b.contribution, detail: b.detail }))
                     : ((sb as any).rules_factors || []).map((rf: any) => ({ component: rf.factor, contribution: rf.points, detail: rf.note || "" }));
                   return rulesFactors.length > 0 ? rulesFactors.map((b: any) => (
@@ -198,29 +266,21 @@ export default function Risks() {
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2.5 border-t border-phantix-700/40 pt-4">
-              <button
-                className="btn-primary"
-                onClick={() =>
-                  void (async () => {
-                    if (!(await requireDualControl("Proposing risk treatment requires a dual-control operate session."))) return;
-                    toast("success", "Treatment proposed", "propose → submit → approve → complete; approve needs the authorizer session.");
-                  })()
-                }
-              >
-                Propose treatment
+              <button className="btn-primary" onClick={handleProposeTreatment} disabled={treating}>
+                {treating ? "Proposing…" : "Propose treatment"}
               </button>
-              <button
-                className="btn-secondary"
-                onClick={() =>
-                  void (async () => {
-                    if (!(await requireDualControl("Assigning a risk owner requires a dual-control operate session."))) return;
-                    toast("info", "Owner assigned", "PATCH /risks/{id}");
-                  })()
-                }
-              >
-                Assign owner
-              </button>
-              <button className="btn-ghost" onClick={() => toast("info", "History", "GET /risks/{id}/history — every score change is audited.")}>
+              <div className="flex items-center gap-2">
+                <input
+                  className="input w-40 text-xs"
+                  placeholder="Owner email"
+                  value={assignedOwner}
+                  onChange={(e) => setAssignedOwner(e.target.value)}
+                />
+                <button className="btn-secondary" onClick={handleAssignOwner} disabled={assigning}>
+                  {assigning ? "Saving…" : "Assign owner"}
+                </button>
+              </div>
+              <button className="btn-ghost" onClick={handleViewHistory}>
                 View history
               </button>
             </div>
@@ -230,6 +290,30 @@ export default function Risks() {
               Residual risk is recalculated on propose/approve/complete.
             </p>
           </div>
+        )}
+      </Modal>
+
+      {/* History modal */}
+      <Modal open={historyOpen} onClose={() => { setHistoryOpen(false); setHistory(null); }} title="Risk history" wide>
+        {historyLoading ? (
+          <div className="flex items-center gap-2 text-sm text-slate-400"><Spinner className="h-4 w-4" /> Loading history…</div>
+        ) : history && history.length > 0 ? (
+          <div className="space-y-2 max-h-[500px] overflow-auto">
+            {history.map((h: any, i: number) => (
+              <div key={i} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="font-mono text-slate-300">{h.action ?? h.event ?? h.change_type ?? "update"}</span>
+                  <span className="text-slate-500">{h.timestamp ?? h.created_at ?? h.changed_at ? timeAgo(h.timestamp ?? h.created_at ?? h.changed_at) : ""}</span>
+                </div>
+                {h.detail && <p className="text-slate-400">{h.detail}</p>}
+                {h.old_value != null && h.new_value != null && (
+                  <p className="text-slate-500 mt-1"><span className="line-through text-slate-600">{String(h.old_value)}</span> → <span className="text-slate-300">{String(h.new_value)}</span></p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">{history ? "No history entries" : "Failed to load history"}</p>
         )}
       </Modal>
     </div>
