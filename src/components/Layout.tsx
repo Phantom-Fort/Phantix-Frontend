@@ -160,7 +160,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
 }
 
 export default function Layout() {
-  const { session, org, operate, lockOperate, logout, dualControl, demoActive, hasLiveApi, switchToRealOrg, requireDualControl, securityDbReady } = useStore();
+  const { session, org, operate, lockOperate, logout, dualControl, demoActive, hasLiveApi, switchToRealOrg, requireDualControl, securityDbReady, toast } = useStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const location = useLocation();
@@ -176,6 +176,46 @@ export default function Layout() {
     window.addEventListener("keydown", fn);
     return () => window.removeEventListener("keydown", fn);
   }, []);
+
+  // Auto-logout after inactivity — timeout driven by backend's inactivity_expires_at (fallback 20 min)
+  useEffect(() => {
+    if (!session?.authenticated || demoActive) return;
+    const DEFAULT_MS = 20 * 60 * 1000;
+    const WARNING_BEFORE_MS = 5 * 60 * 1000;
+    let lastActivity = Date.now();
+    let warned = false;
+
+    const getTimeoutMs = () => operate.expiresAt ? (operate.expiresAt - Date.now()) : DEFAULT_MS;
+    const getWarningMs = () => getTimeoutMs() - WARNING_BEFORE_MS;
+
+    const markActivity = () => { lastActivity = Date.now(); warned = false; };
+    const events = ["mousedown", "keydown", "scroll", "touchstart", "mousemove"];
+    events.forEach((e) => window.addEventListener(e, markActivity, { passive: true }));
+
+    const check = () => {
+      if (!session?.authenticated) return;
+      const idle = Date.now() - lastActivity;
+      const timeoutMs = getTimeoutMs();
+      if (idle >= timeoutMs) {
+        toast("warning", "Session expired", "You have been logged out due to a long period of inactivity. Please sign in again.");
+        logout();
+      } else if (idle >= getWarningMs() && !warned) {
+        warned = true;
+        const mins = Math.round(WARNING_BEFORE_MS / 60000);
+        toast("info", "Session expiring soon", `You will be logged out in ${mins} minutes due to inactivity.`);
+      }
+    };
+
+    const interval = window.setInterval(check, 10000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, markActivity));
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [session?.authenticated, demoActive, operate.expiresAt, logout, toast]);
 
   const isLanding = location.pathname === "/";
   if (isLanding) return <Outlet />;

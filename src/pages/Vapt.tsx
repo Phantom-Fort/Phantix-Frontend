@@ -291,7 +291,7 @@ export default function Vapt() {
                     {((activeSelected as any).asset_scope?.intelligent_plan_id) && (
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] text-slate-500">
                         {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
-                          <span>{((activeSelected as any).asset_scope.asset_types as string[]).length} asset types</span>
+                          <span>{((activeSelected as any).asset_scope?.asset_types as string[])?.length ?? 0} asset types</span>
                         )}
                       </div>
                     )}
@@ -303,10 +303,10 @@ export default function Vapt() {
                           <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse-soft" />
                           <span className="text-blue-400 font-medium">Phase: {(activeSelected as any).current_phase || `Step ${((activeSelected as any).current_step_index || 0) + 1}`}</span>
                           <span className="text-slate-500">
-                            Step {((activeSelected as any).current_step_index || 0) + 1} of {((activeSelected as any).procedure_snapshot.steps.length)}
+                            Step {((activeSelected as any).current_step_index || 0) + 1} of {((activeSelected as any).procedure_snapshot?.steps?.length ?? 0)}
                           </span>
                         </div>
-                        <ProgressBar value={(((activeSelected as any).current_step_index || 0) + 1) / (((activeSelected as any).procedure_snapshot.steps.length || 1)) * 100} color="#38BDF8" />
+                        <ProgressBar value={(((activeSelected as any).current_step_index || 0) + 1) / (((activeSelected as any).procedure_snapshot?.steps?.length || 1)) * 100} color="#38BDF8" />
                       </div>
                     )}
 
@@ -328,7 +328,7 @@ export default function Vapt() {
                               <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-blue-400/20 text-blue-400" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
                                 {isCompleted ? <CheckCircle2 size={12} /> : isFailed ? <XCircle size={12} /> : isCurrent ? <Loader2 size={12} className="animate-spin" /> : i + 1}
                               </div>
-                              {i < ((activeSelected as any).procedure_snapshot.steps.length - 1) && (
+                              {i < (((activeSelected as any).procedure_snapshot?.steps?.length ?? 0) - 1) && (
                                 <div className={cx("w-px h-4 mt-0.5", isCompleted ? "bg-emerald-400/30" : "bg-phantix-700/50")} />
                               )}
                             </div>
@@ -351,7 +351,7 @@ export default function Vapt() {
                     {/* Plan metadata footer */}
                     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
                       {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
-                        <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).asset_scope.asset_types.length} asset types</>
+                        <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).asset_scope?.asset_types?.length ?? 0} asset types</>
                       )}
                       {(activeSelected as any).procedure_snapshot?.source && (
                         <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).procedure_snapshot.source.replace(/_/g, " ")}</>

@@ -191,7 +191,7 @@ export default function Assets() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading assetsâ€¦
+        <Spinner className="h-5 w-5" /> Loading assets...
       </div>
     );
   }
@@ -201,7 +201,7 @@ export default function Assets() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Attack-surface inventory"
-        description="Every row lives only in your dedicated security database â€” schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
+        description="Every row lives only in your dedicated security database -- schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -256,7 +256,7 @@ export default function Assets() {
                 </tr>
               </thead>
               <tbody>
-                {prioritized!.map((a: any, i: number) => {
+                {(prioritized ?? []).map((a: any, i: number) => {
                   const score = a.riskScore ?? a.risk_score ?? 0;
                   const level = (a.riskLevel ?? a.risk_level ?? "low").toLowerCase();
                   const findings = a.openFindingsCount ?? a.open_findings ?? 0;

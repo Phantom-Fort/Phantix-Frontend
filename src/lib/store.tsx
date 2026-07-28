@@ -152,7 +152,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           dualControl.authorizer.full_name === name);
       const expiresAt = res.inactivity_expires_at
         ? Date.parse(res.inactivity_expires_at)
-        : Date.now() + 30 * 60_000;
+        : Date.now() + 20 * 60_000;
       setOperate({
         unlocked: !!tokens.dualControl,
         actingUser: name,
