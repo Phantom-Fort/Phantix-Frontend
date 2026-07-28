@@ -394,9 +394,22 @@ export interface AlertSettings {
 
 export interface AuditEvent {
   id: number;
-  event_key: string;
+  action_key: string;
+  action_label: string;
   category: string;
-  action: string;
+  status: string;
+  summary: string;
+  details: {
+    path: string;
+    method: string;
+    actor_user_id?: number;
+    actor_email?: string;
+    token_type?: string;
+    passive?: boolean;
+    [key: string]: unknown;
+  } | null;
+  source: string;
+  ip_address: string | null;
   initiator_name: string | null;
   initiator_title: string | null;
   authorizer_name: string | null;

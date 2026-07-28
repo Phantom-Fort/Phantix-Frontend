@@ -348,13 +348,10 @@ export async function loadAlertsBundle() {
 export async function loadAuditBundle() {
   if (isDemoMode()) {
     await delay();
-    return { events: demo.auditEvents, pending: demo.pendingActions };
+    return { events: demo.auditEvents };
   }
-  const [events, pending] = await Promise.all([
-    softList<AuditEvent>("/audit/events"),
-    softList<PendingAction>("/audit/pending"),
-  ]);
-  return { events, pending };
+  const events = await softList<AuditEvent>("/audit/events");
+  return { events };
 }
 
 export async function loadPeopleBundle() {

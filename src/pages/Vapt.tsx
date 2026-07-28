@@ -53,7 +53,9 @@ export default function Vapt() {
   const handleApprove = async (approvalId: number, approve: boolean) => {
     if (!(await requireDualControl("Approval requires the assigned controller's dual-control session."))) return;
     try {
-      await api.post(`/vapt/approvals/${approvalId}/decide`, { approve, notes: approve ? "Approved" : "Rejected" });
+      await api.post(`/vapt/approvals/${approvalId}/decide`, approve
+        ? { approve: true, notes: "Approved" }
+        : { approve: false, rejection_reason: "Rejected" });
       toast("success", approve ? "Approved" : "Rejected");
       reload();
     } catch (e: any) { toast("error", "Decision failed", e.message || ""); }

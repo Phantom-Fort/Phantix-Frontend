@@ -340,7 +340,7 @@ export default function Dashboard() {
               <div className="space-y-2.5">
                 {auditEvents.slice(0, 3).map((e) => (
                   <div key={e.id} className="text-xs">
-                    <p className="leading-5 text-slate-300">{e.action}</p>
+                    <p className="leading-5 text-slate-300">{e.summary}</p>
                     <p className="mt-0.5 text-slate-600">
                       {e.initiator_name}{e.authorizer_name ? ` → ${e.authorizer_name}` : ""} · {timeAgo(e.created_at)}
                     </p>

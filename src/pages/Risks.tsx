@@ -43,13 +43,19 @@ export default function Risks() {
     if (!(await requireDualControl("Proposing risk treatment requires a dual-control operate session."))) return;
     setTreating(true);
     try {
-      await api.post(`/risks/${selected.id}/treatments`, {
-        description: "Proposed treatment plan via Phantix UI",
+      const treatment = await api.post<any>(`/risks/${selected.id}/treatments`, {
+        description: "Proposed treatment plan",
         strategy: "mitigate",
       });
-      toast("success", "Treatment proposed", `POST /risks/${selected.id}/treatments — submit → approve → complete; approve needs the authorizer session.`);
+      const treatmentId = treatment.id ?? treatment.treatment_id;
+      toast("success", "Treatment created", `POST /risks/${selected.id}/treatments`);
+
+      if (treatmentId) {
+        await api.post(`/risks/treatments/${treatmentId}/submit`, {});
+        toast("success", "Submitted for approval", `POST /risks/treatments/${treatmentId}/submit — awaiting authorizer`);
+      }
     } catch (err: any) {
-      toast("error", "Failed", err.message ?? "Proposal failed");
+      toast("error", "Failed", err.message ?? "Treatment proposal failed");
     } finally {
       setTreating(false);
     }

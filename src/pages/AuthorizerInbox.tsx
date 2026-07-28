@@ -58,11 +58,20 @@ export default function AuthorizerInbox() {
       ? (item.decidePaths.approve || item.decidePaths.decide)
       : (item.decidePaths.reject || item.decidePaths.decide);
     if (!path) { toast("error", "No decision path"); return; }
-    try {
-      await api.post(path, approve
+
+    let body: Record<string, unknown>;
+    if (item.channel === "vapt") {
+      body = approve
         ? { approve: true, notes: "Approved" }
-        : { approve: false, rejection_reason: "Rejected" }
-      );
+        : { approve: false, rejection_reason: "Rejected" };
+    } else if (approve) {
+      body = { notes: "Approved" };
+    } else {
+      body = { reason: "Rejected" };
+    }
+
+    try {
+      await api.post(path, body);
       toast("success", approve ? "Approved" : "Rejected");
       reload();
     } catch (e: any) {
