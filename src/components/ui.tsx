@@ -32,7 +32,7 @@ export function RiskBadge({ level }: { level: string }) {
 }
 
 export function VerificationBadge({ status }: { status: VerificationStatus }) {
-  const m = verificationMeta[status];
+  const m = verificationMeta[status] || verificationMeta.unverified;
   return (
     <span className={cx("chip", m.className)}>
       {status.includes("verified") && <ShieldCheck size={12} />}

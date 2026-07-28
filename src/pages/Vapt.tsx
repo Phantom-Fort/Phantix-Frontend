@@ -471,7 +471,7 @@ export default function Vapt() {
                           <SeverityBadge severity={f.severity} />
                           <VerificationBadge status={f.verification_status} />
                         </div>
-                        {f.attack_path.length > 0 && (
+                        {f.attack_path?.length > 0 && (
                           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
                             <GitBranch size={11} className="text-gold-400" />
                             {f.attack_path.map((hop, i) => (
