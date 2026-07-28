@@ -1,4 +1,4 @@
-// ── Phantix API client ────────────────────────────────────────────────────────
+﻿// ── Phantix API client ────────────────────────────────────────────────────────
 // Implements the token model from the FE guides:
 //   platform_access_token  (company JWT, type=access)
 //   platform_org_user_token (type=org_user)
@@ -8,7 +8,7 @@
 //   phantix_device_id      (stable browser UUID)
 //
 // Demo mode: active when VITE_API_BASE is unset, OR when the visitor enters the
-// demo from the landing page (runtime flag) — even against a configured API.
+// demo from the landing page (runtime flag) --- even against a configured API.
 // Set VITE_API_BASE (e.g. https://staging.phantix.site/api/v1) for live data.
 
 export const API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
@@ -20,7 +20,7 @@ export function enterDemoMode(): void {
   sessionStorage.setItem(DEMO_FLAG, "1");
 }
 
-/** Leave demo mode — the next sign-in talks to the real organization. */
+/** Leave demo mode --- the next sign-in talks to the real organization. */
 export function exitDemoMode(): void {
   sessionStorage.removeItem(DEMO_FLAG);
   localStorage.removeItem(DEMO_FLAG);
@@ -179,6 +179,20 @@ export const api = {
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     if (!res.ok) throw new ApiError(res.status, res.statusText);
     return res.text();
+  },
+
+  /** Upload a file with FormData --- sends all auth headers. */
+  async upload<T>(path: string, formData: FormData): Promise<T> {
+    const headers: Record<string, string> = {};
+    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    headers["X-Device-Id"] = deviceId();
+    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+
+    const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return res.json() as T;
   },
 };
 

@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from "lucide-react";
 import { tokens, isDemoMode, isDemoFlagSet, enterDemoMode, exitDemoMode, API_BASE, delay, api, deviceId } from "./api";
@@ -43,7 +43,7 @@ type Store = {
   securityDbReady: boolean;
   /** True while browsing the demo tenant (no API, or demo flag from the landing page). */
   demoActive: boolean;
-  /** True when a live API is configured — enables the "switch to real org" UX. */
+  /** True when a live API is configured --- enables the "switch to real org" UX. */
   hasLiveApi: boolean;
   /** Enter the demo tenant without credentials (from the landing page). */
   enterDemo: () => void;
@@ -163,7 +163,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [dualControl.authorizer],
   );
 
-  // Hydrate tenant chrome from demo-data OR live API — never mix.
+  // Hydrate tenant chrome from demo-data OR live API --- never mix.
   useEffect(() => {
     if (!session?.authenticated) {
       if (!isDemoMode()) {
@@ -369,7 +369,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const requireDualControl = useCallback(
     (reason = "This action requires an active dual-control operate session.") => {
-      // Check expiry first — clear if token is stale (tab hidden, setTimeout delayed)
+      // Check expiry first --- clear if token is stale (tab hidden, setTimeout delayed)
       if (operate.unlocked && operate.expiresAt && operate.expiresAt <= Date.now()) {
         tokens.dualControl = null;
         setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
@@ -385,7 +385,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return Promise.resolve(true);
       }
       if (!dualControl.configured && !isDemoMode()) {
-        toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control — set up initiator + authorizer on the Platform to unlock writes.");
+        toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control --- set up initiator + authorizer on the Platform to unlock writes.");
         return Promise.resolve(false);
       }
       if (dualControl.configured && !session?.isInitiator && !session?.isAuthorizer && !isDemoMode()) {
@@ -418,11 +418,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (ms <= 0) { checkAndLock(); return; }
     // Primary timer
     const t = window.setTimeout(checkAndLock, ms);
-    // Poll fallback — catches delayed setTimeout in background tabs
+    // Poll fallback --- catches delayed setTimeout in background tabs
     const fallback = window.setInterval(() => {
       if (Date.now() >= operate.expiresAt!) { checkAndLock(); }
     }, 10000);
-    // Visibility change — check when tab returns to foreground
+    // Visibility change --- check when tab returns to foreground
     const onVisible = () => { if (document.visibilityState === "visible") checkAndLock(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -554,7 +554,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async (email: string, code: string) => {
       await requestDualControlOtp(email);
       const res = await verifyDualControlOtp(code);
-      if (res.deviceRequired) throw new Error("Device verification required — complete the dual-control overlay");
+      if (res.deviceRequired) throw new Error("Device verification required --- complete the dual-control overlay");
     },
     [requestDualControlOtp, verifyDualControlOtp],
   );

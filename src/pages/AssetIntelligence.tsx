@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Shield, AlertTriangle, Search, Activity, RefreshCw, ArrowRight, Globe, Server, Sparkles, Wifi, WifiOff } from "lucide-react";
@@ -60,7 +60,7 @@ export default function AssetIntelligenceDashboard() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-phantix-500 border-t-gold-400" />
-        Loading intelligence data…
+        Loading intelligence data...
       </div>
     );
   }
@@ -151,7 +151,7 @@ export default function AssetIntelligenceDashboard() {
         {/* Newly Discovered */}
         <Card>
           <CardHeader
-            title="Newly Discovered — Not Scanned"
+            title="Newly Discovered --- Not Scanned"
             subtitle="Assets found but not yet scanned"
             action={
               <Link to="/assets" className="text-xs text-gold-400 hover:text-gold-300 flex items-center gap-1">
@@ -204,7 +204,7 @@ export default function AssetIntelligenceDashboard() {
           <Card>
             <CardHeader
               title={<><Sparkles size={16} className="inline text-gold-400 mr-1" /> AI Posture Summary</>}
-              subtitle={aiResult.summarySource === "ai" ? "Generated from known data only — never invents CVEs or scores" : "Deterministic summary"}
+              subtitle={aiResult.summarySource === "ai" ? "Generated from known data only --- never invents CVEs or scores" : "Deterministic summary"}
             />
             <div className="space-y-3">
               <div className="rounded-lg bg-phantix-950/60 border border-phantix-700/40 p-4">

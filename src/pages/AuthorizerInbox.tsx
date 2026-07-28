@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, TableSkeleton, EmptyState } from "@/components/ui";
@@ -85,7 +85,7 @@ export default function AuthorizerInbox() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-phantix-500 border-t-gold-400" />
-        Loading authorizations…
+        Loading authorizations...
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function AuthorizerInbox() {
       </div>
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<CheckCircle2 size={24} />} title="All clear" body="No pending approvals — everything is authorized." />
+        <EmptyState icon={<CheckCircle2 size={24} />} title="All clear" body="No pending approvals --- everything is authorized." />
       ) : (
         <div className="space-y-3">
           {filtered.map((item) => {

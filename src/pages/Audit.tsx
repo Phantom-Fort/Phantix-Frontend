@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, Filter, X } from "lucide-react";
 import { PageHeader, Card, Spinner } from "@/components/ui";
@@ -76,7 +76,7 @@ export default function Audit() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading audit trail…
+        <Spinner className="h-5 w-5" /> Loading audit trail...
       </div>
     );
   }
@@ -85,7 +85,7 @@ export default function Audit() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Audit trail"
-        description="Immutable dual-control trail — every action carries initiator and authorizer snapshots, IP, and token type. Grouped by engine for compliance export."
+        description="Immutable dual-control trail --- every action carries initiator and authorizer snapshots, IP, and token type. Grouped by engine for compliance export."
         actions={
           <button className="btn-secondary" onClick={() => toast("info", "Export", "GET /audit/export?format=csv")}>
             <Download size={15} /> Export CSV
@@ -179,7 +179,7 @@ export default function Audit() {
                             {(e.initiator_name ?? "?").slice(0, 1)}
                           </span>
                           <div>
-                            <p className="text-[11px] text-slate-300">{e.initiator_name ?? "—"}</p>
+                            <p className="text-[11px] text-slate-300">{e.initiator_name ?? "---"}</p>
                             <p className="text-[9px] text-slate-600">{e.initiator_title ?? ""}</p>
                           </div>
                         </div>
@@ -196,10 +196,10 @@ export default function Audit() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-600">—</span>
+                          <span className="text-[11px] text-slate-600">---</span>
                         )}
                       </td>
-                      <td className="td font-mono text-[10px] text-slate-500">{e.ip_address ?? "—"}</td>
+                      <td className="td font-mono text-[10px] text-slate-500">{e.ip_address ?? "---"}</td>
                       <td className="td text-[11px] text-slate-500 whitespace-nowrap">{timeAgo(e.created_at)}</td>
                     </motion.tr>
                   );

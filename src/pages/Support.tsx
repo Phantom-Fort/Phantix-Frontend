@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { LifeBuoy, Plus, MessageSquare } from "lucide-react";
 import { PageHeader, Card, StatusBadge, Modal, EmptyState, Spinner } from "@/components/ui";
@@ -15,7 +15,7 @@ export default function Support() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading support…
+        <Spinner className="h-5 w-5" /> Loading support...
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function Support() {
           onSubmit={(e) => {
             e.preventDefault();
             setOpen(false);
-            toast("success", "Ticket submitted", "POST /support/tickets — the support team will reply shortly.");
+            toast("success", "Ticket submitted", "POST /support/tickets --- the support team will reply shortly.");
           }}
         >
           <div>
@@ -74,7 +74,7 @@ export default function Support() {
           </div>
           <div>
             <label className="label">Details</label>
-            <textarea className="input min-h-[110px] resize-none" placeholder="What happened, what you expected, any job/campaign IDs…" />
+            <textarea className="input min-h-[110px] resize-none" placeholder="What happened, what you expected, any job/campaign IDs..." />
           </div>
           <button className="btn-primary w-full">Submit ticket</button>
         </form>

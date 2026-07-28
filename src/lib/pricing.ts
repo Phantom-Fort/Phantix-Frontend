@@ -1,5 +1,5 @@
-// ── Pricing catalog ───────────────────────────────────────────────────────────
-// PLACEHOLDER DATA — real list prices land soon. The backend source of truth is
+﻿// ── Pricing catalog ───────────────────────────────────────────────────────────
+// PLACEHOLDER DATA --- real list prices land soon. The backend source of truth is
 // GET /api/v1/billing/pricing (monthly list price in NGN; yearly auto-calculated;
 // first month 50% off). Swap these entries for the live payload when finalized.
 
@@ -26,7 +26,7 @@ export const pricingTiers: PricingTier[] = [
     cta: "Start with Starter",
     features: [
       "Asset inventory + discovery (domain_enum, nmap, GitHub, OpenAPI)",
-      "On-demand scans — one active job per org",
+      "On-demand scans --- one active job per org",
       "Verified-only findings with dedupe",
       "Markdown / JSON reporting",
       "2 org users with dual control",
@@ -44,11 +44,11 @@ export const pricingTiers: PricingTier[] = [
     cta: "Go Scale",
     features: [
       "Everything in Starter",
-      "VAPT campaigns — web pipeline, correlation, approvals",
-      "Risk register with priority queue (P1–P5)",
+      "VAPT campaigns --- web pipeline, correlation, approvals",
+      "Risk register with priority queue (P1---P5)",
       "Compliance assessments + evidence connectors",
       "PDF / DOCX client packages on the VAPT template",
-      "Alert channels — email, WhatsApp, Telegram (critical)",
+      "Alert channels --- email, WhatsApp, Telegram (critical)",
       "10 org users + application login links",
       "Priority support",
     ],
@@ -61,7 +61,7 @@ export const pricingTiers: PricingTier[] = [
     cta: "Talk to us",
     features: [
       "Everything in Scale",
-      "Multi-company groups — one service key per company",
+      "Multi-company groups --- one service key per company",
       "AI consensus narratives (multi-model)",
       "Cross-org correlation mining (opt-in)",
       "Custom report retention & branding",
@@ -73,4 +73,4 @@ export const pricingTiers: PricingTier[] = [
 
 export const pricingFootnote =
   "Prices in Nigerian Naira (₦), per company per month. First month 50% off on paid tiers. " +
-  "List prices are placeholders — final pricing publishes soon.";
+  "List prices are placeholders --- final pricing publishes soon.";

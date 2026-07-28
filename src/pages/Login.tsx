@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle, Link2, Building2, User } from "lucide-react";
@@ -103,7 +103,7 @@ function AppLoginFlow({
   const [orgName, setOrgName] = useState("");
   const [userName, setUserName] = useState("");
 
-  // Step 1: validate the login link — per 03_APPLICATION_IMPLEMENTATION.md §2.3
+  // Step 1: validate the login link --- per 03_APPLICATION_IMPLEMENTATION.md §2.3
   useEffect(() => {
     if (demoMode || challenged) return;
     (async () => {
@@ -153,7 +153,7 @@ function AppLoginFlow({
     setBusy(true);
     setError(null);
     try {
-      // Per §2.3 Step C1: no mfa_token yet — send login_token, org slug, user_id
+      // Per §2.3 Step C1: no mfa_token yet --- send login_token, org slug, user_id
       const res = await api.post<{
         mfa_required?: boolean;
         mfa_token?: string;
@@ -343,7 +343,7 @@ function AppLoginFlow({
         <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-[420px] text-center">
           <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 object-contain" />
           <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
-          <p className="mt-2 text-sm text-slate-400">Demo mode — explore features instantly</p>
+          <p className="mt-2 text-sm text-slate-400">Demo mode --- explore features instantly</p>
           <button
             onClick={() => { enterDemo(); navigate("/dashboard"); }}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 font-semibold text-phantix-950 hover:bg-gold-300"
@@ -365,7 +365,7 @@ function AppLoginFlow({
         </div>
         <div className="relative text-center">
           <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 animate-pulse-soft object-contain" />
-          <p className="mt-4 text-sm text-slate-400">Validating login link…</p>
+          <p className="mt-4 text-sm text-slate-400">Validating login link...</p>
           {error && (
             <div className="mt-4 max-w-md rounded-xl border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">
               {error}
@@ -435,7 +435,7 @@ function AppLoginFlow({
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || !password}>
-                  {busy ? "Checking…" : "Continue"} <ArrowRight size={15} />
+                  {busy ? "Checking..." : "Continue"} <ArrowRight size={15} />
                 </button>
               </motion.form>
             )}
@@ -482,7 +482,7 @@ function AppLoginFlow({
                 />
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyMfa()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Verifying…</>) : "Verify & sign in"}
+                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Verifying...</>) : "Verify & sign in"}
                 </button>
                 <button
                   type="button"
@@ -525,7 +525,7 @@ function AppLoginFlow({
                 />
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyDevice()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Confirming…</>) : "Verify device & sign in"}
+                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Confirming...</>) : "Verify device & sign in"}
                 </button>
               </motion.div>
             )}
@@ -542,7 +542,7 @@ function AppLoginFlow({
                   <Mail size={22} className="mx-auto text-gold-400" />
                   <p className="mt-2 text-sm font-medium text-slate-200">OTP sign-in</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    This account uses email OTP — click below to receive a code.
+                    This account uses email OTP --- click below to receive a code.
                   </p>
                   {(orgName || userName) && (
                     <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2">
@@ -553,7 +553,7 @@ function AppLoginFlow({
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy} onClick={() => sendOtp()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Sending…</>) : (<> Send verification code <ArrowRight size={15} /></>)}
+                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Sending...</>) : (<> Send verification code <ArrowRight size={15} /></>)}
                 </button>
               </motion.div>
             )}
@@ -580,7 +580,7 @@ function PasteLinkBox() {
     setError("");
     const trimmed = link.trim();
     if (!trimmed) { setError("Paste your login link from the platform"); return; }
-    if (trimmed.length > MAX_LINK_LENGTH) { setError(`Link is too long — max ${MAX_LINK_LENGTH} characters`); return; }
+    if (trimmed.length > MAX_LINK_LENGTH) { setError(`Link is too long --- max ${MAX_LINK_LENGTH} characters`); return; }
     try {
       const url = new URL(trimmed);
       if (!url.hostname.includes("phantix") && !url.hostname.includes("localhost")) {

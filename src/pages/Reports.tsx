@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner } from "@/components/ui";
@@ -97,7 +97,7 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
   return (
     <>
       <button onClick={handleLoad} className="flex items-center gap-1.5 rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-3 py-2 text-xs text-slate-300 hover:bg-phantix-800/60">
-        <Code2 size={13} /> {loading ? "Loading…" : "View formatted report"}
+        <Code2 size={13} /> {loading ? "Loading..." : "View formatted report"}
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Formatted Report" wide>
         {md && (
@@ -171,7 +171,7 @@ export default function Reports() {
       const keys = Object.keys(merged.sections ?? {});
       setDetailTab(keys[0] ?? "");
     } catch {
-      // fallback – detail stays as the list item
+      // fallback --- detail stays as the list item
     } finally {
       setDetailLoading(false);
     }
@@ -187,7 +187,7 @@ export default function Reports() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading reports…
+        <Spinner className="h-5 w-5" /> Loading reports...
       </div>
     );
   }
@@ -196,7 +196,7 @@ export default function Reports() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Reports"
-        description="Consolidated, CVSS-enriched, verified-only client packages — PDF/DOCX on the Phantix VAPT template, plus markdown, JSON, XLSX and CSV."
+        description="Consolidated, CVSS-enriched, verified-only client packages --- PDF/DOCX on the Phantix VAPT template, plus markdown, JSON, XLSX and CSV."
         actions={
           <button className="btn-primary" onClick={() => setGenOpen(true)}>
             <Plus size={15} /> Generate report
@@ -258,7 +258,7 @@ export default function Reports() {
 
                   {r.status === "generating" ? (
                     <div className="w-40">
-                      <p className="mb-1 text-right text-[11px] text-slate-500">rendering…</p>
+                      <p className="mb-1 text-right text-[11px] text-slate-500">rendering...</p>
                       <ProgressBar value={72} color="#38BDF8" />
                     </div>
                   ) : (
@@ -286,7 +286,7 @@ export default function Reports() {
           ))}
 
           <p className="text-xs text-slate-500">
-            Retention: REPORT_MAX_VERSIONS=3 per type — oldest archives automatically with a ReportArchived
+            Retention: REPORT_MAX_VERSIONS=3 per type --- oldest archives automatically with a ReportArchived
             alert. Prefer run_inline=false for large campaigns to avoid gateway timeouts; poll GET /reports/{"{id}"}
             until status=complete.
           </p>
@@ -362,19 +362,19 @@ export default function Reports() {
           <div>
             <label className="label">Report type</label>
             <select className="input" value={genForm.report_type} onChange={(e) => setGenForm((p) => ({ ...p, report_type: e.target.value }))}>
-              <option value="vapt_campaign">vapt_campaign — full client package</option>
-              <option value="executive">executive — board summary</option>
-              <option value="compliance">compliance — framework-first</option>
-              <option value="tracker">tracker — remediation snapshot</option>
+              <option value="vapt_campaign">vapt_campaign --- full client package</option>
+              <option value="executive">executive --- board summary</option>
+              <option value="compliance">compliance --- framework-first</option>
+              <option value="tracker">tracker --- remediation snapshot</option>
             </select>
           </div>
           <div>
             <label className="label">Campaign</label>
             <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
-              <option value="">Select campaign…</option>
+              <option value="">Select campaign...</option>
               {campaigns.map((c: any) => (
                 <option key={c.id} value={c.id}>
-                  #{c.id} — {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
+                  #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
                 </option>
               ))}
             </select>
@@ -406,16 +406,16 @@ export default function Reports() {
               onChange={(e) => setGenForm((p) => ({ ...p, run_inline: e.target.checked }))}
               className="h-3.5 w-3.5 accent-gold-400"
             />
-            Run inline (waits for completion — may time out for large campaigns)
+            Run inline (waits for completion --- may time out for large campaigns)
           </label>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3.5 text-xs leading-5 text-slate-500">
             <FileDown size={12} className="mr-1.5 inline text-gold-400" />
-            Executive PDF/DOCX follow the standard deliverable: cover → document control → §§1–9 (exec, scope,
+            Executive PDF/DOCX follow the standard deliverable: cover → document control → §§1---9 (exec, scope,
             priority findings with confidence, attack paths, technical catalogue, risk split, compliance, roadmap,
             methodology) → Appendix A evidence IDs.
           </div>
           <button className="btn-primary w-full" disabled={genSubmitting}>
-            {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating…</> : <><Download size={15} /> Generate</>}
+            {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating...</> : <><Download size={15} /> Generate</>}
           </button>
         </form>
       </Modal>
@@ -426,7 +426,7 @@ export default function Reports() {
           <div className="space-y-4">
             {detailLoading && (
               <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Spinner className="h-4 w-4" /> Loading report sections…
+                <Spinner className="h-4 w-4" /> Loading report sections...
               </div>
             )}
 

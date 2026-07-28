@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
 import Layout from "@/components/Layout";
@@ -39,12 +39,12 @@ function PlatformSettingsRedirect() {
   }, []);
   return (
     <div className="flex min-h-screen items-center justify-center text-sm text-slate-400">
-      Opening Platform settings…
+      Opening Platform settings...
     </div>
   );
 }
 
-// app.phantix.site/demo — landing-page entry into the guided demo tenant
+// app.phantix.site/demo --- landing-page entry into the guided demo tenant
 function DemoEntry() {
   const { enterDemo } = useStore();
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ function DemoEntry() {
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
         <img src="/logo-transparent.png" alt="" className="mx-auto h-16 w-16 animate-pulse-soft object-contain" />
-        <p className="mt-4 text-sm text-slate-400">Preparing the demo tenant…</p>
+        <p className="mt-4 text-sm text-slate-400">Preparing the demo tenant...</p>
       </div>
     </div>
   );

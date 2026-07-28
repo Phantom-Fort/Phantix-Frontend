@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -32,7 +32,7 @@ import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
 import { cx, timeAgo } from "@/lib/utils";
 
-// Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() — no Modal here.
+// Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
 
 const navSections: {
@@ -126,7 +126,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Jump to a surface…"
+                placeholder="Jump to a surface..."
                 className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
               />
               <kbd className="rounded-md border border-phantix-600/60 bg-phantix-800/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
@@ -149,7 +149,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
                 </button>
               ))}
               {q && results.length === 0 && (
-                <p className="px-3 py-6 text-center text-sm text-slate-500">No surfaces match “{q}”.</p>
+                <p className="px-3 py-6 text-center text-sm text-slate-500">No surfaces match "{q}".</p>
               )}
             </div>
           </motion.div>
@@ -177,7 +177,7 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Auto-logout after inactivity — uses backend's inactivity_expires_at if set, else 20 min
+  // Auto-logout after inactivity --- uses backend's inactivity_expires_at if set, else 20 min
   useEffect(() => {
     if (!session?.authenticated || demoActive) return;
     const getTimeoutMs = () => operate.expiresAt ? Math.max(20 * 60 * 1000, operate.expiresAt - Date.now()) : 20 * 60 * 1000;
@@ -306,7 +306,7 @@ export default function Layout() {
                       {session?.isInitiator || session?.isAuthorizer ? (
                         <>Your role: <span className="text-gold-300">{session.isInitiator ? "Initiator" : "Authorizer"}</span></>
                       ) : (
-                        <>Read-only — contact {session?.initiatorName || "the initiator"} or {session?.authorizerName || "the authorizer"} for actions</>
+                        <>Read-only --- contact {session?.initiatorName || "the initiator"} or {session?.authorizerName || "the authorizer"} for actions</>
                       )}
                     </p>
                     {(session?.isInitiator || session?.isAuthorizer) && (
@@ -347,7 +347,7 @@ export default function Layout() {
             className="flex w-72 items-center gap-2.5 rounded-xl border border-phantix-700/50 bg-phantix-900/60 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-500/50 hover:text-slate-300"
           >
             <Search size={15} />
-            <span>Search surfaces…</span>
+            <span>Search surfaces...</span>
             <span className="ml-auto flex items-center gap-0.5 rounded-md border border-phantix-600/50 bg-phantix-800/70 px-1.5 py-0.5 text-[10px] font-semibold">
               <Command size={9} />K
             </span>
@@ -442,7 +442,7 @@ export default function Layout() {
               <FlaskConical size={11} /> Demo tenant
             </span>
             <p className="text-xs text-slate-400">
-              You're exploring <strong className="text-slate-200">Acme Financial Group</strong> — simulated data, full product.
+              You're exploring <strong className="text-slate-200">Acme Financial Group</strong> --- simulated data, full product.
             </p>
             {hasLiveApi && (
               <button
@@ -464,7 +464,7 @@ export default function Layout() {
         </main>
 
         <footer className="border-t border-phantix-700/30 px-8 py-4 text-[11px] text-slate-600 flex items-center justify-between">
-          <span>Phantix Security Solutions · Privacy-first by architecture — security data never leaves your database</span>
+          <span>Phantix Security Solutions · Privacy-first by architecture --- security data never leaves your database</span>
           <span className="flex items-center gap-1.5">
             <Sparkles size={11} className="text-gold-500" /> API v1 · {org.plan} plan
           </span>

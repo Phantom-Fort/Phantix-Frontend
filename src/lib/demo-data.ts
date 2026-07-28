@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AiStatus,
   AlertEvent,
   AlertSettings,
@@ -32,7 +32,7 @@ import type {
   VaptFinding,
 } from "./types";
 
-// Demo tenant ONLY — consumed via src/lib/data.ts when isDemoMode() is true
+// Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
 // (/demo, ?demo=1, or VITE_API_BASE unset). Live mode must never import this
 // from pages; shapes still mirror the endpoint catalog.
 
@@ -174,11 +174,11 @@ export const scanJobs: ScanJob[] = [
 ];
 
 export const scanResults: ScanResult[] = [
-  { id: 901, scan_job_id: 88, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "CVE-2025-24104 — Jetty remote code execution", description: " vulnerable Jetty 11.0.24 handler chain allows unauthenticated RCE via crafted URI.", verification_status: "auto_verified", confidence: 98, created_at: "2026-07-21T07:41:00Z" },
+  { id: 901, scan_job_id: 88, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "CVE-2025-24104 --- Jetty remote code execution", description: " vulnerable Jetty 11.0.24 handler chain allows unauthenticated RCE via crafted URI.", verification_status: "auto_verified", confidence: 98, created_at: "2026-07-21T07:41:00Z" },
   { id: 902, scan_job_id: 88, asset_id: 102, asset_value: "api.acme.ng", tool: "nuclei", severity: "high", title: "JWT accepts alg=none on /v2/auth/refresh", description: "Token validation bypass confirmed with forged claims.", verification_status: "auto_verified", confidence: 96, created_at: "2026-07-21T07:44:00Z" },
-  { id: 903, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "medium", title: "OpenSSH 8.9p1 — outdated", description: "Version banner indicates missing security backports.", verification_status: "manually_verified", confidence: 88, created_at: "2026-07-21T07:35:00Z" },
+  { id: 903, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "medium", title: "OpenSSH 8.9p1 --- outdated", description: "Version banner indicates missing security backports.", verification_status: "manually_verified", confidence: 88, created_at: "2026-07-21T07:35:00Z" },
   { id: 904, scan_job_id: 88, asset_id: 106, asset_value: "41.58.130.44:443", tool: "nuclei", severity: "high", title: "TLS 1.0 enabled on edge gateway", description: "Legacy protocol negotiated successfully.", verification_status: "auto_verified", confidence: 94, created_at: "2026-07-21T07:38:00Z" },
-  { id: 905, scan_job_id: 88, asset_id: 111, asset_value: "staging.acme.ng", tool: "nuclei", severity: "low", title: "Directory listing on /backups/", description: "Heuristic probe — pattern match only.", verification_status: "unverified", confidence: 55, created_at: "2026-07-21T07:52:00Z" },
+  { id: 905, scan_job_id: 88, asset_id: 111, asset_value: "staging.acme.ng", tool: "nuclei", severity: "low", title: "Directory listing on /backups/", description: "Heuristic probe --- pattern match only.", verification_status: "unverified", confidence: 55, created_at: "2026-07-21T07:52:00Z" },
   { id: 906, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "info", title: "ICMP echo reply", description: "Host reachability signal.", verification_status: "rejected", confidence: 20, created_at: "2026-07-21T07:33:00Z" },
   { id: 907, scan_job_id: 87, asset_id: 109, asset_value: "payments-v2", tool: "nuclei", severity: "high", title: "Mass assignment on /v2/transfers", description: "Amount field accepted from client body without server check.", verification_status: "manually_verified", confidence: 91, created_at: "2026-07-20T13:14:00Z" },
   { id: 908, scan_job_id: 87, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "medium", title: "Missing Content-Security-Policy", description: "No CSP header on authenticated pages.", verification_status: "auto_verified", confidence: 99, created_at: "2026-07-20T13:09:00Z" },
@@ -205,7 +205,7 @@ export const vaptFindings: VaptFinding[] = [
 ];
 
 export const vaptApprovals: VaptApproval[] = [
-  { id: 51, campaign_id: 13, campaign_name: "Q3 External Assessment", step: "Exploitation phase — full_vapt gate", role_required: "authorizer", status: "pending", requested_at: "2026-07-21T06:55:00Z" },
+  { id: 51, campaign_id: 13, campaign_name: "Q3 External Assessment", step: "Exploitation phase --- full_vapt gate", role_required: "authorizer", status: "pending", requested_at: "2026-07-21T06:55:00Z" },
   { id: 50, campaign_id: 13, campaign_name: "Q3 External Assessment", step: "Campaign start", role_required: "initiator", status: "approved", requested_at: "2026-07-14T10:05:00Z" },
 ];
 
@@ -288,23 +288,23 @@ export const complianceControlResults: ComplianceControlResult[] = [
   { control_id: "A.5.1", title: "Policies for information security", category: "Organizational", status: "pass", source: "merged", evidence_count: 4, recommendation: "Maintain annual review cycle" },
   { control_id: "A.8.9", title: "Configuration management", category: "Technological", status: "gap", source: "posture", evidence_count: 2, recommendation: "Remediate TLS 1.0 on edge gateway; enforce baseline" },
   { control_id: "A.8.16", title: "Monitoring activities", category: "Technological", status: "gap", source: "merged", evidence_count: 1, recommendation: "Extend Wazuh coverage to portal tier" },
-  { control_id: "A.5.24", title: "Incident management planning", category: "Organizational", status: "pass", source: "questionnaire", evidence_count: 3, recommendation: "—" },
+  { control_id: "A.5.24", title: "Incident management planning", category: "Organizational", status: "pass", source: "questionnaire", evidence_count: 3, recommendation: "---" },
   { control_id: "A.8.2", title: "Privileged access rights", category: "Technological", status: "unknown", source: "questionnaire", evidence_count: 0, recommendation: "Complete questionnaire section" },
   { control_id: "A.8.8", title: "Management of technical vulnerabilities", category: "Technological", status: "pass", source: "posture", evidence_count: 6, recommendation: "Continue verified-finding cadence" },
 ];
 
 export const evidenceItems: EvidenceItem[] = [
-  { id: 71, connector: "wazuh", evidence_type: "siem_alerts", title: "Wazuh — authentication anomaly pack", status: "collected", collected_at: "2026-07-20T16:00:00Z", summary: "412 alerts normalized · 3 mapped to A.8.16" },
-  { id: 72, connector: "wazuh", evidence_type: "agent_coverage", title: "Wazuh — agent coverage report", status: "collected", collected_at: "2026-07-20T16:00:00Z", summary: "38/44 agents active" },
+  { id: 71, connector: "wazuh", evidence_type: "siem_alerts", title: "Wazuh --- authentication anomaly pack", status: "collected", collected_at: "2026-07-20T16:00:00Z", summary: "412 alerts normalized · 3 mapped to A.8.16" },
+  { id: 72, connector: "wazuh", evidence_type: "agent_coverage", title: "Wazuh --- agent coverage report", status: "collected", collected_at: "2026-07-20T16:00:00Z", summary: "38/44 agents active" },
   { id: 73, connector: "manual", evidence_type: "policy_document", title: "ISMS Policy v3.2 (board approved)", status: "manual", collected_at: "2026-07-15T11:00:00Z", summary: "Uploaded by Ngozi Umeh" },
   { id: 74, connector: "manual", evidence_type: "attestation", title: "Incident response tabletop minutes", status: "manual", collected_at: "2026-07-02T09:00:00Z", summary: "Q2 exercise records" },
 ];
 
 export const reports: Report[] = [
-  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive — Client Package", status: "complete", formats_requested: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
+  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive --- Client Package", status: "complete", formats_requested: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
   { id: 43, report_type: "executive", title: "June Board Security Summary", status: "complete", formats_requested: ["pdf", "docx"], campaign_id: 11, version: 1, stats: { after_dedupe: 38, after_verification: 31, excluded_from_report: 7 }, created_at: "2026-06-05T10:00:00Z", size_bytes: 2_204_000 },
   { id: 42, report_type: "compliance", title: "NDPR Readiness Snapshot", status: "complete", formats_requested: ["pdf", "json"], campaign_id: null, version: 1, stats: { after_dedupe: 34, after_verification: 34, excluded_from_report: 0 }, created_at: "2026-07-18T12:00:00Z", size_bytes: 1_480_000 },
-  { id: 45, report_type: "vapt_campaign", title: "Q3 External Assessment — Interim", status: "generating", formats_requested: ["pdf", "docx", "markdown", "json"], campaign_id: 13, version: 1, stats: { after_dedupe: 19, after_verification: 14, excluded_from_report: 5 }, created_at: "2026-07-21T07:55:00Z", size_bytes: 0 },
+  { id: 45, report_type: "vapt_campaign", title: "Q3 External Assessment --- Interim", status: "generating", formats_requested: ["pdf", "docx", "markdown", "json"], campaign_id: 13, version: 1, stats: { after_dedupe: 19, after_verification: 14, excluded_from_report: 5 }, created_at: "2026-07-21T07:55:00Z", size_bytes: 0 },
 ];
 
 export const trackerFindings: TrackerFinding[] = [
@@ -320,10 +320,10 @@ export const trackerFindings: TrackerFinding[] = [
 
 export const alertEvents: AlertEvent[] = [
   { id: 201, event_type: "risk.critical", severity: "critical", title: "Critical risk: Unauthenticated RCE on customer portal", status: "delivered", channels: ["email", "whatsapp", "telegram"], created_at: "2026-07-21T06:01:00Z" },
-  { id: 200, event_type: "scan.completed", severity: "medium", title: "Scan #87 completed — 23 findings", status: "delivered", channels: ["email"], created_at: "2026-07-20T13:27:00Z" },
+  { id: 200, event_type: "scan.completed", severity: "medium", title: "Scan #87 completed --- 23 findings", status: "delivered", channels: ["email"], created_at: "2026-07-20T13:27:00Z" },
   { id: 199, event_type: "risk.created", severity: "high", title: "New risk: JWT algorithm confusion", status: "delivered", channels: ["email"], created_at: "2026-07-20T11:06:00Z" },
   { id: 198, event_type: "custom.vapt_campaign_completed", severity: "medium", title: "Campaign finished: Payments API Deep Dive", status: "delivered", channels: ["email"], created_at: "2026-07-02T17:41:00Z" },
-  { id: 197, event_type: "scan.failed", severity: "high", title: "Scan #85 failed — executor timeout", status: "delivered", channels: ["email"], created_at: "2026-07-18T16:48:00Z" },
+  { id: 197, event_type: "scan.failed", severity: "high", title: "Scan #85 failed --- executor timeout", status: "delivered", channels: ["email"], created_at: "2026-07-18T16:48:00Z" },
 ];
 
 export const alertSettings: AlertSettings = {
@@ -348,7 +348,7 @@ export const auditEvents: AuditEvent[] = [
 
 export const pendingActions: PendingAction[] = [
   { id: 41, action_key: "risk.treatment.approve", action_label: "Approve IDOR fix compensation plan", category: "risks", initiated_by: "Ada Okonkwo", status: "pending", created_at: "2026-07-21T05:40:00Z" },
-  { id: 40, action_key: "vapt.step.exploitation", action_label: "Exploitation phase gate — Q3 External", category: "vapt", initiated_by: "Ada Okonkwo", status: "pending", created_at: "2026-07-21T06:55:00Z" },
+  { id: 40, action_key: "vapt.step.exploitation", action_label: "Exploitation phase gate --- Q3 External", category: "vapt", initiated_by: "Ada Okonkwo", status: "pending", created_at: "2026-07-21T06:55:00Z" },
 ];
 
 export const engines: EngineInfo[] = [
@@ -357,7 +357,7 @@ export const engines: EngineInfo[] = [
   { id: "scanner_engine", name: "Scanner Engine", status: "implemented", description: "Nmap / Nuclei orchestration" },
   { id: "vapt_engine", name: "VAPT Engine", status: "implemented", description: "Campaigns, correlation, web scanner" },
   { id: "risk_engine", name: "Risk Engine", status: "implemented", description: "Hybrid scoring & prioritization" },
-  { id: "ai_engine", name: "AI Engine", status: "implemented", description: "Governed narratives — never scores" },
+  { id: "ai_engine", name: "AI Engine", status: "implemented", description: "Governed narratives --- never scores" },
   { id: "compliance_engine", name: "Compliance Engine", status: "implemented", description: "Frameworks, assessments, evidence" },
   { id: "reporting_engine", name: "Reporting Engine", status: "implemented", description: "Verified-only multi-format reports" },
   { id: "alert_engine", name: "Alert Engine", status: "implemented", description: "Severity-routed client alerts" },
@@ -367,7 +367,7 @@ export const engines: EngineInfo[] = [
 
 export const serviceKey: ServiceKeyMeta = {
   id: 3,
-  prefix: "pk_live_9f4c…",
+  prefix: "pk_live_9f4c...",
   active: true,
   created_at: "2026-06-20T10:00:00Z",
   last_used_at: "2026-07-21T07:12:00Z",
@@ -390,7 +390,7 @@ export const aiStatus: AiStatus = {
 
 export const supportTickets: SupportTicket[] = [
   { id: 12, subject: "Nuclei template update cadence", status: "open", priority: "normal", created_at: "2026-07-19T10:00:00Z", messages: [{ from: "Ada Okonkwo", body: "How often are nuclei templates refreshed on staging?", at: "2026-07-19T10:00:00Z" }] },
-  { id: 9, subject: "APK upload limit increase", status: "pending", priority: "low", created_at: "2026-07-10T09:00:00Z", messages: [{ from: "Tunde Bakare", body: "Our release APK is 260MB — can the limit be raised?", at: "2026-07-10T09:00:00Z" }] },
+  { id: 9, subject: "APK upload limit increase", status: "pending", priority: "low", created_at: "2026-07-10T09:00:00Z", messages: [{ from: "Tunde Bakare", body: "Our release APK is 260MB --- can the limit be raised?", at: "2026-07-10T09:00:00Z" }] },
 ];
 
 // Dashboard trend (last 14 days of posture)

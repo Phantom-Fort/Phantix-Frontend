@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -96,7 +96,7 @@ export default function Dashboard() {
         <StatCard label="Open risks" value={<AnimatedNumber value={openRisks.length} />} icon={<ShieldAlert size={17} />} accent="red" delay={0.06}
           hint={<span>{openRisks.filter((r) => r.level === "critical").length} critical · {openRisks.filter((r) => r.priority_band === "P1").length} in P1</span>} />
         <StatCard label="Active scans" value={<AnimatedNumber value={activeScan ? 1 : 0} />} icon={<Radar size={17} />} accent="gold" delay={0.12}
-          hint={activeScan ? <span>Job #{activeScan.id} · {activeScan.progress}% · one-job lock</span> : <span>Idle — slot free</span>} />
+          hint={activeScan ? <span>Job #{activeScan.id} · {activeScan.progress}% · one-job lock</span> : <span>Idle --- slot free</span>} />
         <StatCard label="Campaigns" value={<AnimatedNumber value={vaptCampaigns.length} />} icon={<Crosshair size={17} />} accent="green" delay={0.18}
           hint={<span>{vaptCampaigns.filter((c) => c.status === "active").length} running · {vaptCampaigns.filter((c) => c.status === "completed").length} completed</span>} />
       </div>
@@ -180,7 +180,7 @@ export default function Dashboard() {
               <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-4">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-sm font-semibold text-slate-200">
-                    <Radar size={15} className="text-gold-400" /> Scan #{activeScan?.id ?? "—"}
+                    <Radar size={15} className="text-gold-400" /> Scan #{activeScan?.id ?? "---"}
                   </span>
                   {activeScan && <StatusBadge status={activeScan.status} />}
                 </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                     <p className="mt-2.5 text-xs text-slate-500">{activeScan.findings_count} findings so far · started {timeAgo(activeScan.started_at)}</p>
                   </>
                 ) : (
-                  <p className="mt-3 text-sm text-slate-500">No scan running — the per-org slot is free.</p>
+                  <p className="mt-3 text-sm text-slate-500">No scan running --- the per-org slot is free.</p>
                 )}
                 <Link to="/scans" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-gold-400 hover:text-gold-300">
                   Open scans <ArrowRight size={12} />
@@ -235,7 +235,7 @@ export default function Dashboard() {
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-severity-low/25 bg-severity-low/8 px-4 py-3">
                 <span className="h-2 w-2 animate-pulse-soft rounded-full bg-severity-low" />
                 <p className="text-xs text-slate-300">
-                  Report <strong>#{generating.id} — {generating.title}</strong> is generating ({(generating.formats_requested ?? []).join(", ")})…
+                  Report <strong>#{generating.id} --- {generating.title}</strong> is generating ({(generating.formats_requested ?? []).join(", ")})...
                 </p>
                 <Link to="/reports" className="ml-auto text-xs font-semibold text-gold-400">View</Link>
               </div>
@@ -273,12 +273,12 @@ export default function Dashboard() {
           <Card>
             <CardHeader
               title="Priority queue"
-              subtitle="phantix.risk_priority.v1 — what to fix first"
+              subtitle="phantix.risk_priority.v1 --- what to fix first"
               action={<Link to="/risks" className="text-xs font-semibold text-gold-400 hover:text-gold-300">All risks →</Link>}
             />
             <div className="space-y-2">
               {[...risks].sort((a, b) => b.priority_score - a.priority_score).slice(0, 5).map((r, i) => {
-                const band = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "—", className: "text-slate-400" };
+                const band = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "---", className: "text-slate-400" };
                 return (
                   <motion.div
                     key={r.id}
@@ -370,7 +370,7 @@ export default function Dashboard() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/20 bg-gold-400/5 px-5 py-3.5">
           <Zap size={16} className="shrink-0 text-gold-400" />
           <p className="min-w-0 flex-1 text-xs leading-5 text-slate-400">
-            You're browsing read-only. Unlock operate mode to run scans, start campaigns, and approve treatments —
+            You're browsing read-only. Unlock operate mode to run scans, start campaigns, and approve treatments ---
             mutations require a dual-control session.
           </p>
           <button

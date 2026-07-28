@@ -1,4 +1,4 @@
-import type { Severity, VerificationStatus } from "./types";
+﻿import type { Severity, VerificationStatus } from "./types";
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
@@ -44,7 +44,7 @@ export const priorityBandMeta: Record<string, { label: string; className: string
 };
 
 export function timeAgo(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "---";
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const mins = Math.floor(diff / 60_000);
@@ -58,7 +58,7 @@ export function timeAgo(iso: string | null): string {
 }
 
 export function formatDateTime(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "---";
   return new Date(iso).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
@@ -68,7 +68,7 @@ export function formatDateTime(iso: string | null): string {
 }
 
 export function formatBytes(bytes: number): string {
-  if (!bytes) return "—";
+  if (!bytes) return "---";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;

@@ -1,4 +1,4 @@
-// Central resource loaders — demo-data only when isDemoMode() is true.
+﻿// Central resource loaders --- demo-data only when isDemoMode() is true.
 import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked } from "./api";
 import * as demo from "./demo-data";
 import type {
@@ -65,7 +65,7 @@ function asList<T>(raw: unknown): T[] {
 }
 
 export type LoadMeta = {
-  /** Security storage not bootstrapped (API 409) — product modules blocked. */
+  /** Security storage not bootstrapped (API 409) --- product modules blocked. */
   securityDbBlocked?: boolean;
   error?: string | null;
 };
@@ -502,7 +502,7 @@ export async function loadAssetIntelligence(assetId: number): Promise<AssetIntel
       recommended_actions: [
         { action_key: "scan_now", label: "Run a new scan", description: "Check for newly introduced vulnerabilities", priority: "high" },
         { action_key: "review_findings", label: "Review open findings", description: "4 findings need verification or remediation", priority: "high" },
-        { action_key: "update_firewall", label: "Review firewall rules", description: "Public-facing asset — ensure WAF rules are current", priority: "medium" },
+        { action_key: "update_firewall", label: "Review firewall rules", description: "Public-facing asset --- ensure WAF rules are current", priority: "medium" },
       ],
       related_assets: demo.assets.filter((x) => x.id !== a.id).slice(0, 3).map((r) => ({
         id: r.id, name: r.name, value: r.value, asset_type: r.asset_type, risk_score: 30 + Math.floor(Math.random() * 40),

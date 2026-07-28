@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
@@ -52,7 +52,7 @@ export default function Risks() {
 
       if (treatmentId) {
         await api.post(`/risks/treatments/${treatmentId}/submit`, {});
-        toast("success", "Submitted for approval", `POST /risks/treatments/${treatmentId}/submit — awaiting authorizer`);
+        toast("success", "Submitted for approval", `POST /risks/treatments/${treatmentId}/submit --- awaiting authorizer`);
       }
     } catch (err: any) {
       toast("error", "Failed", err.message ?? "Treatment proposal failed");
@@ -72,7 +72,7 @@ export default function Risks() {
     setAssigning(true);
     try {
       await api.patch(`/risks/${selected.id}`, { owner });
-      toast("success", "Owner updated", `PATCH /risks/${selected.id} — ${owner}`);
+      toast("success", "Owner updated", `PATCH /risks/${selected.id} --- ${owner}`);
       setAssignedOwner("");
     } catch (err: any) {
       toast("error", "Failed", err.message ?? "Assignment failed");
@@ -99,7 +99,7 @@ export default function Risks() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading risks…
+        <Spinner className="h-5 w-5" /> Loading risks...
       </div>
     );
   }
@@ -109,14 +109,18 @@ export default function Risks() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Risk register"
-        description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned — Phantix never owns them."
+        description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned --- Phantix never owns them."
         actions={
-          <button className="btn-secondary" onClick={() => {
-            const url = `${import.meta.env.VITE_API_BASE ?? ""}/risks/export?format=json`;
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "risks-export.json";
-            a.click();
+          <button className="btn-secondary" onClick={async () => {
+            try {
+              const blob = await api.download("/risks/export?format=json");
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "risks-export.json";
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch { toast("error", "Export failed", "Could not download risk export."); }
           }}>
             <Download size={15} /> Export for expert review
           </button>
@@ -150,7 +154,7 @@ export default function Risks() {
 
       <div className="space-y-2.5">
         {sorted.map((r, i) => {
-          const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "—", className: "text-slate-400" };
+          const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "---", className: "text-slate-400" };
           const color = riskLevelHex[r.level] ?? "#64748b";
           return (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
@@ -203,7 +207,7 @@ export default function Risks() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
                 ["Inherent", selected.inherent_score],
-                ["Residual", selected.residual_score ?? "—"],
+                ["Residual", selected.residual_score ?? "---"],
                 ["Likelihood", `${selected.likelihood}/4`],
                 ["Impact", `${selected.impact}/4`],
               ].map(([k, v]) => (
@@ -273,7 +277,7 @@ export default function Risks() {
             {/* Actions */}
             <div className="flex flex-wrap gap-2.5 border-t border-phantix-700/40 pt-4">
               <button className="btn-primary" onClick={handleProposeTreatment} disabled={treating}>
-                {treating ? "Proposing…" : "Propose treatment"}
+                {treating ? "Proposing..." : "Propose treatment"}
               </button>
               <div className="flex items-center gap-2">
                 <input
@@ -283,7 +287,7 @@ export default function Risks() {
                   onChange={(e) => setAssignedOwner(e.target.value)}
                 />
                 <button className="btn-secondary" onClick={handleAssignOwner} disabled={assigning}>
-                  {assigning ? "Saving…" : "Assign owner"}
+                  {assigning ? "Saving..." : "Assign owner"}
                 </button>
               </div>
               <button className="btn-ghost" onClick={handleViewHistory}>
@@ -302,7 +306,7 @@ export default function Risks() {
       {/* History modal */}
       <Modal open={historyOpen} onClose={() => { setHistoryOpen(false); setHistory(null); }} title="Risk history" wide>
         {historyLoading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-400"><Spinner className="h-4 w-4" /> Loading history…</div>
+          <div className="flex items-center gap-2 text-sm text-slate-400"><Spinner className="h-4 w-4" /> Loading history...</div>
         ) : history && history.length > 0 ? (
           <div className="space-y-2 max-h-[500px] overflow-auto">
             {history.map((h: any, i: number) => (

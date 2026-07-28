@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
@@ -90,7 +90,7 @@ export default function Vapt() {
     try {
       const plan = await api.post<{ plan_id: string; recommended_scans?: string[] }>("/vapt/plan", {});
       if (plan.plan_id) {
-        // Execute but do NOT auto-start — let the initiator review the draft first
+        // Execute but do NOT auto-start --- let the initiator review the draft first
         await api.post("/vapt/plan/execute", { plan_id: plan.plan_id, start: false }).catch((e: any) => {
           if (e.status === 400) toast("warning", "Draft created", "Review the plan and start when ready.");
           else throw e;
@@ -105,7 +105,7 @@ export default function Vapt() {
     finally { setPlanning(false); }
   };
 
-  // Poll when campaigns are live — follows same pattern as Assets discovery polling
+  // Poll when campaigns are live --- follows same pattern as Assets discovery polling
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const activeCampaigns = React.useMemo(() =>
     vaptCampaigns.filter((c) => c.status === "active" || c.status === "pending_approval" || c.status === "paused"),
@@ -139,7 +139,7 @@ export default function Vapt() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading campaigns…
+        <Spinner className="h-5 w-5" /> Loading campaigns...
       </div>
     );
   }
@@ -184,7 +184,7 @@ export default function Vapt() {
               <div className="flex-1">
                 <p className="font-semibold text-slate-100">{pending.length} approval{pending.length > 1 ? "s" : ""} waiting</p>
                 <p className="text-xs text-slate-400">
-                  {pending[0].step} — requires the <strong>{pending[0].role_required}</strong>
+                  {pending[0].step} --- requires the <strong>{pending[0].role_required}</strong>
                   {(pending[0].role_required === "authorizer"
                     ? dualControl.authorizer?.full_name
                     : dualControl.initiator?.full_name) && (
@@ -260,9 +260,9 @@ export default function Vapt() {
                 {/* Stats row */}
                 <div className="grid grid-cols-4 gap-2 mb-4">
                   {[
-                    [activeSelected.asset_count ?? "—", "Assets", "text-blue-400"],
-                    [activeSelected.findings_count ?? "—", "Findings", "text-emerald-400"],
-                    [(activeSelected as any).procedure_snapshot?.steps?.length ?? "—", "Steps", "text-phantix-300"],
+                    [activeSelected.asset_count ?? "---", "Assets", "text-blue-400"],
+                    [activeSelected.findings_count ?? "---", "Findings", "text-emerald-400"],
+                    [(activeSelected as any).procedure_snapshot?.steps?.length ?? "---", "Steps", "text-phantix-300"],
                     [activeSelected.requires_approval ? "Yes" : "No", "Approval", activeSelected.requires_approval ? "text-severity-medium" : "text-slate-400"],
                   ].map(([v, l, c]) => (
                     <div key={String(l)} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2.5 text-center">
@@ -367,12 +367,12 @@ export default function Vapt() {
                       )}
                     </div>
                     <div className="mt-2 text-[10px] text-slate-600 bg-phantix-950/30 rounded-lg px-3 py-2 leading-relaxed">
-                      Each subdomain scanned separately. Domain IPs not re-scanned on vuln steps. Time budgets apply — partial completion is not a failure.
+                      Each subdomain scanned separately. Domain IPs not re-scanned on vuln steps. Time budgets apply --- partial completion is not a failure.
                     </div>
                   </div>
                 )}
 
-                {/* Scan coverage — for completed/active campaigns with step output */}
+                {/* Scan coverage --- for completed/active campaigns with step output */}
                 {((activeSelected as any).status === "completed" || (activeSelected as any).status === "active") && (
                   <div className="mb-4">
                     {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).length > 0 && (
@@ -383,7 +383,7 @@ export default function Vapt() {
                           const isPartial = summary.budget_exhausted || summary.partial;
                           const uniqueHosts = summary.unique_hosts;
                           const skipped = summary.skipped_count || (summary.skipped_already_scanned?.length || 0);
-                          const scanned = summary.targets_scanned?.length || uniqueHosts || "—";
+                          const scanned = summary.targets_scanned?.length || uniqueHosts || "---";
                           return (
                             <div key={i} className="flex items-start gap-2 text-xs border-t border-phantix-700/30 pt-2 first:border-0 first:pt-0">
                               <div className={cx("w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5", isPartial ? "bg-severity-medium/20 text-severity-medium" : "bg-emerald-400/20 text-emerald-400")}>
@@ -396,7 +396,7 @@ export default function Vapt() {
                                   {step.finding_count > 0 && <span className="text-slate-400"> · {step.finding_count} findings</span>}
                                   {skipped > 0 && <span className="text-slate-500"> · {skipped} skipped (CDN IPs)</span>}
                                 </p>
-                                {isPartial && <p className="text-severity-medium text-[10px] mt-0.5">Partial — time budget reached</p>}
+                                {isPartial && <p className="text-severity-medium text-[10px] mt-0.5">Partial --- time budget reached</p>}
                               </div>
                             </div>
                           );
@@ -423,7 +423,7 @@ export default function Vapt() {
                     {activeSelected.status === "pending_approval" && (
                       <div className="w-full rounded-lg bg-severity-medium/5 border border-severity-medium/30 p-3 text-xs space-y-1.5">
                         <p className="text-severity-medium font-semibold flex items-center gap-1"><UserCheck size={14} /> Awaiting Authorizer Approval</p>
-                        <p className="text-slate-300">Campaign submitted for approval — will start automatically once the authorizer approves.</p>
+                        <p className="text-slate-300">Campaign submitted for approval --- will start automatically once the authorizer approves.</p>
                         <p className="text-slate-500">Authorize from the <a href="/authorizations" className="text-gold-400 hover:text-gold-300">Authorizations inbox</a>.</p>
                         <button className="btn-danger !py-1.5 text-xs" onClick={() => handleCampaignAction(activeSelected.id, "cancel")}>
                           <XCircle size={12} /> Cancel Request
@@ -509,7 +509,7 @@ export default function Vapt() {
             <p className="text-xs leading-5 text-slate-400">
               This table shows <strong className="text-slate-200">correlated attack paths only</strong> (from{" "}
               <span className="font-mono">/vapt/campaigns/{"{id}"}/findings</span>). Attack-path correlations
-              auto-verify; heuristic probes do not — see the verification badge on each row.
+              auto-verify; heuristic probes do not --- see the verification badge on each row.
             </p>
           </div>
           {vaptFindings.map((f, i) => (
@@ -555,7 +555,7 @@ export default function Vapt() {
             <div>
               <label className="label">Procedure</label>
               <select className="input" value={createForm.procedure_key} onChange={(e) => setCreateForm((f) => ({ ...f, procedure_key: e.target.value }))}>
-                <option value="web_scan">web_scan — full web pipeline</option>
+                <option value="web_scan">web_scan --- full web pipeline</option>
                 <option value="web_app_scan_only">web_app_scan_only</option>
                 <option value="full_vapt">full_vapt (infra + web + gates)</option>
                 <option value="infra_scan">infra_scan</option>
@@ -564,7 +564,7 @@ export default function Vapt() {
             </div>
           </div>
           <p className="text-xs text-slate-500 p-2 rounded-lg bg-phantix-800/40">
-            Campaign starts as a <strong>draft</strong> — you can review and start it from the campaign detail view. Full VAPT requires dual-control approval.
+            Campaign starts as a <strong>draft</strong> --- you can review and start it from the campaign detail view. Full VAPT requires dual-control approval.
           </p>
           <button className="btn-primary w-full" type="submit">Create campaign</button>
         </form>

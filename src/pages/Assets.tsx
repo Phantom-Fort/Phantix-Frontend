@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
@@ -274,7 +274,7 @@ export default function Assets() {
                     </td>
                     <td className="px-5 py-3 font-mono text-sm">
                       <span className={cx(score >= 75 ? "text-severity-critical" : score >= 50 ? "text-severity-high" : score >= 25 ? "text-severity-medium" : "text-severity-low")}>
-                        {score || "â€”"}
+                        {score || "--"}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -286,7 +286,7 @@ export default function Assets() {
                   );
                 })}
                 {(!prioritized || prioritized.length === 0) && (
-                  <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet â€” run scans to populate risk data.</td></tr>
+                  <tr><td colSpan={6} className="px-5 py-10 text-center text-slate-500">No prioritized assets yet -- run scans to populate risk data.</td></tr>
                 )}
               </tbody>
             </table>
@@ -300,7 +300,7 @@ export default function Assets() {
             <div className="flex flex-wrap items-center gap-3 border-b border-phantix-700/40 p-4">
               <div className="relative w-72">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input className="input !pl-10" placeholder="Search value or nameâ€¦" value={q} onChange={(e) => setQ(e.target.value)} />
+                <input className="input !pl-10" placeholder="Search value or name..." value={q} onChange={(e) => setQ(e.target.value)} />
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {types.map((t) => (
@@ -369,7 +369,7 @@ export default function Assets() {
                             <StatusBadge status={a.discoveryStatus} />
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-600">â€”</span>
+                          <span className="text-xs text-slate-600">--</span>
                         )}
                       </td>
                       <td className="td">
@@ -427,7 +427,7 @@ export default function Assets() {
                     <StatusBadge status={j.status} />
                   </div>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Domain: <span className="text-slate-300 font-mono">{cfg.domain || "â€”"}</span>
+                    Domain: <span className="text-slate-300 font-mono">{cfg.domain || "--"}</span>
                     {j.assets_discovered != null && <span className="ml-3">{j.assets_discovered} assets discovered</span>}
                     {rs.assets_upserted != null && <span className="ml-2">{rs.assets_upserted} upserted</span>}
                   </p>
@@ -575,8 +575,7 @@ export default function Assets() {
                 setImporting(true);
                 try {
                   const form = new FormData(); form.append("file", file); form.append("confirm_ownership", "true");
-                  const res = await fetch(`${API_BASE}/assets/upload/apk`, { method: "POST", headers: { Authorization: `Bearer ${tokens.appSession || ""}` }, body: form });
-                  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || "Upload failed");
+                  await api.upload("/assets/upload/apk", form);
                   toast("success", "APK uploaded", "Analysis running in background");
                   reload();
                 } catch (e: any) { toast("error", "Upload failed", e.message || ""); }
@@ -619,7 +618,7 @@ export default function Assets() {
               <div className="flex flex-wrap gap-1.5">
                 {(selected.tags?.length ?? 0) ? selected.tags!.map((t) => (
                   <span key={t.id} className="rounded-lg px-2 py-1 text-xs font-medium" style={{ background: `${t.color}22`, color: t.color }}>{t.name}</span>
-                )) : <span className="text-sm text-slate-500">No manual tags â€” auto-tags (type/source/verified) apply.</span>}
+                )) : <span className="text-sm text-slate-500">No manual tags -- auto-tags (type/source/verified) apply.</span>}
               </div>
             </div>
             {selectedIntel && (
@@ -768,3 +767,4 @@ export default function Assets() {
     </div>
   );
 }
+

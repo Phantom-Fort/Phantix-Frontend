@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck, Mail, KeyRound, Smartphone, Loader2, X, Lock } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -88,7 +88,7 @@ export default function DualControlOverlay() {
         setDeviceCode("");
         return;
       }
-      toast("success", "Operate mode unlocked", "Dual-control session active — mutations enabled for ~3 minutes of idle time.");
+      toast("success", "Operate mode unlocked", "Dual-control session active --- mutations enabled for ~3 minutes of idle time.");
       closeDualControlPrompt(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
@@ -107,7 +107,7 @@ export default function DualControlOverlay() {
     setBusy(true);
     try {
       await confirmDualControlDevice(deviceCode);
-      toast("success", "Operate mode unlocked", "Device confirmed — dual-control session is active.");
+      toast("success", "Operate mode unlocked", "Device confirmed --- dual-control session is active.");
       closeDualControlPrompt(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Device confirmation failed");
@@ -194,18 +194,18 @@ export default function DualControlOverlay() {
                       <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                       <input
                         className="input !pl-10 !opacity-70"
-                        value={email || session?.userEmail || "…"}
+                        value={email || session?.userEmail || "..."}
                         readOnly
                         autoFocus
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500">Your email from the login link — no re-entry needed.</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Your email from the login link --- no re-entry needed.</p>
                   </div>
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy} onClick={() => void sendCode()}>
                     {busy ? (
                       <>
-                        <Loader2 size={15} className="animate-spin" /> Sending code…
+                        <Loader2 size={15} className="animate-spin" /> Sending code...
                       </>
                     ) : (
                       <>
@@ -241,7 +241,7 @@ export default function DualControlOverlay() {
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyOtp()}>
                     {busy ? (
                       <>
-                        <Loader2 size={15} className="animate-spin" /> Unlocking…
+                        <Loader2 size={15} className="animate-spin" /> Unlocking...
                       </>
                     ) : (
                       "Unlock operate session"
@@ -275,7 +275,7 @@ export default function DualControlOverlay() {
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy || deviceCode.length !== 6} onClick={() => void verifyDevice()}>
                     {busy ? (
                       <>
-                        <Loader2 size={15} className="animate-spin" /> Confirming…
+                        <Loader2 size={15} className="animate-spin" /> Confirming...
                       </>
                     ) : (
                       "Confirm device & unlock"

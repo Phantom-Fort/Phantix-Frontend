@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, ShieldCheck, Link2, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner } from "@/components/ui";
@@ -19,7 +19,7 @@ export default function People() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading people…
+        <Spinner className="h-5 w-5" /> Loading people...
       </div>
     );
   }
@@ -28,7 +28,7 @@ export default function People() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="People & dual control"
-        description="Named org users with domain-email OTP identity. Writes require the initiator or authorizer slot plus a 3-minute idle operate session — roles alone grant no writes."
+        description="Named org users with domain-email OTP identity. Writes require the initiator or authorizer slot plus a 3-minute idle operate session --- roles alone grant no writes."
         actions={
           <button
             className="btn-primary"
@@ -50,7 +50,7 @@ export default function People() {
         <Card className="border-gold-400/25">
           <CardHeader
             title="Dual-control assignment"
-            subtitle="Two different people — one proposes, one approves"
+            subtitle="Two different people --- one proposes, one approves"
             action={<ShieldCheck size={17} className="text-gold-400" />}
           />
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -77,7 +77,7 @@ export default function People() {
             <AlertTriangle size={14} className="mt-0.5 shrink-0 text-gold-400" />
             <p className="text-[11px] leading-4 text-slate-500">
               Changing the assignment requires an operate session (PUT /org-users/dual-control). After reassignment,
-              previous operate sessions are revoked — both users must re-login with purpose=dual_control.
+              previous operate sessions are revoked --- both users must re-login with purpose=dual_control.
             </p>
           </div>
         </Card>
@@ -119,7 +119,7 @@ export default function People() {
                     ) : u.is_authorizer ? (
                       <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">Authorizer</span>
                     ) : (
-                      <span className="text-xs text-slate-600">—</span>
+                      <span className="text-xs text-slate-600">---</span>
                     )}
                   </td>
                   <td className="td">
@@ -156,7 +156,7 @@ export default function People() {
         <div className="space-y-4">
           <p className="text-sm leading-6 text-slate-300">
             Issue a one-time sign-in URL for <strong>{linkFor}</strong> to the operator app
-            (app.phantix.site). The link is shown <strong className="text-gold-300">once</strong> — rotating the
+            (app.phantix.site). The link is shown <strong className="text-gold-300">once</strong> --- rotating the
             service key does not invalidate it.
           </p>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/70 p-3.5 font-mono text-xs leading-6 text-gold-300/90 break-all">
@@ -166,7 +166,7 @@ export default function People() {
             <button
               className="btn-primary flex-1"
               onClick={() => {
-                toast("info", "Issue login link", "POST /organizations/me/users/{id}/login-link — shown once.");
+                toast("info", "Issue login link", "POST /organizations/me/users/{id}/login-link --- shown once.");
                 setLinkFor(null);
               }}
             >
@@ -195,7 +195,7 @@ export default function People() {
           onSubmit={(e) => {
             e.preventDefault();
             setInviteOpen(false);
-            toast("success", "User created", "OTP-only by default — day-to-day login is domain-email OTP via /org-users/auth/login.");
+            toast("success", "User created", "OTP-only by default --- day-to-day login is domain-email OTP via /org-users/auth/login.");
           }}
         >
           <div className="grid grid-cols-2 gap-3">
@@ -212,7 +212,7 @@ export default function People() {
             <label className="label">Work email</label>
             <input className="input" placeholder="you@company.com" />
             <p className="mt-1.5 text-[11px] text-slate-500">
-              Prefer the work domain — free-mail only if it matches a registration contact (domain-exempt).
+              Prefer the work domain --- free-mail only if it matches a registration contact (domain-exempt).
             </p>
           </div>
           <div>
@@ -225,7 +225,7 @@ export default function People() {
             </select>
           </div>
           <label className="flex items-center gap-2.5 text-sm text-slate-300">
-            <input type="checkbox" defaultChecked className="h-4 w-4 accent-gold-400" /> OTP-only (recommended — no password)
+            <input type="checkbox" defaultChecked className="h-4 w-4 accent-gold-400" /> OTP-only (recommended --- no password)
           </label>
           <button className="btn-primary w-full"><Plus size={15} /> Create user</button>
         </form>

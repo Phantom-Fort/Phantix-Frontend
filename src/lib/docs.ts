@@ -1,4 +1,4 @@
-// ── Documentation catalog ─────────────────────────────────────────────────────
+﻿// ── Documentation catalog ─────────────────────────────────────────────────────
 // Renders the actual engineering guides shipped in this repository, in-app.
 
 import readme from "@docs/frontend/README.md?raw";
@@ -67,13 +67,13 @@ export const docs: DocEntry[] = [
 
   // Surface guides
   { id: "surface-org-setup", title: "01 · Org setup", description: "Onboarding wizard: privacy, email OTP, domain/CAC/manual verification, complete.", category: "surfaces", content: orgSetupFe },
-  { id: "surface-platform", title: "02 · Platform", description: "Customer management portal — identity, keys, people, connections and every product module.", category: "surfaces", content: platformFe, badge: "Main guide" },
+  { id: "surface-platform", title: "02 · Platform", description: "Customer management portal --- identity, keys, people, connections and every product module.", category: "surfaces", content: platformFe, badge: "Main guide" },
   { id: "surface-application", title: "03 · Application", description: "Operator app on dual tokens: campaigns, findings, risks, reports.", category: "surfaces", content: applicationFe },
   { id: "surface-staff", title: "04 · Staff / Admin", description: "Internal console: clients, frameworks, tooling, AI, server ops.", category: "surfaces", content: staffFe },
 
   // Modules
   { id: "mod-assets", title: "Asset discovery", description: "Inventory, tags, history, domain_enum pipeline, GitHub/OpenAPI/APK imports.", category: "modules", content: assetDiscovery },
-  { id: "mod-asset-intel", title: "Asset intelligence & monitoring", description: "Dashboards, posture monitoring, alerts and metrics after inventory exists — the FE implementation guide.", category: "modules", content: assetIntelFe, badge: "FE guide" },
+  { id: "mod-asset-intel", title: "Asset intelligence & monitoring", description: "Dashboards, posture monitoring, alerts and metrics after inventory exists --- the FE implementation guide.", category: "modules", content: assetIntelFe, badge: "FE guide" },
   { id: "mod-asset-intel-backend", title: "Asset intelligence (backend)", description: "Posture scoring, monitoring service and intelligence aggregation engine.", category: "modules", content: assetIntel },
   { id: "mod-vapt", title: "VAPT engine", description: "Campaign lifecycle, web scanner pipeline, correlation, orchestrator, schedules.", category: "modules", content: vapt },
   { id: "mod-risk", title: "Risk engine", description: "Hybrid scoring, prioritization algorithm, treatments and expert export.", category: "modules", content: risk },

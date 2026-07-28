@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
@@ -31,7 +31,7 @@ export default function Scans() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading scans…
+        <Spinner className="h-5 w-5" /> Loading scans...
       </div>
     );
   }
@@ -41,14 +41,14 @@ export default function Scans() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Scans"
-        description="On-demand Nmap + Nuclei jobs. One active job per organization — the lock is enforced with a unique partial index, so 409 means someone else is scanning."
+        description="On-demand Nmap + Nuclei jobs. One active job per organization --- the lock is enforced with a unique partial index, so 409 means someone else is scanning."
         actions={
           <button
             className="btn-primary"
             onClick={() =>
               void (async () => {
                 if (!(await requireDualControl("Launching scans requires a dual-control operate session."))) return;
-                if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${active.status} — wait or cancel it first.`);
+                if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${active.status} --- wait or cancel it first.`);
                 setNewOpen(true);
               })()
             }
@@ -69,7 +69,7 @@ export default function Scans() {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
-                  <p className="font-semibold text-slate-100">Job #{active.id} — {active.tools.join(" + ")}</p>
+                  <p className="font-semibold text-slate-100">Job #{active.id} --- {active.tools.join(" + ")}</p>
                   <StatusBadge status={active.status} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -136,7 +136,7 @@ export default function Scans() {
                     <td className="td"><StatusBadge status={j.status} /></td>
                     <td className="td font-semibold text-slate-200">{j.findings_count}</td>
                     <td className="td text-xs text-slate-400">{j.initiated_by}</td>
-                    <td className="td text-xs text-slate-500">{j.finished_at ? formatDateTime(j.finished_at) : "—"}</td>
+                    <td className="td text-xs text-slate-500">{j.finished_at ? formatDateTime(j.finished_at) : "---"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -152,7 +152,7 @@ export default function Scans() {
             <ShieldCheck size={16} className="mt-0.5 shrink-0 text-gold-400" />
             <p className="text-xs leading-5 text-slate-400">
               Each result carries <span className="font-mono text-slate-300">evidence.verification</span>. Only{" "}
-              <strong className="text-emerald-400">verified</strong> rows feed risks and client reports — unverified
+              <strong className="text-emerald-400">verified</strong> rows feed risks and client reports --- unverified
               heuristics are held out by the reporting gate.
             </p>
           </div>

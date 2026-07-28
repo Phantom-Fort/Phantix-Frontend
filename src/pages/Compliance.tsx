@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner } from "@/components/ui";
@@ -27,7 +27,7 @@ export default function Compliance() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading compliance…
+        <Spinner className="h-5 w-5" /> Loading compliance...
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function Compliance() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Compliance"
-        description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit — gaps show human review status."
+        description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit --- gaps show human review status."
         actions={
           <button
             className="btn-primary"
@@ -90,7 +90,7 @@ export default function Compliance() {
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Card>
-              <CardHeader title="Evidence connectors" subtitle="Phase 4 — live collection into your security DB" />
+              <CardHeader title="Evidence connectors" subtitle="Phase 4 --- live collection into your security DB" />
               <div className="space-y-2.5">
                 {[
                   { name: "wazuh", state: "configured", note: "SIEM alerts + agent coverage" },
@@ -255,17 +255,17 @@ export default function Compliance() {
                 </ProgressRing>
               </div>
               <p className="mt-2 text-center text-xs leading-5 text-slate-500">
-                Questions merge across ISO 27001, NDPR, SOC 2 and PCI DSS — one answer can satisfy multiple controls.
+                Questions merge across ISO 27001, NDPR, SOC 2 and PCI DSS --- one answer can satisfy multiple controls.
               </p>
             </Card>
             <Card className="lg:col-span-2">
               <CardHeader title="Answering rules" subtitle="Multi-user GRC attribution" action={<ClipboardList size={15} className="text-slate-500" />} />
               <div className="space-y-3 text-sm leading-6 text-slate-300">
                 {[
-                  ["Declare your role first", "POST /compliance/questionnaire/session with stated_role (e.g. CISO) before answering — required for audit."],
+                  ["Declare your role first", "POST /compliance/questionnaire/session with stated_role (e.g. CISO) before answering --- required for audit."],
                   ["Per-user upserts", "Multiple org users can answer the same question; the worst answer wins in merged assessments."],
-                  ["Full attribution", "Every answer stores user id, name, email, stated role and session id — exportable via GET …/answers."],
-                  ["Named users only", "Company-only JWTs may be rejected — answer as an org user."],
+                  ["Full attribution", "Every answer stores user id, name, email, stated role and session id --- exportable via GET .../answers."],
+                  ["Named users only", "Company-only JWTs may be rejected --- answer as an org user."],
                 ].map(([t, d]) => (
                   <div key={t} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
                     <p className="font-semibold text-slate-100">{t}</p>
@@ -273,7 +273,7 @@ export default function Compliance() {
                   </div>
                 ))}
               </div>
-              <button className="btn-primary mt-4" onClick={() => toast("info", "Questionnaire", "Continue answering — 32 of 47 questions complete.")}>
+              <button className="btn-primary mt-4" onClick={() => toast("info", "Questionnaire", "Continue answering --- 32 of 47 questions complete.")}>
                 Continue questionnaire
               </button>
             </Card>
@@ -288,7 +288,7 @@ export default function Compliance() {
           onSubmit={(e) => {
             e.preventDefault();
             setAssessOpen(false);
-            toast("success", "Assessment queued", "POST /compliance/assessments — merges questionnaire + posture per control.");
+            toast("success", "Assessment queued", "POST /compliance/assessments --- merges questionnaire + posture per control.");
           }}
         >
           <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { Activity, Gauge, Shield, Wifi, WifiOff, Monitor, Clock, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, SeverityBadge, EmptyState } from "@/components/ui";
 import { useResource } from "@/lib/useResource";
@@ -34,7 +34,7 @@ export default function SocDashboard() {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-phantix-500 border-t-gold-400" />
-        Loading SOC dashboard…
+        Loading SOC dashboard...
       </div>
     );
   }

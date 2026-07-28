@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+﻿import React, { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -78,7 +78,7 @@ export default function Home() {
       {/* Hero */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 pb-16 pt-20 text-center">
         <motion.div {...fadeUp(0)} className="mx-auto inline-flex items-center gap-2 rounded-full border border-gold-400/25 bg-gold-400/8 px-4 py-1.5 text-xs font-medium text-gold-300">
-          <ShieldCheck size={13} /> app.phantix.site — the operator console
+          <ShieldCheck size={13} /> app.phantix.site --- the operator console
         </motion.div>
 
         <motion.h1 {...fadeUp(0.08)} className="mx-auto mt-6 max-w-3xl font-display text-[42px] font-bold leading-[1.06] tracking-tight text-white sm:text-[56px]">
@@ -89,7 +89,7 @@ export default function Home() {
         </motion.h1>
 
         <motion.p {...fadeUp(0.16)} className="mx-auto mt-5 max-w-xl text-[16px] leading-7 text-slate-400">
-          Assets, scans, VAPT campaigns, risks, compliance and verified-only reports — running against a
+          Assets, scans, VAPT campaigns, risks, compliance and verified-only reports --- running against a
           privacy-first backend where your data never leaves your database.
         </motion.p>
 
@@ -103,7 +103,7 @@ export default function Home() {
         </motion.div>
 
         <motion.p {...fadeUp(0.3)} className="mt-4 text-xs text-slate-600">
-          {demoActive ? "Demo mode is active in this browser — jump back in above." : "No account needed for the demo — full product, simulated tenant."}
+          {demoActive ? "Demo mode is active in this browser --- jump back in above." : "No account needed for the demo --- full product, simulated tenant."}
         </motion.p>
       </section>
 
@@ -115,19 +115,19 @@ export default function Home() {
               icon: <Eye size={18} />,
               step: "01",
               title: "Explore the demo tenant",
-              body: "A fully simulated organization — Acme Financial Group — with assets, an active campaign, risks, compliance scores and reports.",
+              body: "A fully simulated organization --- Acme Financial Group --- with assets, an active campaign, risks, compliance scores and reports.",
             },
             {
               icon: <CheckCircle2 size={18} />,
               step: "02",
               title: "Check every module",
-              body: "Run the scan lock UX, inspect the verification gate, walk the P1–P5 priority queue, download report formats.",
+              body: "Run the scan lock UX, inspect the verification gate, walk the P1---P5 priority queue, download report formats.",
             },
             {
               icon: <Repeat2 size={18} />,
               step: "03",
               title: "Switch to your organization",
-              body: "One click from the demo banner swaps you to the live sign-in — your real tenant, your real data, same console.",
+              body: "One click from the demo banner swaps you to the live sign-in --- your real tenant, your real data, same console.",
             },
           ].map((s, i) => (
             <motion.div
@@ -153,7 +153,7 @@ export default function Home() {
           <h2 className="mt-3 font-display text-4xl font-bold tracking-tight text-white">Simple, per-company pricing</h2>
           <p className="mx-auto mt-3 max-w-xl text-[15px] leading-7 text-slate-400">
             Every tier includes the privacy-first architecture, dual control and the immutable audit trail.
-            Plan and rate limits bind to the company — all its users and keys share the bucket.
+            Plan and rate limits bind to the company --- all its users and keys share the bucket.
           </p>
         </motion.div>
 
@@ -183,7 +183,7 @@ export default function Home() {
                     <span className="font-display text-4xl font-bold text-white">₦{t.monthly_ngn.toLocaleString()}</span>
                     <span className="text-sm text-slate-500">/month</span>
                     {t.first_month_ngn != null && (
-                      <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} — 50% off</p>
+                      <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} --- 50% off</p>
                     )}
                     {t.yearly_note && <p className="mt-0.5 text-[11px] text-slate-600">{t.yearly_note}</p>}
                   </>
@@ -218,7 +218,7 @@ export default function Home() {
           {[
             { host: "phantix.site", name: "Landing", desc: "Product story and company", url: LANDING_URL, icon: <Sparkles size={16} /> },
             { host: "platform.phantix.site", name: "Platform", desc: "Onboarding, keys, people, billing", url: PLATFORM_URL, icon: <Building2 size={16} /> },
-            { host: "app.phantix.site", name: "Command Centre", desc: "The operator console — you are here", url: null, icon: <ShieldCheck size={16} /> },
+            { host: "app.phantix.site", name: "Command Centre", desc: "The operator console --- you are here", url: null, icon: <ShieldCheck size={16} /> },
           ].map((s) => (
             <div key={s.host} className={cx("card flex items-center gap-4 p-5", !s.url && "border-gold-400/30")}>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">{s.icon}</span>

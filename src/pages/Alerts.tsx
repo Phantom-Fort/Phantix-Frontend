@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner } from "@/components/ui";
@@ -27,7 +27,7 @@ export default function Alerts() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading alerts…
+        <Spinner className="h-5 w-5" /> Loading alerts...
       </div>
     );
   }
@@ -91,7 +91,7 @@ export default function Alerts() {
       {tab === "settings" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <Card>
-            <CardHeader title="Client alert SMTP" subtitle="Separate from the Phantix OTP SMTP — this delivers security alerts + VAPT completion mail" action={<Mail size={16} className="text-slate-500" />} />
+            <CardHeader title="Client alert SMTP" subtitle="Separate from the Phantix OTP SMTP --- this delivers security alerts + VAPT completion mail" action={<Mail size={16} className="text-slate-500" />} />
             <div className="space-y-3">
               {[
                 ["Host", `${s.smtp.host}:${s.smtp.port}`],
