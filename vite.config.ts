@@ -13,6 +13,13 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    proxy: {
+      "/api": {
+        target: "https://staging.phantix.site",
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   build: {
     chunkSizeWarningLimit: 1600,

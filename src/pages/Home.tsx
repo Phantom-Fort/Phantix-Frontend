@@ -21,6 +21,13 @@ export default function Home() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
+  // Redirect logged-in users straight to dashboard
+  useEffect(() => {
+    if (session?.authenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [session, navigate]);
+
   // Landing-page deep link: app.phantix.site/?demo=1 → straight into the demo
   useEffect(() => {
     if (params.get("demo") === "1") {

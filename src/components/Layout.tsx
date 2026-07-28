@@ -21,7 +21,6 @@ import {
   KeyRound,
   Sparkles,
   LifeBuoy,
-  Home,
   Timer,
   FlaskConical,
   Building2,
@@ -43,7 +42,6 @@ const navSections: {
   {
     label: "Overview",
     items: [
-      { to: "/", label: "Home", icon: <Home size={17} /> },
       { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={17} /> },
     ],
   },

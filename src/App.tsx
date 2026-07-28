@@ -67,10 +67,10 @@ export default function App() {
     <StoreProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/demo" element={<DemoEntry />} />
           <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
             <Route path="/assets/intelligence" element={<RequireAuth><AssetIntelligence /></RequireAuth>} />

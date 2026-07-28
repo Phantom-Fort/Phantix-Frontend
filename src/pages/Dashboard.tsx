@@ -9,7 +9,7 @@ import {
   Boxes, ShieldAlert, Radar, Crosshair, ArrowRight, ArrowUpRight,
   BellRing, ScrollText, ShieldCheck, Zap,
 } from "lucide-react";
-import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, ProgressBar, Spinner } from "@/components/ui";
+import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, ProgressBar, Spinner, SkeletonCard } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadDashboardBundle, loadIntelligenceDashboard } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
@@ -58,8 +58,18 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading live posture…
+      <div className="mx-auto max-w-[1400px]">
+        <div className="mb-6">
+          <div className="skeleton mb-2 h-5 w-48 rounded" />
+          <div className="skeleton h-8 w-72 rounded" />
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+        <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
+          <div className="xl:col-span-2"><SkeletonCard className="h-80" /></div>
+          <SkeletonCard className="h-80" />
+        </div>
       </div>
     );
   }

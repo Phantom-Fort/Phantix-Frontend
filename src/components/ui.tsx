@@ -297,6 +297,22 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
+export function SkeletonCard({ className }: { className?: string }) {
+  return <div className={cx("card animate-pulse border-phantix-700/40 bg-phantix-900/50 p-5", className)}><div className="skeleton h-4 w-3/4 rounded" /><div className="mt-3 skeleton h-3 w-1/2 rounded" /></div>;
+}
+
+export function SkeletonTable({ rows = 3, cols = 4 }: { rows?: number; cols?: number }) {
+  return (
+    <div className="space-y-2 p-4">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${cols},1fr)` }}>
+          {Array.from({ length: cols }).map((_, j) => <div key={j} className="skeleton h-8 rounded" style={{ opacity: 1 - i * 0.12 - j * 0.04 }} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Empty state ───────────────────────────────────────────────────────────────
 export function EmptyState({
   icon,
