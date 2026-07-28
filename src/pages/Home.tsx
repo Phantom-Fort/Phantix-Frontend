@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -6,7 +6,8 @@ import {
   Building2, Eye, Repeat2, BookOpen,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { pricingTiers, pricingFootnote } from "@/lib/pricing";
+import { loadPricing, pricingFootnote } from "@/lib/pricing";
+import type { PricingTier } from "@/lib/pricing";
 import { LANDING_URL, PLATFORM_URL } from "@/lib/links";
 import { cx } from "@/lib/utils";
 
@@ -20,20 +21,19 @@ export default function Home() {
   const { session, enterDemo, demoActive } = useStore();
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
 
   // Redirect logged-in users straight to dashboard
   useEffect(() => {
-    if (session?.authenticated) {
-      navigate("/dashboard", { replace: true });
-    }
+    if (session?.authenticated) { navigate("/dashboard", { replace: true }); }
   }, [session, navigate]);
+
+  // Load real pricing from API
+  useEffect(() => { loadPricing().then(setPricingTiers); }, []);
 
   // Landing-page deep link: app.phantix.site/?demo=1 → straight into the demo
   useEffect(() => {
-    if (params.get("demo") === "1") {
-      enterDemo();
-      navigate("/dashboard", { replace: true });
-    }
+    if (params.get("demo") === "1") { enterDemo(); navigate("/dashboard", { replace: true }); }
   }, [params, enterDemo, navigate]);
 
   const goDemo = () => {
@@ -180,12 +180,10 @@ export default function Home() {
               <div className="mt-5">
                 {t.monthly_ngn !== null ? (
                   <>
-                    <span className="font-display text-4xl font-bold text-white">₦{t.monthly_ngn.toLocaleString()}</span>
-                    <span className="text-sm text-slate-500">/month</span>
-                    {t.first_month_ngn != null && (
-                      <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} --- 50% off</p>
-                    )}
-                    {t.yearly_note && <p className="mt-0.5 text-[11px] text-slate-600">{t.yearly_note}</p>}
+                    <span className="font-display text-4xl font-bold text-white">{t.monthly_ngn === 0 ? "Free" : `₦${t.monthly_ngn.toLocaleString()}`}</span>
+                    {t.monthly_ngn > 0 && <span className="text-sm text-slate-500">/month</span>}
+                    {t.first_month_ngn != null && t.first_month_ngn > 0 && <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} — {t.monthly_ngn > 0 ? `${Math.round((1 - t.first_month_ngn / t.monthly_ngn) * 100)}% off` : "free"}</p>}
+                    {t.yearly_price_ngn != null && t.yearly_price_ngn > 0 && <p className="mt-0.5 text-[11px] text-slate-600">{t.yearly_note}</p>}
                   </>
                 ) : (
                   <span className="font-display text-4xl font-bold text-white">Custom</span>

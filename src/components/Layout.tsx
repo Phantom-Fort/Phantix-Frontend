@@ -177,6 +177,16 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
+  // Catch billing-required 402 responses and show upgrade prompt
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const msg = (e as CustomEvent).detail as string;
+      toast("warning", "Upgrade required", `${msg} --- visit Platform Billing to subscribe.`);
+    };
+    window.addEventListener("phantix:billing-required", handler);
+    return () => window.removeEventListener("phantix:billing-required", handler);
+  }, [toast]);
+
   // Auto-logout after inactivity --- uses backend's inactivity_expires_at if set, else 20 min
   useEffect(() => {
     if (!session?.authenticated || demoActive) return;

@@ -142,6 +142,10 @@ async function request<T>(
       else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
       else { tokens.platform = null; tokens.orgUser = null; }
     }
+    if (res.status === 402) {
+      const msg = typeof detail === "string" ? detail : "Upgrade required";
+      window.dispatchEvent(new CustomEvent("phantix:billing-required", { detail: msg }));
+    }
     throw new ApiError(res.status, detail);
   }
   if (res.status === 204) return undefined as T;
