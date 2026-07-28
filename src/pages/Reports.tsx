@@ -97,7 +97,7 @@ export default function Reports() {
                     </div>
                   ) : (
                     <div className="flex gap-1.5">
-                      {r.formats.map((f) => (
+                      {(r.formats_requested || []).map((f) => (
                         <button
                           key={f}
                           onClick={() => toast("info", `Downloading ${f.toUpperCase()}`, `GET /reports/${r.id}/download?format=${f} — bytes with Content-Disposition.`)}

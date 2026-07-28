@@ -225,7 +225,7 @@ export default function Dashboard() {
               <div className="mt-4 flex items-center gap-3 rounded-xl border border-severity-low/25 bg-severity-low/8 px-4 py-3">
                 <span className="h-2 w-2 animate-pulse-soft rounded-full bg-severity-low" />
                 <p className="text-xs text-slate-300">
-                  Report <strong>#{generating.id} — {generating.title}</strong> is generating ({generating.formats.join(", ")})…
+                  Report <strong>#{generating.id} — {generating.title}</strong> is generating ({(generating.formats_requested ?? []).join(", ")})…
                 </p>
                 <Link to="/reports" className="ml-auto text-xs font-semibold text-gold-400">View</Link>
               </div>

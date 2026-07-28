@@ -337,7 +337,7 @@ export interface Report {
   report_type: "vapt_campaign" | "executive" | "compliance" | "tracker";
   title: string;
   status: "queued" | "generating" | "complete" | "failed";
-  formats: string[];
+  formats_requested: string[];
   campaign_id: number | null;
   version: number;
   stats: {

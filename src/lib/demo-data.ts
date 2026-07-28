@@ -301,10 +301,10 @@ export const evidenceItems: EvidenceItem[] = [
 ];
 
 export const reports: Report[] = [
-  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive — Client Package", status: "complete", formats: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
-  { id: 43, report_type: "executive", title: "June Board Security Summary", status: "complete", formats: ["pdf", "docx"], campaign_id: 11, version: 1, stats: { after_dedupe: 38, after_verification: 31, excluded_from_report: 7 }, created_at: "2026-06-05T10:00:00Z", size_bytes: 2_204_000 },
-  { id: 42, report_type: "compliance", title: "NDPR Readiness Snapshot", status: "complete", formats: ["pdf", "json"], campaign_id: null, version: 1, stats: { after_dedupe: 34, after_verification: 34, excluded_from_report: 0 }, created_at: "2026-07-18T12:00:00Z", size_bytes: 1_480_000 },
-  { id: 45, report_type: "vapt_campaign", title: "Q3 External Assessment — Interim", status: "generating", formats: ["pdf", "docx", "markdown", "json"], campaign_id: 13, version: 1, stats: { after_dedupe: 19, after_verification: 14, excluded_from_report: 5 }, created_at: "2026-07-21T07:55:00Z", size_bytes: 0 },
+  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive — Client Package", status: "complete", formats_requested: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
+  { id: 43, report_type: "executive", title: "June Board Security Summary", status: "complete", formats_requested: ["pdf", "docx"], campaign_id: 11, version: 1, stats: { after_dedupe: 38, after_verification: 31, excluded_from_report: 7 }, created_at: "2026-06-05T10:00:00Z", size_bytes: 2_204_000 },
+  { id: 42, report_type: "compliance", title: "NDPR Readiness Snapshot", status: "complete", formats_requested: ["pdf", "json"], campaign_id: null, version: 1, stats: { after_dedupe: 34, after_verification: 34, excluded_from_report: 0 }, created_at: "2026-07-18T12:00:00Z", size_bytes: 1_480_000 },
+  { id: 45, report_type: "vapt_campaign", title: "Q3 External Assessment — Interim", status: "generating", formats_requested: ["pdf", "docx", "markdown", "json"], campaign_id: 13, version: 1, stats: { after_dedupe: 19, after_verification: 14, excluded_from_report: 5 }, created_at: "2026-07-21T07:55:00Z", size_bytes: 0 },
 ];
 
 export const trackerFindings: TrackerFinding[] = [
