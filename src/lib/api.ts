@@ -156,6 +156,30 @@ export const api = {
   delete: <T>(path: string, opts?: Parameters<typeof request>[2]) => request<T>("DELETE", path, opts),
   postForm: <T>(path: string, form: Record<string, string>, opts?: Parameters<typeof request>[2]) =>
     request<T>("POST", path, { ...opts, form }),
+
+  /** Fetch binary/raw content with auth headers, returns a Blob. */
+  async download(path: string): Promise<Blob> {
+    const headers: Record<string, string> = {};
+    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+
+    const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return res.blob();
+  },
+
+  /** Fetch text content with auth headers (e.g. markdown). */
+  async fetchText(path: string): Promise<string> {
+    const headers: Record<string, string> = {};
+    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+
+    const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
+    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    return res.text();
+  },
 };
 
 // Simulated latency for demo mode so loading states are visible

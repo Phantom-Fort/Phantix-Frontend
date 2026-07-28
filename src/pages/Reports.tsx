@@ -7,6 +7,29 @@ import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { marked } from "marked";
+
+marked.setOptions({ breaks: true, gfm: true });
+
+function handleDownload(reportId: number, format: string) {
+  const ext = format === "docx" ? "docx" : format === "markdown" ? "md" : format === "xlsx" ? "xlsx" : format;
+  api.download(`/reports/${reportId}/download?format=${format}`).then((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `report-${reportId}.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }).catch(() => {});
+}
+
+async function loadMarkdown(reportId: number): Promise<string> {
+  try {
+    return await api.fetchText(`/reports/${reportId}/download?format=markdown`);
+  } catch {
+    return "*Could not load markdown content.*";
+  }
+}
 
 const trackerStatuses = ["open", "in_progress", "resolved", "accepted", "verified", "false_positive"] as const;
 
@@ -55,6 +78,37 @@ function SectionRenderer({ section }: { section: any }) {
     return <JsonPre data={content} />;
   }
   return <JsonPre data={content} />;
+}
+
+function MarkdownReportView({ reportId }: { reportId: number }) {
+  const [md, setMd] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleLoad = async () => {
+    if (md !== null) { setOpen(true); return; }
+    setLoading(true);
+    const text = await loadMarkdown(reportId);
+    setMd(text);
+    setLoading(false);
+    setOpen(true);
+  };
+
+  return (
+    <>
+      <button onClick={handleLoad} className="flex items-center gap-1.5 rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-3 py-2 text-xs text-slate-300 hover:bg-phantix-800/60">
+        <Code2 size={13} /> {loading ? "Loading…" : "View formatted report"}
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Formatted Report" wide>
+        {md && (
+          <div
+            className="prose prose-invert prose-sm max-w-none overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-6 max-h-[70vh] text-slate-200"
+            dangerouslySetInnerHTML={{ __html: marked.parse(md) as string }}
+          />
+        )}
+      </Modal>
+    </>
+  );
 }
 
 export default function Reports() {
@@ -213,14 +267,7 @@ export default function Reports() {
                         <button
                           key={f}
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const url = `${import.meta.env.VITE_API_BASE ?? ""}/reports/${r.id}/download?format=${f}`;
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = `report-${r.id}-v${(r as any).report_version ?? 1}.${f === "docx" ? "docx" : f === "markdown" ? "md" : f}`;
-                            a.click();
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f); }}
                           className={cx(
                             "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
                             f === "pdf" || f === "docx"
@@ -413,13 +460,7 @@ export default function Reports() {
                 {Object.entries((detail as any).output_files as Record<string, string>).map(([fmt, _path]) => (
                   <button
                     key={fmt}
-                    onClick={() => {
-                      const url = `${import.meta.env.VITE_API_BASE ?? ""}/reports/${detail.id}/download?format=${fmt}`;
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = `report-${detail.id}.${fmt === "docx" ? "docx" : fmt === "markdown" ? "md" : fmt === "xlsx" ? "xlsx" : fmt}`;
-                      a.click();
-                    }}
+                    onClick={() => handleDownload(detail.id, fmt)}
                     className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
                   >
                     <Download size={10} className="mr-1 inline" /> {fmt}
@@ -427,6 +468,9 @@ export default function Reports() {
                 ))}
               </div>
             )}
+
+            {/* Markdown viewer */}
+            <MarkdownReportView reportId={detail.id} />
 
             {/* Sections */}
             {detail.sections && (
