@@ -177,20 +177,17 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Auto-logout after inactivity — timeout driven by backend's inactivity_expires_at (fallback 20 min)
+  // Auto-logout after inactivity — uses backend's inactivity_expires_at if set, else 20 min
   useEffect(() => {
     if (!session?.authenticated || demoActive) return;
-    const DEFAULT_MS = 20 * 60 * 1000;
+    const getTimeoutMs = () => operate.expiresAt ? Math.max(20 * 60 * 1000, operate.expiresAt - Date.now()) : 20 * 60 * 1000;
     const WARNING_BEFORE_MS = 5 * 60 * 1000;
     let lastActivity = Date.now();
     let warned = false;
 
-    const getTimeoutMs = () => operate.expiresAt ? (operate.expiresAt - Date.now()) : DEFAULT_MS;
-    const getWarningMs = () => getTimeoutMs() - WARNING_BEFORE_MS;
-
     const markActivity = () => { lastActivity = Date.now(); warned = false; };
-    const events = ["mousedown", "keydown", "scroll", "touchstart", "mousemove"];
-    events.forEach((e) => window.addEventListener(e, markActivity, { passive: true }));
+    const events = ["mousedown", "keydown", "click", "scroll", "touchstart"];
+    events.forEach((e) => window.addEventListener(e, markActivity));
 
     const check = () => {
       if (!session?.authenticated) return;
@@ -199,14 +196,13 @@ export default function Layout() {
       if (idle >= timeoutMs) {
         toast("warning", "Session expired", "You have been logged out due to a long period of inactivity. Please sign in again.");
         logout();
-      } else if (idle >= getWarningMs() && !warned) {
+      } else if (idle >= (timeoutMs - WARNING_BEFORE_MS) && !warned) {
         warned = true;
-        const mins = Math.round(WARNING_BEFORE_MS / 60000);
-        toast("info", "Session expiring soon", `You will be logged out in ${mins} minutes due to inactivity.`);
+        toast("info", "Session expiring soon", `You will be logged out in ${Math.round(WARNING_BEFORE_MS / 60000)} minutes due to inactivity.`);
       }
     };
 
-    const interval = window.setInterval(check, 10000);
+    const interval = window.setInterval(check, 15000);
     const onVisible = () => { if (document.visibilityState === "visible") check(); };
     document.addEventListener("visibilitychange", onVisible);
 
