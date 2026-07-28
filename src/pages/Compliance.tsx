@@ -181,7 +181,7 @@ export default function Compliance() {
               </thead>
               <tbody>
                 {complianceControlResults.map((c) => {
-                  const Icon = statusIcon[c.status];
+                  const Icon = statusIcon[c.status] ?? HelpCircle;
                   return (
                     <tr key={c.control_id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
                       <td className="td font-mono text-xs text-gold-300">{c.control_id}</td>

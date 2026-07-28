@@ -268,7 +268,7 @@ export default function Dashboard() {
             />
             <div className="space-y-2">
               {[...risks].sort((a, b) => b.priority_score - a.priority_score).slice(0, 5).map((r, i) => {
-                const band = priorityBandMeta[r.priority_band];
+                const band = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "—", className: "text-slate-400" };
                 return (
                   <motion.div
                     key={r.id}

@@ -150,8 +150,8 @@ export default function Risks() {
 
       <div className="space-y-2.5">
         {sorted.map((r, i) => {
-          const bm = priorityBandMeta[r.priority_band];
-          const color = riskLevelHex[r.level];
+          const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "—", className: "text-slate-400" };
+          const color = riskLevelHex[r.level] ?? "#64748b";
           return (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card hover className="!p-0 overflow-hidden" >
@@ -195,7 +195,7 @@ export default function Risks() {
         {selected && (
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={cx("chip", priorityBandMeta[selected.priority_band].className)}>{priorityBandMeta[selected.priority_band].label}</span>
+              <span className={cx("chip", (priorityBandMeta[selected.priority_band] ?? { className: "text-slate-400" }).className)}>{(priorityBandMeta[selected.priority_band] ?? { label: selected.priority_band }).label}</span>
               <StatusBadge status={selected.status} />
               {selected.treatment_status && <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">treatment: {titleCase(selected.treatment_status)}</span>}
             </div>
