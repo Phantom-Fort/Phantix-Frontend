@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner } from "@/components/ui";
@@ -113,7 +113,7 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
 
 export default function Reports() {
   const { toast } = useStore();
-  const { data, loading, reload } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] });
+  const { data, loading, reload } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] }, "reports");
   const { reports, trackerFindings } = data;
   const [tab, setTab] = useState("reports");
   const [genOpen, setGenOpen] = useState(false);
@@ -239,7 +239,7 @@ export default function Reports() {
                       <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` · ${formatBytes((r as any).size_bytes)}` : ""}
+                      {r.campaign_id ? `Campaign #${r.campaign_id} � ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` � ${formatBytes((r as any).size_bytes)}` : ""}
                     </p>
                   </div>
 
@@ -336,7 +336,7 @@ export default function Reports() {
                           const newStatus = e.target.value;
                           try {
                             await api.patch(`/reports/tracker/${f.finding_key}`, { status: newStatus });
-                            toast("success", "Tracker updated", `PATCH /reports/tracker/${f.finding_key} → ${newStatus}`);
+                            toast("success", "Tracker updated", `PATCH /reports/tracker/${f.finding_key} ? ${newStatus}`);
                           } catch (err: any) {
                             toast("error", "Failed", err.message ?? "Status update failed");
                           }

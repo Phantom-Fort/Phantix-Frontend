@@ -1,4 +1,4 @@
-ï»¿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, ShieldCheck, Link2, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner } from "@/components/ui";
@@ -10,7 +10,7 @@ import { useStore } from "@/lib/store";
 
 export default function People() {
   const { toast, requireDualControl, dualControl: storeDc } = useStore();
-  const { data, loading } = useResource(loadPeopleBundle, { users: [], dualControl: emptyDualControl });
+  const { data, loading } = useResource(loadPeopleBundle, { users: [], dualControl: emptyDualControl }, "people");
   const orgUsers = data.users;
   const dualControl = data.dualControl.configured ? data.dualControl : storeDc;
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -67,7 +67,7 @@ export default function People() {
                     <p className="font-semibold text-slate-100">{s.user?.full_name}</p>
                     <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{s.slot}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{s.user?.title} Â· {s.user?.email}</p>
+                  <p className="text-xs text-slate-500">{s.user?.title} · {s.user?.email}</p>
                   <p className="mt-1 text-[11px] text-slate-600">{s.desc}</p>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function People() {
                       </span>
                       <div>
                         <p className="font-medium text-slate-200">{u.full_name}</p>
-                        <p className="text-xs text-slate-500">{u.email} Â· {u.title}</p>
+                        <p className="text-xs text-slate-500">{u.email} · {u.title}</p>
                       </div>
                     </div>
                   </td>

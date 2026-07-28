@@ -18,7 +18,7 @@ export default function Vapt() {
     approvals: [],
     securityDbBlocked: false,
     error: null,
-  });
+  }, "vapt");
   const vaptCampaigns = data.campaigns;
   const vaptFindings = data.findings;
   const vaptApprovals = data.approvals;

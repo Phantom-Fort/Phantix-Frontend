@@ -30,8 +30,8 @@ export default function Assets() {
     discoveryJobs: [],
     securityDbBlocked: false,
     error: null,
-  });
-  const { data: prioritized } = useResource(loadPrioritizedAssets, []);
+  }, "assets");
+  const { data: prioritized } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
   const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");

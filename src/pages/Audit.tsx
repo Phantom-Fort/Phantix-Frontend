@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, Filter, X } from "lucide-react";
 import { PageHeader, Card, Spinner } from "@/components/ui";
@@ -46,7 +46,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function Audit() {
   const { toast } = useStore();
-  const { data, loading } = useResource(loadAuditBundle, { events: [] });
+  const { data, loading } = useResource(loadAuditBundle, { events: [] }, "audit");
   const auditEvents = data.events as AuditEvent[];
   const [engineFilter, setEngineFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");

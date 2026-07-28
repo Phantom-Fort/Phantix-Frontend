@@ -1,4 +1,4 @@
-ï»¿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner } from "@/components/ui";
@@ -129,7 +129,7 @@ export default function Compliance() {
                     <Scale size={15} className="text-gold-400" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-200">{f.name} <span className="text-xs text-slate-500">v{f.version}</span></p>
-                      <p className="text-xs text-slate-500">{f.category} Â· {f.control_count} controls</p>
+                      <p className="text-xs text-slate-500">{f.category} · {f.control_count} controls</p>
                     </div>
                     <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">active</span>
                   </div>
@@ -232,7 +232,7 @@ export default function Compliance() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{e.title}</p>
-                    <p className="text-xs text-slate-500">{e.summary} Â· {timeAgo(e.collected_at)}</p>
+                    <p className="text-xs text-slate-500">{e.summary} · {timeAgo(e.collected_at)}</p>
                   </div>
                   <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{e.evidence_type}</span>
                   <StatusBadge status={e.status} />

@@ -1,4 +1,4 @@
-ï»¿import React from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadDashboardBundle, loadIntelligenceDashboard } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
+import { useSmartPoll } from "@/lib/usePolling";
 import { priorityBandMeta, timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 
@@ -41,8 +42,11 @@ const emptyDash = {
 
 export default function Dashboard() {
   const { org, operate, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadDashboardBundle, emptyDash);
-  const { data: intel } = useResource(loadIntelligenceDashboard, null);
+  const { data, loading } = useResource(loadDashboardBundle, emptyDash, "dashboard");
+  const { data: intel, reload: reloadIntel } = useResource(loadIntelligenceDashboard, null, "intelligence");
+
+  // Smart polling: slow refresh when tab is hidden, fast when visible
+  useSmartPoll(async () => { await reloadIntel(); }, { intervalMs: 30000, hiddenIntervalMs: 120000 });
   const {
     assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents,
     postureTrend, severityDistribution, complianceAssessments, reports,
@@ -92,13 +96,13 @@ export default function Dashboard() {
       {/* Stat row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Assets in inventory" value={<AnimatedNumber value={assets.length} />} icon={<Boxes size={17} />} accent="blue" delay={0}
-          hint={<span>{assets.filter((a) => a.criticality === "critical").length} critical Â· all verified</span>} />
+          hint={<span>{assets.filter((a) => a.criticality === "critical").length} critical · all verified</span>} />
         <StatCard label="Open risks" value={<AnimatedNumber value={openRisks.length} />} icon={<ShieldAlert size={17} />} accent="red" delay={0.06}
-          hint={<span>{openRisks.filter((r) => r.level === "critical").length} critical Â· {openRisks.filter((r) => r.priority_band === "P1").length} in P1</span>} />
+          hint={<span>{openRisks.filter((r) => r.level === "critical").length} critical · {openRisks.filter((r) => r.priority_band === "P1").length} in P1</span>} />
         <StatCard label="Active scans" value={<AnimatedNumber value={activeScan ? 1 : 0} />} icon={<Radar size={17} />} accent="gold" delay={0.12}
-          hint={activeScan ? <span>Job #{activeScan.id} Â· {activeScan.progress}% Â· one-job lock</span> : <span>Idle --- slot free</span>} />
+          hint={activeScan ? <span>Job #{activeScan.id} · {activeScan.progress}% · one-job lock</span> : <span>Idle --- slot free</span>} />
         <StatCard label="Campaigns" value={<AnimatedNumber value={vaptCampaigns.length} />} icon={<Crosshair size={17} />} accent="green" delay={0.18}
-          hint={<span>{vaptCampaigns.filter((c) => c.status === "active").length} running Â· {vaptCampaigns.filter((c) => c.status === "completed").length} completed</span>} />
+          hint={<span>{vaptCampaigns.filter((c) => c.status === "active").length} running · {vaptCampaigns.filter((c) => c.status === "completed").length} completed</span>} />
       </div>
 
       {/* Main grid */}
@@ -187,7 +191,7 @@ export default function Dashboard() {
                 {activeScan ? (
                   <>
                     <p className="mt-1.5 text-xs text-slate-500">
-                      {activeScan.tools.join(" + ")} Â· scope: {(activeScan.target_filter as { tags?: string[] }).tags?.join(", ") ?? "inventory"}
+                      {activeScan.tools.join(" + ")} · scope: {(activeScan.target_filter as { tags?: string[] }).tags?.join(", ") ?? "inventory"}
                     </p>
                     <div className="mt-3">
                       <div className="mb-1.5 flex justify-between text-xs text-slate-400">
@@ -195,7 +199,7 @@ export default function Dashboard() {
                       </div>
                       <ProgressBar value={activeScan.progress} color="#38BDF8" />
                     </div>
-                    <p className="mt-2.5 text-xs text-slate-500">{activeScan.findings_count} findings so far Â· started {timeAgo(activeScan.started_at)}</p>
+                    <p className="mt-2.5 text-xs text-slate-500">{activeScan.findings_count} findings so far · started {timeAgo(activeScan.started_at)}</p>
                   </>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">No scan running --- the per-org slot is free.</p>
@@ -222,7 +226,7 @@ export default function Dashboard() {
                       </div>
                       <ProgressBar value={activeCampaign.progress} />
                     </div>
-                    <p className="mt-2.5 text-xs text-slate-500">{activeCampaign.findings_count} correlated findings Â· {activeCampaign.asset_count} assets in scope</p>
+                    <p className="mt-2.5 text-xs text-slate-500">{activeCampaign.findings_count} correlated findings · {activeCampaign.asset_count} assets in scope</p>
                   </>
                 )}
                 <Link to="/vapt" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-gold-400 hover:text-gold-300">
@@ -274,7 +278,7 @@ export default function Dashboard() {
             <CardHeader
               title="Priority queue"
               subtitle="phantix.risk_priority.v1 --- what to fix first"
-              action={<Link to="/risks" className="text-xs font-semibold text-gold-400 hover:text-gold-300">All risks â†’</Link>}
+              action={<Link to="/risks" className="text-xs font-semibold text-gold-400 hover:text-gold-300">All risks ?</Link>}
             />
             <div className="space-y-2">
               {[...risks].sort((a, b) => b.priority_score - a.priority_score).slice(0, 5).map((r, i) => {
@@ -290,7 +294,7 @@ export default function Dashboard() {
                       <span className={cx("chip shrink-0", band.className)}>{r.priority_band}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-200">{r.title}</p>
-                        <p className="text-xs text-slate-500">{r.asset_value} Â· {r.owner_department ?? "Unassigned"}</p>
+                        <p className="text-xs text-slate-500">{r.asset_value} · {r.owner_department ?? "Unassigned"}</p>
                       </div>
                       <div className="hidden text-right sm:block">
                         <p className="font-mono text-sm font-semibold text-slate-200">{r.priority_score.toFixed(1)}</p>
@@ -316,7 +320,7 @@ export default function Dashboard() {
                     <span className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", a.severity === "critical" ? "bg-severity-critical shadow-[0_0_8px_rgba(244,63,94,0.8)]" : "bg-severity-low")} />
                     <div className="min-w-0">
                       <p className="leading-5 text-slate-300">{a.title}</p>
-                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} Â· {a.channels.join(" + ")}</p>
+                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} · {a.channels.join(" + ")}</p>
                     </div>
                   </div>
                 ))}
@@ -329,7 +333,7 @@ export default function Dashboard() {
 
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58, duration: 0.5 }}>
             <Card>
-              <CardHeader title="Compliance posture" action={<Link to="/compliance" className="text-xs font-semibold text-gold-400">Details â†’</Link>} />
+              <CardHeader title="Compliance posture" action={<Link to="/compliance" className="text-xs font-semibold text-gold-400">Details ?</Link>} />
               <div className="space-y-3">
                 {complianceAssessments.map((c) => (
                   <div key={c.id}>
@@ -352,7 +356,7 @@ export default function Dashboard() {
                   <div key={e.id} className="text-xs">
                     <p className="leading-5 text-slate-300">{e.summary}</p>
                     <p className="mt-0.5 text-slate-600">
-                      {e.initiator_name}{e.authorizer_name ? ` â†’ ${e.authorizer_name}` : ""} Â· {timeAgo(e.created_at)}
+                      {e.initiator_name}{e.authorizer_name ? ` ? ${e.authorizer_name}` : ""} · {timeAgo(e.created_at)}
                     </p>
                   </div>
                 ))}

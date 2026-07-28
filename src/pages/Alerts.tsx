@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner } from "@/components/ui";
@@ -19,7 +19,7 @@ const emptySettings: AlertSettings = {
 
 export default function Alerts() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadAlertsBundle, { events: [], settings: emptySettings });
+  const { data, loading } = useResource(loadAlertsBundle, { events: [], settings: emptySettings }, "alerts");
   const alertEvents = data.events;
   const s = data.settings;
   const [tab, setTab] = useState("events");
@@ -36,7 +36,7 @@ export default function Alerts() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Alerts"
-        description="Severity-routed client notifications. Critical → email + WhatsApp + Telegram; everything else → email only. Routing is enforced server-side, not just configured."
+        description="Severity-routed client notifications. Critical ? email + WhatsApp + Telegram; everything else ? email only. Routing is enforced server-side, not just configured."
         actions={
           <button
             className="btn-primary"
@@ -72,7 +72,7 @@ export default function Alerts() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{a.title}</p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} · {timeAgo(a.created_at)}</p>
+                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} � {timeAgo(a.created_at)}</p>
                   </div>
                   <div className="flex gap-1.5">
                     {a.channels.map((c) => (

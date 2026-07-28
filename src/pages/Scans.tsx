@@ -1,4 +1,4 @@
-ï»¿import React, { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
@@ -16,7 +16,7 @@ export default function Scans() {
     scanResults: [],
     securityDbBlocked: false,
     error: null,
-  });
+  }, "scans");
   const { scanJobs, scanResults, securityDbBlocked, error: loadError } = data;
   const [tab, setTab] = useState("jobs");
   const [verFilter, setVerFilter] = useState<"all" | VerificationStatus>("all");
@@ -73,7 +73,7 @@ export default function Scans() {
                   <StatusBadge status={active.status} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Started {timeAgo(active.started_at)} by {active.initiated_by} Â· idempotency {active.idempotency_key}
+                  Started {timeAgo(active.started_at)} by {active.initiated_by} · idempotency {active.idempotency_key}
                 </p>
                 <div className="mt-2.5 max-w-md"><ProgressBar value={active.progress} color="#38BDF8" /></div>
               </div>
@@ -181,7 +181,7 @@ export default function Scans() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-slate-100">{r.title}</p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        <span className="font-mono">{r.asset_value}</span> Â· {r.tool} Â· job #{r.scan_job_id} Â· {timeAgo(r.created_at)}
+                        <span className="font-mono">{r.asset_value}</span> · {r.tool} · job #{r.scan_job_id} · {timeAgo(r.created_at)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default function Scans() {
           onSubmit={(e) => {
             e.preventDefault();
             setNewOpen(false);
-            toast("success", "Scan job created", "POST /scans/jobs â†’ run with /jobs/{id}/run. Duplicate idempotency keys return the existing job.");
+            toast("success", "Scan job created", "POST /scans/jobs ? run with /jobs/{id}/run. Duplicate idempotency keys return the existing job.");
           }}
         >
           <div>
