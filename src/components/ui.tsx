@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Loader2, ShieldCheck } from "lucide-react";
-import { cx, severityMeta, verificationMeta, statusColor, titleCase } from "@/lib/utils";
+import { X, Loader2, ShieldCheck, Info, Globe, Building2, Server } from "lucide-react";
+import { cx, severityMeta, verificationMeta, statusColor, titleCase, impactLevelColor, categoryLabels, blastRadiusLabels, impactLevelRank } from "@/lib/utils";
 import type { Severity, VerificationStatus } from "@/lib/types";
 
 // ── Badges ────────────────────────────────────────────────────────────────────
@@ -48,6 +48,40 @@ export function StatusBadge({ status }: { status: string }) {
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
       {titleCase(status)}
     </span>
+  );
+}
+
+export function ImpactBadge({ level, score }: { level?: string; score?: number }) {
+  const cls = impactLevelColor(level);
+  const label = level ?? "—";
+  const num = score != null ? `· ${score}` : "";
+  return <span className={cx("chip capitalize", cls)}>{label} {num}</span>;
+}
+
+export function ImpactPanel({ impact }: { impact: any }) {
+  if (!impact?.impact_level) return <p className="text-xs text-slate-500">Impact not available</p>;
+  const catChips = (impact.categories ?? []).map((c: string) => categoryLabels[c] ?? c);
+  const blastLabel = blastRadiusLabels[impact.blast_radius] ?? impact.blast_radius;
+  const cia = impact.cia;
+  return (
+    <div className="space-y-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <ImpactBadge level={impact.impact_level} score={impact.impact_score} />
+        {blastLabel && <span className="chip text-slate-300"><Globe size={11} className="mr-1 inline" />{blastLabel}</span>}
+      </div>
+      {cia && (
+        <div className="flex flex-wrap gap-1.5">
+          {(["confidentiality","integrity","availability"] as const).map(k => (
+            <span key={k} className={cx("chip text-[10px] capitalize", cia[k] === "high" ? "bg-red-500/10 text-red-400 border-red-500/20" : cia[k] === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : cia[k] === "low" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-slate-500/10 text-slate-500")}>{k.slice(0,1).toUpperCase()}: {cia[k]}</span>
+          ))}
+        </div>
+      )}
+      {catChips.length > 0 && <div className="flex flex-wrap gap-1">{catChips.map((c: string) => <span key={c} className="chip text-[10px] bg-phantix-800/70 text-slate-300">{c}</span>)}</div>}
+      {impact.business_impact && <p className="text-slate-300 leading-5"><span className="font-semibold text-slate-200">Business impact: </span>{impact.business_impact}</p>}
+      {impact.technical_impact && <p className="text-slate-400 leading-5"><span className="font-semibold text-slate-300">Technical: </span>{impact.technical_impact}</p>}
+      {impact.regulatory_concerns?.length > 0 && <p className="text-[10px] text-slate-500">Regulatory hints: {impact.regulatory_concerns.join(", ")}</p>}
+      {impact.summary && !impact.business_impact && <p className="text-slate-300">{impact.summary}</p>}
+    </div>
   );
 }
 

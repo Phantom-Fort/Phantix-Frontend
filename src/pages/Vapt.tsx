@@ -1,13 +1,13 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, titleCase, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
 import { api } from "@/lib/api";
+import { useResource } from "@/lib/useResource";
+import { timeAgo, titleCase, cx, isReportable, impactLevelRank } from "@/lib/utils";
+import { useStore } from "@/lib/store";
 import type { VaptCampaign } from "@/lib/types";
 
 export default function Vapt() {
@@ -466,12 +466,14 @@ export default function Vapt() {
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Findings ({campaignFindings.length})</p>
                   <div className="space-y-2">
                     {campaignFindings.length === 0 && <p className="text-xs text-slate-500">No correlated attack paths yet. Raw findings are under Scans → Results.</p>}
-                    {campaignFindings.slice(0, 4).map((f) => (
+                    {campaignFindings.slice(0, 5).map((f) => (
                       <div key={f.id} className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="min-w-0 flex-1 text-sm text-slate-200 truncate">{f.title}</p>
                           <SeverityBadge severity={f.severity} />
                           <VerificationBadge status={f.verification_status} />
+                          {(f as any).impact_level && <ImpactBadge level={(f as any).impact_level} score={(f as any).impact_score} />}
+                          {isReportable(f) ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span> : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held</span>}
                         </div>
                         {f.attack_path?.length > 0 && (
                           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
@@ -507,26 +509,30 @@ export default function Vapt() {
           <div className="mb-4 flex items-start gap-3 rounded-2xl border border-phantix-700/50 bg-phantix-900/50 px-4 py-3">
             <ShieldCheck size={16} className="mt-0.5 shrink-0 text-gold-400" />
             <p className="text-xs leading-5 text-slate-400">
-              This table shows <strong className="text-slate-200">correlated attack paths only</strong> (from{" "}
-              <span className="font-mono">/vapt/campaigns/{"{id}"}/findings</span>). Attack-path correlations
-              auto-verify; heuristic probes do not --- see the verification badge on each row.
+              Correlated attack paths with verification and impact analysis. Only <strong className="text-slate-200">reportable</strong> findings are collated into client reports.
             </p>
           </div>
-          {vaptFindings.map((f, i) => (
+          {vaptFindings.slice().sort((a, b) => impactLevelRank((b as any).impact_level) - impactLevelRank((a as any).impact_level) || b.id - a.id).map((f, i) => (
             <motion.div key={f.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card hover className="!p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-100">{f.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value}</span>
-                      {f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}
-                      {f.cvss && <> · CVSS {f.cvss.toFixed(1)}</>}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-slate-100">{f.title}</p>
+                      {isReportable(f) ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[9px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value}</span>{f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}{f.cvss && <> · CVSS {f.cvss.toFixed(1)}</>}</p>
                   </div>
-                  <span className="font-mono text-xs text-slate-500">{f.confidence}% conf</span>
-                  <SeverityBadge severity={f.severity} />
+                  {(f as any).impact_level ? <ImpactBadge level={(f as any).impact_level} score={(f as any).impact_score} /> : <SeverityBadge severity={f.severity} />}
                   <VerificationBadge status={f.verification_status} />
+                  {(f as any).impact_analysis && (
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-slate-500 hover:text-slate-300 text-[10px]">Impact</summary>
+                      <div className="mt-2">
+                        <ImpactPanel impact={(f as any).impact_analysis} />
+                      </div>
+                    </details>
+                  )}
                 </div>
               </Card>
             </motion.div>

@@ -247,6 +247,7 @@ export default function Reports() {
                     {([
                       [(r as any).stats?.after_dedupe ?? 0, "deduped", "text-phantix-300"],
                       [(r as any).stats?.after_verification ?? 0, "verified", "text-emerald-400"],
+                      [(r as any).stats?.impact_analyzed ?? (r as any).stats?.after_verification ?? 0, "impact", "text-blue-400"],
                       [(r as any).stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
                     ] as [number, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="text-center">
@@ -410,10 +411,11 @@ export default function Reports() {
           </label>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3.5 text-xs leading-5 text-slate-500">
             <FileDown size={12} className="mr-1.5 inline text-gold-400" />
-            Executive PDF/DOCX follow the standard deliverable: cover → document control → §§1---9 (exec, scope,
-            priority findings with confidence, attack paths, technical catalogue, risk split, compliance, roadmap,
-            methodology) → Appendix A evidence IDs.
+            Reports include only auto- or manually verified findings. Each verified finding is analyzed for business and technical impact (CIA triad, blast radius) before it is added to the deliverable. PDF/DOCX follow the standard VAPT template.
           </div>
+          <p className="text-[11px] text-slate-500">
+            Generate report with <strong>run_inline=true</strong> for immediate delivery; use <strong>run_inline=false</strong> for large campaigns to avoid gateway timeouts. Poll GET /reports/{"{id}"} until status=complete.
+          </p>
           <button className="btn-primary w-full" disabled={genSubmitting}>
             {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating...</> : <><Download size={15} /> Generate</>}
           </button>

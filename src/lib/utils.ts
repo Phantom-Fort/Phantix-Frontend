@@ -127,3 +127,49 @@ export const assetTypeIcon: Record<string, string> = {
   cloud_resource: "☁️",
   other: "📌",
 };
+
+// ── Finding verification & impact helpers ─────────────────────────────────────
+export function isReportable(f: any): boolean {
+  if (f.reportable === true) return true;
+  const s = f.verification_status ?? f.evidence?.verification?.verification_status;
+  return s === "auto_verified" || s === "manually_verified";
+}
+
+export function impactLevelRank(level?: string): number {
+  const m: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+  return m[(level || "").toLowerCase()] ?? 0;
+}
+
+export function impactLevelColor(level?: string): string {
+  const m: Record<string, string> = {
+    Critical: "bg-red-500/15 text-red-400 border-red-500/30",
+    High: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+    Medium: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    Low: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+  };
+  return m[level ?? ""] ?? "bg-slate-500/15 text-slate-400 border-slate-500/30";
+}
+
+export const categoryLabels: Record<string, string> = {
+  remote_code_execution: "Remote code execution",
+  injection: "Injection",
+  authentication_bypass: "Auth bypass",
+  privilege_escalation: "Privilege escalation",
+  data_exposure: "Data exposure",
+  information_disclosure: "Info disclosure",
+  lateral_movement: "Lateral movement",
+  service_disruption: "Service disruption",
+  cryptographic_weakness: "Cryptographic weakness",
+  misconfiguration: "Misconfiguration",
+  attack_surface_exposure: "Attack surface",
+  supply_chain: "Supply chain",
+  compliance_control_gap: "Compliance concern",
+};
+
+export const blastRadiusLabels: Record<string, string> = {
+  local: "Local component",
+  host: "Host / endpoint",
+  service: "Application / service",
+  organization: "Organization",
+  internet_facing: "Internet-facing",
+};
