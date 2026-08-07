@@ -151,9 +151,164 @@ export interface RelationshipGraph {
 }
 
 export interface SocDashboardScaffold {
-  organizationId: number; status: "scaffold"; generatedAt: string;
+  organizationId: number; status: "scaffold" | "implemented"; generatedAt: string;
   panels: Array<{ id: string; title: string; source: string; ready: boolean; endpoint: string | null; stream?: string; note?: string; }>;
   liveSubscribers: number; message: string;
+}
+
+// ── SOC Engine (v0.1.0) ───────────────────────────────────────────────────────
+export type DetectionStatus = "open" | "acknowledged" | "assigned" | "escalated" | "closed";
+export type SocCaseStatus = "open" | "investigating" | "contained" | "closed";
+export type DetectionSource = "correlator" | "rule" | "manual" | "enrichment";
+
+export interface SocQueue {
+  openTotal: number;
+  open_total?: number;
+  byStatus: Record<string, number>;
+  bySeverityOpen: Record<string, number>;
+  by_severity_open?: Record<string, number>;
+  error?: string | null;
+}
+
+export interface SocStatus {
+  engineId?: string;
+  name?: string;
+  status?: string;
+  version?: string;
+  organizationId?: number;
+  message?: string;
+  capabilities?: Record<string, boolean>;
+  builtinCorrelators?: string[];
+  queue?: SocQueue;
+  adapters?: { id: string; configured: boolean; vendor?: string }[];
+  realtimeHub?: string;
+}
+
+export interface SocDetection {
+  id: number;
+  organization_id: number;
+  rule_id: number | null;
+  correlator_id: string | null;
+  case_id: number | null;
+  title: string;
+  summary: string | null;
+  severity: Severity | string;
+  status: DetectionStatus | string;
+  assignee_ref: string | null;
+  asset_id: number | null;
+  risk_id: number | null;
+  finding_ref: Record<string, unknown>;
+  signal_fingerprint: string | null;
+  evidence: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  source: string;
+  occurrence_count: number;
+  priority_score: number;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  closed_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface SocDetectionListResponse {
+  items: SocDetection[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SocTriagePacket {
+  organization_id?: number;
+  open_total?: number;
+  by_severity_open?: Record<string, number>;
+  detections?: SocDetection[];
+  playbook_suggestions_allowlist?: string[];
+  honesty?: string;
+}
+
+export interface SocCase {
+  id: number;
+  organization_id?: number;
+  title: string;
+  summary: string | null;
+  severity: Severity | string;
+  status: SocCaseStatus | string;
+  assignee_ref: string | null;
+  metadata: Record<string, unknown>;
+  opened_at?: string | null;
+  closed_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  notes?: SocCaseNote[];
+  detections?: Partial<SocDetection>[];
+}
+
+export interface SocCaseNote {
+  id: number;
+  organization_id?: number;
+  case_id?: number;
+  author_ref: string | null;
+  body: string;
+  created_at?: string;
+}
+
+export interface SocRule {
+  id: number;
+  organization_id?: number;
+  name: string;
+  description?: string | null;
+  enabled: boolean;
+  source?: string;
+  severity_default: Severity | string;
+  match_spec: Record<string, unknown>;
+  dedup_window_seconds?: number;
+  actions?: Record<string, unknown>;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SocAdapter {
+  id?: string;
+  displayName?: string;
+  vendor?: string;
+  configured: boolean;
+  enabled?: boolean;
+  detail?: string;
+}
+
+export interface SocEnrichmentResult {
+  organizationId?: number;
+  adapterId?: string;
+  accepted: number;
+  detections?: Partial<SocDetection>[];
+}
+
+/** Realtime SSE event from /assets/intelligence/stream (camelCase payload). */
+export interface RealtimeEvent {
+  type: string;
+  organizationId: number;
+  eventId: string;
+  ts: string;
+  payload: {
+    assetId?: number;
+    value?: string | null;
+    assetType?: string | null;
+    riskScore?: number | null;
+    riskLevel?: string | null;
+    previousRiskScore?: number | null;
+    previousRiskLevel?: string | null;
+    openFindingsCount?: number | null;
+    priorityScore?: number | null;
+    exposureLevel?: string | null;
+    findingId?: number | string | null;
+    title?: string | null;
+    severity?: string | null;
+    tool?: string | null;
+    source?: string | null;
+    isVerified?: boolean | null;
+    [key: string]: unknown;
+  };
 }
 
 export interface RecommendedAction {
@@ -214,6 +369,26 @@ export interface ScanResult {
   verification_status: VerificationStatus;
   confidence: number;
   created_at: string;
+  evidence?: {
+    verification?: {
+      confidence?: string;
+      verification_status?: string;
+      verification_reason?: string;
+      reportable?: boolean;
+      method?: string;
+    };
+    impact_analysis?: {
+      impact_level?: string;
+      impact_score?: number;
+      summary?: string;
+      categories?: string[];
+      blast_radius?: string;
+      cia?: { confidentiality?: string; integrity?: string; availability?: string };
+    };
+  };
+  impact_level?: string;
+  impact_score?: number;
+  reportable?: boolean;
 }
 
 export interface VaptCampaign {
@@ -238,6 +413,49 @@ export interface VaptCampaign {
   created_at: string;
   started_at: string | null;
   finished_at: string | null;
+  current_step_index?: number;
+  current_phase?: string;
+  asset_scope?: { asset_ids?: number[]; asset_types?: string[]; tags?: string[]; domains?: string[] };
+  procedure_snapshot?: {
+    steps?: VaptStep[];
+    source?: string;
+  };
+}
+
+export interface VaptStep {
+  step_type: string;
+  step_name: string;
+  step_description?: string;
+  status?: string;
+  finding_count?: number;
+  scan_job_ids?: number[];
+  config?: {
+    tools?: string[];
+    max_duration_minutes?: number;
+    dedupe_hosts?: boolean;
+    caido_mode?: "inline" | "agent";
+    caido_ai_enabled?: boolean;
+    objectives?: string[];
+    target_types?: string[];
+  };
+  output_summary?: {
+    assets_resolved?: number;
+    assets_considered?: number;
+    unique_hosts?: number;
+    targets_scanned?: string[];
+    skipped_already_scanned?: string[];
+    skipped_count?: number;
+    time_budget_seconds?: number;
+    elapsed_seconds?: number;
+    budget_exhausted?: boolean;
+    partial?: boolean;
+    retest?: boolean;
+    results_written?: number;
+    errors?: string[];
+    tools?: string[];
+    completed_at?: string;
+  };
+  error_message?: string;
 }
 
 export interface VaptFinding {
@@ -253,6 +471,13 @@ export interface VaptFinding {
   cve: string | null;
   cvss: number | null;
   created_at: string;
+  reportable?: boolean;
+  impact_level?: string;
+  impact_score?: number;
+  impact_summary?: string;
+  business_impact?: string;
+  technical_impact?: string;
+  impact_analysis?: Record<string, unknown>;
 }
 
 export interface VaptApproval {
@@ -344,6 +569,9 @@ export interface Report {
     after_dedupe: number;
     after_verification: number;
     excluded_from_report: number;
+    impact_analyzed?: number;
+    attack_paths?: number;
+    require_verified?: boolean;
   };
   created_at: string;
   size_bytes: number;
@@ -444,12 +672,69 @@ export interface ServiceKeyMeta {
 
 export interface AiStatus {
   enabled: boolean;
+  agent_enabled: boolean;
   default_provider: string;
   ai_pentest_ready: boolean;
   mode: "economy" | "balanced" | "enterprise";
   providers: { id: string; configured: boolean }[];
   monthly_tokens: number;
   monthly_cost_usd: number;
+  /** Agent platform status (PHANTIX_AGENT_FE.md / PHANTIX_AGENT_SSE_FE.md). */
+  agent?: {
+    enabled: boolean;
+    provider: string;
+    model: string;
+    deepseek_ready: boolean;
+    stream: {
+      enabled: boolean;
+      protocol: string;
+      chat: string;
+      runs: string;
+      events: string[];
+    };
+  };
+}
+
+/** Agent skill library item (PHANTIX_AGENT_FE.md A4/A5). */
+export interface AgentSkill {
+  id: number;
+  name: string;
+  description: string;
+  version: string;
+  domain?: string;
+  status: "candidate" | "active" | "quarantined" | "retired";
+  score: number;
+  uses: number;
+  last_used_at?: string | null;
+  created_at?: string;
+  versions?: { version: string; status: string; score?: number; created_at?: string }[];
+}
+
+/** Skill status change action (promote / quarantine / retire). */
+export interface AgentSkillStatusUpdate {
+  status: "active" | "quarantined" | "retired" | "candidate";
+  note?: string;
+}
+
+/** Agent run item returned by GET /ai/agent/runs. */
+export interface AgentRun {
+  analysis_id: string;
+  domain?: string;
+  objective?: string;
+  status: "queued" | "running" | "completed" | "failed" | "cancelled";
+  summary?: string | null;
+  result?: string | null;
+  error?: string | null;
+  skills?: string[];
+  created_at?: string;
+  completed_at?: string | null;
+}
+
+/** One SSE frame parsed from the agent chat / runs stream. */
+export interface AgentStreamEvent {
+  event: string;
+  data: unknown;
+  raw: string;
 }
 
 export interface SupportTicket {

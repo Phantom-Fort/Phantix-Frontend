@@ -1,7 +1,12 @@
 ﻿// Central resource loaders --- demo-data only when isDemoMode() is true.
-import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked } from "./api";
+import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked, tokens, API_BASE } from "./api";
 import * as demo from "./demo-data";
 import type {
+  AgentRun,
+  AgentSkill,
+  AgentSkillStatusUpdate,
+  AgentStreamEvent,
+  AiStatus,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -24,7 +29,16 @@ import type {
   Risk,
   ScanJob,
   ScanResult,
+  SocAdapter,
+  SocCase,
+  SocCaseNote,
   SocDashboardScaffold,
+  SocDetection,
+  SocDetectionListResponse,
+  SocEnrichmentResult,
+  SocRule,
+  SocStatus,
+  SocTriagePacket,
   SupportTicket,
   TrackerFinding,
   VaptApproval,
@@ -583,6 +597,256 @@ export async function requestAiSummary(id: number): Promise<{ postureSummary: st
   return api.post(`/assets/${id}/intelligence/ai-summary`);
 }
 
+export async function loadAiStatus(): Promise<AiStatus> {
+  if (isDemoMode()) { await delay(300); return demo.aiStatus; }
+  const raw = await softOne<any>("/ai/settings");
+  const agentRaw = await softOne<any>("/ai/agent/status");
+  if (!raw && !agentRaw) return demo.aiStatus;
+  const stream = agentRaw?.stream && typeof agentRaw.stream === "object" ? agentRaw.stream : null;
+  return {
+    enabled: Boolean(raw?.ai_enabled ?? raw?.enabled ?? agentRaw?.enabled ?? false),
+    agent_enabled: Boolean(agentRaw?.enabled ?? agentRaw?.agent_enabled ?? raw?.agent_enabled ?? false),
+    default_provider: String(agentRaw?.provider ?? raw?.default_provider ?? raw?.mode ?? ""),
+    ai_pentest_ready: Boolean(agentRaw?.deepseek_ready ?? raw?.ai_pentest_ready ?? false),
+    mode: (raw?.mode ?? "balanced") as AiStatus["mode"],
+    providers: (raw?.providers ?? []).map((p: any) => ({ id: String(p.id ?? p.name ?? "provider"), configured: Boolean(p.configured) })),
+    monthly_tokens: Number(raw?.monthly_tokens ?? 0),
+    monthly_cost_usd: Number(raw?.monthly_cost_usd ?? 0),
+    agent: {
+      enabled: Boolean(agentRaw?.enabled ?? agentRaw?.agent_enabled ?? false),
+      provider: String(agentRaw?.provider ?? "deepseek"),
+      model: String(agentRaw?.model ?? "deepseek-v4-flash"),
+      deepseek_ready: Boolean(agentRaw?.deepseek_ready ?? false),
+      stream: {
+        enabled: Boolean(stream?.enabled ?? true),
+        protocol: String(stream?.protocol ?? "Server-Sent Events (text/event-stream)"),
+        chat: String(stream?.chat ?? "/api/v1/ai/agent/chat/stream"),
+        runs: String(stream?.runs ?? "/api/v1/ai/agent/runs/stream"),
+        events: Array.isArray(stream?.events) ? stream.events.map(String) : ["connected", "meta", "reasoning", "delta", "usage", "done", "error"],
+      },
+    },
+  };
+}
+
+/** Build the auth headers used for agent SSE POST requests (fetch + stream, not EventSource). */
+function agentStreamHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "text/event-stream",
+  };
+  const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+  if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+  if (tokens.device) headers["X-Device-Token"] = tokens.device;
+  return headers;
+}
+
+/**
+ * PHANTIX_AGENT_SSE_FE.md §3: browser EventSource cannot send Authorization headers or a
+ * JSON body, so agent chat/runs use fetch + ReadableStream. Parses SSE frames and calls
+ * onEvent for every parsed event (connected / meta / reasoning / delta / usage / done / error).
+ */
+export async function streamAgentChat(
+  body: {
+    messages: { role: string; content: string }[];
+    system?: string | null;
+    domain?: string;
+    temperature?: number;
+    max_tokens?: number;
+    thinking?: boolean;
+    reasoning_effort?: "low" | "high" | "max";
+  },
+  onEvent: (event: string, data: any) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (isDemoMode()) {
+    await streamDemoResponse(body.messages[body.messages.length - 1]?.content ?? "", onEvent, 900);
+    return;
+  }
+  await streamAgentPost("/ai/agent/chat/stream", body, onEvent, signal);
+}
+
+/**
+ * PHANTIX_AGENT_SSE_FE.md §5: starts an investigation (same body as POST /runs), gathers
+ * engine tools, streams DeepSeek synthesis and persists the run. Emits run_started / tool /
+ * synthesis_start / meta / reasoning / delta / usage / done / run_completed.
+ */
+export async function streamAgentRun(
+  body: {
+    domain: string;
+    objective: string;
+    campaign_id?: number;
+    asset_ids?: number[];
+    skill_ids?: number[];
+    require_human_review?: boolean;
+  },
+  onEvent: (event: string, data: any) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (isDemoMode()) {
+    await streamDemoRun(body.domain, body.objective, onEvent);
+    return;
+  }
+  await streamAgentPost("/ai/agent/runs/stream", body, onEvent, signal);
+}
+
+async function streamAgentPost(path: string, body: unknown, onEvent: (event: string, data: any) => void, signal?: AbortSignal): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: agentStreamHeaders(),
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok || !res.body) throw new ApiError(res.status, `SSE failed: ${res.status}`);
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() || "";
+    for (const block of parts) {
+      let event = "message";
+      const dataLines: string[] = [];
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+      }
+      if (!dataLines.length) continue;
+      try {
+        onEvent(event, JSON.parse(dataLines.join("\n")));
+      } catch { /* ignore partial */ }
+    }
+  }
+}
+
+/** Demo chat: emit connected → meta → reasoning → deltas → done in realistic cadence. */
+async function streamDemoResponse(
+  question: string,
+  onEvent: (event: string, data: any) => void,
+  stepMs = 900,
+): Promise<void> {
+  onEvent("connected", { type: "connected", protocol: "sse", demo: true });
+  await delay(180);
+  onEvent("meta", { type: "meta", provider: "deepseek", model: "deepseek-v4-flash", stream: true, thinking: true });
+  await delay(stepMs);
+  onEvent("reasoning", { type: "reasoning", content: "I'll summarize what the user asked and check the current posture signals available in the organization's security data." });
+  await delay(stepMs);
+  const answer = `Here's what I can tell you about "${question}":\n\n• I can review open findings, risk posture, asset exposure and recent scan results.\n• In production this answer is synthesized from your live security data (verified findings only — I never invent a vulnerability without a Phantix finding ID).\n• Skills used are shown on the result, and every interaction is governed + audited.\n\nAsk me about assets, VAPT campaigns, critical risks, or compliance gaps for a concrete summary.`;
+  const words = answer.split(" ");
+  for (const w of words) {
+    onEvent("delta", { type: "delta", content: w + " " });
+    await delay(12);
+  }
+  onEvent("usage", { type: "usage", tokens_used: 214, usage: { total_tokens: 214 } });
+  onEvent("done", { type: "done", finish_reason: "stop", model: "deepseek-v4-flash" });
+}
+
+/** Demo investigation run stream: tool checklist → synthesis → run_completed. */
+async function streamDemoRun(domain: string, objective: string, onEvent: (event: string, data: any) => void): Promise<void> {
+  const analysisId = `demo-${Date.now()}`;
+  onEvent("connected", { type: "connected", protocol: "sse", demo: true });
+  await delay(150);
+  onEvent("run_started", { type: "run_started", analysis_id: analysisId, domain });
+  await delay(350);
+  onEvent("tool", { type: "tool", tool: `${domain}_inventory`, ok: true });
+  await delay(300);
+  onEvent("tool", { type: "tool", tool: `${domain}_findings`, ok: true });
+  await delay(300);
+  onEvent("synthesis_start", { type: "synthesis_start", analysis_id: analysisId });
+  await delay(250);
+  onEvent("meta", { type: "meta", provider: "deepseek", model: "deepseek-v4-flash", stream: true });
+  await delay(250);
+  onEvent("reasoning", { type: "reasoning", content: `Correlating ${domain} signals across the organization.` });
+  await delay(500);
+  const summary = `${domain} analysis complete. I reviewed the ${domain} inventory, verified findings and posture signals. No finding was changed or created — every item referenced is a Phantix finding with an ID. Skills used: phantix-${domain}@1.0.0.`;
+  const words = summary.split(" ");
+  for (const w of words) {
+    onEvent("delta", { type: "delta", content: w + " " });
+    await delay(10);
+  }
+  onEvent("run_completed", { type: "run_completed", analysis_id: analysisId, status: "completed", summary });
+}
+
+/** Legacy single-turn helper. The checklist only exposes the SSE stream
+ *  (`POST /ai/agent/chat/stream`), so route non-stream fallbacks through it. */
+export async function sendAgentMessage(message: string): Promise<string> {
+  if (isDemoMode()) {
+    await delay(1600);
+    return `I'm Phantix Agent. I understand you asked: "${message}". In production, I would analyze your assets, findings, and risk posture to answer this. Key surfaces you can explore: Assets, Scans, VAPT campaigns, Risks, Compliance, and Reports.`;
+  }
+  const out: string[] = [];
+  await streamAgentChat(
+    { messages: [{ role: "user", content: message }], domain: "cross" },
+    (event, data) => {
+      if (event === "delta" && typeof data?.content === "string") out.push(data.content);
+      if (event === "done") { /* stream finished */ }
+    },
+  );
+  return out.join("").trim() || "No response from agent.";
+}
+
+export async function startAgentRun(domain: string, objective: string, campaignId?: number): Promise<any> {
+  if (isDemoMode()) {
+    await delay(700);
+    return { analysis_id: `demo-${Date.now()}`, status: "queued", domain, specialist: `${domain}_specialist`, skills: [`phantix-${domain}@1.0.0`], plan: { steps: [] }, async: true };
+  }
+  return api.post("/ai/agent/runs", { domain, objective, campaign_id: campaignId, run_inline: false });
+}
+
+export async function getAgentRun(analysisId: string): Promise<AgentRun | null> {
+  if (isDemoMode()) {
+    await delay(600);
+    return { analysis_id: analysisId, status: "completed", domain: "vapt", summary: "Analysis complete. Verified findings summarized with impact." };
+  }
+  const res = await softOne<any>(`/ai/agent/runs/${analysisId}`);
+  if (!res) return null;
+  return {
+    analysis_id: String(res.analysis_id ?? res.id ?? analysisId),
+    domain: res.domain,
+    objective: res.objective,
+    status: (res.status ?? "completed") as AgentRun["status"],
+    summary: res.summary ?? res.result ?? null,
+    result: res.result ?? null,
+    error: res.error ?? null,
+    skills: Array.isArray(res.skills) ? res.skills.map(String) : undefined,
+    created_at: res.created_at,
+    completed_at: res.completed_at,
+  };
+}
+
+// ── Agent skill library (PHANTIX_AGENT_FE.md A4/A5) ──────────────────────────
+export async function loadAgentSkills(): Promise<AgentSkill[]> {
+  if (isDemoMode()) { await delay(300); return demo.agentSkills; }
+  const raw = await softOne<any>("/ai/agent/skills");
+  const list = asList<any>(raw);
+  return list.map((s: any) => ({
+    id: Number(s.id ?? 0),
+    name: String(s.name ?? s.skill_name ?? "skill"),
+    description: String(s.description ?? ""),
+    version: String(s.version ?? s.latest_version ?? "1.0.0"),
+    domain: s.domain ? String(s.domain) : undefined,
+    status: (s.status ?? "candidate") as AgentSkill["status"],
+    score: Number(s.score ?? s.reliability_score ?? 0),
+    uses: Number(s.uses ?? s.use_count ?? s.executions ?? 0),
+    last_used_at: s.last_used_at ?? null,
+    created_at: s.created_at,
+    versions: Array.isArray(s.versions) ? s.versions.map((v: any) => ({ version: String(v.version ?? ""), status: String(v.status ?? "candidate"), score: v.score != null ? Number(v.score) : undefined, created_at: v.created_at })) : undefined,
+  }));
+}
+
+export async function setAgentSkillStatus(
+  id: number,
+  version: string,
+  status: AgentSkillStatusUpdate["status"],
+  note?: string,
+): Promise<AgentSkillStatusUpdate> {
+  if (isDemoMode()) { await delay(500); return { status, note }; }
+  // Checklist: POST /api/v1/ai/agent/skills/{skill_id}/versions/{version}/status
+  return api.post(`/ai/agent/skills/${id}/versions/${encodeURIComponent(version)}/status`, { status, note });
+}
+
 export async function refreshIntelligence(limit = 500): Promise<{ updated: number; errors: number }> {
   if (isDemoMode()) { await delay(800); return { updated: 42, errors: 0 }; }
   return api.post("/assets/intelligence/refresh");
@@ -591,4 +855,289 @@ export async function refreshIntelligence(limit = 500): Promise<{ updated: numbe
 export async function loadSocDashboard(): Promise<SocDashboardScaffold | null> {
   if (isDemoMode()) { await delay(300); return demo.socDashboard; }
   return softOne<SocDashboardScaffold>("/soc/dashboard");
+}
+
+// ── SOC Engine loaders & mutations (SOC_PAGE_FE.md) ───────────────────────────
+export async function loadSocStatus(): Promise<SocStatus | null> {
+  if (isDemoMode()) { await delay(250); return demo.socStatus; }
+  return softOne<SocStatus>("/soc/status");
+}
+
+export async function loadSocDetections(params: {
+  status?: string;
+  severity?: string;
+  openOnly?: boolean;
+  limit?: number;
+  offset?: number;
+} = {}): Promise<SocDetectionListResponse> {
+  if (isDemoMode()) {
+    await delay(300);
+    let items = [...demo.socDetections];
+    if (params.openOnly) items = items.filter((d) => !["closed"].includes(String(d.status)));
+    if (params.status) items = items.filter((d) => d.status === params.status);
+    if (params.severity) items = items.filter((d) => d.severity === params.severity);
+    return { items, total: items.length, limit: params.limit ?? 50, offset: params.offset ?? 0 };
+  }
+  const q: Record<string, string | number | boolean> = { limit: params.limit ?? 50, offset: params.offset ?? 0 };
+  if (params.status) q.status = params.status;
+  if (params.severity) q.severity = params.severity;
+  if (params.openOnly) q.open_only = true;
+  const qs = new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)])).toString();
+  const raw = await softOne<SocDetectionListResponse>(`/soc/detections?${qs}`, {});
+  if (raw?.items) return raw;
+  const list = asList<SocDetection>(await api.get<unknown>(`/soc/detections?${qs}`));
+  return { items: list, total: list.length, limit: params.limit ?? 50, offset: params.offset ?? 0 };
+}
+
+export async function loadSocTriagePacket(): Promise<SocTriagePacket | null> {
+  if (isDemoMode()) {
+    await delay(300);
+    return {
+      organization_id: 11,
+      open_total: demo.socDetections.filter((d) => !["closed"].includes(String(d.status))).length,
+      by_severity_open: { critical: 2, high: 3 },
+      detections: demo.socDetections.filter((d) => !["closed"].includes(String(d.status))).slice(0, 5),
+      playbook_suggestions_allowlist: ["review_risk", "request_rescan", "escalate_case", "notify_owner", "mark_false_positive"],
+      honesty: "Only listed detections exist; do not invent additional alerts.",
+    };
+  }
+  return softOne<SocTriagePacket>("/soc/detections/triage-packet");
+}
+
+export async function createSocDetection(body: {
+  title: string;
+  summary?: string;
+  severity?: string;
+  asset_id?: number | null;
+  risk_id?: number | null;
+  evidence?: Record<string, unknown>;
+  assignee_ref?: string;
+  metadata?: Record<string, unknown>;
+}): Promise<SocDetection> {
+  if (isDemoMode()) {
+    await delay(500);
+    const d: SocDetection = {
+      id: demo.socDetections.length + 900,
+      organization_id: 11,
+      rule_id: null,
+      correlator_id: null,
+      case_id: null,
+      title: body.title,
+      summary: body.summary ?? null,
+      severity: body.severity ?? "medium",
+      status: "open",
+      assignee_ref: body.assignee_ref ?? null,
+      asset_id: body.asset_id ?? null,
+      risk_id: body.risk_id ?? null,
+      finding_ref: {},
+      signal_fingerprint: null,
+      evidence: body.evidence ?? {},
+      metadata: body.metadata ?? {},
+      source: "manual",
+      occurrence_count: 1,
+      priority_score: 50,
+      first_seen_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return d;
+  }
+  return api.post<SocDetection>("/soc/detections", body);
+}
+
+export async function patchSocDetection(id: number, body: {
+  status?: string;
+  assignee_ref?: string;
+  clear_assignee?: boolean;
+  severity?: string;
+  summary?: string;
+  case_id?: number | null;
+}): Promise<SocDetection> {
+  if (isDemoMode()) {
+    await delay(400);
+    return demo.socDetections.find((d) => d.id === id) ?? demo.socDetections[0];
+  }
+  return api.patch<SocDetection>(`/soc/detections/${id}`, body);
+}
+
+export async function escalateSocDetection(id: number, body: {
+  title?: string;
+  summary?: string;
+  assignee_ref?: string;
+} = {}): Promise<{ case: SocCase; detection: SocDetection; created: boolean }> {
+  if (isDemoMode()) {
+    await delay(500);
+    const d = demo.socDetections.find((x) => x.id === id) ?? demo.socDetections[0];
+    const c: SocCase = {
+      id: demo.socCases.length + 500,
+      organization_id: 11,
+      title: body.title ?? `Incident: ${d.title}`,
+      summary: body.summary ?? null,
+      severity: d.severity,
+      status: "open",
+      assignee_ref: body.assignee_ref ?? null,
+      metadata: { source_detection_id: d.id },
+      opened_at: new Date().toISOString(),
+      closed_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return { case: c, detection: { ...d, status: "escalated", case_id: c.id }, created: true };
+  }
+  return api.post<{ case: SocCase; detection: SocDetection; created: boolean }>(`/soc/detections/${id}/escalate`, body);
+}
+
+export async function loadSocCases(params: { status?: string; limit?: number; offset?: number } = {}): Promise<{ items: SocCase[]; total: number }> {
+  if (isDemoMode()) {
+    await delay(250);
+    const items = params.status ? demo.socCases.filter((c) => c.status === params.status) : demo.socCases;
+    return { items, total: items.length };
+  }
+  const q: Record<string, string | number> = { limit: params.limit ?? 50, offset: params.offset ?? 0 };
+  if (params.status) q.status = params.status;
+  const qs = new URLSearchParams(Object.entries(q).map(([k, v]) => [k, String(v)])).toString();
+  const raw = await softOne<{ items: SocCase[]; total: number }>(`/soc/cases?${qs}`, {});
+  if (raw?.items) return raw;
+  const list = asList<SocCase>(await api.get<unknown>(`/soc/cases?${qs}`));
+  return { items: list, total: list.length };
+}
+
+export async function loadSocCase(id: number): Promise<SocCase | null> {
+  if (isDemoMode()) {
+    await delay(250);
+    return demo.socCases.find((c) => c.id === id) ?? null;
+  }
+  return softOne<SocCase>(`/soc/cases/${id}`);
+}
+
+export async function createSocCase(body: {
+  title: string;
+  summary?: string;
+  severity?: string;
+  assignee_ref?: string;
+  metadata?: Record<string, unknown>;
+  detection_ids?: number[];
+}): Promise<SocCase> {
+  if (isDemoMode()) {
+    await delay(500);
+    const c: SocCase = {
+      id: demo.socCases.length + 500,
+      organization_id: 11,
+      title: body.title,
+      summary: body.summary ?? null,
+      severity: body.severity ?? "medium",
+      status: "open",
+      assignee_ref: body.assignee_ref ?? null,
+      metadata: body.metadata ?? {},
+      opened_at: new Date().toISOString(),
+      closed_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return c;
+  }
+  return api.post<SocCase>("/soc/cases", body);
+}
+
+export async function patchSocCase(id: number, body: {
+  title?: string;
+  summary?: string;
+  severity?: string;
+  status?: string;
+  assignee_ref?: string;
+}): Promise<SocCase> {
+  if (isDemoMode()) {
+    await delay(400);
+    return demo.socCases.find((c) => c.id === id) ?? demo.socCases[0];
+  }
+  return api.patch<SocCase>(`/soc/cases/${id}`, body);
+}
+
+export async function addSocCaseNote(id: number, body: { body: string; author_ref?: string }): Promise<SocCaseNote> {
+  if (isDemoMode()) {
+    await delay(350);
+    return { id: 500, organization_id: 11, case_id: id, author_ref: body.author_ref ?? "user:1", body: body.body, created_at: new Date().toISOString() };
+  }
+  return api.post<SocCaseNote>(`/soc/cases/${id}/notes`, body);
+}
+
+export async function loadSocRules(enabledOnly = false): Promise<SocRule[]> {
+  if (isDemoMode()) {
+    await delay(250);
+    return demo.socRules;
+  }
+  const q = enabledOnly ? "?enabled_only=true" : "";
+  const raw = await softOne<{ items: SocRule[]; total: number }>(`/soc/rules${q}`, {});
+  if (raw?.items) return raw.items;
+  return asList<SocRule>(await api.get<unknown>(`/soc/rules${q}`));
+}export async function createSocRule(body: {
+  name: string;
+  description?: string;
+  enabled?: boolean;
+  severity_default?: string;
+  match_spec: Record<string, unknown>;
+  dedup_window_seconds?: number;
+  actions?: Record<string, unknown>;
+}): Promise<SocRule> {
+  if (isDemoMode()) {
+    await delay(450);
+    const r: SocRule = {
+      id: demo.socRules.length + 400,
+      organization_id: 11,
+      name: body.name,
+      description: body.description ?? null,
+      enabled: body.enabled ?? true,
+      source: "org",
+      severity_default: body.severity_default ?? "medium",
+      match_spec: body.match_spec,
+      dedup_window_seconds: body.dedup_window_seconds ?? 3600,
+      actions: body.actions ?? { create_detection: true, notify: false },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return r;
+  }
+  return api.post<SocRule>("/soc/rules", body);
+}
+
+export async function patchSocRule(id: number, body: Record<string, unknown>): Promise<SocRule> {
+  if (isDemoMode()) {
+    await delay(350);
+    return demo.socRules.find((r) => r.id === id) ?? demo.socRules[0];
+  }
+  return api.patch<SocRule>(`/soc/rules/${id}`, body);
+}
+
+export async function deleteSocRule(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(300); return; }
+  await api.delete(`/soc/rules/${id}`);
+}
+
+export async function seedSocRules(): Promise<SocRule[]> {
+  if (isDemoMode()) {
+    await delay(400);
+    return demo.socRules;
+  }
+  const raw = await softOne<{ items: SocRule[]; total: number }>("/soc/rules/seed", {});
+  if (raw?.items) return raw.items;
+  return asList<SocRule>(await api.post<unknown>("/soc/rules/seed"));
+}
+
+export async function loadSocAdapters(): Promise<SocAdapter[]> {
+  if (isDemoMode()) {
+    await delay(200);
+    return demo.socAdapters;
+  }
+  const raw = await softOne<{ adapters: SocAdapter[]; note?: string }>("/soc/adapters", {});
+  if (raw?.adapters) return raw.adapters;
+  return asList<SocAdapter>(await api.get<unknown>("/soc/adapters"));
+}
+
+export async function ingestSocWebhook(body: Record<string, unknown>): Promise<SocEnrichmentResult> {
+  if (isDemoMode()) {
+    await delay(400);
+    return { organizationId: 11, adapterId: "generic_webhook", accepted: 1, detections: [] };
+  }
+  return api.post<SocEnrichmentResult>("/soc/adapters/webhook", body);
 }

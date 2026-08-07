@@ -21,6 +21,7 @@ import DocPage from "@/pages/DocPage";
 import AssetIntelligence from "@/pages/AssetIntelligence";
 import SocDashboard from "@/pages/SocDashboard";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
+import Agent from "@/pages/Agent";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -80,6 +81,7 @@ export default function App() {
             <Route path="/risks" element={<RequireAuth><Risks /></RequireAuth>} />
             <Route path="/compliance" element={<RequireAuth><Compliance /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+            <Route path="/agent" element={<RequireAuth><Agent /></RequireAuth>} />
             <Route path="/alerts" element={<RequireAuth><Alerts /></RequireAuth>} />
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />
             <Route path="/people" element={<RequireAuth><People /></RequireAuth>} />

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadScansBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
@@ -73,7 +73,7 @@ export default function Scans() {
                   <StatusBadge status={active.status} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Started {timeAgo(active.started_at)} by {active.initiated_by} · idempotency {active.idempotency_key}
+                  Started {timeAgo(active.started_at)} by {active.initiated_by} ï¿½ idempotency {active.idempotency_key}
                 </p>
                 <div className="mt-2.5 max-w-md"><ProgressBar value={active.progress} color="#38BDF8" /></div>
               </div>
@@ -181,7 +181,7 @@ export default function Scans() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-slate-100">{r.title}</p>
                       <p className="mt-0.5 text-xs text-slate-500">
-                        <span className="font-mono">{r.asset_value}</span> · {r.tool} · job #{r.scan_job_id} · {timeAgo(r.created_at)}
+                        <span className="font-mono">{r.asset_value}</span> ï¿½ {r.tool} ï¿½ job #{r.scan_job_id} ï¿½ {timeAgo(r.created_at)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -189,12 +189,15 @@ export default function Scans() {
                         const conf = (r as any).evidence?.verification?.confidence ?? r.confidence;
                         const reportable = (r as any).evidence?.verification?.reportable;
                         const verStatus = (r as any).evidence?.verification?.verification_status ?? r.verification_status;
+                        const impact = (r as any).evidence?.impact_analysis?.impact_level ?? (r as any).impact_level;
+                        const impactScore = (r as any).evidence?.impact_analysis?.impact_score ?? (r as any).impact_score;
                         return (
                           <>
                             {conf != null && <span className="hidden font-mono text-xs text-slate-500 sm:block">{conf}% conf</span>}
                             {reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
                             {reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
                             <SeverityBadge severity={r.severity} />
+                            {impact != null && <ImpactBadge level={impact} score={impactScore} />}
                             <VerificationBadge status={verStatus} />
                           </>
                         );

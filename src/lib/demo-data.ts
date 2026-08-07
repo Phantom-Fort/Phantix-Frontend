@@ -1,4 +1,5 @@
 ﻿import type {
+  AgentSkill,
   AiStatus,
   AlertEvent,
   AlertSettings,
@@ -30,6 +31,12 @@
   VaptApproval,
   VaptCampaign,
   VaptFinding,
+  Severity,
+  SocAdapter,
+  SocCase,
+  SocDetection,
+  SocRule,
+  SocStatus,
 } from "./types";
 
 // Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
@@ -174,34 +181,51 @@ export const scanJobs: ScanJob[] = [
 ];
 
 export const scanResults: ScanResult[] = [
-  { id: 901, scan_job_id: 88, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "CVE-2025-24104 --- Jetty remote code execution", description: " vulnerable Jetty 11.0.24 handler chain allows unauthenticated RCE via crafted URI.", verification_status: "auto_verified", confidence: 98, created_at: "2026-07-21T07:41:00Z" },
-  { id: 902, scan_job_id: 88, asset_id: 102, asset_value: "api.acme.ng", tool: "nuclei", severity: "high", title: "JWT accepts alg=none on /v2/auth/refresh", description: "Token validation bypass confirmed with forged claims.", verification_status: "auto_verified", confidence: 96, created_at: "2026-07-21T07:44:00Z" },
-  { id: 903, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "medium", title: "OpenSSH 8.9p1 --- outdated", description: "Version banner indicates missing security backports.", verification_status: "manually_verified", confidence: 88, created_at: "2026-07-21T07:35:00Z" },
-  { id: 904, scan_job_id: 88, asset_id: 106, asset_value: "41.58.130.44:443", tool: "nuclei", severity: "high", title: "TLS 1.0 enabled on edge gateway", description: "Legacy protocol negotiated successfully.", verification_status: "auto_verified", confidence: 94, created_at: "2026-07-21T07:38:00Z" },
-  { id: 905, scan_job_id: 88, asset_id: 111, asset_value: "staging.acme.ng", tool: "nuclei", severity: "low", title: "Directory listing on /backups/", description: "Heuristic probe --- pattern match only.", verification_status: "unverified", confidence: 55, created_at: "2026-07-21T07:52:00Z" },
-  { id: 906, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "info", title: "ICMP echo reply", description: "Host reachability signal.", verification_status: "rejected", confidence: 20, created_at: "2026-07-21T07:33:00Z" },
-  { id: 907, scan_job_id: 87, asset_id: 109, asset_value: "payments-v2", tool: "nuclei", severity: "high", title: "Mass assignment on /v2/transfers", description: "Amount field accepted from client body without server check.", verification_status: "manually_verified", confidence: 91, created_at: "2026-07-20T13:14:00Z" },
-  { id: 908, scan_job_id: 87, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "medium", title: "Missing Content-Security-Policy", description: "No CSP header on authenticated pages.", verification_status: "auto_verified", confidence: 99, created_at: "2026-07-20T13:09:00Z" },
-  { id: 909, scan_job_id: 87, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "medium", title: "Session cookie lacks SameSite", description: "Cookie flags: Secure, HttpOnly only.", verification_status: "auto_verified", confidence: 97, created_at: "2026-07-20T13:09:30Z" },
-  { id: 910, scan_job_id: 86, asset_id: 110, asset_value: "ng.acme.mobile", tool: "apk", severity: "high", title: "Hardcoded API secret in strings.xml", description: "Static analysis recovered a base64 secret constant.", verification_status: "manually_verified", confidence: 89, created_at: "2026-07-19T09:15:00Z" },
-  { id: 911, scan_job_id: 86, asset_id: 110, asset_value: "ng.acme.mobile", tool: "apk", severity: "medium", title: "Exported activity without permission check", description: "MainActivity exported=true.", verification_status: "auto_verified", confidence: 93, created_at: "2026-07-19T09:16:00Z" },
-  { id: 912, scan_job_id: 88, asset_id: 103, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "IDOR on /accounts/{id}/statement", description: "Sequential account ids return other customers' statements.", verification_status: "auto_verified", confidence: 97, created_at: "2026-07-21T07:49:00Z" },
+  { id: 901, scan_job_id: 88, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "CVE-2025-24104 --- Jetty remote code execution", description: " vulnerable Jetty 11.0.24 handler chain allows unauthenticated RCE via crafted URI.", verification_status: "auto_verified", confidence: 98, created_at: "2026-07-21T07:41:00Z", reportable: true, impact_level: "Critical", impact_score: 4, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_cve" }, impact_analysis: { impact_level: "Critical", impact_score: 4, summary: "Critical impact — remote code execution (service)", categories: ["remote_code_execution"], blast_radius: "service" } } },
+  { id: 902, scan_job_id: 88, asset_id: 102, asset_value: "api.acme.ng", tool: "nuclei", severity: "high", title: "JWT accepts alg=none on /v2/auth/refresh", description: "Token validation bypass confirmed with forged claims.", verification_status: "auto_verified", confidence: 96, created_at: "2026-07-21T07:44:00Z", reportable: true, impact_level: "High", impact_score: 3, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "High", impact_score: 3, summary: "High impact — authentication bypass (service)", categories: ["authentication_bypass"], blast_radius: "service" } } },
+  { id: 903, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "medium", title: "OpenSSH 8.9p1 --- outdated", description: "Version banner indicates missing security backports.", verification_status: "manually_verified", confidence: 88, created_at: "2026-07-21T07:35:00Z", reportable: true, impact_level: "Medium", impact_score: 2, evidence: { verification: { confidence: "manually-verified", verification_status: "manually_verified", reportable: true, method: "explicit_status" }, impact_analysis: { impact_level: "Medium", impact_score: 2, summary: "Medium impact — service disruption (host)", categories: ["supply_chain"], blast_radius: "host" } } },
+  { id: 904, scan_job_id: 88, asset_id: 106, asset_value: "41.58.130.44:443", tool: "nuclei", severity: "high", title: "TLS 1.0 enabled on edge gateway", description: "Legacy protocol negotiated successfully.", verification_status: "auto_verified", confidence: 94, created_at: "2026-07-21T07:38:00Z", reportable: true, impact_level: "High", impact_score: 3, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "High", impact_score: 3, summary: "High impact — cryptographic weakness (internet-facing)", categories: ["cryptographic_weakness"], blast_radius: "internet_facing" } } },
+  { id: 905, scan_job_id: 88, asset_id: 111, asset_value: "staging.acme.ng", tool: "nuclei", severity: "low", title: "Directory listing on /backups/", description: "Heuristic probe --- pattern match only.", verification_status: "unverified", confidence: 55, created_at: "2026-07-21T07:52:00Z", reportable: false, evidence: { verification: { confidence: "heuristic", verification_status: "unverified", reportable: false, method: "auto_http_evidence" } } },
+  { id: 906, scan_job_id: 88, asset_id: 105, asset_value: "41.58.130.44", tool: "nmap", severity: "info", title: "ICMP echo reply", description: "Host reachability signal.", verification_status: "rejected", confidence: 20, created_at: "2026-07-21T07:33:00Z", reportable: false, evidence: { verification: { confidence: "heuristic", verification_status: "rejected", reportable: false, method: "explicit_status" } } },
+  { id: 907, scan_job_id: 87, asset_id: 109, asset_value: "payments-v2", tool: "nuclei", severity: "high", title: "Mass assignment on /v2/transfers", description: "Amount field accepted from client body without server check.", verification_status: "manually_verified", confidence: 91, created_at: "2026-07-20T13:14:00Z", reportable: true, impact_level: "High", impact_score: 3, evidence: { verification: { confidence: "manually-verified", verification_status: "manually_verified", reportable: true, method: "explicit_status" }, impact_analysis: { impact_level: "High", impact_score: 3, summary: "High impact — data exposure (service)", categories: ["data_exposure"], blast_radius: "service" } } },
+  { id: 908, scan_job_id: 87, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "medium", title: "Missing Content-Security-Policy", description: "No CSP header on authenticated pages.", verification_status: "auto_verified", confidence: 99, created_at: "2026-07-20T13:09:00Z", reportable: true, impact_level: "Medium", impact_score: 2, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "Medium", impact_score: 2, summary: "Medium impact — misconfiguration (service)", categories: ["misconfiguration"], blast_radius: "service" } } },
+  { id: 909, scan_job_id: 87, asset_id: 104, asset_value: "portal.acme.ng", tool: "nuclei", severity: "medium", title: "Session cookie lacks SameSite", description: "Cookie flags: Secure, HttpOnly only.", verification_status: "auto_verified", confidence: 97, created_at: "2026-07-20T13:09:30Z", reportable: true, impact_level: "Medium", impact_score: 2, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "Medium", impact_score: 2, summary: "Medium impact — misconfiguration (service)", categories: ["misconfiguration"], blast_radius: "service" } } },
+  { id: 910, scan_job_id: 86, asset_id: 110, asset_value: "ng.acme.mobile", tool: "apk", severity: "high", title: "Hardcoded API secret in strings.xml", description: "Static analysis recovered a base64 secret constant.", verification_status: "manually_verified", confidence: 89, created_at: "2026-07-19T09:15:00Z", reportable: true, impact_level: "High", impact_score: 3, evidence: { verification: { confidence: "manually-verified", verification_status: "manually_verified", reportable: true, method: "explicit_status" }, impact_analysis: { impact_level: "High", impact_score: 3, summary: "High impact — data exposure (host)", categories: ["data_exposure"], blast_radius: "host" } } },
+  { id: 911, scan_job_id: 86, asset_id: 110, asset_value: "ng.acme.mobile", tool: "apk", severity: "medium", title: "Exported activity without permission check", description: "MainActivity exported=true.", verification_status: "auto_verified", confidence: 93, created_at: "2026-07-19T09:16:00Z", reportable: true, impact_level: "Medium", impact_score: 2, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "Medium", impact_score: 2, summary: "Medium impact — information disclosure (host)", categories: ["information_disclosure"], blast_radius: "host" } } },
+  { id: 912, scan_job_id: 88, asset_id: 103, asset_value: "portal.acme.ng", tool: "nuclei", severity: "critical", title: "IDOR on /accounts/{id}/statement", description: "Sequential account ids return other customers' statements.", verification_status: "auto_verified", confidence: 97, created_at: "2026-07-21T07:49:00Z", reportable: true, impact_level: "Critical", impact_score: 4, evidence: { verification: { confidence: "scanner-confirmed", verification_status: "auto_verified", reportable: true, method: "auto_http_evidence" }, impact_analysis: { impact_level: "Critical", impact_score: 4, summary: "Critical impact — data exposure (service)", categories: ["data_exposure"], blast_radius: "service" } } },
 ];
 
 export const vaptCampaigns: VaptCampaign[] = [
-  { id: 13, name: "Q3 External Assessment", campaign_type: "external", procedure_key: "full_vapt", status: "active", phase: "Web application testing", progress: 58, asset_count: 9, findings_count: 17, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-14T10:00:00Z", started_at: "2026-07-14T10:30:00Z", finished_at: null },
-  { id: 12, name: "Payments API Deep Dive", campaign_type: "web_scan", procedure_key: "web_app_scan_only", status: "completed", phase: "Complete", progress: 100, asset_count: 3, findings_count: 11, requires_approval: false, created_by: "Chidi Eze", created_at: "2026-06-28T09:00:00Z", started_at: "2026-06-28T09:15:00Z", finished_at: "2026-07-02T17:40:00Z" },
-  { id: 11, name: "Monthly Infrastructure Sweep", campaign_type: "internal", procedure_key: "infra_scan", status: "completed", phase: "Complete", progress: 100, asset_count: 22, findings_count: 31, requires_approval: false, created_by: "Tunde Bakare", created_at: "2026-06-01T08:00:00Z", started_at: "2026-06-01T08:05:00Z", finished_at: "2026-06-03T11:22:00Z" },
-  { id: 10, name: "Mobile Channel Review", campaign_type: "mobile", procedure_key: "mobile_assessment", status: "draft", phase: "Scoping", progress: 0, asset_count: 1, findings_count: 0, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-18T15:00:00Z", started_at: null, finished_at: null },
+  { id: 13, name: "Q3 External Assessment", campaign_type: "external", procedure_key: "full_vapt", status: "active", phase: "Web application testing", progress: 58, asset_count: 9, findings_count: 17, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-14T10:00:00Z", started_at: "2026-07-14T10:30:00Z", finished_at: null, current_step_index: 2, current_phase: "Vulnerability templates", asset_scope: { asset_types: ["domain", "subdomain", "ip_address"] }, procedure_snapshot: { source: "full_vapt", steps: [
+    { step_type: "recon", step_name: "Asset & DNS recon", step_description: "Enumerate subdomains and hosts", status: "completed", config: { tools: ["subfinder", "dnsx"], max_duration_minutes: 15 }, output_summary: { assets_resolved: 22, unique_hosts: 14, targets_scanned: ["acme.ng", "www.acme.ng", "app.acme.ng", "portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "172.67.131.182 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 2, time_budget_seconds: 900, elapsed_seconds: 540, results_written: 0, tools: ["subfinder", "dnsx"] } },
+    { step_type: "scan", step_name: "Network surface (Nmap)", step_description: "Port and service discovery on live hosts", status: "completed", config: { tools: ["nmap"], max_duration_minutes: 20 }, output_summary: { assets_resolved: 9, unique_hosts: 9, targets_scanned: ["portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: [], skipped_count: 0, time_budget_seconds: 1200, elapsed_seconds: 1100, results_written: 41, tools: ["nmap"] } },
+    { step_type: "scan", step_name: "Vulnerability templates", step_description: "YAML vulnerability checks on unique hosts (domain IPs skipped)", status: "running", config: { tools: ["vuln_scan"], max_duration_minutes: 35, dedupe_hosts: true, target_types: ["domain", "subdomain", "web_app", "api"] }, output_summary: { assets_resolved: 18, assets_considered: 12, unique_hosts: 12, targets_scanned: ["portal.acme.ng", "api.acme.ng", "app.acme.ng", "www.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["41.58.130.44 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 4, time_budget_seconds: 2100, elapsed_seconds: 1320, results_written: 17, tools: ["vuln_scan"], partial: true } },
+    { step_type: "correlate", step_name: "Attack-path correlation", step_description: "Chain findings into attack paths", status: "pending", config: {}, output_summary: {} },
+    { step_type: "analyze", step_name: "AI-assisted analysis", step_description: "Optional narrative enrichment", status: "pending", config: {}, output_summary: {} },
+  ] } },
+  { id: 12, name: "Payments API Deep Dive", campaign_type: "web_scan", procedure_key: "web_app_scan_only", status: "completed", phase: "Complete", progress: 100, asset_count: 3, findings_count: 11, requires_approval: false, created_by: "Chidi Eze", created_at: "2026-06-28T09:00:00Z", started_at: "2026-06-28T09:15:00Z", finished_at: "2026-07-02T17:40:00Z", current_step_index: 3, current_phase: "Complete", asset_scope: { asset_ids: [102, 109, 103] }, procedure_snapshot: { source: "web_app_scan_only", steps: [
+    { step_type: "recon", step_name: "API surface enumeration", step_description: "Crawl and inventory endpoints", status: "completed", config: { tools: ["katana", "httpx"] }, output_summary: { assets_resolved: 3, unique_hosts: 3, results_written: 0, tools: ["katana", "httpx"] } },
+    { step_type: "scan", step_name: "API security checks", step_description: "BOLA/JWT/rate-limit verification", status: "completed", config: { tools: ["nuclei", "sqlmap"] }, output_summary: { unique_hosts: 3, results_written: 11, tools: ["nuclei", "sqlmap"] } },
+    { step_type: "correlate", step_name: "Attack-path correlation", step_description: "Chain findings", status: "completed", config: {}, output_summary: { results_written: 0 } },
+    { step_type: "analyze", step_name: "AI-assisted analysis", step_description: "Narrative enrichment", status: "completed", config: {}, output_summary: {} },
+  ] } },
+  { id: 11, name: "Monthly Infrastructure Sweep", campaign_type: "internal", procedure_key: "infra_scan", status: "completed", phase: "Complete", progress: 100, asset_count: 22, findings_count: 31, requires_approval: false, created_by: "Tunde Bakare", created_at: "2026-06-01T08:00:00Z", started_at: "2026-06-01T08:05:00Z", finished_at: "2026-06-03T11:22:00Z", current_step_index: 2, current_phase: "Complete", asset_scope: { asset_types: ["ip_address"] }, procedure_snapshot: { source: "infra_scan", steps: [
+    { step_type: "scan", step_name: "Network surface (Nmap)", step_description: "Port and service discovery", status: "completed", config: { tools: ["nmap"] }, output_summary: { assets_resolved: 22, unique_hosts: 22, results_written: 31, tools: ["nmap"] } },
+    { step_type: "scan", step_name: "Vulnerability templates", step_description: "YAML checks on hosts", status: "completed", config: { tools: ["vuln_scan"] }, output_summary: { unique_hosts: 22, results_written: 0, tools: ["vuln_scan"] } },
+    { step_type: "correlate", step_name: "Attack-path correlation", step_description: "Chain findings", status: "completed", config: {}, output_summary: {} },
+  ] } },
+  { id: 10, name: "Mobile Channel Review", campaign_type: "mobile", procedure_key: "mobile_assessment", status: "draft", phase: "Scoping", progress: 0, asset_count: 1, findings_count: 0, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-18T15:00:00Z", started_at: null, finished_at: null, current_step_index: 0, current_phase: "Scoping", asset_scope: { asset_types: ["mobile_apk"] }, procedure_snapshot: { source: "mobile_assessment", steps: [
+    { step_type: "scan", step_name: "APK static analysis", step_description: "Extract manifest and secrets", status: "pending", config: { tools: ["apk"] }, output_summary: {} },
+  ] } },
 ];
 
 export const vaptFindings: VaptFinding[] = [
-  { id: 301, campaign_id: 13, title: "Edge → Portal → Core ledger attack path", severity: "critical", verification_status: "auto_verified", confidence: 96, asset_value: "portal.acme.ng", correlation_rule: "chain.auth_bypass_data_access", attack_path: ["41.58.130.44:443 TLS 1.0", "portal.acme.ng Jetty RCE", "core-ledger service account"], cve: "CVE-2025-24104", cvss: 9.8, created_at: "2026-07-19T12:00:00Z" },
-  { id: 302, campaign_id: 13, title: "IDOR exposes customer statements", severity: "critical", verification_status: "auto_verified", confidence: 97, asset_value: "portal.acme.ng", correlation_rule: null, attack_path: [], cve: null, cvss: 8.6, created_at: "2026-07-20T09:30:00Z" },
-  { id: 303, campaign_id: 13, title: "JWT alg=none auth bypass", severity: "high", verification_status: "auto_verified", confidence: 96, asset_value: "api.acme.ng", correlation_rule: "chain.token_forgery", attack_path: ["/v2/auth/refresh", "forged admin claims"], cve: null, cvss: 8.1, created_at: "2026-07-20T11:00:00Z" },
-  { id: 304, campaign_id: 13, title: "TLS 1.0 on edge gateway", severity: "high", verification_status: "manually_verified", confidence: 94, asset_value: "41.58.130.44", correlation_rule: null, attack_path: [], cve: null, cvss: 7.4, created_at: "2026-07-19T14:20:00Z" },
-  { id: 305, campaign_id: 13, title: "Mass assignment on transfers", severity: "high", verification_status: "manually_verified", confidence: 91, asset_value: "payments-v2", correlation_rule: null, attack_path: [], cve: null, cvss: 7.1, created_at: "2026-07-21T06:10:00Z" },
-  { id: 306, campaign_id: 13, title: "Staging debug console exposed", severity: "medium", verification_status: "unverified", confidence: 60, asset_value: "staging.acme.ng", correlation_rule: null, attack_path: [], cve: null, cvss: 5.3, created_at: "2026-07-20T16:45:00Z" },
+  { id: 301, campaign_id: 13, title: "Edge → Portal → Core ledger attack path", severity: "critical", verification_status: "auto_verified", confidence: 96, asset_value: "portal.acme.ng", correlation_rule: "chain.auth_bypass_data_access", attack_path: ["41.58.130.44:443 TLS 1.0", "portal.acme.ng Jetty RCE", "core-ledger service account"], cve: "CVE-2025-24104", cvss: 9.8, created_at: "2026-07-19T12:00:00Z", reportable: true, impact_level: "Critical", impact_score: 4, impact_summary: "Critical impact — remote code execution (service)", business_impact: "High business impact from a verified critical-severity finding allowing unauthenticated control of the customer portal.", technical_impact: "Untrusted input reaches a trusted Jetty handler chain, enabling unauthenticated RCE on the portal tier.", impact_analysis: { impact_level: "Critical", impact_score: 4, cia: { confidentiality: "high", integrity: "high", availability: "high" }, categories: ["remote_code_execution"], blast_radius: "service", business_impact: "High business impact from a verified critical-severity finding allowing unauthenticated control of the customer portal.", technical_impact: "Untrusted input reaches a trusted Jetty handler chain, enabling unauthenticated RCE on the portal tier.", summary: "Critical impact — remote code execution (service)", analysis_method: "deterministic_v1", analyzed_at: "2026-07-21T10:00:00Z" } },
+  { id: 302, campaign_id: 13, title: "IDOR exposes customer statements", severity: "critical", verification_status: "auto_verified", confidence: 97, asset_value: "portal.acme.ng", correlation_rule: null, attack_path: [], cve: null, cvss: 8.6, created_at: "2026-07-20T09:30:00Z", reportable: true, impact_level: "Critical", impact_score: 4, impact_summary: "Critical impact — data exposure (service)", business_impact: "Customers' financial statements can be read by any authenticated user by walking sequential ids.", technical_impact: "Object reference is not validated against the authenticated principal before returning the statement resource.", impact_analysis: { impact_level: "Critical", impact_score: 4, cia: { confidentiality: "high", integrity: "low", availability: "low" }, categories: ["data_exposure"], blast_radius: "service", business_impact: "Customers' financial statements can be read by any authenticated user by walking sequential ids.", technical_impact: "Object reference is not validated against the authenticated principal before returning the statement resource.", summary: "Critical impact — data exposure (service)", analysis_method: "deterministic_v1", analyzed_at: "2026-07-21T10:05:00Z" } },
+  { id: 303, campaign_id: 13, title: "JWT alg=none auth bypass", severity: "high", verification_status: "auto_verified", confidence: 96, asset_value: "api.acme.ng", correlation_rule: "chain.token_forgery", attack_path: ["/v2/auth/refresh", "forged admin claims"], cve: null, cvss: 8.1, created_at: "2026-07-20T11:00:00Z", reportable: true, impact_level: "High", impact_score: 3, impact_summary: "High impact — authentication bypass (service)", business_impact: "Forged tokens grant administrative API access without credentials.", technical_impact: "Refresh endpoint accepts alg=none tokens, bypassing signature verification.", impact_analysis: { impact_level: "High", impact_score: 3, cia: { confidentiality: "high", integrity: "high", availability: "low" }, categories: ["authentication_bypass"], blast_radius: "service", business_impact: "Forged tokens grant administrative API access without credentials.", technical_impact: "Refresh endpoint accepts alg=none tokens, bypassing signature verification.", summary: "High impact — authentication bypass (service)", analysis_method: "deterministic_v1", analyzed_at: "2026-07-21T10:10:00Z" } },
+  { id: 304, campaign_id: 13, title: "TLS 1.0 on edge gateway", severity: "high", verification_status: "manually_verified", confidence: 94, asset_value: "41.58.130.44", correlation_rule: null, attack_path: [], cve: null, cvss: 7.4, created_at: "2026-07-19T14:20:00Z", reportable: true, impact_level: "High", impact_score: 3, impact_summary: "High impact — cryptographic weakness (internet-facing)", business_impact: "Legacy TLS weakens transport security for internet-facing traffic.", technical_impact: "TLS 1.0 negotiation accepted, exposing the connection to protocol-level attacks.", impact_analysis: { impact_level: "High", impact_score: 3, cia: { confidentiality: "medium", integrity: "low", availability: "low" }, categories: ["cryptographic_weakness"], blast_radius: "internet_facing", business_impact: "Legacy TLS weakens transport security for internet-facing traffic.", technical_impact: "TLS 1.0 negotiation accepted, exposing the connection to protocol-level attacks.", summary: "High impact — cryptographic weakness (internet-facing)", analysis_method: "deterministic_v1", analyzed_at: "2026-07-21T10:15:00Z" } },
+  { id: 305, campaign_id: 13, title: "Mass assignment on transfers", severity: "high", verification_status: "manually_verified", confidence: 91, asset_value: "payments-v2", correlation_rule: null, attack_path: [], cve: null, cvss: 7.1, created_at: "2026-07-21T06:10:00Z", reportable: true, impact_level: "High", impact_score: 3, impact_summary: "High impact — data exposure (service)", business_impact: "Client-controlled fields can alter transfer amounts and destinations.", technical_impact: "Request body fields are bound to the transfer model without an allowlist.", impact_analysis: { impact_level: "High", impact_score: 3, cia: { confidentiality: "low", integrity: "high", availability: "low" }, categories: ["data_exposure"], blast_radius: "service", business_impact: "Client-controlled fields can alter transfer amounts and destinations.", technical_impact: "Request body fields are bound to the transfer model without an allowlist.", summary: "High impact — data exposure (service)", analysis_method: "deterministic_v1", analyzed_at: "2026-07-21T10:20:00Z" } },
+  { id: 306, campaign_id: 13, title: "Staging debug console exposed", severity: "medium", verification_status: "unverified", confidence: 60, asset_value: "staging.acme.ng", correlation_rule: null, attack_path: [], cve: null, cvss: 5.3, created_at: "2026-07-20T16:45:00Z", reportable: false },
 ];
 
 export const vaptApprovals: VaptApproval[] = [
@@ -301,9 +325,9 @@ export const evidenceItems: EvidenceItem[] = [
 ];
 
 export const reports: Report[] = [
-  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive --- Client Package", status: "complete", formats_requested: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
-  { id: 43, report_type: "executive", title: "June Board Security Summary", status: "complete", formats_requested: ["pdf", "docx"], campaign_id: 11, version: 1, stats: { after_dedupe: 38, after_verification: 31, excluded_from_report: 7 }, created_at: "2026-06-05T10:00:00Z", size_bytes: 2_204_000 },
-  { id: 42, report_type: "compliance", title: "NDPR Readiness Snapshot", status: "complete", formats_requested: ["pdf", "json"], campaign_id: null, version: 1, stats: { after_dedupe: 34, after_verification: 34, excluded_from_report: 0 }, created_at: "2026-07-18T12:00:00Z", size_bytes: 1_480_000 },
+  { id: 44, report_type: "vapt_campaign", title: "Payments API Deep Dive --- Client Package", status: "complete", formats_requested: ["pdf", "docx", "markdown", "json", "xlsx"], campaign_id: 12, version: 2, stats: { after_dedupe: 14, after_verification: 11, excluded_from_report: 3, impact_analyzed: 11 }, created_at: "2026-07-03T09:00:00Z", size_bytes: 4_812_000 },
+  { id: 43, report_type: "executive", title: "June Board Security Summary", status: "complete", formats_requested: ["pdf", "docx"], campaign_id: 11, version: 1, stats: { after_dedupe: 38, after_verification: 31, excluded_from_report: 7, impact_analyzed: 31 }, created_at: "2026-06-05T10:00:00Z", size_bytes: 2_204_000 },
+  { id: 42, report_type: "compliance", title: "NDPR Readiness Snapshot", status: "complete", formats_requested: ["pdf", "json"], campaign_id: null, version: 1, stats: { after_dedupe: 34, after_verification: 34, excluded_from_report: 0, impact_analyzed: 34 }, created_at: "2026-07-18T12:00:00Z", size_bytes: 1_480_000 },
   { id: 45, report_type: "vapt_campaign", title: "Q3 External Assessment --- Interim", status: "generating", formats_requested: ["pdf", "docx", "markdown", "json"], campaign_id: 13, version: 1, stats: { after_dedupe: 19, after_verification: 14, excluded_from_report: 5 }, created_at: "2026-07-21T07:55:00Z", size_bytes: 0 },
 ];
 
@@ -375,6 +399,7 @@ export const serviceKey: ServiceKeyMeta = {
 
 export const aiStatus: AiStatus = {
   enabled: true,
+  agent_enabled: true,
   default_provider: "deepseek",
   ai_pentest_ready: true,
   mode: "balanced",
@@ -386,7 +411,28 @@ export const aiStatus: AiStatus = {
   ],
   monthly_tokens: 1_284_500,
   monthly_cost_usd: 6.42,
+  agent: {
+    enabled: true,
+    provider: "deepseek",
+    model: "deepseek-v4-flash",
+    deepseek_ready: true,
+    stream: {
+      enabled: true,
+      protocol: "Server-Sent Events (text/event-stream)",
+      chat: "POST /api/v1/ai/agent/chat/stream",
+      runs: "POST /api/v1/ai/agent/runs/stream",
+      events: ["connected", "meta", "reasoning", "delta", "usage", "done", "error"],
+    },
+  },
 };
+
+export const agentSkills: AgentSkill[] = [
+  { id: 1, name: "phantix-vapt-writeup", description: "Drafts verified VAPT finding write-ups from campaign data. Only references findings with a Phantix finding ID.", version: "1.0.0", domain: "vapt", status: "active", score: 0.94, uses: 187, last_used_at: "2026-07-21T09:00:00Z", created_at: "2026-06-02T10:00:00Z" },
+  { id: 2, name: "phantix-asset-exposure-brief", description: "Summarizes an asset's external exposure from intelligence signals.", version: "1.1.0", domain: "asset", status: "active", score: 0.91, uses: 142, last_used_at: "2026-07-20T14:22:00Z", created_at: "2026-06-05T10:00:00Z" },
+  { id: 3, name: "phantix-soc-triage-assist", description: "Assists SOC triage: correlates detections, suggests priority for human review.", version: "0.9.0", domain: "soc", status: "candidate", score: 0.78, uses: 21, last_used_at: "2026-07-18T11:40:00Z", created_at: "2026-07-01T10:00:00Z" },
+  { id: 4, name: "phantix-grc-gap-brief", description: "Explains compliance framework gaps with control evidence references.", version: "1.0.0", domain: "grc", status: "candidate", score: 0.82, uses: 9, last_used_at: null, created_at: "2026-07-08T10:00:00Z" },
+  { id: 5, name: "phantix-threat-correlate", description: "Correlates threat intelligence signals across assets. Disabled pending review.", version: "0.4.0", domain: "ti", status: "quarantined", score: 0.51, uses: 14, last_used_at: "2026-07-12T09:30:00Z", created_at: "2026-06-20T10:00:00Z" },
+];
 
 export const supportTickets: SupportTicket[] = [
   { id: 12, subject: "Nuclei template update cadence", status: "open", priority: "normal", created_at: "2026-07-19T10:00:00Z", messages: [{ from: "Ada Okonkwo", body: "How often are nuclei templates refreshed on staging?", at: "2026-07-19T10:00:00Z" }] },
@@ -423,4 +469,135 @@ export const intelligenceDashboard: IntelligenceDashboard = { organizationId: 11
 
 export const relationshipGraph: RelationshipGraph = { nodes: [{ id: 1, value: "acme-financial.com", name: "acme-financial.com", assetType: "domain", riskLevel: "low", riskScore: 15, openFindingsCount: 2, isVerified: true, exposureLevel: "external", priorityScore: 25 }, { id: 2, value: "api.acme-financial.com", name: "API Gateway", assetType: "subdomain", riskLevel: "high", riskScore: 74, openFindingsCount: 8, isVerified: true, exposureLevel: "external", priorityScore: 85 }], edges: [{ id: 1, source: 1, target: 2, relationshipType: "domain_to_subdomain", confidence: 1 }], rootAssetId: null, depth: 2, truncated: false, nodeCount: 2, edgeCount: 1 };
 
-export const socDashboard = { organizationId: 0, status: "scaffold" as const, generatedAt: new Date().toISOString(), panels: [{ id: "live-assets", title: "Live Asset Events", source: "asset_intelligence", ready: true, endpoint: "/assets/intelligence/stream", stream: "/assets/intelligence/stream" }, { id: "risk-panel", title: "Risk Overview", source: "asset_intelligence", ready: true, endpoint: "/assets/intelligence/dashboard" }, { id: "detections", title: "SOC Detections", source: "soc_engine", ready: false, endpoint: null, note: "Coming when SOC detections ship" }], liveSubscribers: 1, message: "SOC monitoring scaffold" };
+export const socDashboard = { organizationId: 0, status: "implemented" as const, generatedAt: new Date().toISOString(), panels: [
+  { id: "live-assets", title: "Live Security Events", source: "shared.realtime + soc_engine", ready: true, endpoint: "/api/v1/soc/dashboard/stream", stream: "/api/v1/soc/dashboard/stream", note: "SOC SSE + Asset Intelligence events on same hub" },
+  { id: "asset_posture", title: "Asset posture", source: "asset_intelligence", ready: true, endpoint: "/api/v1/assets/intelligence/dashboard", note: "Posture score" },
+  { id: "critical_assets", title: "Critical assets at risk", source: "asset_intelligence", ready: true, endpoint: "/api/v1/assets/intelligence/prioritized?risk_level=critical" },
+  { id: "detections", title: "Active detections", source: "soc_engine", ready: true, endpoint: "/api/v1/soc/detections?open_only=true", openTotal: 8 },
+  { id: "triage_queue", title: "Analyst triage queue", source: "soc_engine", ready: true, endpoint: "/api/v1/soc/detections?open_only=true" },
+  { id: "cases", title: "Open cases", source: "soc_engine", ready: true, endpoint: "/api/v1/soc/cases?status=open" },
+], liveSubscribers: 2, message: "SOC dashboard live. Detections and triage are engine-backed; asset posture still served by Asset Intelligence." };
+
+export const socStatus: SocStatus = {
+  engineId: "soc_engine",
+  name: "SOC Engine",
+  status: "implemented",
+  version: "0.1.0",
+  organizationId: 11,
+  message: "SOC Engine is implemented: detections, rules, optional cases, dashboard SSE, Celery correlation, enrichment adapter interfaces.",
+  capabilities: {
+    detection_rules: true,
+    builtin_correlators: true,
+    manual_detections: true,
+    alert_triage_queue: true,
+    optional_cases: true,
+    realtime_monitoring_dashboard: true,
+    soc_sse_stream: true,
+    dedup_fingerprints: true,
+    celery_correlation: true,
+    ai_triage_packet: true,
+    audit_on_triage: true,
+    alert_enqueue_on_critical: true,
+    siem_connectors_live: false,
+    enrichment_adapter_interfaces: true,
+    enrichment_webhook: true,
+  },
+  builtinCorrelators: ["builtin.risk", "builtin.finding_high", "builtin.scan_high_findings", "builtin.alert_critical", "builtin.asset_watch"],
+  queue: { openTotal: 8, byStatus: { open: 5, assigned: 2, escalated: 1, closed: 12 }, bySeverityOpen: { critical: 2, high: 3, medium: 3 } },
+  adapters: [
+    { id: "generic_webhook", configured: true, vendor: "phantix" },
+    { id: "splunk", configured: false, vendor: "splunk" },
+    { id: "microsoft_defender", configured: false, vendor: "microsoft" },
+    { id: "soar_generic", configured: false, vendor: "soar" },
+  ],
+  realtimeHub: "app.shared.realtime — SOC publishes socDetectionMatched, socAlertRaised, socTriageAssigned; stream at /api/v1/soc/dashboard/stream",
+};
+
+const socDetection = (d: Partial<SocDetection> & { id: number; title: string; severity: Severity }): SocDetection => ({
+  organization_id: 11,
+  rule_id: null,
+  correlator_id: null,
+  case_id: null,
+  summary: null,
+  status: "open",
+  assignee_ref: null,
+  asset_id: null,
+  risk_id: null,
+  finding_ref: {},
+  signal_fingerprint: null,
+  evidence: {},
+  metadata: {},
+  source: "correlator",
+  occurrence_count: 1,
+  priority_score: 50,
+  first_seen_at: new Date(Date.now() - 7200000).toISOString(),
+  last_seen_at: new Date().toISOString(),
+  created_at: new Date(Date.now() - 7200000).toISOString(),
+  updated_at: new Date().toISOString(),
+  ...d,
+});
+
+export const socDetections: SocDetection[] = [
+  socDetection({ id: 101, title: "Critical risk: RCE on edge", severity: "critical", correlator_id: "builtin.risk", risk_id: 501, asset_id: 7, occurrence_count: 3, priority_score: 125.5, source: "correlator", status: "open", evidence: { event_type: "RiskCritical", blast_radius_hint: { related_asset_count: 3 } } }),
+  socDetection({ id: 102, title: "High findings on prod tags", severity: "high", correlator_id: "builtin.finding_high", asset_id: 9, occurrence_count: 2, priority_score: 98, source: "correlator", status: "open", evidence: { event_type: "FindingCreated" } }),
+  socDetection({ id: 103, title: "TLS 1.0 on edge gateway", severity: "high", correlator_id: "builtin.scan_high_findings", asset_id: 10, risk_id: 504, occurrence_count: 1, priority_score: 88, source: "correlator", status: "assigned", assignee_ref: "user:12", evidence: { event_type: "ScanCompleted" } }),
+  socDetection({ id: 104, title: "Alert: critical vulnerability detected", severity: "critical", correlator_id: "builtin.alert_critical", asset_id: 11, occurrence_count: 1, priority_score: 115, source: "correlator", status: "escalated", case_id: 9, evidence: { event_type: "AlertCritical" } }),
+  socDetection({ id: 105, title: "Suspicious login spike on VPN", severity: "medium", source: "manual", asset_id: 12, assignee_ref: "user:5", occurrence_count: 1, priority_score: 40, status: "open", metadata: { channel: "slack" } }),
+  socDetection({ id: 106, title: "Staging debug console exposed", severity: "medium", correlator_id: "builtin.finding_high", asset_id: 13, occurrence_count: 4, priority_score: 35, source: "enrichment", status: "open", evidence: { event_type: "FindingCreated" } }),
+  socDetection({ id: 107, title: "Mass assignment on transfers", severity: "high", correlator_id: "builtin.finding_high", asset_id: 14, risk_id: 505, occurrence_count: 1, priority_score: 91, source: "correlator", status: "assigned", assignee_ref: "user:8" }),
+  socDetection({ id: 108, title: "Directory listing on /backups/", severity: "low", correlator_id: "builtin.finding_high", asset_id: 15, occurrence_count: 1, priority_score: 15, source: "correlator", status: "closed", closed_at: new Date().toISOString() }),
+];
+
+export const socCases: SocCase[] = [
+  {
+    id: 9,
+    organization_id: 11,
+    title: "Incident: edge RCE",
+    summary: "Escalated for IR — unauthenticated RCE on the portal tier.",
+    severity: "critical",
+    status: "investigating",
+    assignee_ref: "user:12",
+    metadata: { source_detection_id: 101 },
+    opened_at: new Date(Date.now() - 3600000).toISOString(),
+    closed_at: null,
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+    updated_at: new Date(Date.now() - 1800000).toISOString(),
+    notes: [
+      { id: 1, organization_id: 11, case_id: 9, author_ref: "user:12", body: "Isolated the portal tier; collecting evidence.", created_at: new Date(Date.now() - 3000000).toISOString() },
+      { id: 2, organization_id: 11, case_id: 9, author_ref: "user:12", body: "Containment complete; monitoring 24h.", created_at: new Date(Date.now() - 1800000).toISOString() },
+    ],
+    detections: [
+      { id: 101, title: "Critical risk: RCE on edge", severity: "critical", status: "escalated", priority_score: 125.5, asset_id: 7, risk_id: 501 },
+      { id: 104, title: "Alert: critical vulnerability detected", severity: "critical", status: "escalated", priority_score: 115, asset_id: 11 },
+    ],
+  },
+  {
+    id: 10,
+    organization_id: 11,
+    title: "Weekend IR war room",
+    summary: "Multi-detection cluster for the TLS + transfer findings.",
+    severity: "high",
+    status: "open",
+    assignee_ref: null,
+    metadata: {},
+    opened_at: new Date(Date.now() - 86400000).toISOString(),
+    closed_at: null,
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    updated_at: new Date(Date.now() - 86400000).toISOString(),
+    notes: [],
+    detections: [],
+  },
+];
+
+export const socRules: SocRule[] = [
+  { id: 3, organization_id: 11, name: "Critical risk created", description: "Open SOC detection when a critical risk is created", enabled: true, source: "seed", severity_default: "critical", match_spec: { event_types: ["RiskCritical", "RiskCreated"], risk_levels: ["critical"] }, dedup_window_seconds: 7200, actions: { notify: true, create_detection: true }, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 4, organization_id: 11, name: "High findings on prod tags", description: "Detection when high+ findings land on production assets", enabled: true, source: "seed", severity_default: "high", match_spec: { event_types: ["FindingCreated"], min_severity: "high" }, dedup_window_seconds: 3600, actions: { create_detection: true, notify: false }, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+  { id: 5, organization_id: 11, name: "Scan completed with criticals", description: "Flag completed scans that produced critical findings", enabled: false, source: "org", severity_default: "high", match_spec: { event_types: ["ScanCompleted"], severities: ["critical"] }, dedup_window_seconds: 1800, actions: { create_detection: true, notify: true }, created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+];
+
+export const socAdapters: SocAdapter[] = [
+  { id: "generic_webhook", displayName: "Generic webhook", vendor: "phantix", configured: true, enabled: true, detail: "Accepts normalized enrichment payloads (no vendor credentials)" },
+  { id: "splunk", displayName: "Splunk", vendor: "splunk", configured: false, enabled: true, detail: "Not configured — interface only; engine works without this adapter" },
+  { id: "microsoft_defender", displayName: "Microsoft Defender", vendor: "microsoft", configured: false, enabled: true, detail: "Not configured — interface only" },
+  { id: "soar_generic", displayName: "Generic SOAR", vendor: "soar", configured: false, enabled: false, detail: "Not configured" },
+];

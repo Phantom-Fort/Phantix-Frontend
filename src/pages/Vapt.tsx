@@ -378,24 +378,54 @@ export default function Vapt() {
                     {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).length > 0 && (
                       <div className="p-3 rounded-lg bg-phantix-800/30 border border-phantix-700/30 space-y-2">
                         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Scan Results</p>
-                        {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 3).map((step: any, i: number) => {
+                        {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 5).map((step: any, i: number) => {
                           const summary = step.output_summary || {};
                           const isPartial = summary.budget_exhausted || summary.partial;
                           const uniqueHosts = summary.unique_hosts;
                           const skipped = summary.skipped_count || (summary.skipped_already_scanned?.length || 0);
                           const scanned = summary.targets_scanned?.length || uniqueHosts || "---";
+                          const budgetSec = Number(summary.time_budget_seconds ?? 0);
+                          const elapsedSec = Number(summary.elapsed_seconds ?? 0);
+                          const budgetPct = budgetSec > 0 ? Math.min(100, (elapsedSec / budgetSec) * 100) : null;
+                          const skipReasons: string[] = Array.isArray(summary.skipped_already_scanned) ? summary.skipped_already_scanned : [];
+                          const tools: string[] = Array.isArray(summary.tools) ? summary.tools : [];
                           return (
                             <div key={i} className="flex items-start gap-2 text-xs border-t border-phantix-700/30 pt-2 first:border-0 first:pt-0">
                               <div className={cx("w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5", isPartial ? "bg-severity-medium/20 text-severity-medium" : "bg-emerald-400/20 text-emerald-400")}>
                                 {isPartial ? <AlertTriangle size={10} /> : <CheckCircle2 size={12} />}
                               </div>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="text-slate-300 font-medium">{step.step_name}</p>
                                 <p className="text-slate-500">
                                   {uniqueHosts != null ? `${uniqueHosts} hosts` : `${scanned} targets`}
                                   {step.finding_count > 0 && <span className="text-slate-400"> · {step.finding_count} findings</span>}
-                                  {skipped > 0 && <span className="text-slate-500"> · {skipped} skipped (CDN IPs)</span>}
+                                  {typeof summary.assets_resolved === "number" && summary.assets_resolved !== uniqueHosts && (
+                                    <span className="text-slate-500"> · {summary.assets_resolved} resolved → {summary.unique_hosts} unique</span>
+                                  )}
+                                  {typeof summary.results_written === "number" && <span className="text-slate-400"> · {summary.results_written} written</span>}
+                                  {skipped > 0 && (
+                                    <span className="text-slate-500">
+                                      {' '}· {skipped} skipped (already scanned / domain IP)
+                                      {skipReasons.length > 0 && (
+                                        <span className="block text-[10px] text-slate-600">
+                                          {skipReasons.slice(0, 3).map((r) => <span key={r} className="block">{r}</span>)}
+                                          {skipReasons.length > 3 && <span>+{skipReasons.length - 3} more</span>}
+                                        </span>
+                                      )}
+                                    </span>
+                                  )}
+                                  {tools.length > 0 && <span className="block text-[10px] text-slate-600">tools: {tools.join(", ")}</span>}
                                 </p>
+                                {budgetPct !== null && (
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <div className="h-1 flex-1 rounded-full bg-phantix-800">
+                                      <div className={cx("h-full rounded-full", isPartial ? "bg-severity-medium" : "bg-emerald-400")} style={{ width: `${budgetPct}%` }} />
+                                    </div>
+                                    <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                      {Math.round(elapsedSec / 60)}m / {Math.round(budgetSec / 60)}m
+                                    </span>
+                                  </div>
+                                )}
                                 {isPartial && <p className="text-severity-medium text-[10px] mt-0.5">Partial --- time budget reached</p>}
                               </div>
                             </div>
@@ -566,6 +596,7 @@ export default function Vapt() {
                 <option value="full_vapt">full_vapt (infra + web + gates)</option>
                 <option value="infra_scan">infra_scan</option>
                 <option value="api_scan">api_scan</option>
+                <option value="caido">caido --- advanced proxy (history, Replay, workflows)</option>
               </select>
             </div>
           </div>

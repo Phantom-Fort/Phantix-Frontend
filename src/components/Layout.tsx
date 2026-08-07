@@ -27,10 +27,12 @@ import {
   Shield,
   Activity,
   UserCheck,
+  Bot,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
 import { cx, timeAgo } from "@/lib/utils";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
@@ -61,6 +63,12 @@ const navSections: {
       { to: "/risks", label: "Risks", icon: <ShieldAlert size={17} /> },
       { to: "/compliance", label: "Compliance", icon: <Scale size={17} /> },
       { to: "/reports", label: "Reports", icon: <FileText size={17} /> },
+    ],
+  },
+  {
+    label: "Assistant",
+    items: [
+      { to: "/agent", label: "Phantix Agent", icon: <Bot size={17} /> },
     ],
   },
   {
@@ -364,6 +372,7 @@ export default function Layout() {
           </button>
 
           <div className="ml-auto flex items-center gap-2.5">
+            <ThemeToggle />
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
               <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>

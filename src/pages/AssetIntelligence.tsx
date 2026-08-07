@@ -1,32 +1,57 @@
-﻿import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Shield, AlertTriangle, Search, Activity, RefreshCw, ArrowRight, Globe, Server, Sparkles, Wifi, WifiOff } from "lucide-react";
+import { Shield, AlertTriangle, Search, Activity, RefreshCw, ArrowRight, Globe, Server, Sparkles, Wifi, WifiOff, Radio } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState } from "@/components/ui";
 import { useResource } from "@/lib/useResource";
 import { loadIntelligenceDashboard, refreshIntelligence, requestAiSummary } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx } from "@/lib/utils";
-import type { IntelligenceDashboard } from "@/lib/types";
+import { useSseStream, type SseEvent } from "@/lib/useSse";
+import type { IntelligenceDashboard, RealtimeEvent } from "@/lib/types";
 
 const emptyIntel: IntelligenceDashboard = { posture_score: 0, total_assets: 0, verified_count: 0, unscanned_count: 0 };
 
 export default function AssetIntelligenceDashboard() {
   const { toast, requireDualControl } = useStore();
-  const [liveConnected, setLiveConnected] = useState(false);
   const [aiLoading, setAiLoading] = useState<number | null>(null);
   const [aiResult, setAiResult] = useState<{ postureSummary: string; whyPrioritized: string; summarySource: string } | null>(null);
 
-  useEffect(() => {
-    setLiveConnected(true);
-    const t = setInterval(() => setLiveConnected((p) => !p), 3000);
-    return () => clearInterval(t);
-  }, []);
-
-  const { data: intelData, loading, reload } = useResource(
+  const { data: intelData, loading, reload, setData } = useResource(
     () => loadIntelligenceDashboard().then((d) => d ?? emptyIntel),
     emptyIntel,
   );
+
+  const { connected: liveConnected, events: liveEvents } = useSseStream("/assets/intelligence/stream", {
+    onEvent: useCallback((evt: SseEvent) => {
+      const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Partial<RealtimeEvent["payload"]>;
+      const assetId = payload.assetId;
+      const assetType = payload.assetType;
+      if (assetId && (assetType || payload.value)) {
+        setData((prev) => {
+          const p = { ...prev };
+          const critical = [...((p.criticalAssetsAtRisk ?? p.critical_assets_at_risk ?? []) as any[])];
+          const idx = critical.findIndex((a) => a.id === assetId);
+          if (idx >= 0 && typeof payload.riskLevel === "string") {
+            critical[idx] = { ...critical[idx], riskLevel: payload.riskLevel, riskScore: payload.riskScore ?? critical[idx].riskScore };
+          }
+          if (evt.event === "assetDiscovered") {
+            const fresh = [...((p.newlyDiscoveredUnscanned ?? p.newly_discovered ?? []) as any[])];
+            if (!fresh.some((a) => a.id === assetId)) {
+              fresh.unshift({ id: assetId, value: payload.value ?? null, assetType: assetType ?? null, firstSeenAt: payload.ts ?? null, isVerified: payload.isVerified ?? null, source: payload.source ?? null });
+              p.newlyDiscoveredUnscanned = fresh;
+              p.newly_discovered = fresh;
+            }
+          }
+          if (critical.length) {
+            p.criticalAssetsAtRisk = critical;
+            p.critical_assets_at_risk = critical;
+          }
+          return p;
+        });
+      }
+    }, [setData]),
+  });
 
   const score = intelData.postureScore ?? intelData.posture_score ?? 68;
 
@@ -199,9 +224,57 @@ export default function AssetIntelligenceDashboard() {
         </Card>
       </div>
 
+      {/* Live event feed */}
+      <Card className="mb-6">
+        <CardHeader
+          title={<><Radio size={16} className="inline text-gold-400 mr-1" /> Live Event Feed</>}
+          subtitle={liveConnected ? "Streaming from your security database via SSE" : "Reconnecting to event stream..."}
+          action={
+            liveEvents.length > 0 ? (
+              <span className="text-xs text-slate-500">{liveEvents.length} recent events</span>
+            ) : undefined
+          }
+        />
+        {liveEvents.length > 0 ? (
+          <div className="space-y-1.5 max-h-64 overflow-y-auto px-5 pb-5">
+            {liveEvents.slice(-12).reverse().map((evt, i) => {
+              const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Partial<RealtimeEvent["payload"]>;
+              const label =
+                evt.event === "riskScoreChanged"
+                  ? `Risk changed on ${String(payload.value ?? `#${payload.assetId}`)}`
+                  : evt.event === "assetDiscovered"
+                    ? `New asset ${String(payload.value ?? `#${payload.assetId}`)}`
+                    : evt.event === "newFindingOnAsset"
+                      ? `New finding on ${String(payload.value ?? `#${payload.assetId}`)}`
+                      : evt.event === "assetUpdated" || evt.event === "intelligenceUpdated"
+                        ? `Intel updated for ${String(payload.value ?? `#${payload.assetId}`)}`
+                        : evt.event === "heartbeat"
+                          ? "Heartbeat"
+                          : `${evt.event} event`;
+              const isRisk = evt.event === "riskScoreChanged";
+              return (
+                <div key={`${evt.ts}-${i}`} className="flex items-center gap-2 text-xs">
+                  <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", isRisk ? "bg-severity-high animate-pulse-soft" : evt.event === "heartbeat" ? "bg-slate-700" : "bg-emerald-400")} />
+                  <span className="text-slate-400 font-mono w-14 shrink-0">{timeAgo(evt.ts)}</span>
+                  <span className="text-slate-300 truncate">{label}</span>
+                  {isRisk && (payload.previousRiskLevel || payload.riskLevel) && (
+                    <span className="ml-auto text-[10px] text-slate-500">
+                      {String(payload.previousRiskLevel ?? "?")} → {String(payload.riskLevel ?? "?")}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="px-5 pb-5 text-xs text-slate-500">
+            {liveConnected ? "Connected --- waiting for events..." : "Offline --- live updates will resume on reconnect."}
+          </div>
+        )}
+      </Card>
+
       {aiResult && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-          <Card>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-6">          <Card>
             <CardHeader
               title={<><Sparkles size={16} className="inline text-gold-400 mr-1" /> AI Posture Summary</>}
               subtitle={aiResult.summarySource === "ai" ? "Generated from known data only --- never invents CVEs or scores" : "Deterministic summary"}

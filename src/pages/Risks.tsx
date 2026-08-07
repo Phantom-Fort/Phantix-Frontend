@@ -12,7 +12,7 @@ import type { Risk } from "@/lib/types";
 
 export default function Risks() {
   const { toast, requireDualControl, dualControl } = useStore();
-  const { data, loading } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
+  const { data, loading, setData } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
   const risks = data.risks;
   const securityDbBlocked = data.securityDbBlocked;
   const loadError = data.error;
@@ -70,11 +70,17 @@ export default function Risks() {
       return;
     }
     setAssigning(true);
+    const previous = data;
+    setData((bundle) => ({
+      ...bundle,
+      risks: bundle.risks.map((r) => (r.id === selected.id ? { ...r, owner } : r)),
+    }));
     try {
       await api.patch(`/risks/${selected.id}`, { owner });
       toast("success", "Owner updated", `PATCH /risks/${selected.id} --- ${owner}`);
       setAssignedOwner("");
     } catch (err: any) {
+      setData(previous);
       toast("error", "Failed", err.message ?? "Assignment failed");
     } finally {
       setAssigning(false);

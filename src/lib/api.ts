@@ -85,6 +85,16 @@ export class ApiError extends Error {
   }
 }
 
+/** Apply X-Token-Refreshed response headers to the token store (app sessions). */
+function applyTokenRenewal(res: Response): void {
+  if (res.headers.get("X-Token-Refreshed") === "1") {
+    const access = res.headers.get("X-Refreshed-Access-Token");
+    const device = res.headers.get("X-Refreshed-Device-Token");
+    if (access) tokens.appSession = access;
+    if (device) tokens.device = device;
+  }
+}
+
 /** 409 on product modules usually means security storage is not bootstrapped. */
 export function isSecurityDbBlocked(err: unknown): boolean {
   if (!(err instanceof ApiError) || err.status !== 409) return false;
@@ -133,15 +143,25 @@ async function request<T>(
   }
 
   const res = await fetch(`${API_BASE}${path}`, { method, headers, body });
+
+  // App session token renewal (APP_SESSION_TOKEN_RENEWAL.md): the backend bumps
+  // token versions on activity and returns refreshed tokens in response headers.
+  applyTokenRenewal(res);
+
   if (!res.ok) {
     let detail: unknown = res.statusText;
     try {
       detail = (await res.json()).detail;
     } catch { /* non-JSON */ }
+    const detailObj = detail && typeof detail === "object" ? detail as Record<string, unknown> : null;
+    const relogin = detailObj?.relogin === true || detailObj?.error === "session_invalid";
     if (res.status === 401) {
       if (realm === "staff") tokens.staff = null;
       else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
       else { tokens.platform = null; tokens.orgUser = null; }
+      if (realm === "application" && relogin) {
+        window.location.assign("/login");
+      }
     }
     if (res.status === 402) {
       const msg = typeof detail === "string" ? detail : "Upgrade required";
@@ -171,6 +191,7 @@ export const api = {
     if (tokens.device) headers["X-Device-Token"] = tokens.device;
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
+    applyTokenRenewal(res);
     if (!res.ok) throw new ApiError(res.status, res.statusText);
     return res.blob();
   },
@@ -183,6 +204,7 @@ export const api = {
     if (tokens.device) headers["X-Device-Token"] = tokens.device;
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
+    applyTokenRenewal(res);
     if (!res.ok) throw new ApiError(res.status, res.statusText);
     return res.text();
   },
@@ -197,6 +219,7 @@ export const api = {
     if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
+    applyTokenRenewal(res);
     if (!res.ok) throw new ApiError(res.status, res.statusText);
     return res.json() as T;
   },

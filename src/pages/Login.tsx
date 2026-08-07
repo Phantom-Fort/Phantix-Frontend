@@ -1,13 +1,45 @@
 ﻿import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle, Link2, Building2, User } from "lucide-react";
-import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE } from "@/lib/api";
+import {
+  ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
+  Link2, Building2, User, AlertOctagon, Check,
+} from "lucide-react";
+import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
 import { cx } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
-type Stage = "password" | "otp" | "mfa" | "device";
+type Stage =
+  | "email"
+  | "password"
+  | "set_password"
+  | "mfa"
+  | "device"
+  | "service_key_blocked";
+
+interface ChallengeData {
+  next_step?: "set_password" | "password";
+  must_set_password?: boolean;
+  password_set?: boolean;
+  organization_name?: string;
+  organization_id?: number;
+  user_full_name?: string;
+  user_email_masked?: string;
+  user_email?: string;
+}
+
+/** Detect the 403 service_key_required detail shape and return a friendly message. */
+function serviceKeyMessage(err: unknown): string | null {
+  if (!(err instanceof ApiError) || err.status !== 403) return null;
+  const d = err.detail as Record<string, unknown> | undefined;
+  if (d && (d.error === "service_key_required" || d.service_key_required === true)) {
+    return "Application access is not enabled for this company yet. An admin must create a service key on the Platform before operators can sign in.";
+  }
+  return null;
+}
 
 export default function Login() {
   const { enterDemo, toast } = useStore();
@@ -17,53 +49,15 @@ export default function Login() {
   const org = searchParams.get("org") ?? "";
   const userId = searchParams.get("u") ?? "";
   const loginToken = searchParams.get("t") ?? "";
+  const isInvite = Boolean(loginToken);
 
   useEffect(() => { if (API_BASE && isDemoFlagSet()) exitDemoMode(); }, []);
 
   const demoMode = isDemoMode();
 
-  // If no login link params, show landing with paste-able link box
-  if (!demoMode && (!org || !userId || !loginToken)) {
-    return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
-          <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
-        </div>
-        <motion.div
-          initial={{ opacity: 0, y: 26 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative w-full max-w-[440px] text-center"
-        >
-          <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 object-contain" />
-          <h1 className="mt-5 font-display text-2xl font-bold text-white">Application Access</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">
-            Sign in to <strong>app.phantix.site</strong> using a login link from your organization administrator.
-          </p>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="mt-5"
-          >
-            <PasteLinkBox />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-5 space-y-3"
-          >
-            <a href={PLATFORM_URL} className="btn-primary inline-flex items-center gap-2 !py-3 px-8 w-auto">
-              Go to Platform <ArrowRight size={15} />
-            </a>
-            <p className="text-xs text-slate-500">
-              Admin? <a href={`${PLATFORM_URL}/login`} className="text-gold-400 hover:text-gold-300">Sign in to the platform</a>
-            </p>
-          </motion.div>
-        </motion.div>
-      </div>
-    );
+  // No invite link and not demo → show returning sign-in (email + password) + paste-link option.
+  if (!demoMode && !isInvite) {
+    return <ReturningLogin enterDemo={enterDemo} navigate={navigate} toast={toast} />;
   }
 
   return (
@@ -79,7 +73,202 @@ export default function Login() {
   );
 }
 
-// ── App login flow component ───────────────────────────────────────────────────
+// ── Returning sign-in: email + password + OTP (no invite link) ────────────────
+function ReturningLogin({
+  enterDemo, navigate, toast,
+}: {
+  enterDemo: () => void;
+  navigate: (path: string) => void;
+  toast: (kind: "success" | "error" | "info" | "warning", title: string, body?: string) => void;
+}) {
+  const { completeAppLogin } = useStore();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [stage, setStage] = useState<Stage>("email");
+  const [mfaToken, setMfaToken] = useState("");
+  const [code, setCode] = useState("");
+  const [maskedDest, setMaskedDest] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [blocked, setBlocked] = useState<string | null>(null);
+  const [showInvite, setShowInvite] = useState(false);
+
+  const startLogin = async () => {
+    if (!email.trim() || !password) return;
+    setBusy(true);
+    setError(null);
+    setBlocked(null);
+    try {
+      const res = await api.post<{
+        mfa_required?: boolean;
+        mfa_token?: string;
+        destination_masked?: string;
+        message?: string;
+      }>("/app/auth/login", { email: email.trim(), password }, { realm: "application" });
+      setMfaToken(res.mfa_token ?? "");
+      setMaskedDest(res.destination_masked ?? "");
+      setStage("mfa");
+      setCode("");
+    } catch (err) {
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else setError(err instanceof Error ? err.message : "Invalid email or password");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verify = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{
+        access_token?: string;
+        device_token?: string;
+        device_verification_required?: boolean;
+        user?: { full_name?: string; email?: string };
+        user_email?: string;
+        effective_role?: string;
+        role?: string;
+        can_operate?: boolean;
+        is_initiator?: boolean;
+        is_authorizer?: boolean;
+        dual_control?: {
+          session_token?: string;
+          can_operate?: boolean;
+          is_initiator?: boolean;
+          is_authorizer?: boolean;
+        };
+        dual_control_session_token?: string;
+      }>("/app/auth/mfa", {
+        mfa_token: mfaToken,
+        code,
+        device_id: deviceId(),
+      }, { realm: "application" });
+
+      if (res.device_verification_required && res.device_token) {
+        // Retry MFA with device binding on the next code submission.
+        setStage("device");
+        return;
+      }
+
+      tokens.appSession = res.access_token ?? "";
+      tokens.device = res.device_token ?? "";
+      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
+      if (dcSessionToken) tokens.dualControl = dcSessionToken;
+
+      const name = res.user?.full_name ?? "";
+      const emailAddr = res.user_email ?? res.user?.email ?? "";
+      const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
+      const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
+      completeAppLogin(emailAddr, name, isInit, isAuth);
+      toast("success", "Signed in", "Welcome" + (name ? " " + name : " back"));
+      navigate("/dashboard");
+    } catch (err) {
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Screen>
+      <BackLink to="/" />
+      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-[420px]">
+        <Header subtitle="Application sign-in" note="Returning user? Sign in with your email and password." />
+        <div className="card p-7">
+          {showInvite ? (
+            <motion.div key="invite" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+              <p className="text-center text-xs text-slate-500">First time? Paste your invite link from the platform below, or sign in with your email.</p>
+              <PasteLinkBox onCancel={() => setShowInvite(false)} />
+            </motion.div>
+          ) : (
+          <AnimatePresence mode="wait">
+            {blocked && stage === "service_key_blocked" && (
+              <motion.div key="skb" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
+                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-4 text-center">
+                  <AlertOctagon size={22} className="mx-auto text-severity-medium" />
+                  <p className="mt-2 text-sm font-medium text-slate-200">Company access is not enabled</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">{blocked}</p>
+                </div>
+                <a href={PLATFORM_URL} className="btn-primary w-full !py-3">Open Platform settings <ArrowRight size={15} /></a>
+                <button type="button" onClick={() => { setBlocked(null); setStage("email"); }} className="w-full text-center text-xs text-slate-500 hover:text-slate-300">Try again</button>
+              </motion.div>
+            )}
+
+            {!blocked && stage === "email" && (
+              <motion.form key="email" initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -14 }} onSubmit={(e) => { e.preventDefault(); void startLogin(); }} className="space-y-4">
+                <div>
+                  <label className="label">Work email</label>
+                  <div className="relative">
+                    <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input type="email" className="input !pl-10" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" autoFocus autoComplete="email" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Password</label>
+                  <div className="relative">
+                    <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
+                  </div>
+                </div>
+                {error && <p className="text-sm text-severity-critical">{error}</p>}
+                <button className="btn-primary w-full !py-3" disabled={busy || !email.trim() || !password}>
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
+                </button>
+              </motion.form>
+            )}
+
+            {!blocked && stage === "mfa" && (
+              <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
+                <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
+                  <ShieldCheck size={22} className="mx-auto text-gold-400" />
+                  <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
+                  <p className="mt-1 text-xs text-slate-500">{maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}</p>
+                </div>
+                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
+                {error && <p className="text-sm text-severity-critical">{error}</p>}
+                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : <>Verify & sign in</>}
+                </button>
+                <button type="button" onClick={() => { setStage("email"); setError(null); }} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Use a different account</button>
+              </motion.div>
+            )}
+
+            {!blocked && stage === "device" && (
+              <motion.div key="device" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
+                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
+                  <Smartphone size={22} className="mx-auto text-severity-medium" />
+                  <p className="mt-2 text-sm font-medium text-slate-200">New device detected</p>
+                  <p className="mt-1 text-xs text-slate-500">Re-enter the emailed code to confirm this browser.</p>
+                </div>
+                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
+                {error && <p className="text-sm text-severity-critical">{error}</p>}
+                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Confirming...</> : "Verify device & sign in"}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          )}
+        </div>
+
+        <div className="mt-5 space-y-2 text-center">
+          <button onClick={() => { enterDemo(); navigate("/dashboard"); }} className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300">
+            <PlayCircle size={13} /> Explore the demo tenant
+          </button>
+          <p className="text-xs text-slate-500">
+            First time? <button onClick={() => { setShowInvite(true); setError(null); }} className="text-gold-400 hover:text-gold-300">Use an invite link</button>
+          </p>
+        </div>
+      </motion.div>
+    </Screen>
+  );
+}
+
+// ── Invite flow: challenge → set-password | password → MFA → dual tokens ──────
 function AppLoginFlow({
   org, userId, loginToken, demoMode, enterDemo, navigate, toast,
 }: {
@@ -90,58 +279,47 @@ function AppLoginFlow({
   const { completeAppLogin } = useStore();
   const [stage, setStage] = useState<Stage>("password");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
-  const [email, setEmail] = useState("");
   const [maskedDest, setMaskedDest] = useState("");
   const [mfaToken, setMfaToken] = useState("");
-  const [deviceToken, setDeviceToken] = useState("");
-  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [challenged, setChallenged] = useState(false);
-  const [nextStep, setNextStep] = useState<"otp" | "password" | null>(null);
+  const [nextStep, setNextStep] = useState<"set_password" | "password" | null>(null);
   const [orgName, setOrgName] = useState("");
   const [userName, setUserName] = useState("");
+  const [blocked, setBlocked] = useState<string | null>(null);
 
-  // Step 1: validate the login link --- per 03_APPLICATION_IMPLEMENTATION.md §2.3
+  // Step 1: validate the invite link (APP_ACCESS_INVITE_AND_LOGIN_FE.md §6 Step A)
   useEffect(() => {
     if (demoMode || challenged) return;
     (async () => {
       setBusy(true);
       setError(null);
       try {
-        const res = await api.post<{
-          next_step?: string;
-          mfa_token?: string;
-          destination_masked?: string;
-          user_email?: string;
-          user_name?: string;
-          otp_only?: boolean;
-          password_required?: boolean;
-          organization_id?: number;
-          organization_name?: string;
-          message?: string;
-        }>("/app/auth/challenge", {
+        const res = await api.post<ChallengeData & { user_email?: string; organization_name?: string; next_step?: string }>("/app/auth/challenge", {
           login_token: loginToken,
           organization_slug: org,
           organization_user_id: Number(userId),
         }, { realm: "application" });
         setChallenged(true);
-        setEmail(res.user_email ?? "");
-        setMfaToken(res.mfa_token ?? "");
-        setMaskedDest(res.destination_masked ?? "");
-        setOrgName((res as any).organization_name || "Your Organization");
-        setUserName(res.user_name || res.user_email?.split("@")[0] || "");
-        if (res.next_step === "password") {
-          setNextStep("password");
+        setOrgName(res.organization_name || "Your Organization");
+        setUserName(res.user_full_name || res.user_email?.split("@")[0] || "");
+        // Per §6: branch on next_step — set_password (first visit) vs password
+        if (res.next_step === "set_password" || res.must_set_password === true) {
+          setNextStep("set_password");
+          setStage("set_password");
         } else {
-          setNextStep("otp");
+          setNextStep("password");
+          setStage("password");
         }
       } catch (err) {
-        const msg = err instanceof ApiError && err.status === 403
+        const sk = serviceKeyMessage(err);
+        if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+        else setError(err instanceof ApiError && err.status === 403
           ? "This login link requires an active service key. Contact your organization admin to create one on the platform."
-          : err instanceof Error ? err.message : "Login link validation failed";
-        setError(msg);
+          : err instanceof Error ? err.message : "Login link validation failed");
       } finally {
         setBusy(false);
       }
@@ -149,43 +327,46 @@ function AppLoginFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const sendOtp = async () => {
+  // Step B1 — first visit: set a new password (min 8)
+  const handleSetPassword = async () => {
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     setBusy(true);
     setError(null);
     try {
-      // Per §2.3 Step C1: no mfa_token yet --- send login_token, org slug, user_id
       const res = await api.post<{
         mfa_required?: boolean;
         mfa_token?: string;
         destination_masked?: string;
-        dev_otp?: string;
-        message?: string;
-      }>("/app/auth/otp", {
+        password_set?: boolean;
+      }>("/app/auth/set-password", {
         login_token: loginToken,
+        password,
         organization_slug: org,
         organization_user_id: Number(userId),
       }, { realm: "application" });
       setMfaToken(res.mfa_token ?? "");
-      setMaskedDest(res.destination_masked ?? maskedDest);
-      setDevOtp(res.dev_otp ?? null);
+      setMaskedDest(res.destination_masked ?? "");
       setStage("mfa");
       setCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send verification code");
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else setError(err instanceof Error ? err.message : "Could not save password");
     } finally {
       setBusy(false);
     }
   };
 
+  // Step B2 — invite link + existing password
   const handlePassword = async () => {
     setBusy(true);
     setError(null);
     try {
-      // Per §2.3 Step C2
       const res = await api.post<{
+        mfa_required?: boolean;
         mfa_token?: string;
         destination_masked?: string;
-        dev_otp?: string;
         message?: string;
       }>("/app/auth/password", {
         login_token: loginToken,
@@ -195,29 +376,30 @@ function AppLoginFlow({
       }, { realm: "application" });
       setMfaToken(res.mfa_token ?? "");
       setMaskedDest(res.destination_masked ?? maskedDest);
-      setDevOtp(res.dev_otp ?? null);
       setStage("mfa");
       setCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Password verification failed");
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else setError(err instanceof Error ? err.message : "Password verification failed");
     } finally {
       setBusy(false);
     }
   };
 
+  // Step C — MFA → dual tokens (+ dual-control session when eligible)
   const verifyMfa = async () => {
     setBusy(true);
     setError(null);
     try {
       const res = await api.post<{
         access_token?: string;
-        token_type?: string;
         device_token?: string;
         device_verification_required?: boolean;
         user?: { full_name?: string; email?: string };
         user_email?: string;
-        role?: string;
         effective_role?: string;
+        role?: string;
         can_operate?: boolean;
         is_initiator?: boolean;
         is_authorizer?: boolean;
@@ -232,15 +414,13 @@ function AppLoginFlow({
           can_operate?: boolean;
         };
         dual_control_session_token?: string;
-        dual_control_header?: string;
       }>("/app/auth/mfa", {
         mfa_token: mfaToken,
         code,
-        device_id: localStorage.getItem("phantix_device_id") ?? crypto.randomUUID(),
+        device_id: deviceId(),
       }, { realm: "application" });
 
       if (res.device_verification_required && res.device_token) {
-        setDeviceToken(res.device_token);
         setStage("device");
         return;
       }
@@ -250,69 +430,7 @@ function AppLoginFlow({
       const devId2 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
       localStorage.setItem("phantix_device_id", devId2);
 
-      // Per §2.4/§5.2: store dual-control session from MFA response (auto-issued for initiator/authorizer)
-      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
-      if (dcSessionToken) {
-        tokens.dualControl = dcSessionToken;
-      }
-
-      const email = res.user_email ?? res.user?.email ?? "";
-      const name = res.user?.full_name ?? "";
-      const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
-      const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
-      completeAppLogin(email, name, isInit, isAuth);
-
-      const roleLabel = res.effective_role ?? res.role ?? "";
-      const canOperate = res.can_operate === true || res.dual_control?.can_operate === true;
-      const dcInfo = canOperate && isInit && !isAuth ? " · operate as initiator" : canOperate && isAuth && !isInit ? " · operate as authorizer" : "";
-      toast("success", "Signed in", "Welcome" + (name ? " " + name : " back") + dcInfo);
-      navigate("/dashboard");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-      setCode("");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const verifyDevice = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await api.post<{
-        access_token?: string;
-        token_type?: string;
-        device_token?: string;
-        user?: { full_name?: string; email?: string };
-        user_email?: string;
-        role?: string;
-        effective_role?: string;
-        can_operate?: boolean;
-        is_initiator?: boolean;
-        is_authorizer?: boolean;
-        dual_control?: {
-          configured?: boolean;
-          eligible?: boolean;
-          is_initiator?: boolean;
-          is_authorizer?: boolean;
-          session_token?: string;
-          header_name?: string;
-          inactivity_minutes?: number;
-          can_operate?: boolean;
-        };
-        dual_control_session_token?: string;
-        dual_control_header?: string;
-      }>("/app/auth/mfa", {
-        device_token: deviceToken,
-        code,
-        device_id: localStorage.getItem("phantix_device_id") ?? crypto.randomUUID(),
-      }, { realm: "application" });
-
-      tokens.appSession = res.access_token ?? "";
-      tokens.device = res.device_token ?? "";
-      const devId3 = localStorage.getItem("phantix_device_id") ?? crypto.randomUUID();
-      localStorage.setItem("phantix_device_id", devId3);
-
+      // Per §6 Step D / §5.2: store dual-control session when issued
       const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
       if (dcSessionToken) tokens.dualControl = dcSessionToken;
 
@@ -322,11 +440,55 @@ function AppLoginFlow({
       const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
       completeAppLogin(email, name, isInit, isAuth);
 
+      const canOperate = res.can_operate === true || res.dual_control?.can_operate === true;
+      const dcInfo = canOperate && isInit && !isAuth ? " · operate as initiator" : canOperate && isAuth && !isInit ? " · operate as authorizer" : "";
+      toast("success", "Signed in", "Welcome" + (name ? " " + name : " back") + dcInfo);
+      navigate("/dashboard");
+    } catch (err) {
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Device re-verification: re-submit the MFA code (replace_primary only on explicit consent)
+  const verifyDevice = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{
+        access_token?: string;
+        device_token?: string;
+        user?: { full_name?: string; email?: string };
+        user_email?: string;
+        dual_control?: { session_token?: string; can_operate?: boolean; is_initiator?: boolean; is_authorizer?: boolean };
+        dual_control_session_token?: string;
+      }>("/app/auth/mfa", {
+        mfa_token: mfaToken,
+        code,
+        device_id: deviceId(),
+        replace_primary: true,
+      }, { realm: "application" });
+
+      tokens.appSession = res.access_token ?? "";
+      tokens.device = res.device_token ?? "";
+      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
+      if (dcSessionToken) tokens.dualControl = dcSessionToken;
+
+      const email = res.user_email ?? res.user?.email ?? "";
+      const name = res.user?.full_name ?? "";
+      const isInit = res.dual_control?.is_initiator === true;
+      const isAuth = res.dual_control?.is_authorizer === true;
+      completeAppLogin(email, name, isInit, isAuth);
+
       toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
       navigate("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Device verification failed");
-      setCode("");
+      const sk = serviceKeyMessage(err);
+      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else { setError(err instanceof Error ? err.message : "Device verification failed"); setCode(""); }
     } finally {
       setBusy(false);
     }
@@ -335,13 +497,9 @@ function AppLoginFlow({
   // Demo mode: skip authentication
   if (demoMode) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
-          <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
-        </div>
+      <Screen>
         <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-[420px] text-center">
-          <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 object-contain" />
+          <BrandLogo className="mx-auto h-20 w-20" />
           <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
           <p className="mt-2 text-sm text-slate-400">Demo mode --- explore features instantly</p>
           <button
@@ -351,82 +509,80 @@ function AppLoginFlow({
             <PlayCircle size={16} /> Explore the demo tenant
           </button>
         </motion.div>
-      </div>
+      </Screen>
     );
   }
 
   // Loading / challenge state
-  if (!challenged) {
+  if (!challenged && !blocked) {
     return (
-      <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
-          <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
-        </div>
+      <Screen>
         <div className="relative text-center">
-          <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 animate-pulse-soft object-contain" />
+          <BrandLogo className="mx-auto h-20 w-20 animate-pulse-soft" />
           <p className="mt-4 text-sm text-slate-400">Validating login link...</p>
           {error && (
-            <div className="mt-4 max-w-md rounded-xl border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">
-              {error}
-            </div>
+            <div className="mx-auto mt-4 max-w-md rounded-xl border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">{error}</div>
           )}
         </div>
-      </div>
+      </Screen>
     );
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
-        <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
-      </div>
-
-      <Link to="/" className="absolute left-6 top-6 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-200">
-        <ArrowLeft size={15} /> Back to site
-      </Link>
-
-      <motion.div
-        initial={{ opacity: 0, y: 26 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[420px]"
-      >
-        <div className="mb-8 text-center">
-          <img src="/logo-white.png" alt="Phantix" className="mx-auto h-20 w-20 object-contain" />
-          <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
-          <p className="mt-1.5 text-sm text-slate-400">
-            Application sign-in · <span className="font-mono text-xs">app.phantix.site</span>
-          </p>
-            {email && <p className="mt-1 text-xs text-slate-500">{email}</p>}
-            {orgName && (
-              <div className="flex items-center justify-center gap-3 mt-1.5 text-xs text-slate-500">
-                <span className="flex items-center gap-1"><Building2 size={11} /> {orgName}</span>
-                {userName && <span className="flex items-center gap-1"><User size={11} /> {userName}</span>}
-              </div>
-            )}
-        </div>
+    <Screen>
+      <BackLink to="/" />
+      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-[420px]">
+        <Header subtitle="Application sign-in" note={nextStep === "set_password" ? "First sign-in: set a password for your account." : "Invite link verified."}>
+          {(orgName || userName) && (
+            <div className="mt-2 flex items-center justify-center gap-3 text-xs text-slate-500">
+              {orgName && <span className="flex items-center gap-1"><Building2 size={11} /> {orgName}</span>}
+              {userName && <span className="flex items-center gap-1"><User size={11} /> {userName}</span>}
+            </div>
+          )}
+        </Header>
 
         <div className="card p-7">
           <AnimatePresence mode="wait">
-            {/* Stage: Password */}
-              {nextStep === "password" && stage === "password" && (
-                <motion.form
-                  key="pw"
-                  initial={{ opacity: 0, x: -14 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -14 }}
-                  onSubmit={async (e) => { e.preventDefault(); await handlePassword(); }}
-                  className="space-y-4"
-                >
-                  {(orgName || userName) && (
-                    <div className="text-center text-[10px] text-slate-600 flex items-center justify-center gap-2">
-                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
-                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
-                    </div>
-                  )}
-                  <div>
+            {/* Service key blocked */}
+            {blocked && stage === "service_key_blocked" && (
+              <motion.div key="skb" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
+                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-4 text-center">
+                  <AlertOctagon size={22} className="mx-auto text-severity-medium" />
+                  <p className="mt-2 text-sm font-medium text-slate-200">Company access is not enabled</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">{blocked}</p>
+                </div>
+                <a href={PLATFORM_URL} className="btn-primary w-full !py-3">Open Platform settings <ArrowRight size={15} /></a>
+              </motion.div>
+            )}
+
+            {/* First visit: set password */}
+            {!blocked && nextStep === "set_password" && stage === "set_password" && (
+              <motion.form key="sp" initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -14 }} onSubmit={(e) => { e.preventDefault(); void handleSetPassword(); }} className="space-y-4">
+                <div>
+                  <label className="label">New password</label>
+                  <div className="relative">
+                    <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" autoFocus autoComplete="new-password" />
+                  </div>
+                </div>
+                <div>
+                  <label className="label">Confirm password</label>
+                  <div className="relative">
+                    <Check size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input type="password" className="input !pl-10" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password" autoComplete="new-password" />
+                  </div>
+                </div>
+                {error && <p className="text-sm text-severity-critical">{error}</p>}
+                <button className="btn-primary w-full !py-3" disabled={busy || !password || !confirmPassword}>
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Saving...</> : <>Set password & continue <ArrowRight size={15} /></>}
+                </button>
+              </motion.form>
+            )}
+
+            {/* Invite + existing password */}
+            {!blocked && nextStep === "password" && stage === "password" && (
+              <motion.form key="pw" initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -14 }} onSubmit={(e) => { e.preventDefault(); void handlePassword(); }} className="space-y-4">
+                <div>
                   <label className="label">Your password</label>
                   <div className="relative">
                     <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -435,126 +591,37 @@ function AppLoginFlow({
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || !password}>
-                  {busy ? "Checking..." : "Continue"} <ArrowRight size={15} />
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Checking...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
               </motion.form>
             )}
 
-            {/* Stage: OTP/MFA */}
-            {(stage === "mfa" || stage === "otp") && (
-              <motion.div
-                key="mfa"
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 14 }}
-                className="space-y-4"
-              >
+            {/* MFA */}
+            {(stage === "mfa" || stage === "device") && (
+              <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
                 <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
-                  <ShieldCheck size={22} className="mx-auto text-gold-400" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
+                  {stage === "device" ? <Smartphone size={22} className="mx-auto text-severity-medium" /> : <ShieldCheck size={22} className="mx-auto text-gold-400" />}
+                  <p className="mt-2 text-sm font-medium text-slate-200">{stage === "device" ? "New device detected" : "Verify your identity"}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
+                    {stage === "device" ? "A second code was emailed to confirm this browser." : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
                   {(orgName || userName) && (
-                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2 flex-wrap">
+                    <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
                       {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
                       {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
                     </p>
                   )}
                 </div>
-
-                {devOtp && import.meta.env.DEV && (
-                  <div className="rounded-xl border border-gold-400/30 bg-gold-400/8 p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-gold-400/80">Dev OTP</p>
-                    <p className="mt-1 font-mono text-xl font-bold tracking-[0.35em] text-gold-300">{devOtp}</p>
-                  </div>
+                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void (stage === "mfa" ? verifyMfa() : verifyDevice())} />
+                {error && <p className="text-sm text-severity-critical">{error}</p>}
+                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void (stage === "mfa" ? verifyMfa() : verifyDevice())}>
+                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : stage === "device" ? "Verify device & sign in" : "Verify & sign in"}
+                </button>
+                {stage === "mfa" && (
+                  <p className="text-center text-[11px] text-slate-600">
+                    No code? Check your inbox or spam, or ask your admin to resend the invite.
+                  </p>
                 )}
-
-                <input
-                  className="input text-center font-mono !text-xl !tracking-[0.5em]"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  autoFocus
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  onKeyDown={(e) => e.key === "Enter" && code.length === 6 && void (stage === "mfa" ? verifyMfa() : undefined)}
-                />
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyMfa()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Verifying...</>) : "Verify & sign in"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendOtp()}
-                  disabled={busy}
-                  className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50"
-                >
-                  Resend code
-                </button>
-              </motion.div>
-            )}
-
-            {/* Stage: New device verification */}
-            {stage === "device" && (
-              <motion.div
-                key="device"
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 14 }}
-                className="space-y-4"
-              >
-                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
-                  <Smartphone size={22} className="mx-auto text-severity-medium" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">New device detected</p>
-                  <p className="mt-1 text-xs text-slate-500">A second code was emailed to confirm this browser.</p>
-                  {(orgName || userName) && (
-                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2">
-                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
-                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
-                    </p>
-                  )}
-                </div>
-                <input
-                  className="input text-center font-mono !text-xl !tracking-[0.5em]"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="••••••"
-                  autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && code.length === 6 && void verifyDevice()}
-                />
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyDevice()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Confirming...</>) : "Verify device & sign in"}
-                </button>
-              </motion.div>
-            )}
-
-            {/* OTP send button (for OTP-only users) */}
-            {nextStep === "otp" && stage === "password" && (
-              <motion.div
-                key="otpSend"
-                initial={{ opacity: 0, x: 14 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-4"
-              >
-                <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
-                  <Mail size={22} className="mx-auto text-gold-400" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">OTP sign-in</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    This account uses email OTP --- click below to receive a code.
-                  </p>
-                  {(orgName || userName) && (
-                    <p className="mt-2 text-[10px] text-slate-600 flex items-center justify-center gap-2">
-                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
-                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
-                    </p>
-                  )}
-                </div>
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy} onClick={() => sendOtp()}>
-                  {busy ? (<> <Loader2 size={14} className="animate-spin inline" /> Sending...</>) : (<> Send verification code <ArrowRight size={15} /></>)}
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -563,15 +630,68 @@ function AppLoginFlow({
         <p className="mt-5 text-center text-xs text-slate-500">
           Signing in via <a href={PLATFORM_URL} className="text-gold-400 hover:text-gold-300">organization login link</a>
         </p>
-        </motion.div>
+      </motion.div>
+    </Screen>
+  );
+}
+
+// ── Shared chrome ──────────────────────────────────────────────────────────────
+function Screen({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
+        <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
+      </div>
+      <div className="absolute right-6 top-6 z-20">
+        <ThemeToggle />
+      </div>
+      {children}
     </div>
   );
 }
 
-// ── Paste link box ────────────────────────────────────────────────────────────
+function BackLink({ to }: { to: string }) {
+  return (
+    <Link to={to} className="absolute left-6 top-6 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-200">
+      <ArrowLeft size={15} /> Back to site
+    </Link>
+  );
+}
+
+function Header({ subtitle, note, children }: { subtitle: string; note?: string; children?: React.ReactNode }) {
+  return (
+    <div className="mb-8 text-center">
+      <BrandLogo className="mx-auto h-20 w-20" />
+      <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
+      <p className="mt-1.5 text-sm text-slate-400">
+        {subtitle} · <span className="font-mono text-xs">app.phantix.site</span>
+      </p>
+      {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
+      {children}
+    </div>
+  );
+}
+
+function OtpInput({ value, onChange, onEnter }: { value: string; onChange: (v: string) => void; onEnter: () => void }) {
+  return (
+    <input
+      className="input text-center font-mono !text-xl !tracking-[0.5em]"
+      value={value}
+      onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+      placeholder="••••••"
+      autoFocus
+      inputMode="numeric"
+      autoComplete="one-time-code"
+      onKeyDown={(e) => e.key === "Enter" && value.length === 6 && onEnter()}
+    />
+  );
+}
+
+// ── Paste invite link box (admin convenience; returning users can also use this) ─
 const MAX_LINK_LENGTH = 250;
 
-function PasteLinkBox() {
+function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
   const navigate = useNavigate();
   const [link, setLink] = useState("");
   const [error, setError] = useState("");
@@ -607,7 +727,7 @@ function PasteLinkBox() {
 
   return (
     <div className="space-y-2.5 text-left">
-      <p className="text-xs text-slate-500 text-center flex items-center justify-center gap-1">
+      <p className="flex items-center justify-center gap-1 text-center text-xs text-slate-500">
         <Link2 size={12} /> Paste your login link below
       </p>
       <textarea
@@ -630,6 +750,9 @@ function PasteLinkBox() {
         <span className={cx(link.length > MAX_LINK_LENGTH * 0.9 ? "text-severity-medium" : "text-slate-600", link.length > 10 && "visible")}>
           {link.length > 10 ? `${link.length}/${MAX_LINK_LENGTH}` : ""}
         </span>
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">Back to email sign-in</button>
+        )}
       </div>
       {error && <p className="text-xs text-severity-critical">{error}</p>}
       <button onClick={validateAndGo} disabled={!link.trim()} className="btn-secondary w-full text-sm">

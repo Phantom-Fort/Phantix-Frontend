@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, useRef } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { isDemoMode } from "./api";
 
 export type ResourceState<T> = {
@@ -7,6 +8,8 @@ export type ResourceState<T> = {
   error: string | null;
   reload: () => void;
   demo: boolean;
+  /** Imperatively patch the cached value (used by SSE live updates). */
+  setData: React.Dispatch<React.SetStateAction<T>>;
 };
 
 // Simple in-memory cache for stale-while-revalidate
@@ -56,7 +59,7 @@ export function useResource<T>(loader: () => Promise<T>, initial: T, cacheKey?: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tick, demo]);
 
-  return { data, loading, error, reload, demo };
+  return { data, loading, error, reload, demo, setData };
 }
 
 /** Clear stale entries from SWR cache */

@@ -3,8 +3,196 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
+  :root,
+  :root[data-theme="dark"] {
+    /* ── Dark theme (default) ── */
     color-scheme: dark;
+
+    --phantix-950: 5 11 29;
+    --phantix-900: 13 27 61;
+    --phantix-850: 16 33 74;
+    --phantix-800: 22 38 92;
+    --phantix-700: 30 51 115;
+    --phantix-600: 39 66 143;
+    --phantix-500: 51 85 181;
+    --phantix-400: 90 123 214;
+    --phantix-300: 143 166 230;
+    --phantix-200: 194 207 243;
+    --phantix-100: 227 234 251;
+
+    --gold-300: 243 205 126;
+    --gold-400: 232 181 77;
+    --gold-500: 212 162 78;
+    --gold-600: 185 134 47;
+
+    --severity-critical: 244 63 94;
+    --severity-high: 251 146 60;
+    --severity-medium: 250 204 21;
+    --severity-low: 56 189 248;
+    --severity-info: 148 163 184;
+
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    --color-white: 255 255 255;
+    --color-black: 2 6 23;
+  }
+
+  :root[data-theme="light"] {
+    /* ── Light theme ──
+       phantix-950 becomes the light page surface; text-phantix-950 (used on gold
+       buttons / brand marks) is re-pinned to navy via the override below. */
+    color-scheme: light;
+
+    --phantix-950: 244 246 250;
+    --phantix-900: 255 255 255;
+    --phantix-850: 248 250 253;
+    --phantix-800: 237 241 248;
+    --phantix-700: 214 222 238;
+    --phantix-600: 165 180 220;
+    --phantix-500: 51 85 181;
+    --phantix-400: 74 108 205;
+    --phantix-300: 74 108 205;
+    --phantix-200: 90 120 200;
+    --phantix-100: 51 85 181;
+
+    --gold-300: 184 138 40;
+    --gold-400: 196 148 40;
+    --gold-500: 174 126 30;
+    --gold-600: 140 96 18;
+
+    --severity-critical: 220 38 60;
+    --severity-high: 234 116 30;
+    --severity-medium: 174 140 10;
+    --severity-low: 2 132 199;
+    --severity-info: 100 116 139;
+
+    --slate-50: 15 23 42;
+    --slate-100: 30 41 59;
+    --slate-200: 51 65 85;
+    --slate-300: 71 85 105;
+    --slate-400: 100 116 139;
+    --slate-500: 148 163 184;
+    --slate-600: 203 213 225;
+    --slate-700: 226 232 240;
+    --slate-800: 237 241 248;
+    --slate-900: 244 246 250;
+    --slate-950: 248 250 252;
+
+    --color-white: 15 23 42;
+    --color-black: 2 6 23;
+
+    --surface: 244 246 250;
+    --surface-card: 255 255 255;
+    --surface-inset: 237 241 248;
+    --border-subtle: 214 222 238;
+  }
+
+  /* Gold buttons always use white label text (readable on gold in both themes). */
+  :root[data-theme="light"] .btn-primary,
+  :root .btn-primary {
+    color: #ffffff;
+  }
+  :root[data-theme="light"] .btn-primary .text-phantix-950,
+  :root .btn-primary .text-phantix-950 {
+    color: #ffffff;
+  }
+
+  /*
+   * Light mode: gold copy on white is hard to read — sit gold text on a soft
+   * navy chip so kickers / accents stay brand-gold but legible.
+   */
+  :root[data-theme="light"] .text-gold-300,
+  :root[data-theme="light"] .text-gold-400,
+  :root[data-theme="light"] .text-gold-500,
+  :root[data-theme="light"] .text-gold-600 {
+    color: rgb(196 148 40);
+    background-color: rgb(13 27 61 / 0.1);
+    border-radius: 0.35rem;
+    padding: 0.05em 0.4em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  /* Icons / chips already have their own bg — don't double-pad lucide wrappers */
+  :root[data-theme="light"] svg.text-gold-300,
+  :root[data-theme="light"] svg.text-gold-400,
+  :root[data-theme="light"] svg.text-gold-500,
+  :root[data-theme="light"] .chip.text-gold-300,
+  :root[data-theme="light"] .chip.text-gold-400,
+  :root[data-theme="light"] [class*="bg-gold"] .text-gold-300,
+  :root[data-theme="light"] [class*="bg-gold"] .text-gold-400 {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  /*
+   * Final CTA / brand panels are always navy. Pin literal light colors so inverted
+   * light-theme slate/white tokens never make body copy unreadable on the panel.
+   */
+  .final-cta,
+  .brand-panel {
+    background: linear-gradient(180deg, rgb(30 51 115) 0%, rgb(13 27 61) 100%) !important;
+    border-color: rgb(232 181 77 / 0.35) !important;
+    color: #e2e8f0 !important;
+  }
+  .final-cta h2,
+  .final-cta .text-white,
+  .brand-panel h2,
+  .brand-panel .text-white {
+    color: #ffffff !important;
+  }
+  .final-cta p,
+  .final-cta .text-slate-200,
+  .final-cta .text-slate-300,
+  .final-cta .text-slate-400,
+  .final-cta .text-slate-500,
+  .final-cta .text-slate-600,
+  .final-cta strong,
+  .brand-panel p,
+  .brand-panel .text-slate-200,
+  .brand-panel .text-slate-300,
+  .brand-panel .text-slate-400,
+  .brand-panel .text-slate-500,
+  .brand-panel .text-slate-600,
+  .brand-panel strong {
+    color: #cbd5e1 !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .final-cta strong,
+  .brand-panel strong {
+    color: #e2e8f0 !important;
+    font-weight: 600;
+  }
+  .final-cta .text-gold-300,
+  .final-cta .text-gold-400,
+  .brand-panel .text-gold-300,
+  .brand-panel .text-gold-400 {
+    color: #f3cd7e !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+  .final-cta .btn-secondary,
+  .brand-panel .btn-secondary {
+    background-color: rgb(255 255 255 / 0.12) !important;
+    border-color: rgb(255 255 255 / 0.4) !important;
+    color: #ffffff !important;
+  }
+  .final-cta .btn-primary,
+  .brand-panel .btn-primary {
+    color: #ffffff !important;
+  }
+  :root[data-theme="light"] footer {
+    background: linear-gradient(180deg, rgb(30 51 115 / 0.08) 0%, rgb(13 27 61 / 0.12) 100%);
   }
 
   html {
@@ -17,6 +205,51 @@
       radial-gradient(ellipse 90% 55% at 50% -10%, rgba(51, 85, 181, 0.22), transparent),
       radial-gradient(ellipse 50% 40% at 90% 110%, rgba(232, 181, 77, 0.06), transparent);
     background-attachment: fixed;
+    transition: color 0.3s ease;
+  }
+
+  :root[data-theme="light"] body {
+    background-color: rgb(var(--phantix-950));
+    background-image:
+      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(51, 85, 181, 0.08), transparent),
+      radial-gradient(ellipse 50% 40% at 90% 110%, rgba(196, 148, 40, 0.05), transparent);
+  }
+
+  /* Light-mode surface polish — cards/glass need solid white + visible borders. */
+  :root[data-theme="light"] .glass {
+    background-color: rgb(255 255 255 / 0.92);
+    border-color: rgb(214 222 238 / 0.9);
+    box-shadow: 0 8px 28px -14px rgba(15, 23, 42, 0.12);
+  }
+  :root[data-theme="light"] .glass-bright {
+    background-color: rgb(255 255 255 / 0.96);
+    border-color: rgb(214 222 238 / 0.95);
+  }
+  :root[data-theme="light"] .card {
+    box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.14);
+  }
+  :root[data-theme="light"] .input {
+    background-color: rgb(255 255 255 / 0.95);
+    border-color: rgb(214 222 238);
+    color: rgb(15 23 42);
+  }
+  :root[data-theme="light"] .btn-secondary {
+    background-color: rgb(237 241 248);
+    border-color: rgb(214 222 238);
+    color: rgb(30 41 59);
+  }
+  :root[data-theme="light"] .btn-ghost:hover {
+    background-color: rgb(237 241 248);
+  }
+  :root[data-theme="light"] .nav-item:hover {
+    background-color: rgb(237 241 248);
+    color: rgb(15 23 42);
+  }
+  :root[data-theme="light"] .skeleton {
+    background-color: rgb(237 241 248);
+  }
+  :root[data-theme="light"] .shadow-glow {
+    box-shadow: 0 0 36px -12px rgba(196, 148, 40, 0.35);
   }
 
   ::selection {
@@ -68,7 +301,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-phantix-950 shadow-glow
+    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-glow
       hover:brightness-110 active:scale-[0.98];
   }
 

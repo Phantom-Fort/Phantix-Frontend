@@ -8,6 +8,7 @@ import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { marked } from "marked";
+import type { TrackerFinding } from "@/lib/types";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -113,7 +114,7 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
 
 export default function Reports() {
   const { toast } = useStore();
-  const { data, loading, reload } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] }, "reports");
+  const { data, loading, reload, setData } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] }, "reports");
   const { reports, trackerFindings } = data;
   const [tab, setTab] = useState("reports");
   const [genOpen, setGenOpen] = useState(false);
@@ -239,7 +240,7 @@ export default function Reports() {
                       <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` · ${formatBytes((r as any).size_bytes)}` : ""}
+                      {r.campaign_id ? `Campaign #${r.campaign_id} ï¿½ ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` ï¿½ ${formatBytes((r as any).size_bytes)}` : ""}
                     </p>
                   </div>
 
@@ -247,11 +248,11 @@ export default function Reports() {
                     {([
                       [(r as any).stats?.after_dedupe ?? 0, "deduped", "text-phantix-300"],
                       [(r as any).stats?.after_verification ?? 0, "verified", "text-emerald-400"],
-                      [(r as any).stats?.impact_analyzed ?? (r as any).stats?.after_verification ?? 0, "impact", "text-blue-400"],
+                      [(r as any).stats?.impact_analyzed ?? null, "impact", "text-blue-400"],
                       [(r as any).stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
-                    ] as [number, string, string][]).map(([v, l, c]) => (
+                    ] as [number | null, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="text-center">
-                        <p className={cx("font-display text-lg font-bold", c)}>{v}</p>
+                        <p className={cx("font-display text-lg font-bold", v == null ? "text-slate-600" : c)}>{v == null ? "â€”" : v}</p>
                         <p className="text-[9px] uppercase tracking-wider text-slate-600">{l}</p>
                       </div>
                     ))}
@@ -334,10 +335,20 @@ export default function Reports() {
                         defaultValue={f.status}
                         onChange={async (e) => {
                           const newStatus = e.target.value;
+                          const previous = data;
+                          // Optimistic update: reflect status change instantly.
+                          setData((bundle) => ({
+                            ...bundle,
+                            trackerFindings: bundle.trackerFindings.map((tf) =>
+                              tf.finding_key === f.finding_key ? { ...tf, status: newStatus as TrackerFinding["status"] } : tf,
+                            ),
+                          }));
                           try {
                             await api.patch(`/reports/tracker/${f.finding_key}`, { status: newStatus });
                             toast("success", "Tracker updated", `PATCH /reports/tracker/${f.finding_key} ? ${newStatus}`);
+                            reload();
                           } catch (err: any) {
+                            setData(previous);
                             toast("error", "Failed", err.message ?? "Status update failed");
                           }
                         }}

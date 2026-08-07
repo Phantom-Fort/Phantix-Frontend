@@ -222,8 +222,8 @@ export function ProgressRing({
   value,
   size = 120,
   stroke = 10,
-  color = "#E8B54D",
-  track = "rgba(30,51,115,0.5)",
+  color = "rgb(var(--gold-400))",
+  track = "rgb(var(--phantix-700) / 0.45)",
   children,
 }: {
   value: number; // 0-100
@@ -419,7 +419,7 @@ export function Tabs({
 }
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
-export function ProgressBar({ value, color = "#E8B54D" }: { value: number; color?: string }) {
+export function ProgressBar({ value, color = "rgb(var(--gold-400))" }: { value: number; color?: string }) {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-phantix-700/50">
       <motion.div
@@ -427,7 +427,7 @@ export function ProgressBar({ value, color = "#E8B54D" }: { value: number; color
         animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
         className="h-full rounded-full"
-        style={{ background: color, boxShadow: `0 0 10px ${color}66` }}
+        style={{ background: color, boxShadow: `0 0 10px ${color}` }}
       />
     </div>
   );

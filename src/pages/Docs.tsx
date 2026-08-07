@@ -33,17 +33,17 @@ export default function Docs() {
         <div className="relative max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold-400">Phantix documentation</p>
           <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-white">
-            Every guide, in one place
+            The help centre, in one place
           </h1>
           <p className="mt-3 text-[15px] leading-7 text-slate-400">
-            The complete implementation canon --- auth realms, surface contracts, module deep-dives and the
-            326-route API catalog --- rendered from the engineering repository.
+            Setup guides, day-to-day workflows, and public product documentation —
+            written for the people running their organization on Phantix.
           </p>
           <div className="relative mt-6 max-w-lg">
             <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               className="input !py-3.5 !pl-11 !text-[15px]"
-              placeholder="Search the docs --- try 'dual control' or 'verification gate'..."
+              placeholder="Search the docs — try 'security database' or 'dual control'..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -127,7 +127,7 @@ export default function Docs() {
         <div className="py-16 text-center">
           <BookOpen size={28} className="mx-auto text-slate-600" />
           <p className="mt-4 text-slate-400">No guides match "{q}".</p>
-          <p className="mt-1 text-sm text-slate-600">Try an endpoint path, an engine name, or an auth term.</p>
+          <p className="mt-1 text-sm text-slate-600">Try "security database", "GitHub", or "billing".</p>
         </div>
       )}
     </div>

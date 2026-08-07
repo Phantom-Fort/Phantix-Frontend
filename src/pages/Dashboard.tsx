@@ -16,14 +16,7 @@ import { useResource } from "@/lib/useResource";
 import { useSmartPoll } from "@/lib/usePolling";
 import { priorityBandMeta, timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-
-const ttStyle = {
-  background: "#0D1B3D",
-  border: "1px solid rgba(30,51,115,0.8)",
-  borderRadius: 12,
-  fontSize: 12,
-  color: "#e2e8f0",
-};
+import { chartColors, useTheme } from "@/lib/theme";
 
 const emptyDash = {
   assets: [],
@@ -42,6 +35,15 @@ const emptyDash = {
 
 export default function Dashboard() {
   const { org, operate, requireDualControl } = useStore();
+  const { theme } = useTheme();
+  const cc = chartColors(theme);
+  const ttStyle = {
+    background: cc.tooltipBg,
+    border: `1px solid ${cc.tooltipBorder}`,
+    borderRadius: 12,
+    fontSize: 12,
+    color: cc.tooltipColor,
+  };
   const { data, loading } = useResource(loadDashboardBundle, emptyDash, "dashboard");
   const { data: intel, reload: reloadIntel } = useResource(loadIntelligenceDashboard, null, "intelligence");
 
@@ -96,13 +98,13 @@ export default function Dashboard() {
       {/* Stat row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Assets in inventory" value={<AnimatedNumber value={assets.length} />} icon={<Boxes size={17} />} accent="blue" delay={0}
-          hint={<span>{assets.filter((a) => a.criticality === "critical").length} critical · all verified</span>} />
+          hint={<span>{assets.filter((a) => a.criticality === "critical").length} critical ï¿½ all verified</span>} />
         <StatCard label="Open risks" value={<AnimatedNumber value={openRisks.length} />} icon={<ShieldAlert size={17} />} accent="red" delay={0.06}
-          hint={<span>{openRisks.filter((r) => r.level === "critical").length} critical · {openRisks.filter((r) => r.priority_band === "P1").length} in P1</span>} />
+          hint={<span>{openRisks.filter((r) => r.level === "critical").length} critical ï¿½ {openRisks.filter((r) => r.priority_band === "P1").length} in P1</span>} />
         <StatCard label="Active scans" value={<AnimatedNumber value={activeScan ? 1 : 0} />} icon={<Radar size={17} />} accent="gold" delay={0.12}
-          hint={activeScan ? <span>Job #{activeScan.id} · {activeScan.progress}% · one-job lock</span> : <span>Idle --- slot free</span>} />
+          hint={activeScan ? <span>Job #{activeScan.id} ï¿½ {activeScan.progress}% ï¿½ one-job lock</span> : <span>Idle --- slot free</span>} />
         <StatCard label="Campaigns" value={<AnimatedNumber value={vaptCampaigns.length} />} icon={<Crosshair size={17} />} accent="green" delay={0.18}
-          hint={<span>{vaptCampaigns.filter((c) => c.status === "active").length} running · {vaptCampaigns.filter((c) => c.status === "completed").length} completed</span>} />
+          hint={<span>{vaptCampaigns.filter((c) => c.status === "active").length} running ï¿½ {vaptCampaigns.filter((c) => c.status === "completed").length} completed</span>} />
       </div>
 
       {/* Main grid */}
@@ -116,7 +118,7 @@ export default function Dashboard() {
               action={<span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><ArrowUpRight size={12} /> +10 this week</span>}
             />
             <div className="flex items-center gap-6">
-              <ProgressRing value={posture} size={132} color={posture >= 70 ? "#34D399" : "#E8B54D"}>
+              <ProgressRing value={posture} size={132} color={posture >= 70 ? cc.emerald : cc.gold} track={theme === "light" ? "rgb(214 222 238)" : undefined}>
                 <span className="font-display text-3xl font-bold text-white">{posture}</span>
                 <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">score</span>
               </ProgressRing>
@@ -125,15 +127,15 @@ export default function Dashboard() {
                   <AreaChart data={intelTrend} margin={{ top: 6, right: 4, bottom: 0, left: -22 }}>
                     <defs>
                       <linearGradient id="postureFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#E8B54D" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="#E8B54D" stopOpacity={0} />
+                        <stop offset="0%" stopColor={cc.gold} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={cc.gold} stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid stroke="rgba(30,51,115,0.35)" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} axisLine={false} interval={3} />
-                    <YAxis domain={[50, 80]} tick={{ fontSize: 10, fill: "#64748b" }} tickLine={false} axisLine={false} />
+                    <CartesianGrid stroke={cc.grid} vertical={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: cc.muted }} tickLine={false} axisLine={false} interval={3} />
+                    <YAxis domain={[50, 80]} tick={{ fontSize: 10, fill: cc.muted }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={ttStyle} />
-                    <Area type="monotone" dataKey="score" stroke="#E8B54D" strokeWidth={2.5} fill="url(#postureFill)" />
+                    <Area type="monotone" dataKey="score" stroke={cc.gold} strokeWidth={2.5} fill="url(#postureFill)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -191,7 +193,7 @@ export default function Dashboard() {
                 {activeScan ? (
                   <>
                     <p className="mt-1.5 text-xs text-slate-500">
-                      {activeScan.tools.join(" + ")} · scope: {(activeScan.target_filter as { tags?: string[] }).tags?.join(", ") ?? "inventory"}
+                      {activeScan.tools.join(" + ")} ï¿½ scope: {(activeScan.target_filter as { tags?: string[] }).tags?.join(", ") ?? "inventory"}
                     </p>
                     <div className="mt-3">
                       <div className="mb-1.5 flex justify-between text-xs text-slate-400">
@@ -199,7 +201,7 @@ export default function Dashboard() {
                       </div>
                       <ProgressBar value={activeScan.progress} color="#38BDF8" />
                     </div>
-                    <p className="mt-2.5 text-xs text-slate-500">{activeScan.findings_count} findings so far · started {timeAgo(activeScan.started_at)}</p>
+                    <p className="mt-2.5 text-xs text-slate-500">{activeScan.findings_count} findings so far ï¿½ started {timeAgo(activeScan.started_at)}</p>
                   </>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500">No scan running --- the per-org slot is free.</p>
@@ -226,7 +228,7 @@ export default function Dashboard() {
                       </div>
                       <ProgressBar value={activeCampaign.progress} />
                     </div>
-                    <p className="mt-2.5 text-xs text-slate-500">{activeCampaign.findings_count} correlated findings · {activeCampaign.asset_count} assets in scope</p>
+                    <p className="mt-2.5 text-xs text-slate-500">{activeCampaign.findings_count} correlated findings ï¿½ {activeCampaign.asset_count} assets in scope</p>
                   </>
                 )}
                 <Link to="/vapt" className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-gold-400 hover:text-gold-300">
@@ -253,16 +255,17 @@ export default function Dashboard() {
             <CardHeader title="Verification gate" subtitle="REPORT_REQUIRE_VERIFIED_FINDINGS" action={<ShieldCheck size={17} className="text-gold-400" />} />
             <div className="space-y-3">
               {[
-                { v: reports[0]?.stats?.after_dedupe ?? 0, l: "After dedupe", c: "text-phantix-300", bar: 100, bg: "#5A7BD6" },
-                { v: reports[0]?.stats?.after_verification ?? 0, l: "After verification", c: "text-emerald-400", bar: 76, bg: "#34D399" },
-                { v: reports[0]?.stats?.excluded_from_report ?? 0, l: "Excluded noise", c: "text-severity-critical", bar: 24, bg: "#F43F5E" },
+                { v: reports[0]?.stats?.after_dedupe ?? 0, l: "After dedupe", c: "text-phantix-300", bg: "#5A7BD6" },
+                { v: reports[0]?.stats?.after_verification ?? 0, l: "Verified for report", c: "text-emerald-400", bg: "#34D399" },
+                { v: reports[0]?.stats?.impact_analyzed ?? null, l: "Impact analyzed", c: "text-blue-400", bg: "#38BDF8" },
+                { v: reports[0]?.stats?.excluded_from_report ?? 0, l: "Excluded noise", c: "text-severity-critical", bg: "#F43F5E" },
               ].map((s) => (
                 <div key={s.l} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5">
                   <div className="flex items-baseline justify-between">
-                    <span className={`font-display text-2xl font-bold ${s.c}`}>{s.v}</span>
+                    <span className={`font-display text-2xl font-bold ${s.v == null ? "text-slate-600" : s.c}`}>{s.v == null ? "â€”" : s.v}</span>
                     <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">{s.l}</span>
                   </div>
-                  <div className="mt-2"><ProgressBar value={s.bar} color={s.bg} /></div>
+                  <div className="mt-2"><ProgressBar value={s.v == null ? 0 : Math.min(100, Number(s.v))} color={s.bg} /></div>
                 </div>
               ))}
               <p className="text-[11px] leading-4 text-slate-500">
@@ -294,7 +297,7 @@ export default function Dashboard() {
                       <span className={cx("chip shrink-0", band.className)}>{r.priority_band}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium text-slate-200">{r.title}</p>
-                        <p className="text-xs text-slate-500">{r.asset_value} · {r.owner_department ?? "Unassigned"}</p>
+                        <p className="text-xs text-slate-500">{r.asset_value} ï¿½ {r.owner_department ?? "Unassigned"}</p>
                       </div>
                       <div className="hidden text-right sm:block">
                         <p className="font-mono text-sm font-semibold text-slate-200">{r.priority_score.toFixed(1)}</p>
@@ -320,7 +323,7 @@ export default function Dashboard() {
                     <span className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", a.severity === "critical" ? "bg-severity-critical shadow-[0_0_8px_rgba(244,63,94,0.8)]" : "bg-severity-low")} />
                     <div className="min-w-0">
                       <p className="leading-5 text-slate-300">{a.title}</p>
-                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} · {a.channels.join(" + ")}</p>
+                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} ï¿½ {a.channels.join(" + ")}</p>
                     </div>
                   </div>
                 ))}
@@ -356,7 +359,7 @@ export default function Dashboard() {
                   <div key={e.id} className="text-xs">
                     <p className="leading-5 text-slate-300">{e.summary}</p>
                     <p className="mt-0.5 text-slate-600">
-                      {e.initiator_name}{e.authorizer_name ? ` ? ${e.authorizer_name}` : ""} · {timeAgo(e.created_at)}
+                      {e.initiator_name}{e.authorizer_name ? ` ? ${e.authorizer_name}` : ""} ï¿½ {timeAgo(e.created_at)}
                     </p>
                   </div>
                 ))}

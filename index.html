@@ -1,7 +1,16 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("phantix_theme");
+          if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+          else document.documentElement.removeAttribute("data-theme");
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

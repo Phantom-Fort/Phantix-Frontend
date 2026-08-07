@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ScrollText, Download, Filter, X } from "lucide-react";
+import { ScrollText, Download, Filter, X, Loader2 } from "lucide-react";
 import { PageHeader, Card, Spinner } from "@/components/ui";
 import { loadAuditBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { api } from "@/lib/api";
 import type { AuditEvent } from "@/lib/types";
 
 const ENGINE_MAP: Record<string, { label: string; color: string }> = {
@@ -46,6 +47,27 @@ const METHOD_COLORS: Record<string, string> = {
 
 export default function Audit() {
   const { toast } = useStore();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await api.download("/audit/export?format=csv");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `phantix-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast("success", "Export ready", "Audit CSV downloaded");
+    } catch (err) {
+      toast("error", "Export failed", err instanceof Error ? err.message : "Could not download the audit trail");
+    } finally {
+      setExporting(false);
+    }
+  };
   const { data, loading } = useResource(loadAuditBundle, { events: [] }, "audit");
   const auditEvents = data.events as AuditEvent[];
   const [engineFilter, setEngineFilter] = useState<string>("all");
@@ -87,8 +109,8 @@ export default function Audit() {
         title="Audit trail"
         description="Immutable dual-control trail --- every action carries initiator and authorizer snapshots, IP, and token type. Grouped by engine for compliance export."
         actions={
-          <button className="btn-secondary" onClick={() => toast("info", "Export", "GET /audit/export?format=csv")}>
-            <Download size={15} /> Export CSV
+          <button className="btn-secondary" onClick={() => void handleExport()} disabled={exporting}>
+            {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Export CSV
           </button>
         }
       />
