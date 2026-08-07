@@ -97,14 +97,10 @@
     --border-subtle: 214 222 238;
   }
 
-  /* Gold buttons always use white label text (readable on gold in both themes). */
+  /* Gold buttons always use navy/blue label text (readable on gold in both themes). */
   :root[data-theme="light"] .btn-primary,
   :root .btn-primary {
-    color: #ffffff;
-  }
-  :root[data-theme="light"] .btn-primary .text-phantix-950,
-  :root .btn-primary .text-phantix-950 {
-    color: #ffffff;
+    color: #050b1d;
   }
 
   /*
@@ -189,7 +185,7 @@
   }
   .final-cta .btn-primary,
   .brand-panel .btn-primary {
-    color: #ffffff !important;
+    color: #050b1d !important;
   }
   :root[data-theme="light"] footer {
     background: linear-gradient(180deg, rgb(30 51 115 / 0.08) 0%, rgb(13 27 61 / 0.12) 100%);
@@ -301,7 +297,7 @@
   }
 
   .btn-primary {
-    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-white shadow-glow
+    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-phantix-950 shadow-glow
       hover:brightness-110 active:scale-[0.98];
   }
 

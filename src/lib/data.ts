@@ -348,13 +348,32 @@ export async function loadAlertsBundle() {
     softList<AlertEvent>("/alerts/events"),
     softOne<AlertSettings>("/alerts/settings"),
   ]);
-  const settings: AlertSettings = settingsRaw ?? {
-    alerts_enabled: false,
-    smtp: { enabled: false, host: "", port: 587, from_email: "", from_name: "", use_tls: true },
-    email_recipients: [],
-    whatsapp: { enabled: false, provider: "", recipients: [] },
-    telegram: { enabled: false, provider: "", recipients: [] },
-    notify: {},
+  const raw = settingsRaw && typeof settingsRaw === "object" ? (settingsRaw as Record<string, any>) : {};
+  const smtp = raw.smtp && typeof raw.smtp === "object" ? (raw.smtp as Record<string, any>) : {};
+  const wa = raw.whatsapp && typeof raw.whatsapp === "object" ? (raw.whatsapp as Record<string, any>) : {};
+  const tg = raw.telegram && typeof raw.telegram === "object" ? (raw.telegram as Record<string, any>) : {};
+  const settings: AlertSettings = {
+    alerts_enabled: raw.alerts_enabled !== false,
+    smtp: {
+      enabled: smtp.enabled !== false,
+      host: String(smtp.host ?? ""),
+      port: Number(smtp.port ?? 587),
+      from_email: String(smtp.from_email ?? smtp.fromEmail ?? ""),
+      from_name: String(smtp.from_name ?? smtp.fromName ?? "Phantix Alerts"),
+      use_tls: smtp.use_tls !== false,
+    },
+    email_recipients: Array.isArray(raw.email_recipients) ? raw.email_recipients.map(String) : [],
+    whatsapp: {
+      enabled: wa.enabled === true,
+      provider: String(wa.provider ?? "auto"),
+      recipients: Array.isArray(wa.recipients) ? wa.recipients.map(String) : [],
+    },
+    telegram: {
+      enabled: tg.enabled === true,
+      provider: String(tg.provider ?? "auto"),
+      recipients: Array.isArray(tg.recipients) ? tg.recipients.map(String) : [],
+    },
+    notify: (raw.notify && typeof raw.notify === "object" ? raw.notify : {}) as Record<string, boolean>,
   };
   return { events, settings };
 }
@@ -383,7 +402,24 @@ export async function loadSupportTickets(): Promise<SupportTicket[]> {
     await delay();
     return demo.supportTickets;
   }
-  return softList<SupportTicket>("/support/tickets");
+  const list = await softList<Record<string, unknown>>("/support/tickets");
+  return list.map((t) => ({
+    id: Number(t.id ?? 0),
+    subject: String(t.subject ?? ""),
+    status: String(t.status ?? "open") as SupportTicket["status"],
+    priority: String(t.priority ?? "normal"),
+    category: String(t.category ?? ""),
+    created_at: String(t.created_at ?? new Date().toISOString()),
+    updated_at: String(t.last_activity_at ?? t.updated_at ?? t.created_at ?? new Date().toISOString()),
+    messages: Array.isArray(t.messages)
+      ? (t.messages as Record<string, unknown>[]).map((m) => ({
+          id: Number(m.id ?? 0),
+          from: String(m.submitter_name ?? m.from ?? "You"),
+          body: String(m.body ?? m.message ?? ""),
+          at: String(m.created_at ?? m.at ?? new Date().toISOString()),
+        }))
+      : [],
+  }));
 }
 
 export type PosturePoint = { day: string; score: number; findings: number };

@@ -323,7 +323,7 @@ export default function Dashboard() {
                     <span className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", a.severity === "critical" ? "bg-severity-critical shadow-[0_0_8px_rgba(244,63,94,0.8)]" : "bg-severity-low")} />
                     <div className="min-w-0">
                       <p className="leading-5 text-slate-300">{a.title}</p>
-                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} � {a.channels.join(" + ")}</p>
+                      <p className="mt-0.5 text-slate-600">{timeAgo(a.created_at)} � {(a.channels ?? []).join(" + ")}</p>
                     </div>
                   </div>
                 ))}

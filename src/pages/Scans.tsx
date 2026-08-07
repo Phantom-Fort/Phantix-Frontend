@@ -69,7 +69,7 @@ export default function Scans() {
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2.5">
-                  <p className="font-semibold text-slate-100">Job #{active.id} --- {active.tools.join(" + ")}</p>
+                  <p className="font-semibold text-slate-100">Job #{active.id} --- {(active.tools ?? []).join(" + ")}</p>
                   <StatusBadge status={active.status} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -127,7 +127,7 @@ export default function Scans() {
                     <td className="td font-mono font-semibold text-slate-200">#{j.id}</td>
                     <td className="td">
                       <div className="flex gap-1.5">
-                        {j.tools.map((t) => (
+                        {(j.tools ?? []).map((t) => (
                           <span key={t} className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono text-[10px] text-phantix-300">{t}</span>
                         ))}
                       </div>

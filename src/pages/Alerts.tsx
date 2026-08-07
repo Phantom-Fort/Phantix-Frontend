@@ -72,10 +72,10 @@ export default function Alerts() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{a.title}</p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} · {timeAgo(a.created_at)}</p>
+                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} ï¿½ {timeAgo(a.created_at)}</p>
                   </div>
                   <div className="flex gap-1.5">
-                    {a.channels.map((c) => (
+                    {(a.channels ?? []).map((c) => (
                       <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[10px] font-medium text-slate-400">{c}</span>
                     ))}
                   </div>
@@ -97,7 +97,7 @@ export default function Alerts() {
                 ["Host", `${s.smtp.host}:${s.smtp.port}`],
                 ["From", `${s.smtp.from_name} <${s.smtp.from_email}>`],
                 ["TLS", s.smtp.use_tls ? "Enabled" : "Disabled"],
-                ["Recipients", s.email_recipients.join(", ")],
+                ["Recipients", (s.email_recipients ?? []).join(", ")],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-start justify-between gap-4 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
                   <span className="text-xs font-medium uppercase tracking-wider text-slate-500">{k}</span>

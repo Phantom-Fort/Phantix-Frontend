@@ -54,9 +54,8 @@ export default function AuthorizerInbox() {
 
   const handleDecide = async (item: InboxItem, approve: boolean) => {
     setActing(item.pendingId || item.requestId || item.treatmentId || null);
-    const path = approve
-      ? (item.decidePaths.approve || item.decidePaths.decide)
-      : (item.decidePaths.reject || item.decidePaths.decide);
+    const dp = (item as any).decidePaths ?? (item as any).decide_paths ?? {};
+    const path = approve ? (dp.approve || dp.decide) : (dp.reject || dp.decide);
     if (!path) { toast("error", "No decision path"); return; }
 
     let body: Record<string, unknown>;
