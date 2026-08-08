@@ -673,6 +673,9 @@ function agentStreamHeaders(): Record<string, string> {
   const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
   if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
   if (tokens.device) headers["X-Device-Token"] = tokens.device;
+  // Agent chat/run streams are mutating org POSTs — the operate middleware
+  // requires the dual-control session header once dual-control is configured.
+  if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
   return headers;
 }
 
