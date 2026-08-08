@@ -11,12 +11,17 @@
 // demo from the landing page (runtime flag) --- even against a configured API.
 // Set VITE_API_BASE (e.g. https://staging.phantix.site/api/v1) for live data.
 // Normalize: tolerate "staging.phantix.site/api/v1" (missing protocol) so the
-// fetch never resolves against the page origin. Relative "/api/v1" is kept
+// fetch never resolves against the page origin. Also guarantee the `/api/v1`
+// prefix so no endpoint is ever called without it. Relative "/api/v1" is kept
 // for same-origin dev proxies.
 const RAW_API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
-export const API_BASE = RAW_API_BASE
-  ? RAW_API_BASE.replace(/\/+$/, "").replace(/^(?!https?:\/\/|\/)/i, "https://")
-  : RAW_API_BASE;
+export const API_BASE = (() => {
+  if (!RAW_API_BASE) return RAW_API_BASE;
+  let base = RAW_API_BASE.replace(/\/+$/, "").replace(/^(?!https?:\/\/|\/)/i, "https://");
+  if (base.startsWith("/")) return base; // relative — dev proxy already targets /api/v1
+  if (!/\/api\/v1(?:\/|$)/i.test(base)) base = `${base}/api/v1`;
+  return base;
+})();
 
 import { dedupedRequest } from "./dedupe";
 
