@@ -10,7 +10,13 @@
 // Demo mode: active when VITE_API_BASE is unset, OR when the visitor enters the
 // demo from the landing page (runtime flag) --- even against a configured API.
 // Set VITE_API_BASE (e.g. https://staging.phantix.site/api/v1) for live data.
-export const API_BASE = import.meta.env.VITE_API_BASE as string | undefined;
+// Normalize: tolerate "staging.phantix.site/api/v1" (missing protocol) so the
+// fetch never resolves against the page origin. Relative "/api/v1" is kept
+// for same-origin dev proxies.
+const RAW_API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
+export const API_BASE = RAW_API_BASE
+  ? RAW_API_BASE.replace(/\/+$/, "").replace(/^(?!https?:\/\/|\/)/i, "https://")
+  : RAW_API_BASE;
 
 import { dedupedRequest } from "./dedupe";
 
