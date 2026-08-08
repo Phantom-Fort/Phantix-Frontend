@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -47,8 +47,13 @@ export default function Dashboard() {
   const { data, loading } = useResource(loadDashboardBundle, emptyDash, "dashboard");
   const { data: intel, reload: reloadIntel } = useResource(loadIntelligenceDashboard, null, "intelligence");
 
-  // Smart polling: slow refresh when tab is hidden, fast when visible
-  useSmartPoll(async () => { await reloadIntel(); }, { intervalMs: 30000, hiddenIntervalMs: 120000 });
+  // Smart polling: slow refresh when tab is hidden, fast when visible.
+  // Skip the first tick (initial load handled by useResource) and poll every 60s.
+  const skipFirstPoll = useRef(true);
+  useSmartPoll(async () => {
+    if (skipFirstPoll.current) { skipFirstPoll.current = false; return; }
+    await reloadIntel();
+  }, { intervalMs: 60000, hiddenIntervalMs: 300000 });
   const {
     assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents,
     postureTrend, severityDistribution, complianceAssessments, reports,
