@@ -44,8 +44,115 @@ const SUGGESTIONS = [
 
 const MODEL_BADGE = "deepseek-v4-flash";
 
+// ── Request clarification ────────────────────────────────────────────────────
+// Quick prompts and vague questions are answered locally by a lightweight
+// "assistant" that helps the user pin down a specific request before any backend
+// / LLM call is made. Only once a concrete ask is established do we stream to
+// the agent.
+type ClarifyResult =
+  | { clear: true }
+  | { clear: false; reply: string; followUps: string[] };
+
+function clarifyRequest(raw: string): ClarifyResult {
+  const q = raw.toLowerCase().trim();
+
+  // Direct, scoped asks already carry a concrete target → go to backend.
+  const directPatterns = [
+    /summarize.*(posture|security posture)/,
+    /how many.*(critical|open).*risk/,
+    /which.*(asset|host|server).*(risk|exposure|critical)/,
+    /what findings.*(report|next)/,
+    /highest risk/i,
+    /list.*(assets|risks|findings|campaigns)/,
+    /show.*(assets|risks|findings|campaigns|scans)/,
+    /explain.*(finding|cve|risk|treatment)/,
+    /status of.*(scan|campaign|job)/,
+  ];
+  if (directPatterns.some((re) => re.test(q))) return { clear: true };
+
+  // Greeting / thanks → generic reply, no backend.
+  if (/^(hi|hello|hey|thanks|thank you|ok|okay|bye)\b/.test(q)) {
+    return {
+      clear: false,
+      reply: "I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. What would you like to look into?",
+      followUps: ["Summarize my current security posture", "Which assets are highest risk?", "How many critical risks are open right now?"],
+    };
+  }
+
+  // Ambiguous topic (mentions a domain but no concrete ask) → clarify.
+  const topic = q.match(/asset|server|host|endpoint|domain/)
+    ? "assets"
+    : q.match(/risk|threat|treatment|exposure/)
+      ? "risks"
+      : q.match(/scan|nmap|nuclei|vulnerabilit/)
+        ? "scans"
+        : q.match(/vapt|campaign|pen.?test/)
+          ? "vapt"
+          : q.match(/finding|cve|vuln/)
+            ? "findings"
+            : q.match(/complian|grc|framework|iso|evidence|gap/)
+              ? "compliance"
+              : q.match(/report|pdf|docx|executive summary/)
+                ? "reports"
+                : q.match(/soc|triage|detection|alert|incident/)
+                  ? "soc"
+                  : q.match(/posture|score/)
+                    ? "posture"
+                    : null;
+
+  if (topic) {
+    const byTopic: Record<string, { reply: string; followUps: string[] }> = {
+      assets: {
+        reply: "Happy to help with assets. To pull the right information, which one did you have in mind?",
+        followUps: ["Which of my assets are highest risk?", "List assets discovered recently", "Show assets that haven't been scanned"],
+      },
+      risks: {
+        reply: "I can walk through your risk register. What would you like me to focus on?",
+        followUps: ["How many critical risks are open right now?", "List risks in P1", "Show the highest-scored risk and why"],
+      },
+      scans: {
+        reply: "I can summarize scan activity for you. What do you want to know?",
+        followUps: ["Status of my latest scan", "What findings came from my last scan?", "How many scans are running right now?"],
+      },
+      vapt: {
+        reply: "I can help with VAPT campaigns. What would you like me to check?",
+        followUps: ["List my active campaigns", "Status of campaign #12", "What findings would appear in my next report?"],
+      },
+      findings: {
+        reply: "I can explain findings or summarize them for reports. What's the specific question?",
+        followUps: ["What findings would appear in my next report?", "Explain the most critical open finding", "List verified findings"],
+      },
+      compliance: {
+        reply: "I can walk through compliance posture. What framework or question do you have?",
+        followUps: ["Summarize my compliance gaps", "How ready am I for ISO 27001?", "What evidence is missing?"],
+      },
+      reports: {
+        reply: "I can preview what would land in a report. Which report or finding set should I look at?",
+        followUps: ["What findings would appear in my next report?", "Preview my executive summary", "List generated reports"],
+      },
+      soc: {
+        reply: "I can help with SOC triage. Which part do you want to look at?",
+        followUps: ["How many open detections do I have?", "List critical detections", "Summarize the triage queue"],
+      },
+      posture: {
+        reply: "I can summarize your posture. What angle would help most?",
+        followUps: ["Summarize my current security posture", "Show my posture trend", "What's driving my posture score down?"],
+      },
+    };
+    const m = byTopic[topic];
+    return { clear: false, reply: m.reply, followUps: m.followUps };
+  }
+
+  // No recognizable topic → guide the user toward a concrete ask.
+  return {
+    clear: false,
+    reply: "I want to make sure I answer the right thing. Could you be more specific — for example, ask me about your assets, risks, scans, VAPT campaigns, findings, compliance, reports, or SOC queue?",
+    followUps: SUGGESTIONS,
+  };
+}
+
 export default function Agent() {
-  const { toast } = useStore();
+  const { toast, operate, requireDualControl } = useStore();
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"chat" | "skills">("chat");
@@ -119,15 +226,26 @@ export default function Agent() {
         </button>
       </div>
 
-      {tab === "chat" ? <AgentChat streamEnabled={streamEnabled} toast={toast} /> : <SkillsLibrary toast={toast} />}
+      {tab === "chat" ? <AgentChat streamEnabled={streamEnabled} operate={operate} requireDualControl={requireDualControl} toast={toast} /> : <SkillsLibrary toast={toast} />}
     </div>
   );
 }
 
 // ── Agent chat + investigation (SSE streaming per PHANTIX_AGENT_SSE_FE.md) ─────
-function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (kind: "success" | "error" | "info" | "warning", title: string, body?: string) => void }) {
+function AgentChat({
+  streamEnabled,
+  operate,
+  requireDualControl,
+  toast,
+}: {
+  streamEnabled: boolean;
+  operate: { unlocked: boolean };
+  requireDualControl: (reason?: string) => Promise<boolean>;
+  toast: (kind: "success" | "error" | "info" | "warning", title: string, body?: string) => void;
+}) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
+  const [followUps, setFollowUps] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"idle" | "connecting" | "streaming" | "synthesizing">("idle");
   const [liveAnswer, setLiveAnswer] = useState("");
@@ -151,6 +269,19 @@ function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (k
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || busy) return;
+    // Phantix Agent operates on org data — require an unlocked dual-control session.
+    if (!(await requireDualControl("Using the Phantix Agent requires a dual-control operate session."))) return;
+
+    // Clarify first: quick prompts / vague asks are answered locally so the user
+    // pins down a specific request before any backend (LLM) call happens.
+    const clarified = clarifyRequest(msg);
+    if (!clarified.clear) {
+      setMessages((m) => [...m, { role: "user", text: msg }, { role: "agent", text: clarified.reply }]);
+      setInput("");
+      setFollowUps(clarified.followUps);
+      return;
+    }
+    setFollowUps([]);
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
     setBusy(true);
@@ -197,6 +328,7 @@ function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (k
   };
 
   const invokeDomain = async (domain: string) => {
+    if (!(await requireDualControl("Running a specialist investigation requires a dual-control operate session."))) return;
     const objective = `Investigate ${domain} for this organization`;
     setMessages((m) => [...m, { role: "user", text: `Run ${domain} specialist: ${objective}` }]);
     setBusy(true);
@@ -250,7 +382,15 @@ function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (k
               {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
             </p>
           </div>
-          <button onClick={() => { setMessages([]); }} className="ml-auto text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
+          <span
+            className={cx(
+              "ml-auto flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium",
+              operate.unlocked ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+            )}
+          >
+            <Lock size={10} /> {operate.unlocked ? "Operate unlocked" : "Dual-control required"}
+          </span>
+          <button onClick={() => { setMessages([]); }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
         {/* Domain specialists */}
@@ -305,6 +445,21 @@ function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (k
               </motion.div>
             ))}
           </AnimatePresence>
+
+          {/* Follow-up suggestions from the clarification assistant */}
+          {!busy && followUps.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {followUps.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => void send(s)}
+                  className="rounded-xl border border-gold-400/30 bg-gold-400/5 px-3 py-2 text-left text-xs text-gold-200 transition-colors hover:border-gold-400/60 hover:bg-gold-400/10"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Live streaming panel */}
           {busy && (
@@ -364,6 +519,7 @@ function AgentChat({ streamEnabled, toast }: { streamEnabled: boolean; toast: (k
 
 // ── Skill library (PHANTIX_AGENT_FE.md A4/A5) ─────────────────────────────────
 function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" | "warning", title: string, body?: string) => void }) {
+  const { requireDualControl } = useStore();
   const [skills, setSkills] = useState<AgentSkill[]>([]);
   const [filter, setFilter] = useState<"all" | "active" | "candidate" | "quarantined">("all");
   const [loading, setLoading] = useState(true);
@@ -376,6 +532,7 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   const act = async (skill: AgentSkill, status: "active" | "quarantined" | "retired") => {
+    if (!(await requireDualControl("Changing a skill's governance state requires a dual-control operate session."))) return;
     setBusyId(skill.id);
     try {
       await setAgentSkillStatus(skill.id, skill.version, status);
