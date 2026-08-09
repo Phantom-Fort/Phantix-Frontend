@@ -110,7 +110,8 @@ export const statusColor: Record<string, string> = {
   closed: "text-slate-400 bg-slate-400/10 border-slate-500/30",
 };
 
-export function titleCase(s: string): string {
+export function titleCase(s: string | null | undefined): string {
+  if (!s) return "";
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 

@@ -735,7 +735,19 @@ async function streamAgentPost(path: string, body: unknown, onEvent: (event: str
     body: JSON.stringify(body),
     signal,
   });
-  if (!res.ok || !res.body) throw new ApiError(res.status, `SSE failed: ${res.status}`);
+  if (!res.ok) {
+    let detail: unknown = `SSE failed: ${res.status}`;
+    try { detail = (await res.json()).detail ?? detail; } catch { /* non-JSON */ }
+    const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+    // Surface the dual-control requirement clearly (403 from the operate gate).
+    if (res.status === 403 && /dual|operate|authenticator|session/i.test(msg)) {
+      onEvent("error", { type: "error", error: "Dual-control operate session required. Unlock operate mode and try again.", code: "dual_control_required" });
+    } else {
+      onEvent("error", { type: "error", error: msg });
+    }
+    throw new ApiError(res.status, detail);
+  }
+  if (!res.body) throw new ApiError(res.status, `SSE failed: ${res.status}`);
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";

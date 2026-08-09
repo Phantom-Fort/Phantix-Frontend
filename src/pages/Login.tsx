@@ -118,6 +118,14 @@ function ReturningLogin({
     }
   };
 
+  // Resend the one-time code: re-submit email+password to get a fresh OTP.
+  const resendCode = async () => {
+    if (busy) return;
+    setError(null);
+    await startLogin();
+    setError("A new code was sent. Enter the latest code.");
+  };
+
   const verify = async () => {
     setBusy(true);
     setError(null);
@@ -233,6 +241,7 @@ function ReturningLogin({
                 <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : <>Verify & sign in</>}
                 </button>
+                <button type="button" onClick={() => void resendCode()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
                 <button type="button" onClick={() => { setStage("email"); setError(null); }} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Use a different account</button>
               </motion.div>
             )}
@@ -249,6 +258,7 @@ function ReturningLogin({
                 <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Confirming...</> : "Verify device & sign in"}
                 </button>
+                <button type="button" onClick={() => void resendCode()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -494,6 +504,27 @@ function AppLoginFlow({
     }
   };
 
+  // Resend the OTP for the invite flow (POST /app/auth/otp).
+  const resendInviteOtp = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{ destination_masked?: string }>("/app/auth/otp", {
+        login_token: loginToken,
+        organization_slug: org,
+        organization_user_id: Number(userId),
+      }, { realm: "application" });
+      setMaskedDest(res.destination_masked ?? maskedDest);
+      setCode("");
+      setError("A new code was sent. Enter the latest code.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not resend code");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // Demo mode: skip authentication
   if (demoMode) {
     return (
@@ -617,9 +648,12 @@ function AppLoginFlow({
                 <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void (stage === "mfa" ? verifyMfa() : verifyDevice())}>
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : stage === "device" ? "Verify device & sign in" : "Verify & sign in"}
                 </button>
+                <button type="button" onClick={() => void resendInviteOtp()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
+                  Resend code
+                </button>
                 {stage === "mfa" && (
                   <p className="text-center text-[11px] text-slate-600">
-                    No code? Check your inbox or spam, or ask your admin to resend the invite.
+                    No code? Check your inbox or spam.
                   </p>
                 )}
               </motion.div>

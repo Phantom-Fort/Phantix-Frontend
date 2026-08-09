@@ -41,8 +41,8 @@ export function VerificationBadge({ status }: { status: VerificationStatus }) {
   );
 }
 
-export function StatusBadge({ status }: { status: string }) {
-  const cls = statusColor[status] ?? "text-slate-400 bg-slate-400/10 border-slate-500/30";
+export function StatusBadge({ status }: { status: string | null | undefined }) {
+  const cls = statusColor[status ?? ""] ?? "text-slate-400 bg-slate-400/10 border-slate-500/30";
   return (
     <span className={cx("chip capitalize", cls)}>
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
