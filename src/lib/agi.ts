@@ -13,6 +13,9 @@ import type {
   AgiTranscriptChunk,
 } from "./types";
 
+/** Build-time master switch — mirrors backend PHANTIX_AGI_ENABLED (default on). */
+export const AGI_ENABLED = (import.meta.env.VITE_AGI_ENABLED ?? "true") !== "false";
+
 // ── Demo fixtures ─────────────────────────────────────────────────────────────
 let demoAgreed = false;
 let demoEngagements: AgiEngagement[] = [];

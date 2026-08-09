@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import AgiWorkspace from "@/components/AgiWorkspace";
+import { AGI_ENABLED } from "@/lib/agi";
 import {
   loadAiStatus,
   streamAgentChat,
@@ -221,15 +222,17 @@ export default function Agent() {
         >
           <Bot size={15} /> Phantix Agent
         </button>
-        <button
-          onClick={() => setMode("agi")}
-          className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agi" ? "bg-gradient-to-r from-gold-400/20 to-gold-600/20 text-gold-200 ring-1 ring-gold-400/30" : "text-slate-400 hover:text-slate-200")}
-        >
-          <Radar size={15} /> Autonomous Pentest Agent
-        </button>
+        {AGI_ENABLED && (
+          <button
+            onClick={() => setMode("agi")}
+            className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agi" ? "bg-gradient-to-r from-gold-400/20 to-gold-600/20 text-gold-200 ring-1 ring-gold-400/30" : "text-slate-400 hover:text-slate-200")}
+          >
+            <Radar size={15} /> Autonomous Pentest Agent
+          </button>
+        )}
       </div>
 
-      {mode === "agi" ? (
+      {mode === "agi" && AGI_ENABLED ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="!p-0 overflow-hidden">
             <div className="h-[72vh]">
