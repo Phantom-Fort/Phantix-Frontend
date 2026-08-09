@@ -1,0 +1,208 @@
+import React, { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2 } from "lucide-react";
+import { streamAgentChat } from "@/lib/data";
+import { useStore } from "@/lib/store";
+import { cx } from "@/lib/utils";
+
+type Msg = { role: "user" | "agent"; text: string; thinking?: string };
+
+const DEFAULT_GREETING =
+  "Hi, I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. What would you like to look into?";
+
+const SUGGESTIONS = [
+  "Summarize my current security posture",
+  "Which of my assets are highest risk?",
+  "How many critical risks are open right now?",
+  "What findings would appear in my next report?",
+];
+
+const WIDTH = 400;
+
+export default function AgentAssistant() {
+  const { toast, requireDualControl } = useStore();
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Msg[]>([{ role: "agent", text: DEFAULT_GREETING }]);
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "connecting" | "streaming">("idle");
+  const [liveAnswer, setLiveAnswer] = useState("");
+  const [liveThinking, setLiveThinking] = useState("");
+  const [thinkingOpen, setThinkingOpen] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", fn);
+    return () => window.removeEventListener("keydown", fn);
+  }, []);
+
+  const resetLive = () => { setLiveAnswer(""); setLiveThinking(""); setThinkingOpen(false); };
+
+  const send = async (text?: string) => {
+    const msg = (text ?? input).trim();
+    if (!msg || busy) return;
+    if (!(await requireDualControl("Using Phantix Agent requires a dual-control operate session."))) return;
+    setMessages((m) => [...m, { role: "user", text: msg }]);
+    setInput("");
+    setBusy(true);
+    setPhase("connecting");
+    resetLive();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let answer = "";
+    let thinking = "";
+    try {
+      await streamAgentChat(
+        { messages: [{ role: "user", content: msg }], thinking: true, reasoning_effort: "high", domain: "cross" },
+        (event, data) => {
+          if (event === "connected") setPhase("streaming");
+          else if (event === "reasoning") { thinking += data?.content ?? ""; setLiveThinking(thinking); setThinkingOpen(true); }
+          else if (event === "delta") { answer += data?.content ?? ""; setLiveAnswer(answer); }
+          else if (event === "done") {
+            setMessages((prev) => [...prev, { role: "agent", text: answer || "No response from agent.", thinking: thinking || undefined }]);
+            resetLive();
+          } else if (event === "error") {
+            throw new Error(data?.error ?? "Agent stream error");
+          }
+        },
+        controller.signal,
+      );
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") {
+        toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
+        setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
+      }
+    } finally {
+      setBusy(false);
+      setPhase("idle");
+      abortRef.current = null;
+    }
+  };
+
+  const stop = () => {
+    abortRef.current?.abort();
+    setBusy(false);
+    setPhase("idle");
+  };
+
+  const streaming = busy && phase === "streaming";
+
+  return (
+    <>
+      {/* Floating launcher (bottom-right) */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="fixed bottom-5 right-5 z-[75] flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950 shadow-card transition-transform hover:scale-105"
+        title="Phantix Agent assistant"
+        aria-label="Toggle Phantix Agent assistant"
+      >
+        {open ? <X size={22} /> : <Bot size={24} />}
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[80] bg-phantix-950/50 backdrop-blur-sm"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 340, damping: 30 }}
+              className="fixed bottom-5 right-5 z-[85] flex flex-col overflow-hidden rounded-2xl border border-phantix-700/40 bg-phantix-950/95 shadow-card"
+              style={{ width: WIDTH, maxWidth: "calc(100vw - 40px)", height: "min(70vh, 640px)" }}
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Bot size={18} /></span>
+                <div className="min-w-0">
+                  <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
+                  <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                    Security operations assistant
+                    {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
+                  </p>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <button onClick={() => { setMessages([{ role: "agent", text: DEFAULT_GREETING }]); resetLive(); }} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Reset conversation"><Trash2 size={14} /></button>
+                  <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Close"><X size={15} /></button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
+                <AnimatePresence initial={false}>
+                  {messages.map((m, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                      <div className={cx("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
+                        {m.role === "agent" && m.thinking && (
+                          <details className="mb-1.5">
+                            <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                            <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{m.thinking}</p>
+                          </details>
+                        )}
+                        <p className="whitespace-pre-wrap">{m.text}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Live streaming bubble */}
+                {busy && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-3.5 py-2.5 text-[13px] leading-6 text-slate-200">
+                      {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={13} className="animate-spin" /> Connecting to stream...</span>}
+                      {liveThinking && (
+                        <details className="mb-1.5" open>
+                          <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                          <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{liveThinking}</p>
+                        </details>
+                      )}
+                      {liveAnswer && <p className="whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-3.5 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>}
+                      {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={13} className="animate-spin" /> Streaming...</span>}
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={endRef} />
+              </div>
+
+              {/* Suggestions on empty conversation */}
+              {messages.length === 1 && !busy && (
+                <div className="grid grid-cols-1 gap-1.5 border-t border-phantix-700/40 px-3.5 py-2.5 sm:grid-cols-2">
+                  {SUGGESTIONS.map((s) => (
+                    <button key={s} onClick={() => void send(s)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-2 text-left text-[11px] leading-4 text-slate-300 transition-colors hover:border-gold-400/40 hover:bg-phantix-800/60">{s}</button>
+                  ))}
+                </div>
+              )}
+
+              {/* Composer */}
+              <div className="border-t border-phantix-700/40 p-3">
+                <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !busy) void send(); }}
+                    placeholder="Ask about assets, findings, risks, or reports..."
+                    className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
+                  />
+                  {busy ? (
+                    <button onClick={stop} className="btn-secondary !px-3 !py-1.5 !text-xs" aria-label="Stop stream"><Square size={12} className="mr-1 inline" /> Stop</button>
+                  ) : (
+                    <button onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
+                  )}
+                </div>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600"><Sparkles size={10} /> PII redacted before provider calls · every interaction audited · agent never changes findings or risk scores</p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}

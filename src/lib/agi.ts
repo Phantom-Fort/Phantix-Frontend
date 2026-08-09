@@ -270,7 +270,11 @@ export async function createAgiEngagement(payload: {
 
 export async function startAgiSession(engagementId: number, instruction: string): Promise<AgiSession> {
   if (isDemoMode()) { await delay(600); return demoStartSession(engagementId, instruction); }
-  return api.post<AgiSession>(`/agi/engagements/${engagementId}/sessions`, { instruction });
+  return api.post<AgiSession>(`/agi/engagements/${engagementId}/sessions`, {
+    instruction,
+    autonomy: "medium",
+    include_org_assets: true,
+  });
 }
 
 export async function agiChat(sessionId: number, message: string): Promise<Record<string, unknown>> {

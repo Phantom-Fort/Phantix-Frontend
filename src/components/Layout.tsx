@@ -34,6 +34,7 @@ import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
 import { cx, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
+import AgentAssistant from "@/components/AgentAssistant";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
@@ -495,6 +496,9 @@ export default function Layout() {
 
       {/* Autonomous Pentest Agent — right-side drawer with full-screen option */}
       <AgiDrawer />
+
+      {/* Phantix Agent — floating chatbot assistant */}
+      <AgentAssistant />
     </div>
   );
 }
