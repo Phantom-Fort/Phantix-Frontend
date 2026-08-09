@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
@@ -43,9 +43,11 @@ export default function Assets() {
   const [addConfirmOwnership, setAddConfirmOwnership] = useState(false);
   const [addForm, setAddForm] = useState({ type: "domain", value: "", name: "", environment: "production", criticality: "medium" });
   const [showGithubModal, setShowGithubModal] = useState(false);
+  const [githubMethod, setGithubMethod] = useState<"pat" | "app">("pat");
   const [githubPat, setGithubPat] = useState("");
   const [importingGithub, setImportingGithub] = useState(false);
   const [githubStatus, setGithubStatus] = useState<{ github_login?: string; token_configured?: boolean } | null>(null);
+  const [githubAppStatus, setGithubAppStatus] = useState<{ connected?: boolean; account_login?: string; status?: string; message?: string } | null>(null);
   const [showApiModal, setShowApiModal] = useState(false);
   const [apiSpec, setApiSpec] = useState("");
   const [apiFormat, setApiFormat] = useState("openapi");
@@ -138,15 +140,41 @@ export default function Assets() {
   };
 
 
+  const loadGithubStatus = async () => {
+    // PAT integration(s) — backend returns a list.
+    try {
+      const list = await api.get<{ github_login?: string; token_configured?: boolean }[] | { items: { github_login?: string; token_configured?: boolean }[] }>("/assets/integrations/github");
+      const arr = Array.isArray(list) ? list : (list as any)?.items ?? [];
+      const active = arr.find((x: { token_configured?: boolean }) => x.token_configured !== false) ?? arr[0];
+      setGithubStatus(active ? { github_login: active.github_login, token_configured: active.token_configured !== false } : null);
+    } catch { setGithubStatus(null); }
+    // GitHub App installation (org-scoped) — reflects the org's connected App.
+    try {
+      const app = await api.get<{ connected?: boolean; account_login?: string; status?: string; message?: string }>("/github/installation");
+      setGithubAppStatus(app);
+    } catch { setGithubAppStatus(null); }
+  };
+
   const handleGithubConnect = async () => {
+    if (githubMethod === "app") {
+      if (!(await requireDualControl("Connecting the GitHub App requires a dual-control operate session."))) return;
+      setImportingGithub(true);
+      try {
+        const res = await api.get<{ install_url: string; state: string; configured: boolean }>("/github/install-url");
+        if (!res.configured) { toast("error", "GitHub App not configured", "The GitHub App is not set up on the server yet."); return; }
+        window.location.href = res.install_url;
+      } catch (e: any) {
+        toast("error", "Connect failed", e.message || "Could not reach the GitHub App setup");
+      } finally { setImportingGithub(false); }
+      return;
+    }
     if (!githubPat) { toast("error", "Enter a PAT"); return; }
     if (!(await requireDualControl("Connecting GitHub requires a dual-control operate session."))) return;
     setImportingGithub(true);
     try {
       await api.post("/assets/integrations/github", { personal_access_token: githubPat });
-      const status = await api.get<{ github_login: string; token_configured: boolean }>("/assets/integrations/github");
-      setGithubStatus(status);
-      toast("success", "GitHub connected", status.github_login ? `Logged in as ${status.github_login}` : "Token stored");
+      await loadGithubStatus();
+      toast("success", "GitHub connected", githubStatus?.github_login ? `Logged in as ${githubStatus.github_login}` : "Token stored");
       setGithubPat("");
     } catch (e: any) {
       toast("error", "Connection failed", e.message || "Invalid token or network error");
@@ -183,10 +211,9 @@ export default function Assets() {
     } finally { setImporting(false); }
   };
 
-  // Check GitHub status on page load
+  // Check GitHub status (PAT + GitHub App) on page load
   useEffect(() => {
-    api.get<{ github_login: string; token_configured: boolean }>("/assets/integrations/github")
-      .then(setGithubStatus).catch(() => {});
+    void loadGithubStatus();
   }, []);
   if (loading) {
     return (
@@ -538,18 +565,33 @@ export default function Assets() {
             <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><Github size={18} /></span>
             <h3 className="font-display text-[15px] font-semibold text-slate-100">GitHub repositories</h3>
             <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">
-              {githubStatus?.token_configured ? `Connected as ${githubStatus.github_login || "GitHub"}. Import repos as assets.` : "Paste a Personal Access Token to list and import repositories."}
+              {githubAppStatus?.connected
+                ? `GitHub App connected as ${githubAppStatus.account_login || "GitHub"}. Import repos as assets.`
+                : githubStatus?.token_configured
+                  ? `Connected via PAT as ${githubStatus.github_login || "GitHub"}. Import repos as assets.`
+                  : "Connect the GitHub App or a Personal Access Token to list and import repositories."}
             </p>
-            {githubStatus?.token_configured ? (
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              {githubAppStatus?.connected && (
+                <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Github size={10} className="mr-1 inline" /> App · {githubAppStatus.account_login}</span>
+              )}
+              {githubStatus?.token_configured && (
+                <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">PAT · {githubStatus.github_login || "configured"}</span>
+              )}
+              {!githubStatus?.token_configured && !githubAppStatus?.connected && (
+                <span className="chip border-phantix-600/40 bg-phantix-800/50 text-slate-400">Not connected</span>
+              )}
+            </div>
+            {(githubStatus?.token_configured || githubAppStatus?.connected) ? (
               <button className="btn-secondary mt-4 w-full" onClick={handleGithubImport} disabled={importingGithub}>
                 {importingGithub ? <Spinner className="h-3 w-3" /> : <Github size={14} />} Import Repos
               </button>
             ) : (
-              <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("Connecting GitHub requires a dual-control operate session.")) setShowGithubModal(true); })(); }}>
+              <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("Connecting GitHub requires a dual-control operate session.")) { setGithubMethod("pat"); setShowGithubModal(true); } })(); }}>
                 <Github size={14} /> Connect GitHub
               </button>
             )}
-            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/integrations/github</p>
+            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/integrations/github · GET /github/installation</p>
           </Card>
 
           <Card hover className="flex flex-col">
@@ -749,10 +791,44 @@ export default function Assets() {
 
       <Modal open={showGithubModal} onClose={() => setShowGithubModal(false)} title="Connect GitHub">
         <div className="space-y-3">
-          <p className="text-xs text-slate-400">Paste a GitHub Personal Access Token (classic or fine-grained) with <strong>repo</strong> or <strong>Contents: Read</strong> scope. The token is stored encrypted and never shown again.</p>
-          <div><label className="label">Personal Access Token</label><input className="input font-mono text-sm" type="password" placeholder="ghp_..." value={githubPat} onChange={(e) => setGithubPat(e.target.value)} /></div>
-          <p className="text-[10px] text-slate-500">Minimum scopes: <code>public_repo</code> (classic) or <code>Contents: Read</code> (fine-grained). Revoke anytime in GitHub → Settings → Developer settings.</p>
-          <button onClick={handleGithubConnect} disabled={importingGithub || !githubPat} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : null}Connect GitHub</button>
+          <div className="flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
+            <button
+              onClick={() => setGithubMethod("pat")}
+              className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", githubMethod === "pat" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
+            >
+              <KeyRound size={15} /> Personal Access Token
+            </button>
+            <button
+              onClick={() => setGithubMethod("app")}
+              className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", githubMethod === "app" ? "bg-gradient-to-r from-gold-400/20 to-gold-600/20 text-gold-200 ring-1 ring-gold-400/30" : "text-slate-400 hover:text-slate-200")}
+            >
+              <Github size={15} /> GitHub App
+            </button>
+          </div>
+
+          {githubMethod === "pat" ? (
+            <>
+              <p className="text-xs text-slate-400">Paste a GitHub Personal Access Token (classic or fine-grained) with <strong>repo</strong> or <strong>Contents: Read</strong> scope. The token is stored encrypted and never shown again.</p>
+              <div><label className="label">Personal Access Token</label><input className="input font-mono text-sm" type="password" placeholder="ghp_..." value={githubPat} onChange={(e) => setGithubPat(e.target.value)} /></div>
+              <p className="text-[10px] text-slate-500">Minimum scopes: <code>public_repo</code> (classic) or <code>Contents: Read</code> (fine-grained). Revoke anytime in GitHub → Settings → Developer settings.</p>
+              <button onClick={handleGithubConnect} disabled={importingGithub || !githubPat} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : null}Connect with PAT</button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-400">Install the <strong>Phantix GitHub App</strong> on your account or organization. The App is the recommended integration — no tokens to rotate, and repositories are imported automatically.</p>
+              {githubAppStatus?.connected ? (
+                <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-3">
+                  <p className="text-sm font-semibold text-emerald-300">GitHub App connected</p>
+                  <p className="mt-1 text-xs text-slate-300">Logged in as {githubAppStatus.account_login || "your GitHub account"}. You can import repositories directly.</p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
+                  <p className="text-xs text-slate-300">You'll be redirected to GitHub to install the Phantix App. After approving, repositories are available for import.</p>
+                </div>
+              )}
+              <button onClick={handleGithubConnect} disabled={importingGithub} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : <Github size={14} className="mr-1 inline" />}{githubAppStatus?.connected ? "Reconnect GitHub App" : "Install GitHub App"}</button>
+            </>
+          )}
         </div>
       </Modal>
 
