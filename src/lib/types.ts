@@ -745,3 +745,120 @@ export interface SupportTicket {
   created_at: string;
   messages: { from: string; body: string; at: string }[];
 }
+
+// ── Autonomous Pentest Agent (PHANTIX AGI) — customer surface ────────────────
+// Mirror of app/engines/ai_engine/agi customer_api + schemas.
+
+/** GET /agi/access — drives the Agent/AGI switcher, agreement modal + blockers. */
+export interface AgiAccess {
+  modes: {
+    agent: { id: string; label: string; description: string; cost_tier: string; available: boolean };
+    agi: { id: string; label: string; description: string; cost_tier: string; available: boolean };
+  };
+  agi: {
+    platform_enabled: boolean;
+    org_enabled: boolean;
+    entitled: boolean;
+    entitlement_code: string | null;
+    agreement_required: boolean;
+    agreement_accepted: boolean;
+    active_policy_version: string | null;
+    can_use: boolean;
+    limits: {
+      daily_session_limit: number;
+      max_session_minutes: number;
+      max_allowlist_targets: number;
+      allow_state_changing: boolean;
+      require_dual_control_for_active: boolean;
+      require_asset_backed_targets: boolean;
+    };
+    blockers: { code: string; message: string }[];
+  };
+  agreement: {
+    version: string | null;
+    title: string | null;
+    body_md: string | null;
+    security_policy: Record<string, unknown> | null;
+    must_accept_before_agi: boolean;
+  };
+}
+
+/** Active AGI usage agreement (GET /agi/agreement). */
+export interface AgiAgreement {
+  version: string;
+  title: string;
+  body_md: string;
+  security_policy?: Record<string, unknown> | null;
+  accepted: boolean;
+  must_accept: boolean;
+  organization_id: number;
+}
+
+/** POST /agi/intent recommendation. */
+export interface AgiIntentRecommendation {
+  recommended_mode: "agent" | "agi";
+  confidence: number;
+  reason: string;
+  can_switch: boolean;
+  next_step?: string;
+  access?: { agi_can_use: boolean; agreement_required: boolean };
+}
+
+/** Scoped work package (AgiEngagementRead). */
+export interface AgiEngagement {
+  id: number;
+  organization_id: number;
+  name: string;
+  description: string | null;
+  scope_definition: {
+    target_allowlist: string[];
+    forbidden_actions: string[];
+    rules_of_engagement?: string;
+    window_start?: string | null;
+    window_end?: string | null;
+    max_session_minutes?: number | null;
+  };
+  status: string;
+  config?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Live agent run (AgiSessionRead). */
+export interface AgiSession {
+  id: number;
+  engagement_id: number;
+  container_id?: string | null;
+  runner_session_id?: string | null;
+  status: string;
+  started_at: string;
+  ended_at?: string | null;
+  teardown_reason?: string | null;
+  meta?: Record<string, unknown> | null;
+}
+
+/** One terminal history line (AgiTranscriptChunk). */
+export interface AgiTranscriptChunk {
+  seq: number;
+  role: string;
+  content: string;
+  meta?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+/** State-changing step awaiting approval (AgiActionRead). */
+export interface AgiAction {
+  id: number;
+  session_id: number;
+  action_type: string;
+  tool_name?: string | null;
+  proposed_command: string;
+  rationale?: string | null;
+  status: string;
+  approved_by_staff_id?: number | null;
+  decision_notes?: string | null;
+  result_summary?: string | null;
+  created_at: string;
+  decided_at?: string | null;
+  executed_at?: string | null;
+}

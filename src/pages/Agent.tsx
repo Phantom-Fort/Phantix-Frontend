@@ -6,6 +6,7 @@ import {
   ThumbsUp, AlertTriangle, RotateCcw, Cpu,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
+import AgiWorkspace from "@/components/AgiWorkspace";
 import {
   loadAiStatus,
   streamAgentChat,
@@ -156,6 +157,7 @@ export default function Agent() {
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"chat" | "skills">("chat");
+  const [mode, setMode] = useState<"agent" | "agi">("agent");
 
   useEffect(() => {
     let cancelled = false;
@@ -211,22 +213,51 @@ export default function Agent() {
         }
       />
 
+      {/* Mode switch — Phantix Agent vs Autonomous Pentest Agent */}
       <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
         <button
-          onClick={() => setTab("chat")}
-          className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", tab === "chat" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
+          onClick={() => setMode("agent")}
+          className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agent" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
         >
-          <Bot size={15} /> Chat & investigations
+          <Bot size={15} /> Phantix Agent
         </button>
         <button
-          onClick={() => setTab("skills")}
-          className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", tab === "skills" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
+          onClick={() => setMode("agi")}
+          className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agi" ? "bg-gradient-to-r from-gold-400/20 to-gold-600/20 text-gold-200 ring-1 ring-gold-400/30" : "text-slate-400 hover:text-slate-200")}
         >
-          <BrainCircuit size={15} /> Skill library
+          <Radar size={15} /> Autonomous Pentest Agent
         </button>
       </div>
 
-      {tab === "chat" ? <AgentChat streamEnabled={streamEnabled} operate={operate} requireDualControl={requireDualControl} toast={toast} /> : <SkillsLibrary toast={toast} />}
+      {mode === "agi" ? (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="!p-0 overflow-hidden">
+            <div className="h-[72vh]">
+              <AgiWorkspace variant="page" />
+            </div>
+          </Card>
+          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
+            <ShieldCheck size={11} className="text-gold-400" /> Human-gated, scoped, container-isolated. Read-only steps stream live; state-changing steps pause for your approval. Sessions destroy their containers when stopped.
+          </p>
+        </motion.div>
+      ) : (
+        <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
+          <button
+            onClick={() => setTab("chat")}
+            className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", tab === "chat" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
+          >
+            <Bot size={15} /> Chat & investigations
+          </button>
+          <button
+            onClick={() => setTab("skills")}
+            className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", tab === "skills" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
+          >
+            <BrainCircuit size={15} /> Skill library
+          </button>
+        </div>
+      )}
+
+      {mode === "agent" && (tab === "chat" ? <AgentChat streamEnabled={streamEnabled} operate={operate} requireDualControl={requireDualControl} toast={toast} /> : <SkillsLibrary toast={toast} />)}
     </div>
   );
 }

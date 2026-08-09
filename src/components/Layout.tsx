@@ -33,6 +33,7 @@ import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
 import { cx, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import AgiDrawer from "@/components/AgiDrawer";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
@@ -491,6 +492,9 @@ export default function Layout() {
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
+      {/* Autonomous Pentest Agent — right-side drawer with full-screen option */}
+      <AgiDrawer />
     </div>
   );
 }
