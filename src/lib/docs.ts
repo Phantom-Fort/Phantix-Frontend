@@ -31,6 +31,9 @@ import hcAiAgent from "@docs/docs/user-docs/10-ai-agent-api.md?raw";
 import hcPrivacy from "@docs/docs/user-docs/11-privacy-and-security.md?raw";
 import hcTroubleshoot from "@docs/docs/user-docs/12-troubleshooting.md?raw";
 
+// In-app user manuals (Command Centre help centre)
+import { manualDocs } from "@/lib/manualDocs";
+
 export interface DocEntry {
   id: string;
   title: string;
@@ -43,6 +46,7 @@ export interface DocEntry {
 export const docCategories = [
   { id: "help", label: "Help Centre", blurb: "Setup, day-to-day use and integrations" },
   { id: "guides", label: "Guides", blurb: "Public guides by audience and topic" },
+  { id: "manuals", label: "User manuals", blurb: "Screenshotted guides for each product surface" },
 ] as const;
 
 export const docs: DocEntry[] = [
@@ -73,6 +77,7 @@ export const docs: DocEntry[] = [
   { id: "for-developers", title: "For developers", description: "Public API overview and the AI Agent API plan.", category: "guides", content: forDevelopers },
   { id: "faq", title: "FAQ", description: "Answers for first contact and common questions.", category: "guides", content: faq },
   { id: "getting-started", title: "Getting started", description: "CTAs and the onboarding path for new organizations.", category: "guides", content: gettingStarted },
+  ...(manualDocs as DocEntry[]),
 ];
 
 export function getDoc(id: string): DocEntry | undefined {
