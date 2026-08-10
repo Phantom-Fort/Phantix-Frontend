@@ -345,8 +345,14 @@ function AgentChat({
       );
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
-        toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
-        setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
+        const planRequired = (e as any)?.status === 402 || (e as any)?.detail?.code === "ai_agent_plan_required";
+        if (planRequired) {
+          toast("warning", "Upgrade required", "The Phantix Agent is part of a paid plan. Upgrade on the Platform to keep chatting.");
+          setMessages((m) => [...m, { role: "agent", text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
+        } else {
+          toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
+          setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
+        }
       }
     } finally {
       setBusy(false);

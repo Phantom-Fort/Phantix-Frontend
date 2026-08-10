@@ -1,26 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2 } from "lucide-react";
+import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
+import { tryNavigationAnswer, helpOverview } from "@/lib/navigationGuide";
 
-type Msg = { role: "user" | "agent"; text: string; thinking?: string };
+type Msg = { role: "user" | "agent"; text: string; thinking?: string; nav?: { route: string; label: string; also?: { route: string; label: string }[] } };
 
 const DEFAULT_GREETING =
-  "Hi, I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. What would you like to look into?";
+  "Hi, I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. I can also point you to any page in the app — just ask \u201cwhere do I find\u2026\u201d. What would you like to look into?";
 
 const SUGGESTIONS = [
   "Summarize my current security posture",
   "Which of my assets are highest risk?",
   "How many critical risks are open right now?",
-  "What findings would appear in my next report?",
+  "Where do I find my risk register?",
 ];
 
 const WIDTH = 400;
 
 export default function AgentAssistant() {
   const { toast, requireDualControl } = useStore();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([{ role: "agent", text: DEFAULT_GREETING }]);
   const [input, setInput] = useState("");
@@ -45,6 +48,23 @@ export default function AgentAssistant() {
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || busy) return;
+
+    // Free, local navigation answers (no AI/plan call): "where do I find X".
+    if (!msg.toLowerCase().startsWith("/")) {
+      const nav = tryNavigationAnswer(msg);
+      if (nav) {
+        setMessages((m) => [...m, { role: "user", text: msg }, { role: "agent", text: nav.text, nav }]);
+        setInput("");
+        return;
+      }
+    }
+    // Free, local help overview: "help", "where is everything", etc.
+    if (/^(help|hi|hello|hey|what can you do|help me|where is everything|how do i use this|get started)\b/i.test(msg) && /navigat|find|where|page|module|help|guide|use|do/i.test(msg)) {
+      setMessages((m) => [...m, { role: "user", text: msg }, { role: "agent", text: helpOverview() }]);
+      setInput("");
+      return;
+    }
+
     if (!(await requireDualControl("Using Phantix Agent requires a dual-control operate session."))) return;
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
@@ -73,8 +93,16 @@ export default function AgentAssistant() {
       );
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
-        toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
-        setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
+        const planRequired = (e as any)?.status === 402 || (e as any)?.detail?.code === "ai_agent_plan_required";
+        if (planRequired) {
+          setMessages((m) => [...m, {
+            role: "agent",
+            text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data.",
+          }]);
+        } else {
+          toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
+          setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
+        }
       }
     } finally {
       setBusy(false);
@@ -148,6 +176,25 @@ export default function AgentAssistant() {
                           </details>
                         )}
                         <p className="whitespace-pre-wrap">{m.text}</p>
+                        {m.nav && (
+                          <div className="mt-2 space-y-1">
+                            <button
+                              onClick={() => { navigate(m.nav!.route); setOpen(false); }}
+                              className="flex w-full items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 text-left text-[11px] font-semibold text-gold-200 transition-colors hover:bg-gold-400/20"
+                            >
+                              <ArrowRight size={12} /> Go to {m.nav.label}
+                            </button>
+                            {m.nav.also?.map((a) => (
+                              <button
+                                key={a.route}
+                                onClick={() => { navigate(a.route); setOpen(false); }}
+                                className="flex w-full items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-1.5 text-left text-[11px] text-slate-300 transition-colors hover:border-phantix-500/50"
+                              >
+                                <ArrowRight size={12} /> {a.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   ))}

@@ -739,8 +739,15 @@ async function streamAgentPost(path: string, body: unknown, onEvent: (event: str
     let detail: unknown = `SSE failed: ${res.status}`;
     try { detail = (await res.json()).detail ?? detail; } catch { /* non-JSON */ }
     const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
-    // Surface the dual-control requirement clearly (403 from the operate gate).
-    if (res.status === 403 && /dual|operate|authenticator|session/i.test(msg)) {
+    // Plan-gated: surface the paid-plan request clearly (402 from entitlement gate)
+    // so the app-wide "Upgrade required" handler fires.
+    if (res.status === 402) {
+      const readable = (detail && typeof detail === "object" && typeof (detail as any).message === "string")
+        ? (detail as any).message
+        : "A paid plan is required to use the Phantix Agent.";
+      window.dispatchEvent(new CustomEvent("phantix:billing-required", { detail: readable }));
+      onEvent("error", { type: "error", error: readable, code: "ai_agent_plan_required", status: 402 });
+    } else if (res.status === 403 && /dual|operate|authenticator|session/i.test(msg)) {
       onEvent("error", { type: "error", error: "Dual-control operate session required. Unlock operate mode and try again.", code: "dual_control_required" });
     } else {
       onEvent("error", { type: "error", error: msg });
