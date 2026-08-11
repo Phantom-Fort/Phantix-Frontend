@@ -472,12 +472,14 @@ function postureFromRisks(risks: Risk[]): { trend: PosturePoint[]; score: number
 export async function loadIntelligenceDashboard(): Promise<IntelligenceDashboard | null> {
   if (isDemoMode()) {
     await delay();
+    // Deterministic trend — reuse the demo dashboard trend so the graph never
+    // re-randomizes on each poll (the old code used Math.random() per call,
+    // which made the posture chart "glitch" between refreshes).
+    const trend = (demo.postureTrend as PosturePoint[]).map((p) => ({ day: p.day, score: p.score }));
+    const lastScore = trend[trend.length - 1]?.score ?? 71;
     return {
-      posture_score: 78,
-      posture_trend: Array.from({ length: 14 }, (_, i) => ({
-        day: `Jul ${10 + i}`,
-        score: 70 + Math.floor(Math.random() * 20),
-      })),
+      posture_score: lastScore,
+      posture_trend: trend,
       total_assets: demo.assets.length,
       verified_count: demo.assets.filter((a) => a.is_verified).length,
       unscanned_count: 3,
