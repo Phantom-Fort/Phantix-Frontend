@@ -128,6 +128,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [actionBusy, setActionBusy] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [policyBanner, setPolicyBanner] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
+  const [connError, setConnError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const boot = useCallback(async () => {
@@ -253,13 +255,28 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     if (!session || !msg || !running) return;
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
     setInstruction("");
+    setConnError(null);
     setTranscript((prev) => [...prev, { seq: -1, role: "operator", content: msg, meta: null, created_at: new Date().toISOString() }]);
+    setThinking(true);
     try {
       await agiChat(session.id, msg);
-    } catch (e) {
+    } catch (e: any) {
+      setThinking(false);
       const blocked = isAgiPolicyBlocked(e);
-      if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); }
-      else toast("error", "Chat failed", e instanceof Error ? e.message : "");
+      if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return; }
+      // Connection failures: "Failed to fetch" (network/backend down) vs timeout (server unavailability).
+      const name = String(e?.name ?? "");
+      const message = String(e?.message ?? "");
+      if (name === "TimeoutError" || name === "AbortError" || /timeout|timed out/i.test(message)) {
+        setConnError("Timed out — the agent server is unavailable. Check your connection and try again.");
+      } else if (/failed to fetch|networkerror|network error|load failed|fetch/i.test(message)) {
+        setConnError("Failed to fetch — could not reach the agent server. Check your connection and try again.");
+      } else {
+        setConnError(message || "Failed to reach the agent server.");
+      }
+      toast("error", "Chat failed", e instanceof Error ? e.message : "");
+    } finally {
+      setThinking(false);
     }
   };
 
@@ -289,6 +306,9 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         if (chunks.length > 0) {
           setTranscript((prev) => [...prev, ...chunks]);
           afterSeqRef.current = Math.max(afterSeqRef.current, ...chunks.map((c) => c.seq));
+          // New engine output means the agent has replied — drop the thinking cue.
+          setThinking(false);
+          setConnError(null);
         }
       } catch { /* transient — keep polling */ }
     }, POLL_MS);
@@ -324,22 +344,24 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-phantix-700/40 px-4 py-3">
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={18} /></span>
-        <div className="min-w-0">
-          <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
-          <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            human-gated · scoped
-            {running && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
-          </p>
+      {/* Header — only the standalone page renders its own (the drawer provides one) */}
+      {variant === "page" && (
+        <div className="flex items-center gap-3 border-b border-phantix-700/40 px-4 py-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={18} /></span>
+          <div className="min-w-0">
+            <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
+            <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              human-gated · scoped · terminal-access
+              {running && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
+            </p>
+          </div>
+          {running && (
+            <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-3 !py-1.5 !text-xs" title="Stop session">
+              <Square size={12} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
+            </button>
+          )}
         </div>
-        {running && (
-          <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-3 !py-1.5 !text-xs" title="Stop session">
-            <Square size={12} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
-          </button>
-        )}
-      </div>
+      )}
 
       {/* Policy banner */}
       {policyBanner && (
@@ -469,16 +491,32 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 </span>
                 <span className="chip !text-[9px] text-slate-500">{selected?.name}</span>
                 <span className="chip !text-[9px] font-mono text-slate-500">session #{session.id}</span>
+                {running && (
+                  <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-2.5 !py-1 !text-[10px]" title="Stop session">
+                    <Square size={11} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
+                  </button>
+                )}
               </div>
 
               <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 font-mono">
-                {transcript.length === 0 && (
+                {connError && (
+                  <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
+                    <Lock size={13} className="shrink-0 text-severity-critical" />
+                    <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                  </div>
+                )}
+                {transcript.length === 0 && !connError && (
                   <p className="py-6 text-center text-[11px] text-slate-600">Connecting to engagement container...</p>
                 )}
                 {transcript.map((t, i) => (
                   <TxLine key={i} t={t} last={i === transcript.length - 1 && running} />
                 ))}
-                {running && transcript.length > 0 && (
+                {thinking && (
+                  <p className="flex items-center gap-2 text-[11px] text-gold-300">
+                    <Loader2 size={12} className="animate-spin" /> thinking...
+                  </p>
+                )}
+                {running && transcript.length > 0 && !thinking && !connError && (
                   <p className="text-[10px] text-slate-600">— awaiting engine output —</p>
                 )}
                 <div ref={endRef} />

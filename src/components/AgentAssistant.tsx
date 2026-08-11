@@ -32,6 +32,7 @@ export default function AgentAssistant() {
   const [liveAnswer, setLiveAnswer] = useState("");
   const [liveThinking, setLiveThinking] = useState("");
   const [thinkingOpen, setThinkingOpen] = useState(false);
+  const [connError, setConnError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +67,7 @@ export default function AgentAssistant() {
     }
 
     if (!(await requireDualControl("Using Phantix Agent requires a dual-control operate session."))) return;
+    setConnError(null);
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
     setBusy(true);
@@ -100,6 +102,15 @@ export default function AgentAssistant() {
             text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data.",
           }]);
         } else {
+          const name = String((e as any)?.name ?? "");
+          const message = String((e as any)?.message ?? "");
+          if (name === "TimeoutError" || name === "AbortError" || /timeout|timed out/i.test(message)) {
+            setConnError("Timed out — the agent server is unavailable. Check your connection and try again.");
+          } else if (/failed to fetch|networkerror|network error|load failed|fetch/i.test(message)) {
+            setConnError("Failed to fetch — could not reach the agent server. Check your connection and try again.");
+          } else {
+            setConnError(message || "Failed to reach the agent server.");
+          }
           toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
           setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
         }
@@ -165,6 +176,12 @@ export default function AgentAssistant() {
 
               {/* Messages */}
               <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
+                {connError && (
+                  <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
+                    <X size={13} className="shrink-0 text-severity-critical" />
+                    <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                  </div>
+                )}
                 <AnimatePresence initial={false}>
                   {messages.map((m, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>

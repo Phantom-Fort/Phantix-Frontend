@@ -58,7 +58,7 @@ export default function AgiDrawer() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={15} /></span>
               <div className="min-w-0">
                 <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
-                <p className="text-[10px] text-slate-500">human-gated · scoped · container-isolated</p>
+                <p className="text-[10px] text-slate-500">human-gated · scoped · terminal-access</p>
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <button
