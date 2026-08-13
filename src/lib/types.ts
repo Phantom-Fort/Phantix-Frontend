@@ -862,3 +862,83 @@ export interface AgiAction {
   decided_at?: string | null;
   executed_at?: string | null;
 }
+
+// ── SOC Availability / uptime (MTTR) ──────────────────────────────────────────
+// Mirrors app/engines/soc_engine/schemas/availability.py + services/summary.
+
+export type AvailabilityCheckType = "http" | "https" | "tcp" | "tls" | "dns";
+export type AvailabilityStatus = "unknown" | "up" | "down" | "degraded";
+
+export interface AvailabilityCheck {
+  id: number;
+  organization_id: number;
+  asset_id: number | null;
+  name: string;
+  check_type: AvailabilityCheckType | string;
+  target: string;
+  enabled: boolean;
+  interval_seconds: number;
+  timeout_seconds: number;
+  failures_to_down: number;
+  successes_to_up: number;
+  expected_status: number | null;
+  expected_keyword: string | null;
+  severity_on_down: string;
+  notify_on_down: boolean;
+  notify_on_recovery: boolean;
+  last_status: AvailabilityStatus | string;
+  consecutive_failures: number;
+  consecutive_successes: number;
+  last_checked_at: string | null;
+  last_latency_ms: number | null;
+  last_error: string | null;
+  next_check_at: string | null;
+  metadata: Record<string, unknown>;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AvailabilityIncident {
+  id: number;
+  organization_id: number;
+  check_id: number | null;
+  asset_id: number | null;
+  soc_detection_id: number | null;
+  title: string;
+  status: string;
+  severity: string;
+  source: string;
+  down_at: string;
+  recovered_at: string | null;
+  acknowledged_at: string | null;
+  time_to_resolve_seconds: number | null;
+  time_to_acknowledge_seconds: number | null;
+  excluded_from_sla: boolean;
+  failure_count: number;
+  last_error: string | null;
+  evidence: Record<string, unknown>;
+  metadata: Record<string, unknown>;
+  elapsed_seconds: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export interface AvailabilitySummary {
+  organizationId: number;
+  checks: {
+    total?: number;
+    enabled?: number;
+    up?: number;
+    down?: number;
+    degraded?: number;
+    unknown?: number;
+  };
+  openIncidents: number;
+  uptimePercentSnapshot: number | null;
+  mttrLast7d: {
+    recoveredCount: number;
+    avgSeconds: number | null;
+    medianSeconds: number | null;
+    p95Seconds: number | null;
+  };
+}

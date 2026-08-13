@@ -13,6 +13,9 @@ import type {
   AssetIntelligence,
   AssetTag,
   AuditEvent,
+  AvailabilityCheck,
+  AvailabilityIncident,
+  AvailabilitySummary,
   ComplianceAssessment,
   ComplianceControlResult,
   ComplianceFramework,
@@ -29,6 +32,8 @@ import type {
   Risk,
   ScanJob,
   ScanResult,
+  ServiceKeyMeta,
+  Severity,
   SocAdapter,
   SocCase,
   SocCaseNote,
@@ -1200,4 +1205,143 @@ export async function ingestSocWebhook(body: Record<string, unknown>): Promise<S
     return { organizationId: 11, adapterId: "generic_webhook", accepted: 1, detections: [] };
   }
   return api.post<SocEnrichmentResult>("/soc/adapters/webhook", body);
+}
+
+// ── SOC Availability / uptime (checks, incidents, MTTR) ───────────────────────
+// Contract: docs/frontend/SOC_AVAILABILITY_FE.md + app/engines/soc_engine/api/availability.py
+
+const demoAvChecks = [
+  {
+    id: 1, organization_id: 11, asset_id: null, name: "Production API health", check_type: "https",
+    target: "https://api.acme-financial.com/health", enabled: true, interval_seconds: 120, timeout_seconds: 8,
+    failures_to_down: 3, successes_to_up: 2, expected_status: 200, expected_keyword: null,
+    severity_on_down: "critical", notify_on_down: true, notify_on_recovery: true,
+    last_status: "up", consecutive_failures: 0, consecutive_successes: 3,
+    last_checked_at: new Date(Date.now() - 60_000).toISOString(), last_latency_ms: 120, last_error: null,
+    next_check_at: new Date(Date.now() + 60_000).toISOString(), metadata: {},
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  },
+  {
+    id: 2, organization_id: 11, asset_id: null, name: "Edge nginx", check_type: "tcp",
+    target: "edge-01.acme-financial.com:443", enabled: true, interval_seconds: 180, timeout_seconds: 6,
+    failures_to_down: 3, successes_to_up: 2, expected_status: null, expected_keyword: null,
+    severity_on_down: "critical", notify_on_down: true, notify_on_recovery: true,
+    last_status: "down", consecutive_failures: 4, consecutive_successes: 0,
+    last_checked_at: new Date(Date.now() - 30_000).toISOString(), last_latency_ms: null,
+    last_error: "connection refused", next_check_at: new Date(Date.now() + 60_000).toISOString(), metadata: {},
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  },
+  {
+    id: 3, organization_id: 11, asset_id: null, name: "DB primary :5432", check_type: "tcp",
+    target: "db-primary.acme-financial.com:5432", enabled: true, interval_seconds: 300, timeout_seconds: 8,
+    failures_to_down: 3, successes_to_up: 2, expected_status: null, expected_keyword: null,
+    severity_on_down: "high", notify_on_down: true, notify_on_recovery: true,
+    last_status: "unknown", consecutive_failures: 0, consecutive_successes: 0,
+    last_checked_at: null, last_latency_ms: null, last_error: null, next_check_at: null, metadata: {},
+    created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  },
+];
+
+const demoAvIncidents = [
+  {
+    id: 1, organization_id: 11, check_id: 2, asset_id: null, soc_detection_id: 401,
+    title: "Edge nginx is down", status: "open", severity: "critical", source: "phantix_probe",
+    down_at: new Date(Date.now() - 4 * 60_000).toISOString(), recovered_at: null, acknowledged_at: null,
+    time_to_resolve_seconds: null, time_to_acknowledge_seconds: null, excluded_from_sla: false,
+    failure_count: 4, last_error: "connection refused", evidence: {}, metadata: {},
+    elapsed_seconds: 240, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  },
+  {
+    id: 2, organization_id: 11, check_id: 1, asset_id: null, soc_detection_id: 402,
+    title: "API health degraded", status: "recovered", severity: "high", source: "phantix_probe",
+    down_at: new Date(Date.now() - 3600_000).toISOString(), recovered_at: new Date(Date.now() - 3300_000).toISOString(),
+    acknowledged_at: new Date(Date.now() - 3500_000).toISOString(),
+    time_to_resolve_seconds: 300, time_to_acknowledge_seconds: 100, excluded_from_sla: false,
+    failure_count: 3, last_error: "HTTP 503", evidence: {}, metadata: {},
+    elapsed_seconds: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  },
+];
+
+const demoAvSummary = {
+  organizationId: 11,
+  checks: { total: 3, enabled: 3, up: 1, down: 1, degraded: 0, unknown: 1 },
+  openIncidents: 1,
+  uptimePercentSnapshot: 33.33,
+  mttrLast7d: { recoveredCount: 4, avgSeconds: 420, medianSeconds: 300, p95Seconds: 780 },
+};
+
+export async function loadAvailabilitySummary(): Promise<AvailabilitySummary | null> {
+  if (isDemoMode()) { await delay(250); return demoAvSummary; }
+  try { return await api.get<AvailabilitySummary>("/soc/availability/summary"); } catch { return null; }
+}
+
+export async function loadAvailabilityChecks(limit = 100): Promise<AvailabilityCheck[]> {
+  if (isDemoMode()) { await delay(250); return demoAvChecks as AvailabilityCheck[]; }
+  const res = await api.get<{ items: AvailabilityCheck[]; total: number }>(`/soc/availability/checks?limit=${limit}`);
+  return res?.items ?? [];
+}
+
+export async function createAvailabilityCheck(body: Record<string, unknown>): Promise<AvailabilityCheck> {
+  if (isDemoMode()) {
+    await delay(300);
+    const c: any = { id: Date.now(), organization_id: 11, name: String(body.name ?? "Check"), check_type: String(body.check_type ?? "http"), target: String(body.target ?? ""), enabled: true, interval_seconds: Number(body.interval_seconds ?? 120), timeout_seconds: Number(body.timeout_seconds ?? 8), failures_to_down: Number(body.failures_to_down ?? 3), successes_to_up: Number(body.successes_to_up ?? 2), expected_status: body.expected_status ?? null, expected_keyword: body.expected_keyword ?? null, severity_on_down: String(body.severity_on_down ?? "critical"), notify_on_down: true, notify_on_recovery: true, last_status: "unknown", consecutive_failures: 0, consecutive_successes: 0, last_checked_at: null, last_latency_ms: null, last_error: null, next_check_at: null, metadata: {}, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), asset_id: null };
+    return c;
+  }
+  return api.post<AvailabilityCheck>("/soc/availability/checks", body);
+}
+
+export async function updateAvailabilityCheck(id: number, body: Record<string, unknown>): Promise<AvailabilityCheck> {
+  if (isDemoMode()) { await delay(250); return { ...demoAvChecks[0], id, ...body } as unknown as AvailabilityCheck; }
+  return api.patch<AvailabilityCheck>(`/soc/availability/checks/${id}`, body);
+}
+
+export async function deleteAvailabilityCheck(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.delete(`/soc/availability/checks/${id}`);
+}
+
+export async function runAvailabilityCheck(id: number): Promise<any> {
+  if (isDemoMode()) { await delay(500); return { check: { id, last_status: "up", last_latency_ms: 98 }, probe: { ok: true, status_label: "up", latency_ms: 98, http_status: 200, error: null }, incident: null, recovered: null, transition_down: false, transition_up: false }; }
+  return api.post<any>(`/soc/availability/checks/${id}/run`);
+}
+
+export async function loadAvailabilityIncidents(status?: string, limit = 50): Promise<AvailabilityIncident[]> {
+  if (isDemoMode()) {
+    await delay(250);
+    const list = demoAvIncidents as AvailabilityIncident[];
+    return status ? list.filter((i) => i.status === status) : list;
+  }
+  const q = status ? `status=${encodeURIComponent(status)}` : "";
+  const res = await api.get<{ items: AvailabilityIncident[]; total: number }>(`/soc/availability/incidents?${q}&limit=${limit}`);
+  return res?.items ?? [];
+}
+
+export async function acknowledgeAvailabilityIncident(id: number): Promise<AvailabilityIncident> {
+  if (isDemoMode()) { await delay(250); return { ...demoAvIncidents[0], id, acknowledged_at: new Date().toISOString(), time_to_acknowledge_seconds: 60 } as unknown as AvailabilityIncident; }
+  return api.post<AvailabilityIncident>(`/soc/availability/incidents/${id}/acknowledge`);
+}
+
+export async function markAvailabilityFalsePositive(id: number): Promise<AvailabilityIncident> {
+  if (isDemoMode()) { await delay(250); return { ...demoAvIncidents[0], id, status: "false_positive", excluded_from_sla: true } as unknown as AvailabilityIncident; }
+  return api.post<AvailabilityIncident>(`/soc/availability/incidents/${id}/false-positive`);
+}
+
+export async function sendAvailabilityEvent(body: Record<string, unknown>): Promise<any> {
+  if (isDemoMode()) { await delay(250); return { ok: true, event: body.event }; }
+  return api.post<any>("/soc/availability/events", body);
+}
+
+export async function sendAvailabilityHeartbeat(body: Record<string, unknown>): Promise<any> {
+  if (isDemoMode()) { await delay(200); return { ok: true }; }
+  return api.post<any>("/soc/availability/heartbeat", body);
+}
+
+export function formatDuration(sec: number | null | undefined): string {
+  if (sec == null || Number.isNaN(sec)) return "—";
+  const s = Math.max(0, Math.floor(sec));
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ${s % 60}s`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h ${m}m`;
 }

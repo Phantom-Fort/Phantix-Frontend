@@ -35,6 +35,7 @@ import { cx, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
 import AgentAssistant from "@/components/AgentAssistant";
+import AlertNotifications from "@/components/AlertNotifications";
 import { AGI_ENABLED } from "@/lib/agi";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
@@ -500,6 +501,9 @@ export default function Layout() {
 
       {/* Phantix Agent — floating chatbot assistant */}
       <AgentAssistant />
+
+      {/* Alert notifications — all severities toast, critical blocks */}
+      <AlertNotifications />
     </div>
   );
 }

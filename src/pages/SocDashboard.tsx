@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import SocAvailability from "@/components/SocAvailability";
 import { useResource } from "@/lib/useResource";
 import {
   loadSocStatus, loadSocDashboard, loadSocDetections,
@@ -373,6 +374,7 @@ export default function SocDashboard() {
           { id: "overview", label: "Overview" },
           { id: "queue", label: "Triage queue", count: openCount },
           { id: "cases", label: "Cases", count: casesRes.data?.items?.length ?? 0 },
+          { id: "availability", label: "Availability" },
           { id: "rules", label: "Rules", count: (rulesRes.data ?? []).length },
           { id: "adapters", label: "Adapters", count: (adaptersRes.data ?? []).filter((a) => a.configured).length },
         ]}
@@ -560,6 +562,10 @@ export default function SocDashboard() {
             ))}
           </div>
         </div>
+      )}
+
+      {tab === "availability" && (
+        <SocAvailability />
       )}
 
       {tab === "rules" && (
