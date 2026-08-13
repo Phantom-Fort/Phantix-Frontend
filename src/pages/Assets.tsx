@@ -501,7 +501,7 @@ export default function Assets() {
               {tools.length > 0 && (
                 <div className="mt-2 text-[10px] text-slate-500">
                   Tools: {tools.join(", ")}
-                  {rs.method && <span className="ml-2">Â· Method: {rs.method}</span>}
+                  {rs.method && <span className="ml-2">· Method: {rs.method}</span>}
                 </div>
               )}
 
@@ -537,7 +537,7 @@ export default function Assets() {
                 </span>
                 <div>
                   <p className="font-medium text-slate-200">{t.name}</p>
-                  <p className="text-xs text-slate-500">{t.asset_count} assets{t.description ? ` Â· ${t.description}` : ""}</p>
+                  <p className="text-xs text-slate-500">{t.asset_count} assets{t.description ? ` · ${t.description}` : ""}</p>
                 </div>
               </div>
             </Card>
@@ -687,11 +687,11 @@ export default function Assets() {
                     </div>
                   )}
                 </div>
-                {selectedIntel.recommended_actions.length > 0 && (
+                {(selectedIntel.recommended_actions?.length ?? 0) > 0 && (
                   <div>
                     <p className="label">Recommended actions</p>
                     <div className="space-y-2">
-                      {selectedIntel.recommended_actions.map((ra) => (
+                      {(selectedIntel.recommended_actions ?? []).map((ra) => (
                         <div key={ra.action_key} className="flex items-start gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
                           <SeverityBadge severity={ra.priority as never} />
                           <div className="min-w-0 flex-1">

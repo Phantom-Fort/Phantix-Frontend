@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, Terminal, ChevronDown, ChevronRight,
-  Plus, Lock, CheckCircle2, XCircle, Globe2,
+  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import {
@@ -131,6 +131,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [thinking, setThinking] = useState(false);
   const [connError, setConnError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const boot = useCallback(async () => {
     setBooting(true);
@@ -153,6 +155,20 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
   // Scroll to bottom on new lines.
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [transcript, actions, running]);
+
+  // Track scroll position: show the "jump to bottom" button when the user
+  // scrolls up away from the latest terminal output.
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    setShowScrollBtn(!atBottom);
+  };
+
+  const scrollToBottom = () => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollBtn(false);
+  };
 
   const openAgreement = async () => {
     try {
@@ -498,28 +514,46 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 )}
               </div>
 
-              <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 font-mono">
-                {connError && (
-                  <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
-                    <Lock size={13} className="shrink-0 text-severity-critical" />
-                    <p className="text-[11px] leading-4 text-red-300">{connError}</p>
-                  </div>
-                )}
-                {transcript.length === 0 && !connError && (
-                  <p className="py-6 text-center text-[11px] text-slate-600">Connecting to engagement container...</p>
-                )}
-                {transcript.map((t, i) => (
-                  <TxLine key={i} t={t} last={i === transcript.length - 1 && running} />
-                ))}
-                {thinking && (
-                  <p className="flex items-center gap-2 text-[11px] text-gold-300">
-                    <Loader2 size={12} className="animate-spin" /> thinking...
-                  </p>
-                )}
-                {running && transcript.length > 0 && !thinking && !connError && (
-                  <p className="text-[10px] text-slate-600">— awaiting engine output —</p>
-                )}
-                <div ref={endRef} />
+              <div className="relative min-h-0 flex-1">
+                <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-2 overflow-y-auto p-3 font-mono">
+                  {connError && (
+                    <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
+                      <Lock size={13} className="shrink-0 text-severity-critical" />
+                      <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                    </div>
+                  )}
+                  {transcript.length === 0 && !connError && (
+                    <p className="py-6 text-center text-[11px] text-slate-600">Connecting to engagement container...</p>
+                  )}
+                  {transcript.map((t, i) => (
+                    <TxLine key={i} t={t} last={i === transcript.length - 1 && running} />
+                  ))}
+                  {thinking && (
+                    <p className="flex items-center gap-2 text-[11px] text-gold-300">
+                      <Loader2 size={12} className="animate-spin" /> thinking...
+                    </p>
+                  )}
+                  {running && transcript.length > 0 && !thinking && !connError && (
+                    <p className="text-[10px] text-slate-600">— awaiting engine output —</p>
+                  )}
+                  <div ref={endRef} />
+                </div>
+
+                {/* Floating "jump to bottom" */}
+                <AnimatePresence>
+                  {showScrollBtn && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                      onClick={scrollToBottom}
+                      aria-label="Scroll to bottom"
+                      className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-phantix-700/50 bg-phantix-900/90 text-gold-300 shadow-card backdrop-blur-xl transition-colors hover:border-gold-400/40 hover:bg-phantix-800/90"
+                    >
+                      <ArrowDown size={16} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Pending approvals */}

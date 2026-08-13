@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2, ArrowRight } from "lucide-react";
+import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2, ArrowRight, ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
@@ -35,8 +35,24 @@ export default function AgentAssistant() {
   const [connError, setConnError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
+
+  // Track scroll position: show the "jump to bottom" button when the user
+  // scrolls up away from the latest messages.
+  const onScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    setShowScrollBtn(!atBottom);
+  };
+
+  const scrollToBottom = () => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollBtn(false);
+  };
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -175,8 +191,9 @@ export default function AgentAssistant() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
-                {connError && (
+              <div className="relative flex-1">
+                <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-3 overflow-y-auto p-3.5">
+                  {connError && (
                   <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
                     <X size={13} className="shrink-0 text-severity-critical" />
                     <p className="text-[11px] leading-4 text-red-300">{connError}</p>
@@ -234,6 +251,23 @@ export default function AgentAssistant() {
                   </motion.div>
                 )}
                 <div ref={endRef} />
+                </div>
+
+                {/* Floating "jump to bottom" */}
+                <AnimatePresence>
+                  {showScrollBtn && (
+                    <motion.button
+                      initial={{ opacity: 0, y: 6, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.9 }}
+                      onClick={scrollToBottom}
+                      aria-label="Scroll to bottom"
+                      className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-phantix-700/50 bg-phantix-900/90 text-gold-300 shadow-card backdrop-blur-xl transition-colors hover:border-gold-400/40 hover:bg-phantix-800/90"
+                    >
+                      <ArrowDown size={16} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Suggestions on empty conversation */}
