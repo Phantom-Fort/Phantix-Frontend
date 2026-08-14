@@ -166,10 +166,20 @@ async function request<T>(
     } catch { /* non-JSON */ }
     const detailObj = detail && typeof detail === "object" ? detail as Record<string, unknown> : null;
     const relogin = detailObj?.relogin === true || detailObj?.error === "session_invalid";
+    // Only treat a 401 as a dropped session when it is genuinely about an
+    // invalid/expired token — NOT an authorization gap such as "dual-control
+    // session required" (authorizer inbox). Clearing tokens on every 401 would
+    // log the user out of authorized reads.
+    const msg = typeof detail === "string" ? detail : detailObj?.message ? String(detailObj.message) : "";
+    const sessionInvalid =
+      relogin ||
+      /session_invalid|invalid session|session expired|token expired|not authenticated|authentication expired|expired/i.test(msg);
     if (res.status === 401) {
-      if (realm === "staff") tokens.staff = null;
-      else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
-      else { tokens.platform = null; tokens.orgUser = null; }
+      if (sessionInvalid) {
+        if (realm === "staff") tokens.staff = null;
+        else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
+        else { tokens.platform = null; tokens.orgUser = null; }
+      }
       if (realm === "application" && relogin) {
         window.location.assign("/login");
       }

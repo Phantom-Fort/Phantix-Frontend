@@ -41,6 +41,17 @@ function serviceKeyMessage(err: unknown): string | null {
   return null;
 }
 
+/** Detect the device-bound 401 so the UI can offer rotation. */
+function isDeviceBoundError(err: unknown): boolean {
+  if (!(err instanceof ApiError) || err.status !== 401) return false;
+  const msg = `${err.message} ${JSON.stringify(err.detail ?? "")}`.toLowerCase();
+  return (
+    msg.includes("bound to another device") ||
+    msg.includes("device rotation") ||
+    msg.includes("replace_primary")
+  );
+}
+
 export default function Login() {
   const { enterDemo, toast } = useStore();
   const navigate = useNavigate();
@@ -92,12 +103,14 @@ function ReturningLogin({
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [deviceRotate, setDeviceRotate] = useState(false);
 
   const startLogin = async () => {
     if (!email.trim() || !password) return;
     setBusy(true);
     setError(null);
     setBlocked(null);
+    setDeviceRotate(false);
     try {
       const res = await api.post<{
         mfa_required?: boolean;
@@ -152,6 +165,7 @@ function ReturningLogin({
         mfa_token: mfaToken,
         code,
         device_id: deviceId(),
+        replace_primary: deviceRotate,
       }, { realm: "application" });
 
       if (res.device_verification_required && res.device_token) {
@@ -175,7 +189,38 @@ function ReturningLogin({
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else if (isDeviceBoundError(err)) {
+        // Account is bound to another device — offer rotation.
+        setStage("device");
+        setCode("");
+        setError("This account is bound to another device. Confirm this is your device to rotate it to this browser.");
+      }
       else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Device rotation: get a fresh OTP, then re-submit with replace_primary=true.
+  const confirmDeviceRotation = async () => {
+    if (busy) return;
+    setError(null);
+    setBusy(true);
+    try {
+      // 1) Fresh OTP for the same account (email + password).
+      const login = await api.post<{ mfa_token?: string; destination_masked?: string }>(
+        "/app/auth/login",
+        { email: email.trim(), password },
+        { realm: "application" },
+      );
+      setMfaToken(login.mfa_token ?? "");
+      setMaskedDest(login.destination_masked ?? "");
+      setCode("");
+      setDeviceRotate(true);
+      setStage("mfa");
+      setError("A new code was sent. Enter it to rotate this device.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not start device rotation");
     } finally {
       setBusy(false);
     }
@@ -226,6 +271,7 @@ function ReturningLogin({
                 <button className="btn-primary w-full !py-3" disabled={busy || !email.trim() || !password}>
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
+                <a href={`${PLATFORM_URL}/password-reset`} className="block text-center text-xs text-slate-500 hover:text-slate-300">Forgot password?</a>
               </motion.form>
             )}
 
@@ -233,8 +279,12 @@ function ReturningLogin({
               <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
                 <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
                   <ShieldCheck size={22} className="mx-auto text-gold-400" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
-                  <p className="mt-1 text-xs text-slate-500">{maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-200">{deviceRotate ? "Confirm device rotation" : "Verify your identity"}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {deviceRotate
+                      ? "A new code was sent. Entering it will rotate this browser to your primary device."
+                      : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
+                  </p>
                 </div>
                 <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
@@ -457,6 +507,11 @@ function AppLoginFlow({
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
+      else if (isDeviceBoundError(err)) {
+        setStage("device");
+        setCode("");
+        setError("This account is bound to another device. Enter the code again to rotate it to this browser.");
+      }
       else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
     } finally {
       setBusy(false);
@@ -634,7 +689,9 @@ function AppLoginFlow({
                   {stage === "device" ? <Smartphone size={22} className="mx-auto text-severity-medium" /> : <ShieldCheck size={22} className="mx-auto text-gold-400" />}
                   <p className="mt-2 text-sm font-medium text-slate-200">{stage === "device" ? "New device detected" : "Verify your identity"}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {stage === "device" ? "A second code was emailed to confirm this browser." : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
+                    {stage === "device"
+                      ? "This account is bound to another device. Enter the code to rotate it to this browser."
+                      : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
                   {(orgName || userName) && (
                     <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">

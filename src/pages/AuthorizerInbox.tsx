@@ -40,7 +40,7 @@ export default function AuthorizerInbox() {
   const [acting, setActing] = useState<number | null>(null);
 
   const { data: inbox, loading, reload } = useResource(
-    () => api.get<InboxResponse>("/authorizer/inbox"),
+    () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
     emptyInbox,
   );
 

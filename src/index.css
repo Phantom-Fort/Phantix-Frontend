@@ -48,27 +48,25 @@
   }
 
   :root[data-theme="light"] {
-    /* ── Light theme ──
-       phantix-950 becomes the light page surface; text-phantix-950 (used on gold
-       buttons / brand marks) is re-pinned to navy via the override below. */
+    /* Clean light theme: white surfaces, ink text, blue structure, gold actions. */
     color-scheme: light;
 
-    --phantix-950: 244 246 250;
+    --phantix-950: 255 255 255;
     --phantix-900: 255 255 255;
-    --phantix-850: 248 250 253;
-    --phantix-800: 237 241 248;
-    --phantix-700: 214 222 238;
-    --phantix-600: 165 180 220;
-    --phantix-500: 51 85 181;
-    --phantix-400: 74 108 205;
-    --phantix-300: 74 108 205;
-    --phantix-200: 90 120 200;
-    --phantix-100: 51 85 181;
+    --phantix-850: 248 251 255;
+    --phantix-800: 239 246 255;
+    --phantix-700: 207 220 240;
+    --phantix-600: 148 172 210;
+    --phantix-500: 37 99 235;
+    --phantix-400: 29 78 216;
+    --phantix-300: 30 64 175;
+    --phantix-200: 30 58 130;
+    --phantix-100: 15 50 110;
 
-    --gold-300: 184 138 40;
-    --gold-400: 196 148 40;
-    --gold-500: 174 126 30;
-    --gold-600: 140 96 18;
+    --gold-300: 154 103 22;
+    --gold-400: 183 126 34;
+    --gold-500: 161 106 22;
+    --gold-600: 127 78 12;
 
     --severity-critical: 220 38 60;
     --severity-high: 234 116 30;
@@ -76,25 +74,25 @@
     --severity-low: 2 132 199;
     --severity-info: 100 116 139;
 
-    --slate-50: 15 23 42;
-    --slate-100: 30 41 59;
-    --slate-200: 51 65 85;
-    --slate-300: 71 85 105;
-    --slate-400: 100 116 139;
-    --slate-500: 148 163 184;
-    --slate-600: 203 213 225;
-    --slate-700: 226 232 240;
-    --slate-800: 237 241 248;
-    --slate-900: 244 246 250;
+    --slate-50: 8 15 30;
+    --slate-100: 15 23 42;
+    --slate-200: 30 41 59;
+    --slate-300: 51 65 85;
+    --slate-400: 71 85 105;
+    --slate-500: 100 116 139;
+    --slate-600: 148 163 184;
+    --slate-700: 203 213 225;
+    --slate-800: 226 232 240;
+    --slate-900: 241 245 249;
     --slate-950: 248 250 252;
 
     --color-white: 15 23 42;
     --color-black: 2 6 23;
 
-    --surface: 244 246 250;
+    --surface: 255 255 255;
     --surface-card: 255 255 255;
-    --surface-inset: 237 241 248;
-    --border-subtle: 214 222 238;
+    --surface-inset: 239 246 255;
+    --border-subtle: 207 220 240;
   }
 
   /* Gold buttons always use navy/blue label text (readable on gold in both themes). */
@@ -103,20 +101,12 @@
     color: #050b1d;
   }
 
-  /*
-   * Light mode: gold copy on white is hard to read — sit gold text on a soft
-   * navy chip so kickers / accents stay brand-gold but legible.
-   */
+  /* Gold remains an accent, never a text-background treatment. */
   :root[data-theme="light"] .text-gold-300,
   :root[data-theme="light"] .text-gold-400,
   :root[data-theme="light"] .text-gold-500,
   :root[data-theme="light"] .text-gold-600 {
-    color: rgb(196 148 40);
-    background-color: rgb(13 27 61 / 0.1);
-    border-radius: 0.35rem;
-    padding: 0.05em 0.4em;
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
+    color: rgb(154 103 22);
   }
   /* Icons / chips already have their own bg — don't double-pad lucide wrappers */
   :root[data-theme="light"] svg.text-gold-300,
@@ -205,44 +195,42 @@
   }
 
   :root[data-theme="light"] body {
-    background-color: rgb(var(--phantix-950));
-    background-image:
-      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(51, 85, 181, 0.08), transparent),
-      radial-gradient(ellipse 50% 40% at 90% 110%, rgba(196, 148, 40, 0.05), transparent);
+    background-color: #ffffff;
+    background-image: none;
   }
 
   /* Light-mode surface polish — cards/glass need solid white + visible borders. */
   :root[data-theme="light"] .glass {
-    background-color: rgb(255 255 255 / 0.92);
-    border-color: rgb(214 222 238 / 0.9);
-    box-shadow: 0 8px 28px -14px rgba(15, 23, 42, 0.12);
+    background-color: #ffffff;
+    border-color: rgb(207 220 240);
+    box-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.28);
   }
   :root[data-theme="light"] .glass-bright {
-    background-color: rgb(255 255 255 / 0.96);
-    border-color: rgb(214 222 238 / 0.95);
+    background-color: #ffffff;
+    border-color: rgb(207 220 240);
   }
   :root[data-theme="light"] .card {
     box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.14);
   }
   :root[data-theme="light"] .input {
-    background-color: rgb(255 255 255 / 0.95);
-    border-color: rgb(214 222 238);
-    color: rgb(15 23 42);
+    background-color: #ffffff;
+    border-color: rgb(148 172 210);
+    color: rgb(8 15 30);
   }
   :root[data-theme="light"] .btn-secondary {
-    background-color: rgb(237 241 248);
-    border-color: rgb(214 222 238);
-    color: rgb(30 41 59);
-  }
-  :root[data-theme="light"] .btn-ghost:hover {
-    background-color: rgb(237 241 248);
-  }
-  :root[data-theme="light"] .nav-item:hover {
-    background-color: rgb(237 241 248);
+    background-color: rgb(239 246 255);
+    border-color: rgb(148 172 210);
     color: rgb(15 23 42);
   }
+  :root[data-theme="light"] .btn-ghost:hover {
+    background-color: rgb(239 246 255);
+  }
+  :root[data-theme="light"] .nav-item:hover {
+    background-color: rgb(239 246 255);
+    color: rgb(8 15 30);
+  }
   :root[data-theme="light"] .skeleton {
-    background-color: rgb(237 241 248);
+    background-color: rgb(239 246 255);
   }
   :root[data-theme="light"] .shadow-glow {
     box-shadow: 0 0 36px -12px rgba(196, 148, 40, 0.35);
@@ -363,10 +351,14 @@
     @apply my-3 pl-5 space-y-1.5 text-sm text-slate-300 leading-6;
   }
   .prose-doc ul {
-    @apply list-disc marker:text-gold-500;
+    @apply list-disc;
   }
   .prose-doc ol {
-    @apply list-decimal marker:text-gold-500;
+    @apply list-decimal;
+  }
+  .prose-doc ul li::marker,
+  .prose-doc ol li::marker {
+    color: rgb(var(--gold-500));
   }
   .prose-doc a {
     @apply text-gold-400 underline decoration-gold-400/30 underline-offset-2 hover:decoration-gold-400;

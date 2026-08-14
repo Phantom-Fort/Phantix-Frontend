@@ -225,9 +225,9 @@ export default function Scans() {
             <label className="label">Tools</label>
             <div className="flex gap-2">
               {["nmap", "nuclei", "apk"].map((t) => (
-                <label key={t} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/50 py-2.5 text-sm text-slate-300 has-[:checked]:border-gold-400/50 has-[:checked]:bg-gold-400/10 has-[:checked]:text-gold-300">
-                  <input type="checkbox" defaultChecked={t !== "apk"} className="h-3.5 w-3.5 accent-gold-400" />
-                  <span className="font-mono">{t}</span>
+                <label key={t} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/50 py-2.5 text-sm text-slate-300">
+                  <input type="checkbox" defaultChecked={t !== "apk"} className="peer h-3.5 w-3.5 accent-gold-400" />
+                  <span className="font-mono transition-colors peer-checked:text-gold-300">{t}</span>
                 </label>
               ))}
             </div>

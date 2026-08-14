@@ -41,13 +41,19 @@ export default function Support() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-100">#{t.id} · {t.subject}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">{t.messages.length} message{t.messages.length !== 1 ? "s" : ""} · opened {timeAgo(t.created_at)}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{(t.messages?.length ?? 0)} message{t.messages?.length !== 1 ? "s" : ""} · opened {timeAgo(t.created_at)}</p>
                   </div>
                   <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400 capitalize">{t.priority}</span>
                   <StatusBadge status={t.status} />
                 </div>
                 <div className="mt-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5 text-xs leading-5 text-slate-400">
-                  <span className="font-semibold text-slate-300">{t.messages[0].from}:</span> {t.messages[0].body}
+                  {t.messages?.[0] ? (
+                    <>
+                      <span className="font-semibold text-slate-300">{t.messages[0].from}:</span> {t.messages[0].body}
+                    </>
+                  ) : (
+                    <span className="text-slate-500">No message preview available.</span>
+                  )}
                 </div>
               </Card>
             </motion.div>
