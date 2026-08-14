@@ -10,6 +10,8 @@ import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
 import { cx } from "@/lib/utils";
 import { BrandLogo } from "@/components/BrandLogo";
+import LottiePlayer from "@/components/LottiePlayer";
+import cyberData from "@docs/Animations/cybersecurity.json";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Stage =
@@ -753,8 +755,9 @@ function BackLink({ to }: { to: string }) {
 function Header({ subtitle, note, children }: { subtitle: string; note?: string; children?: React.ReactNode }) {
   return (
     <div className="mb-8 text-center">
-      <BrandLogo className="mx-auto h-20 w-20" />
-      <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
+      <LottiePlayer animationData={cyberData} className="mx-auto h-24 w-24" loop speed={1.1} />
+      <BrandLogo className="mx-auto mt-2 h-16 w-16" />
+      <h1 className="mt-4 font-display text-2xl font-bold text-white">Command Centre</h1>
       <p className="mt-1.5 text-sm text-slate-400">
         {subtitle} · <span className="font-mono text-xs">app.phantix.site</span>
       </p>

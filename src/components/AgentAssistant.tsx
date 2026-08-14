@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Send, Loader2, Square, BrainCircuit, Sparkles, X, Trash2, ArrowRight, ArrowDown } from "lucide-react";
+import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
+import LottiePlayer from "@/components/LottiePlayer";
+import chatbotData from "@docs/Animations/chatbot.json";
+import ghostData from "@docs/Animations/Ghostsmart.json";
+import flowData from "@docs/Animations/ai animation Flow 1.json";
 import { tryNavigationAnswer, helpOverview } from "@/lib/navigationGuide";
 
 type Msg = { role: "user" | "agent"; text: string; thinking?: string; nav?: { route: string; label: string; also?: { route: string; label: string }[] } };
@@ -151,11 +155,15 @@ export default function AgentAssistant() {
       {/* Floating launcher (bottom-right) */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-[75] flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950 shadow-card transition-transform hover:scale-105"
+        className="fixed bottom-5 right-5 z-[75] flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950 shadow-card transition-transform hover:scale-105"
         title="Phantix Agent assistant"
         aria-label="Toggle Phantix Agent assistant"
       >
-        {open ? <X size={22} /> : <Bot size={24} />}
+        {open ? (
+          <X size={22} />
+        ) : (
+          <LottiePlayer animationData={chatbotData} className="h-12 w-12" loop />
+        )}
       </button>
 
       <AnimatePresence>
@@ -176,7 +184,7 @@ export default function AgentAssistant() {
             >
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Bot size={18} /></span>
+                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
                 <div className="min-w-0">
                   <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
                   <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -205,7 +213,7 @@ export default function AgentAssistant() {
                       <div className={cx("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
                         {m.role === "agent" && m.thinking && (
                           <details className="mb-1.5">
-                            <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                            <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
                             <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{m.thinking}</p>
                           </details>
                         )}
@@ -238,15 +246,15 @@ export default function AgentAssistant() {
                 {busy && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
                     <div className="max-w-[85%] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-3.5 py-2.5 text-[13px] leading-6 text-slate-200">
-                      {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={13} className="animate-spin" /> Connecting to stream...</span>}
+                      {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream...</span>}
                       {liveThinking && (
                         <details className="mb-1.5" open>
-                          <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                          <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
                           <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{liveThinking}</p>
                         </details>
                       )}
                       {liveAnswer && <p className="whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-3.5 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>}
-                      {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={13} className="animate-spin" /> Streaming...</span>}
+                      {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Streaming...</span>}
                     </div>
                   </motion.div>
                 )}

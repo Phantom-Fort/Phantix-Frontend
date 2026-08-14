@@ -5,6 +5,8 @@ import {
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
+import LottiePlayer from "@/components/LottiePlayer";
+import ghostData from "@docs/Animations/Ghostsmart.json";
 import {
   loadAgiAccess,
   loadAgiAgreement,
@@ -530,7 +532,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   ))}
                   {thinking && (
                     <p className="flex items-center gap-2 text-[11px] text-gold-300">
-                      <Loader2 size={12} className="animate-spin" /> thinking...
+                      <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> thinking...
                     </p>
                   )}
                   {running && transcript.length > 0 && !thinking && !connError && (

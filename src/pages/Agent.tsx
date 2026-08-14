@@ -7,6 +7,10 @@ import {
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import AgiWorkspace from "@/components/AgiWorkspace";
+import LottiePlayer from "@/components/LottiePlayer";
+import chatbotData from "@docs/Animations/chatbot.json";
+import ghostData from "@docs/Animations/Ghostsmart.json";
+import flowData from "@docs/Animations/ai animation Flow 1.json";
 import { AGI_ENABLED } from "@/lib/agi";
 import {
   loadAiStatus,
@@ -414,7 +418,7 @@ function AgentChat({
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="flex h-[66vh] flex-col !p-0 overflow-hidden">
         <div className="flex items-center gap-3 border-b border-phantix-700/40 px-5 py-3.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Bot size={18} /></span>
+          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
             <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
             <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -452,7 +456,7 @@ function AgentChat({
         <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {messages.length === 0 && !busy && (
             <div className="flex h-full flex-col items-center justify-center text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-phantix-800/70 text-gold-400"><Bot size={26} /></span>
+              <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-phantix-800/70"><LottiePlayer animationData={chatbotData} className="h-12 w-12" loop /></span>
               <p className="mt-4 max-w-sm text-sm text-slate-400">Ask me anything about your security posture, or spin up a specialist for deep analysis.</p>
               <div className="mt-6 grid w-full max-w-lg grid-cols-1 gap-2 sm:grid-cols-2">
                 {SUGGESTIONS.map((s) => (
@@ -467,7 +471,7 @@ function AgentChat({
                 <div className={cx("max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
                   {m.role === "agent" && m.thinking && (
                     <details className="mb-2">
-                      <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                      <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
                       <p className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{m.thinking}</p>
                     </details>
                   )}
@@ -505,8 +509,8 @@ function AgentChat({
           {busy && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
               <div className="max-w-[82%] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-4 py-3 text-sm leading-6 text-slate-200">
-                {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={14} className="animate-spin" /> Connecting to stream...</span>}
-                {phase === "synthesizing" && tools.length === 0 && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={14} className="animate-spin" /> Synthesizing...</span>}
+                {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream...</span>}
+                {phase === "synthesizing" && tools.length === 0 && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Synthesizing...</span>}
                 {tools.length > 0 && (
                   <div className="mb-2 flex flex-wrap items-center gap-1.5">
                     {tools.map((t, idx) => (
@@ -519,7 +523,7 @@ function AgentChat({
                 {liveRunId && <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveThinking && (
                   <details className="mb-2" open>
-                    <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                    <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
                     <p className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{liveThinking}</p>
                   </details>
                 )}
@@ -528,7 +532,7 @@ function AgentChat({
                     <p className="whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-4 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>
                   </>
                 )}
-                {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><Loader2 size={14} className="animate-spin" /> Streaming...</span>}
+                {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Streaming...</span>}
               </div>
             </motion.div>
           )}
