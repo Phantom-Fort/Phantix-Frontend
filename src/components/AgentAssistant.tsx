@@ -6,9 +6,9 @@ import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
 import LottiePlayer from "@/components/LottiePlayer";
-import chatbotData from "@docs/Animations/chatbot.json";
-import ghostData from "@docs/Animations/Ghostsmart.json";
-import flowData from "@docs/Animations/ai animation Flow 1.json";
+import chatbotData from "@/lib/animations/chatbot.json";
+import ghostData from "@/lib/animations/ghostsmart.json";
+import flowData from "@/lib/animations/ai-flow.json";
 import { tryNavigationAnswer, helpOverview } from "@/lib/navigationGuide";
 
 type Msg = { role: "user" | "agent"; text: string; thinking?: string; nav?: { route: string; label: string; also?: { route: string; label: string }[] } };
@@ -159,11 +159,7 @@ export default function AgentAssistant() {
         title="Phantix Agent assistant"
         aria-label="Toggle Phantix Agent assistant"
       >
-        {open ? (
-          <X size={22} />
-        ) : (
-          <LottiePlayer animationData={chatbotData} className="h-12 w-12" loop />
-        )}
+        <LottiePlayer animationData={chatbotData} className="h-12 w-12" loop />
       </button>
 
       <AnimatePresence>

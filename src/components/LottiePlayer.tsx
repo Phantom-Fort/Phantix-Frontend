@@ -2,7 +2,10 @@ import React, { useEffect, useRef } from "react";
 import lottie, { AnimationItem } from "lottie-web/build/player/lottie_svg";
 
 interface LottiePlayerProps {
-  animationData: unknown;
+  /** Inline Lottie JSON. */
+  animationData?: unknown;
+  /** URL path to a Lottie JSON (fetched at runtime, keeps bundle small). */
+  src?: string;
   className?: string;
   loop?: boolean;
   autoplay?: boolean;
@@ -15,9 +18,11 @@ interface LottiePlayerProps {
 /**
  * Minimal lottie-web wrapper used across the Phantix apps.
  * Renders a Lottie JSON animation into a container and cleans it up on unmount.
+ * Pass either `animationData` (inline JSON) or `src` (runtime path).
  */
 export default function LottiePlayer({
   animationData,
+  src,
   className,
   loop = true,
   autoplay = true,
@@ -36,7 +41,8 @@ export default function LottiePlayer({
       renderer: "svg",
       loop,
       autoplay,
-      animationData: animationData as any,
+      animationData: src ? undefined : (animationData as any),
+      path: src,
     });
     anim.setSpeed(speed);
     if (segment && typeof anim.playSegments === "function") {

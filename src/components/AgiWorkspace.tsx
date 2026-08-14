@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
-import ghostData from "@docs/Animations/Ghostsmart.json";
+import ghostData from "@/lib/animations/ghostsmart.json";
 import {
   loadAgiAccess,
   loadAgiAgreement,

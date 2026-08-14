@@ -1,17 +1,16 @@
 ﻿import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
-  Link2, Building2, User, AlertOctagon, Check,
+  ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
+  Link2, Building2, User, AlertOctagon, Check, Send,
 } from "lucide-react";
 import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
 import { cx } from "@/lib/utils";
 import { BrandLogo } from "@/components/BrandLogo";
-import LottiePlayer from "@/components/LottiePlayer";
-import cyberData from "@docs/Animations/cybersecurity.json";
+import AuthShowcase from "@/components/AuthShowcase";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Stage =
@@ -83,6 +82,43 @@ export default function Login() {
       navigate={navigate}
       toast={toast}
     />
+  );
+}
+
+// ── Shared chrome: two-column layout mirroring the platform login ──────────────
+function LoginChrome({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative flex min-h-screen overflow-hidden bg-phantix-950">
+      <div className="pointer-events-none fixed inset-0">
+        <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
+        <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
+      </div>
+
+      <div className="relative z-10 w-full lg:grid lg:min-h-screen lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
+        <AuthShowcase />
+
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+          <div className="absolute right-6 top-6 z-20"><ThemeToggle /></div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginBrand({ subtitle, note, children }: { subtitle: string; note?: string; children?: React.ReactNode }) {
+  return (
+    <div className="mb-8 text-center">
+      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="mx-auto">
+        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(51,85,181,0.6)]" />
+      </motion.div>
+      <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
+      <p className="mt-1.5 text-sm text-slate-400">
+        {subtitle} · <span className="font-mono text-xs">app.phantix.site</span>
+      </p>
+      {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
+      {children}
+    </div>
   );
 }
 
@@ -229,10 +265,9 @@ function ReturningLogin({
   };
 
   return (
-    <Screen>
-      <BackLink to="/" />
-      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-[420px]">
-        <Header subtitle="Application sign-in" note="Returning user? Sign in with your email and password." />
+    <LoginChrome>
+      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="w-full max-w-[420px]">
+        <LoginBrand subtitle="Application sign-in" note="Returning user? Sign in with your email and password." />
         <div className="card p-7">
           {showInvite ? (
             <motion.div key="invite" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
@@ -273,6 +308,7 @@ function ReturningLogin({
                 <button className="btn-primary w-full !py-3" disabled={busy || !email.trim() || !password}>
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
+                <NewsletterField />
                 <a href={`${PLATFORM_URL}/password-reset`} className="block text-center text-xs text-slate-500 hover:text-slate-300">Forgot password?</a>
               </motion.form>
             )}
@@ -311,6 +347,9 @@ function ReturningLogin({
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Confirming...</> : "Verify device & sign in"}
                 </button>
                 <button type="button" onClick={() => void resendCode()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
+                {!deviceRotate && (
+                  <button type="button" onClick={() => void confirmDeviceRotation()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">This is my device — rotate it</button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -318,15 +357,15 @@ function ReturningLogin({
         </div>
 
         <div className="mt-5 space-y-2 text-center">
-          <button onClick={() => { enterDemo(); navigate("/dashboard"); }} className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300">
+          <button onClick={() => { enterDemo(); navigate("/dashboard"); }} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-300">
             <PlayCircle size={13} /> Explore the demo tenant
           </button>
-          <p className="text-xs text-slate-500">
-            First time? <button onClick={() => { setShowInvite(true); setError(null); }} className="text-gold-400 hover:text-gold-300">Use an invite link</button>
-          </p>
+          <button onClick={() => { setShowInvite((v) => !v); setError(null); }} className="block w-full text-xs text-gold-400 hover:text-gold-300">
+            {showInvite ? "Back to email sign-in" : "Use an invite link"}
+          </button>
         </div>
       </motion.div>
-    </Screen>
+    </LoginChrome>
   );
 }
 
@@ -585,49 +624,46 @@ function AppLoginFlow({
   // Demo mode: skip authentication
   if (demoMode) {
     return (
-      <Screen>
-        <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="relative w-full max-w-[420px] text-center">
-          <BrandLogo className="mx-auto h-20 w-20" />
-          <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
-          <p className="mt-2 text-sm text-slate-400">Demo mode --- explore features instantly</p>
+      <LoginChrome>
+        <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[420px] text-center">
+          <LoginBrand subtitle="Application sign-in" note="Demo mode --- explore features instantly" />
           <button
             onClick={() => { enterDemo(); navigate("/dashboard"); }}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 font-semibold text-phantix-950 hover:bg-gold-300"
+            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 font-semibold text-phantix-950 hover:bg-gold-300"
           >
             <PlayCircle size={16} /> Explore the demo tenant
           </button>
         </motion.div>
-      </Screen>
+      </LoginChrome>
     );
   }
 
   // Loading / challenge state
   if (!challenged && !blocked) {
     return (
-      <Screen>
-        <div className="relative text-center">
-          <BrandLogo className="mx-auto h-20 w-20 animate-pulse-soft" />
-          <p className="mt-4 text-sm text-slate-400">Validating login link...</p>
+      <LoginChrome>
+        <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[420px] text-center">
+          <LoginBrand subtitle="Application sign-in" />
+          <p className="text-sm text-slate-400">Validating login link...</p>
           {error && (
             <div className="mx-auto mt-4 max-w-md rounded-xl border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">{error}</div>
           )}
-        </div>
-      </Screen>
+        </motion.div>
+      </LoginChrome>
     );
   }
 
   return (
-    <Screen>
-      <BackLink to="/" />
-      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-[420px]">
-        <Header subtitle="Application sign-in" note={nextStep === "set_password" ? "First sign-in: set a password for your account." : "Invite link verified."}>
+    <LoginChrome>
+      <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="w-full max-w-[420px]">
+        <LoginBrand subtitle="Application sign-in" note={nextStep === "set_password" ? "First sign-in: set a password for your account." : "Invite link verified."}>
           {(orgName || userName) && (
             <div className="mt-2 flex items-center justify-center gap-3 text-xs text-slate-500">
               {orgName && <span className="flex items-center gap-1"><Building2 size={11} /> {orgName}</span>}
               {userName && <span className="flex items-center gap-1"><User size={11} /> {userName}</span>}
             </div>
           )}
-        </Header>
+        </LoginBrand>
 
         <div className="card p-7">
           <AnimatePresence mode="wait">
@@ -724,45 +760,61 @@ function AppLoginFlow({
           Signing in via <a href={PLATFORM_URL} className="text-gold-400 hover:text-gold-300">organization login link</a>
         </p>
       </motion.div>
-    </Screen>
+    </LoginChrome>
   );
 }
 
-// ── Shared chrome ──────────────────────────────────────────────────────────────
-function Screen({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-grid-faint bg-grid [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
-        <div className="absolute left-1/2 top-1/3 h-[420px] w-[680px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-phantix-600/20 blur-[130px]" />
-      </div>
-      <div className="absolute right-6 top-6 z-20">
-        <ThemeToggle />
-      </div>
-      {children}
-    </div>
-  );
-}
+// ── Shared inputs ──────────────────────────────────────────────────────────────
+function NewsletterField() {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-function BackLink({ to }: { to: string }) {
-  return (
-    <Link to={to} className="absolute left-6 top-6 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-200">
-      <ArrowLeft size={15} /> Back to site
-    </Link>
-  );
-}
+  const subscribe = () => {
+    const v = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+    setError(null);
+    setSubscribed(true);
+  };
 
-function Header({ subtitle, note, children }: { subtitle: string; note?: string; children?: React.ReactNode }) {
   return (
-    <div className="mb-8 text-center">
-      <LottiePlayer animationData={cyberData} className="mx-auto h-24 w-24" loop speed={1.1} />
-      <BrandLogo className="mx-auto mt-2 h-16 w-16" />
-      <h1 className="mt-4 font-display text-2xl font-bold text-white">Command Centre</h1>
-      <p className="mt-1.5 text-sm text-slate-400">
-        {subtitle} · <span className="font-mono text-xs">app.phantix.site</span>
+    <div className="border-t border-phantix-700/40 pt-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+        Security insights in your inbox
       </p>
-      {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
-      {children}
+      {subscribed ? (
+        <p className="mt-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-400">
+          You're on the list. Watch your inbox for a welcome note.
+        </p>
+      ) : (
+        <>
+          <div className="mt-2 flex gap-2">
+            <div className="relative flex-1">
+              <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                className="input !pl-9 !py-2 text-xs"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    subscribe();
+                  }
+                }}
+                placeholder="you@company.com"
+                aria-label="Newsletter email"
+              />
+            </div>
+            <button type="button" onClick={subscribe} className="btn-secondary !px-3 !py-2">
+              <Send size={14} />
+            </button>
+          </div>
+          {error && <p className="mt-1.5 text-xs text-severity-critical">{error}</p>}
+        </>
+      )}
     </div>
   );
 }

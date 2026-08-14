@@ -8,9 +8,9 @@ import {
 import { PageHeader, Card } from "@/components/ui";
 import AgiWorkspace from "@/components/AgiWorkspace";
 import LottiePlayer from "@/components/LottiePlayer";
-import chatbotData from "@docs/Animations/chatbot.json";
-import ghostData from "@docs/Animations/Ghostsmart.json";
-import flowData from "@docs/Animations/ai animation Flow 1.json";
+import chatbotData from "@/lib/animations/chatbot.json";
+import ghostData from "@/lib/animations/ghostsmart.json";
+import flowData from "@/lib/animations/ai-flow.json";
 import { AGI_ENABLED } from "@/lib/agi";
 import {
   loadAiStatus,
