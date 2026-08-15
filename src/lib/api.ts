@@ -127,40 +127,54 @@ async function request<T>(
   path: string,
   opts: { body?: unknown; realm?: Realm; dualControl?: boolean; form?: Record<string, string> } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = {};
   const realm = opts.realm ?? (tokens.appSession ? "application" : "platform");
 
-  const bearer =
-    realm === "staff" ? tokens.staff : realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;
-  if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-  if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
-  // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
-  if (realm === "application") headers["X-Device-Id"] = deviceId();
-  // Dual-control operate session: attach on ALL mutations when a token exists so
-  // the Phantix Agent, Pentest Agent, and platform mutations share ONE operate
-  // session. Stale/expired tokens are handled separately (the backend rejects the
-  // mutation, not the org/app session — see the 401 handling below).
-  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-  if (opts.dualControl && tokens.dualControl) {
-    headers["X-Dual-Control-Session"] = tokens.dualControl;
-  } else if (isMutation && tokens.dualControl) {
-    headers["X-Dual-Control-Session"] = tokens.dualControl;
+  // Build headers fresh on every attempt so a renewal applied by another
+  // in-flight response is picked up on retry.
+  const doFetch = async (): Promise<Response> => {
+    const headers: Record<string, string> = {};
+    const bearer =
+      realm === "staff" ? tokens.staff : realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;
+    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+    if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
+    // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
+    if (realm === "application") headers["X-Device-Id"] = deviceId();
+    // Dual-control operate session: attach on ALL mutations when a token exists so
+    // the Phantix Agent, Pentest Agent, and platform mutations share ONE operate
+    // session. Stale/expired tokens are handled separately (the backend rejects the
+    // mutation, not the org/app session — see the 401 handling below).
+    const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    if (opts.dualControl && tokens.dualControl) {
+      headers["X-Dual-Control-Session"] = tokens.dualControl;
+    } else if (isMutation && tokens.dualControl) {
+      headers["X-Dual-Control-Session"] = tokens.dualControl;
+    }
+
+    let body: BodyInit | undefined;
+    if (opts.form) {
+      headers["Content-Type"] = "application/x-www-form-urlencoded";
+      body = new URLSearchParams(opts.form).toString();
+    } else if (opts.body !== undefined) {
+      headers["Content-Type"] = "application/json";
+      body = JSON.stringify(opts.body);
+    }
+
+    const res = await fetch(`${API_BASE}${path}`, { method, headers, body });
+    // App session token renewal (APP_SESSION_TOKEN_RENEWAL.md): the backend bumps
+    // token versions on activity and returns refreshed tokens in response headers.
+    applyTokenRenewal(res);
+    return res;
+  };
+
+  let res = await doFetch();
+
+  // Concurrent-renewal race: another request already bumped the token version,
+  // so this one was rejected as superseded. Retry once with the freshly stored
+  // token instead of treating it as a dropped session (which logs the user out
+  // mid-session).
+  if (res.status === 401 && (await isSessionSuperseded(res))) {
+    res = await doFetch();
   }
-
-  let body: BodyInit | undefined;
-  if (opts.form) {
-    headers["Content-Type"] = "application/x-www-form-urlencoded";
-    body = new URLSearchParams(opts.form).toString();
-  } else if (opts.body !== undefined) {
-    headers["Content-Type"] = "application/json";
-    body = JSON.stringify(opts.body);
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, { method, headers, body });
-
-  // App session token renewal (APP_SESSION_TOKEN_RENEWAL.md): the backend bumps
-  // token versions on activity and returns refreshed tokens in response headers.
-  applyTokenRenewal(res);
 
   if (!res.ok) {
     let detail: unknown = res.statusText;
@@ -171,22 +185,22 @@ async function request<T>(
     const relogin = detailObj?.relogin === true || detailObj?.error === "session_invalid";
     // Only treat a 401 as a dropped session when it is genuinely about an
     // invalid/expired token — NOT an authorization gap such as "dual-control
-    // session required" (authorizer inbox). Clearing tokens on every 401 would
-    // log the user out of authorized reads.
+    // session required" (authorizer inbox) and NOT a transient superseded race.
     const msg = typeof detail === "string" ? detail : detailObj?.message ? String(detailObj.message) : "";
     // A missing/expired dual-control operate session is NOT a dropped org/app
     // session. It only blocks sensitive actions; the user stays signed in.
     const dcSessionIssue = /authenticator session|dual.?control session|X-Dual-Control-Session/i.test(msg);
+    const superseded = detailObj?.error === "session_superseded" || /superseded by renewal/i.test(msg);
     const sessionInvalid =
       relogin ||
       /session_invalid|invalid session|session expired|token expired|not authenticated|authentication expired|expired/i.test(msg);
     if (res.status === 401) {
-      if (sessionInvalid && !dcSessionIssue) {
+      if (sessionInvalid && !dcSessionIssue && !superseded) {
         if (realm === "staff") tokens.staff = null;
         else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
         else { tokens.platform = null; tokens.orgUser = null; }
       }
-      if (realm === "application" && relogin && !dcSessionIssue) {
+      if (realm === "application" && relogin && !dcSessionIssue && !superseded) {
         window.location.assign("/login");
       }
     }
@@ -198,6 +212,17 @@ async function request<T>(
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
+}
+
+/** True when a 401 is the retryable "token superseded by renewal" race. */
+async function isSessionSuperseded(res: Response): Promise<boolean> {
+  try {
+    const j = (await res.clone().json()) as { detail?: { error?: string; message?: string } };
+    const d = j?.detail;
+    return d?.error === "session_superseded" || /superseded by renewal/i.test(d?.message ?? "");
+  } catch {
+    return false;
+  }
 }
 
 export const api = {

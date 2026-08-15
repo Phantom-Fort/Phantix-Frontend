@@ -8,6 +8,8 @@ import { Modal, Spinner } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
 import MarkdownView from "@/components/MarkdownView";
 import ghostData from "@/lib/animations/ghostsmart.json";
+import { loadAssetsBundle } from "@/lib/data";
+import type { Asset } from "@/lib/types";
 import {
   loadAgiAccess,
   loadAgiAgreement,
@@ -117,9 +119,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [selectedEng, setSelectedEng] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newAllowlist, setNewAllowlist] = useState("");
   const [newRoe, setNewRoe] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Asset picker — engagements may only target the org's already-added assets.
+  const [orgAssets, setOrgAssets] = useState<Asset[]>([]);
+  const [assetLoading, setAssetLoading] = useState(false);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [selectedAssetIds, setSelectedAssetIds] = useState<Set<number>>(new Set());
+  const [selectAllAssets, setSelectAllAssets] = useState(false);
 
   // Session + stream
   const [session, setSession] = useState<AgiSession | null>(null);
@@ -152,6 +160,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       toast("error", "Could not load AGI access", e instanceof Error ? e.message : "");
     } finally {
       setBooting(false);
+    }
+    // Best-effort: load the org's assets for the engagement target picker.
+    setAssetLoading(true);
+    try {
+      const bundle = await loadAssetsBundle();
+      setOrgAssets(Array.isArray(bundle.assets) ? bundle.assets : []);
+    } catch {
+      setOrgAssets([]);
+    } finally {
+      setAssetLoading(false);
     }
   }, [toast]);
 
@@ -198,9 +216,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   };
 
   const createEngagement = async () => {
-    const targets = newAllowlist.split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+    const max = access?.agi.limits.max_allowlist_targets ?? 10;
+    const picked = selectAllAssets
+      ? orgAssets
+      : orgAssets.filter((a) => selectedAssetIds.has(a.id));
+    const targets = picked.map((a) => a.value.trim()).filter(Boolean).slice(0, max);
     if (!newName.trim() || targets.length === 0) {
-      toast("error", "Name and at least one target are required");
+      toast("error", selectAllAssets && orgAssets.length === 0 ? "No assets available yet — add assets first" : "Name and at least one target asset are required");
       return;
     }
     setCreating(true);
@@ -218,12 +240,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       setSelectedEng(eng.id);
       setCreateOpen(false);
       setNewName("");
-      setNewAllowlist("");
       setNewRoe("");
-      toast("success", "Engagement created", eng.name);
+      setSelectedAssetIds(new Set());
+      setSelectAllAssets(false);
+      setAssetSearch("");
+      toast("success", "Engagement created", `${eng.name} · ${targets.length} target${targets.length === 1 ? "" : "s"}`);
     } catch (e) {
       const code = (e as any)?.detail?.code;
-      if (code === "allowlist_too_large") toast("error", "Too many targets", `Reduce the allowlist (max ${access?.agi.limits.max_allowlist_targets ?? 10}).`);
+      if (code === "allowlist_too_large") toast("error", "Too many targets", `Reduce the allowlist (max ${max}).`);
       else toast("error", "Create failed", e instanceof Error ? e.message : "");
     } finally {
       setCreating(false);
@@ -467,13 +491,69 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     placeholder="Name (e.g. Lab external web)"
                     className="w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
                   />
-                  <textarea
-                    value={newAllowlist}
-                    onChange={(e) => setNewAllowlist(e.target.value)}
-                    placeholder={`Target allowlist (one per line)${access?.agi.limits.max_allowlist_targets ? ` — max ${access.agi.limits.max_allowlist_targets}` : ""}\nhttps://lab.example.com\n10.0.0.0/24`}
-                    rows={3}
-                    className="w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 font-mono text-[11px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
-                  />
+                  <div className="rounded-lg border border-phantix-700/50 bg-phantix-950/60 p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Target assets (from your inventory)</p>
+                      <label className="flex cursor-pointer items-center gap-1.5 text-[10px] text-slate-400">
+                        <input
+                          type="checkbox"
+                          checked={selectAllAssets}
+                          onChange={(e) => setSelectAllAssets(e.target.checked)}
+                          className="h-3 w-3 accent-gold-400"
+                        />
+                        Select all
+                      </label>
+                    </div>
+                    <input
+                      value={assetSearch}
+                      onChange={(e) => setAssetSearch(e.target.value)}
+                      placeholder={selectAllAssets ? "All assets selected" : "Search assets…"}
+                      disabled={selectAllAssets}
+                      className="mt-1.5 w-full rounded-md border border-phantix-700/50 bg-phantix-950/70 px-2 py-1.5 text-[11px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
+                    />
+                    {assetLoading ? (
+                      <p className="py-3 text-center text-[10px] text-slate-500"><Loader2 size={11} className="mr-1 animate-spin inline" /> Loading assets…</p>
+                    ) : orgAssets.length === 0 ? (
+                      <p className="py-3 text-center text-[10px] text-slate-500">No assets in your inventory yet. Add assets first, then create an engagement.</p>
+                    ) : (
+                      <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto pr-1">
+                        {orgAssets
+                          .filter((a) => !selectAllAssets && (!assetSearch.trim() || a.value.toLowerCase().includes(assetSearch.toLowerCase()) || a.name.toLowerCase().includes(assetSearch.toLowerCase())))
+                          .map((a) => (
+                            <label
+                              key={a.id}
+                              className={cx(
+                                "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
+                                selectAllAssets ? "opacity-60" : "hover:bg-phantix-800/50",
+                                selectedAssetIds.has(a.id) && !selectAllAssets && "bg-phantix-800/40",
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectAllAssets || selectedAssetIds.has(a.id)}
+                                disabled={selectAllAssets}
+                                onChange={(e) => {
+                                  setSelectedAssetIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (e.target.checked) next.add(a.id); else next.delete(a.id);
+                                    return next;
+                                  });
+                                }}
+                                className="h-3 w-3 shrink-0 accent-gold-400"
+                              />
+                              <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", a.criticality === "critical" ? "bg-severity-critical" : a.criticality === "high" ? "bg-severity-high" : a.criticality === "medium" ? "bg-severity-medium" : "bg-severity-low")} />
+                              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-200">{a.value}</span>
+                              <span className="shrink-0 text-[9px] uppercase tracking-wider text-slate-500">{a.asset_type}</span>
+                            </label>
+                          ))}
+                      </div>
+                    )}
+                    <p className="mt-1.5 text-[10px] text-slate-600">
+                      {selectAllAssets
+                        ? `${orgAssets.length} asset${orgAssets.length === 1 ? "" : "s"} selected (all)`
+                        : `${selectedAssetIds.size} of ${orgAssets.length} selected`}
+                    </p>
+                  </div>
                   <input
                     value={newRoe}
                     onChange={(e) => setNewRoe(e.target.value)}
