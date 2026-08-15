@@ -136,11 +136,10 @@ async function request<T>(
   if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
   // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
   if (realm === "application") headers["X-Device-Id"] = deviceId();
-  // Per §2.4/§5.3: send dual-control session on ALL mutations when session exists
-  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-  if (isMutation && tokens.dualControl) {
-    headers["X-Dual-Control-Session"] = tokens.dualControl;
-  } else if (opts.dualControl && tokens.dualControl) {
+  // Dual-control session header is explicit opt-in only (least privilege). We never
+  // auto-attach a possibly-stale operate token to unrelated app mutations — that
+  // leaked tokens and could 401 (booting the user) when the operate session lapsed.
+  if (opts.dualControl && tokens.dualControl) {
     headers["X-Dual-Control-Session"] = tokens.dualControl;
   }
 
@@ -171,16 +170,19 @@ async function request<T>(
     // session required" (authorizer inbox). Clearing tokens on every 401 would
     // log the user out of authorized reads.
     const msg = typeof detail === "string" ? detail : detailObj?.message ? String(detailObj.message) : "";
+    // A missing/expired dual-control operate session is NOT a dropped org/app
+    // session. It only blocks sensitive actions; the user stays signed in.
+    const dcSessionIssue = /authenticator session|dual.?control session|X-Dual-Control-Session/i.test(msg);
     const sessionInvalid =
       relogin ||
       /session_invalid|invalid session|session expired|token expired|not authenticated|authentication expired|expired/i.test(msg);
     if (res.status === 401) {
-      if (sessionInvalid) {
+      if (sessionInvalid && !dcSessionIssue) {
         if (realm === "staff") tokens.staff = null;
         else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
         else { tokens.platform = null; tokens.orgUser = null; }
       }
-      if (realm === "application" && relogin) {
+      if (realm === "application" && relogin && !dcSessionIssue) {
         window.location.assign("/login");
       }
     }

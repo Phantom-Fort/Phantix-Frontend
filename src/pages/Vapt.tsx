@@ -6,6 +6,7 @@ import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
+import { useOperations } from "@/lib/operations";
 import { timeAgo, titleCase, cx, isReportable, impactLevelRank } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { VaptCampaign } from "@/lib/types";
@@ -135,6 +136,34 @@ export default function Vapt() {
     }
     return () => { if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; } };
   }, [activeCampaigns.length, pollCampaigns]);
+
+  // Surface running campaigns in the global operations tray.
+  const { register, update } = useOperations();
+  const opIdsRef = useRef<Record<number, string>>({});
+  useEffect(() => {
+    const running = vaptCampaigns.filter((c) => c.status === "active" || c.status === "paused" || c.status === "pending_approval");
+    const finished = vaptCampaigns.filter((c) => c.status === "completed" || c.status === "failed" || c.status === "cancelled");
+
+    running.forEach((c) => {
+      const existing = opIdsRef.current[c.id];
+      const label = "VAPT scan";
+      if (!existing) {
+        opIdsRef.current[c.id] = register({ label, route: "/vapt", detail: `${c.name} · ${c.progress ?? 0}%` });
+      } else {
+        update(existing, { label, status: "running", detail: `${c.name} · ${c.progress ?? 0}%` });
+      }
+    });
+
+    finished.forEach((c) => {
+      const id = opIdsRef.current[c.id];
+      if (!id) return;
+      update(id, {
+        status: c.status === "failed" ? "error" : "success",
+        detail: c.status === "failed" ? `${c.name} failed` : `${c.name} completed`,
+      });
+      delete opIdsRef.current[c.id];
+    });
+  }, [vaptCampaigns, register, update]);
 
   if (loading) {
     return (

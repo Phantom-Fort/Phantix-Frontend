@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { ShieldCheck, Mail, KeyRound, Smartphone, Loader2, X, Lock } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { listenDeviceConfirmed } from "@/lib/deviceConfirm";
 
 function maskEmail(email: string): string {
   return email.replace(/(.{2}).+(@.+)/, "$1***$2");
@@ -33,11 +34,11 @@ export default function DualControlOverlay() {
   const [stage, setStage] = useState<"email" | "otp" | "device">("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
-  const [deviceCode, setDeviceCode] = useState("");
   const [masked, setMasked] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [deviceWait, setDeviceWait] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -45,12 +46,52 @@ export default function DualControlOverlay() {
     // Per 03_APPLICATION_IMPLEMENTATION.md §5.2: use app session email, never ask to re-enter
     setEmail(session?.userEmail ?? "");
     setCode("");
-    setDeviceCode("");
     setMasked("");
     setError(null);
     setDevOtp(null);
     setBusy(false);
+    setDeviceWait(false);
   }, [open, session?.userEmail]);
+
+  // Device stage: the org-specific confirmation link was emailed. Poll until it
+  // is opened (plus a BroadcastChannel shortcut when the link is in the same browser).
+  useEffect(() => {
+    if (!open || stage !== "device") return;
+    setDeviceWait(true);
+    let disposed = false;
+    const stop = () => {
+      if (disposed) return;
+      disposed = true;
+      setDeviceWait(false);
+      clearInterval(timer);
+      clearTimeout(timer);
+    };
+    const attempt = () => {
+      void confirmDualControlDevice().then((r) => {
+        if (!disposed && r.done) {
+          toast("success", "Operate mode unlocked", "Device confirmed --- dual-control session is active.");
+          closeDualControlPrompt(true);
+          stop();
+        }
+      }).catch(() => { /* keep polling */ });
+    };
+    const unsubscribe = listenDeviceConfirmed(attempt);
+    const timer = setInterval(attempt, 2500);
+    const timeout = setTimeout(() => {
+      if (!disposed) {
+        clearInterval(timer);
+        setError("The confirmation link may have expired. Start over to receive a fresh one.");
+        setDeviceWait(false);
+      }
+    }, 15 * 60 * 1000);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+      clearTimeout(timeout);
+      disposed = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, stage]);
 
   const cancel = () => closeDualControlPrompt(false);
 
@@ -85,7 +126,6 @@ export default function DualControlOverlay() {
       const res = await verifyDualControlOtp(code);
       if (res.deviceRequired) {
         setStage("device");
-        setDeviceCode("");
         return;
       }
       toast("success", "Operate mode unlocked", "Dual-control session active --- mutations enabled for ~3 minutes of idle time.");
@@ -93,25 +133,6 @@ export default function DualControlOverlay() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
       setCode("");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const verifyDevice = async () => {
-    setError(null);
-    if (deviceCode.length !== 6) {
-      setError("Enter the device confirmation code");
-      return;
-    }
-    setBusy(true);
-    try {
-      await confirmDualControlDevice(deviceCode);
-      toast("success", "Operate mode unlocked", "Device confirmed --- dual-control session is active.");
-      closeDualControlPrompt(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Device confirmation failed");
-      setDeviceCode("");
     } finally {
       setBusy(false);
     }
@@ -260,26 +281,19 @@ export default function DualControlOverlay() {
                 <>
                   <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
                     <Smartphone size={20} className="mx-auto text-severity-medium" />
-                    <p className="mt-2 text-sm font-medium text-slate-200">Confirm this browser</p>
-                    <p className="mt-1 text-xs text-slate-500">A second code was emailed to verify the new device.</p>
+                    <p className="mt-2 text-sm font-medium text-slate-200">Confirm this new device</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      A confirmation link was sent to {masked || maskEmail(email)}. Open it to start the operate
+                      session — no additional code needed.
+                    </p>
                   </div>
-                  <input
-                    className="input text-center font-mono !text-2xl !tracking-[0.5em]"
-                    value={deviceCode}
-                    onChange={(e) => setDeviceCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="••••••"
-                    autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && deviceCode.length === 6 && void verifyDevice()}
-                  />
+                  <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                    {deviceWait ? <Loader2 size={14} className="animate-spin text-gold-400" /> : <Mail size={14} className="text-gold-400" />}
+                    <span>{deviceWait ? "Waiting for you to open the link…" : "Check your inbox and click the link."}</span>
+                  </div>
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
-                  <button type="button" className="btn-primary w-full !py-3" disabled={busy || deviceCode.length !== 6} onClick={() => void verifyDevice()}>
-                    {busy ? (
-                      <>
-                        <Loader2 size={15} className="animate-spin" /> Confirming...
-                      </>
-                    ) : (
-                      "Confirm device & unlock"
-                    )}
+                  <button type="button" onClick={() => { setStage("email"); setError(null); }} className="w-full text-center text-xs text-slate-500 hover:text-slate-300" disabled={busy}>
+                    Start over
                   </button>
                 </>
               )}

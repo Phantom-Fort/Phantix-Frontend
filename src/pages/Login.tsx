@@ -1,14 +1,15 @@
-﻿import React, { useEffect, useState } from "react";
+﻿import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
-  Link2, Building2, User, AlertOctagon, Check, Send,
+  Link2, Building2, User, AlertOctagon, Check, Send, RefreshCw,
 } from "lucide-react";
 import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
 import { cx } from "@/lib/utils";
+import { listenDeviceConfirmed } from "@/lib/deviceConfirm";
 import { BrandLogo } from "@/components/BrandLogo";
 import AuthShowcase from "@/components/AuthShowcase";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -136,19 +137,19 @@ function ReturningLogin({
   const [stage, setStage] = useState<Stage>("email");
   const [mfaToken, setMfaToken] = useState("");
   const [code, setCode] = useState("");
+  const [deviceToken, setDeviceToken] = useState("");
   const [maskedDest, setMaskedDest] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
-  const [deviceRotate, setDeviceRotate] = useState(false);
+  const [deviceWait, setDeviceWait] = useState(false);
 
   const startLogin = async () => {
     if (!email.trim() || !password) return;
     setBusy(true);
     setError(null);
     setBlocked(null);
-    setDeviceRotate(false);
     try {
       const res = await api.post<{
         mfa_required?: boolean;
@@ -177,92 +178,118 @@ function ReturningLogin({
     setError("A new code was sent. Enter the latest code.");
   };
 
+  type MfaResult = {
+    access_token?: string;
+    device_token?: string;
+    device_verification_required?: boolean;
+    user?: { full_name?: string; email?: string };
+    user_email?: string;
+    effective_role?: string;
+    role?: string;
+    can_operate?: boolean;
+    is_initiator?: boolean;
+    is_authorizer?: boolean;
+    dual_control?: {
+      session_token?: string;
+      can_operate?: boolean;
+      is_initiator?: boolean;
+      is_authorizer?: boolean;
+    };
+    dual_control_session_token?: string;
+  };
+
+  const finishLogin = (res: MfaResult, rotated = false) => {
+    tokens.appSession = res.access_token ?? "";
+    tokens.device = res.device_token ?? "";
+    const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
+    if (dcSessionToken) tokens.dualControl = dcSessionToken;
+
+    const name = res.user?.full_name ?? "";
+    const emailAddr = res.user_email ?? res.user?.email ?? "";
+    const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
+    const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
+    completeAppLogin(emailAddr, name, isInit, isAuth);
+    toast("success", rotated ? "Device confirmed" : "Signed in", rotated ? "Welcome" + (name ? " " + name : "") + " — this browser is now your primary device." : "Welcome" + (name ? " " + name : " back"));
+    navigate("/dashboard");
+  };
+
   const verify = async () => {
     setBusy(true);
     setError(null);
     try {
-      const res = await api.post<{
-        access_token?: string;
-        device_token?: string;
-        device_verification_required?: boolean;
-        user?: { full_name?: string; email?: string };
-        user_email?: string;
-        effective_role?: string;
-        role?: string;
-        can_operate?: boolean;
-        is_initiator?: boolean;
-        is_authorizer?: boolean;
-        dual_control?: {
-          session_token?: string;
-          can_operate?: boolean;
-          is_initiator?: boolean;
-          is_authorizer?: boolean;
-        };
-        dual_control_session_token?: string;
-      }>("/app/auth/mfa", {
+      const res = await api.post<MfaResult>("/app/auth/mfa", {
         mfa_token: mfaToken,
         code,
         device_id: deviceId(),
-        replace_primary: deviceRotate,
+        replace_primary: false,
       }, { realm: "application" });
 
       if (res.device_verification_required && res.device_token) {
-        // Retry MFA with device binding on the next code submission.
+        // New browser → a confirmation link was emailed. Wait for the link, then poll.
+        setDeviceToken(res.device_token);
         setStage("device");
         return;
       }
-
-      tokens.appSession = res.access_token ?? "";
-      tokens.device = res.device_token ?? "";
-      const dcSessionToken = res.dual_control_session_token ?? res.dual_control?.session_token;
-      if (dcSessionToken) tokens.dualControl = dcSessionToken;
-
-      const name = res.user?.full_name ?? "";
-      const emailAddr = res.user_email ?? res.user?.email ?? "";
-      const isInit = res.is_initiator === true || res.dual_control?.is_initiator === true;
-      const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
-      completeAppLogin(emailAddr, name, isInit, isAuth);
-      toast("success", "Signed in", "Welcome" + (name ? " " + name : " back"));
-      navigate("/dashboard");
+      finishLogin(res);
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
-      else if (isDeviceBoundError(err)) {
-        // Account is bound to another device — offer rotation.
-        setStage("device");
-        setCode("");
-        setError("This account is bound to another device. Confirm this is your device to rotate it to this browser.");
-      }
       else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
     } finally {
       setBusy(false);
     }
   };
 
-  // Device rotation: get a fresh OTP, then re-submit with replace_primary=true.
-  const confirmDeviceRotation = async () => {
-    if (busy) return;
-    setError(null);
-    setBusy(true);
+  // Poll /app/auth/device-status once the link is opened; completes when confirmed.
+  const checkDeviceConfirmed = useCallback(async (): Promise<boolean> => {
+    if (!deviceToken) return false;
     try {
-      // 1) Fresh OTP for the same account (email + password).
-      const login = await api.post<{ mfa_token?: string; destination_masked?: string }>(
-        "/app/auth/login",
-        { email: email.trim(), password },
-        { realm: "application" },
-      );
-      setMfaToken(login.mfa_token ?? "");
-      setMaskedDest(login.destination_masked ?? "");
-      setCode("");
-      setDeviceRotate(true);
-      setStage("mfa");
-      setError("A new code was sent. Enter it to rotate this device.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start device rotation");
-    } finally {
-      setBusy(false);
+      const res = await api.post<MfaResult & { confirmed?: boolean }>("/app/auth/device-status", {
+        device_token: deviceToken,
+        device_id: deviceId(),
+      }, { realm: "application" });
+      if (res && res.confirmed === false) return false;
+      if (!res?.access_token) return false;
+      finishLogin(res, true);
+      return true;
+    } catch {
+      return false;
     }
-  };
+  }, [deviceToken, finishLogin]);
+
+  // While in the device stage: listen for the link tab + poll until confirmed.
+  useEffect(() => {
+    if (stage !== "device" || !deviceToken) return;
+    setDeviceWait(true);
+    let disposed = false;
+    const stop = () => {
+      if (disposed) return;
+      disposed = true;
+      setDeviceWait(false);
+      clearInterval(timer);
+      clearTimeout(timer);
+    };
+    const unsubscribe = listenDeviceConfirmed(() => {
+      void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+    });
+    const timer = setInterval(() => {
+      void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+    }, 2500);
+    const timeout = setTimeout(() => {
+      if (!disposed) {
+        clearInterval(timer);
+        setError("The confirmation link may have expired. Restart sign-in to receive a fresh one.");
+        setDeviceWait(false);
+      }
+    }, 15 * 60 * 1000);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+      clearTimeout(timeout);
+      disposed = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, deviceToken]);
 
   return (
     <LoginChrome>
@@ -317,11 +344,9 @@ function ReturningLogin({
               <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
                 <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
                   <ShieldCheck size={22} className="mx-auto text-gold-400" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">{deviceRotate ? "Confirm device rotation" : "Verify your identity"}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {deviceRotate
-                      ? "A new code was sent. Entering it will rotate this browser to your primary device."
-                      : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
+                    {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
                 </div>
                 <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
@@ -338,18 +363,25 @@ function ReturningLogin({
               <motion.div key="device" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
                 <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
                   <Smartphone size={22} className="mx-auto text-severity-medium" />
-                  <p className="mt-2 text-sm font-medium text-slate-200">New device detected</p>
-                  <p className="mt-1 text-xs text-slate-500">Re-enter the emailed code to confirm this browser.</p>
+                  <p className="mt-2 text-sm font-medium text-slate-200">Confirm this new device</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    A confirmation link was sent to {maskedDest || "your organization address"}. Open it to make
+                    this browser your primary device — no additional code needed.
+                  </p>
                 </div>
-                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                  {deviceWait ? <Loader2 size={14} className="animate-spin text-gold-400" /> : <Mail size={14} className="text-gold-400" />}
+                  <span>{deviceWait ? "Waiting for you to open the link…" : "Check your inbox and click the link."}</span>
+                </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Confirming...</> : "Verify device & sign in"}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => { setStage("email"); setError(null); }}
+                  className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50"
+                >
+                  Restart sign-in
                 </button>
-                <button type="button" onClick={() => void resendCode()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
-                {!deviceRotate && (
-                  <button type="button" onClick={() => void confirmDeviceRotation()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">This is my device — rotate it</button>
-                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -382,6 +414,8 @@ function AppLoginFlow({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [code, setCode] = useState("");
+  const [deviceToken, setDeviceToken] = useState("");
+  const [deviceWait, setDeviceWait] = useState(false);
   const [maskedDest, setMaskedDest] = useState("");
   const [mfaToken, setMfaToken] = useState("");
   const [busy, setBusy] = useState(false);
@@ -522,6 +556,7 @@ function AppLoginFlow({
       }, { realm: "application" });
 
       if (res.device_verification_required && res.device_token) {
+        setDeviceToken(res.device_token);
         setStage("device");
         return;
       }
@@ -548,35 +583,21 @@ function AppLoginFlow({
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
-      else if (isDeviceBoundError(err)) {
-        setStage("device");
-        setCode("");
-        setError("This account is bound to another device. Enter the code again to rotate it to this browser.");
-      }
       else { setError(err instanceof Error ? err.message : "Verification failed"); setCode(""); }
     } finally {
       setBusy(false);
     }
   };
 
-  // Device re-verification: re-submit the MFA code (replace_primary only on explicit consent)
-  const verifyDevice = async () => {
-    setBusy(true);
-    setError(null);
+  // Poll /app/auth/device-status once the link is opened; completes when confirmed.
+  const checkDeviceConfirmed = useCallback(async (): Promise<boolean> => {
+    if (!deviceToken) return false;
     try {
-      const res = await api.post<{
-        access_token?: string;
-        device_token?: string;
-        user?: { full_name?: string; email?: string };
-        user_email?: string;
-        dual_control?: { session_token?: string; can_operate?: boolean; is_initiator?: boolean; is_authorizer?: boolean };
-        dual_control_session_token?: string;
-      }>("/app/auth/mfa", {
-        mfa_token: mfaToken,
-        code,
+      const res = await api.post<{ access_token?: string; device_token?: string; confirmed?: boolean; user?: { full_name?: string; email?: string }; user_email?: string; dual_control?: { session_token?: string; can_operate?: boolean; is_initiator?: boolean; is_authorizer?: boolean }; dual_control_session_token?: string }>("/app/auth/device-status", {
+        device_token: deviceToken,
         device_id: deviceId(),
-        replace_primary: true,
       }, { realm: "application" });
+      if (!res || res.confirmed === false || !res.access_token) return false;
 
       tokens.appSession = res.access_token ?? "";
       tokens.device = res.device_token ?? "";
@@ -588,17 +609,47 @@ function AppLoginFlow({
       const isInit = res.dual_control?.is_initiator === true;
       const isAuth = res.dual_control?.is_authorizer === true;
       completeAppLogin(email, name, isInit, isAuth);
-
       toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
       navigate("/dashboard");
-    } catch (err) {
-      const sk = serviceKeyMessage(err);
-      if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
-      else { setError(err instanceof Error ? err.message : "Device verification failed"); setCode(""); }
-    } finally {
-      setBusy(false);
+      return true;
+    } catch {
+      return false;
     }
-  };
+  }, [deviceToken, completeAppLogin, toast, navigate]);
+
+  // While in the device stage: listen for the link tab + poll until confirmed.
+  useEffect(() => {
+    if (stage !== "device" || !deviceToken) return;
+    setDeviceWait(true);
+    let disposed = false;
+    const stop = () => {
+      if (disposed) return;
+      disposed = true;
+      setDeviceWait(false);
+      clearInterval(timer);
+      clearTimeout(timer);
+    };
+    const unsubscribe = listenDeviceConfirmed(() => {
+      void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+    });
+    const timer = setInterval(() => {
+      void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+    }, 2500);
+    const timeout = setTimeout(() => {
+      if (!disposed) {
+        clearInterval(timer);
+        setError("The confirmation link may have expired. Restart sign-in to receive a fresh one.");
+        setDeviceWait(false);
+      }
+    }, 15 * 60 * 1000);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+      clearTimeout(timeout);
+      disposed = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, deviceToken]);
 
   // Resend the OTP for the invite flow (POST /app/auth/otp).
   const resendInviteOtp = async () => {
@@ -723,33 +774,63 @@ function AppLoginFlow({
             {/* MFA */}
             {(stage === "mfa" || stage === "device") && (
               <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
-                <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
-                  {stage === "device" ? <Smartphone size={22} className="mx-auto text-severity-medium" /> : <ShieldCheck size={22} className="mx-auto text-gold-400" />}
-                  <p className="mt-2 text-sm font-medium text-slate-200">{stage === "device" ? "New device detected" : "Verify your identity"}</p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {stage === "device"
-                      ? "This account is bound to another device. Enter the code to rotate it to this browser."
-                      : maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
-                  </p>
-                  {(orgName || userName) && (
-                    <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
-                      {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
-                      {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                {stage === "device" ? (
+                  <>
+                    <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
+                      <Smartphone size={22} className="mx-auto text-severity-medium" />
+                      <p className="mt-2 text-sm font-medium text-slate-200">Confirm this new device</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        A confirmation link was sent to {maskedDest || "your organization address"}. Open it to make
+                        this browser your primary device — no additional code needed.
+                      </p>
+                      {(orgName || userName) && (
+                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
+                          {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                          {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-center gap-2 text-xs text-slate-400">
+                      {deviceWait ? <Loader2 size={14} className="animate-spin text-gold-400" /> : <Mail size={14} className="text-gold-400" />}
+                      <span>{deviceWait ? "Waiting for you to open the link…" : "Check your inbox and click the link."}</span>
+                    </div>
+                    {error && <p className="text-sm text-severity-critical">{error}</p>}
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => { setStage("email"); setError(null); }}
+                      className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50"
+                    >
+                      Restart sign-in
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
+                      <ShieldCheck size={22} className="mx-auto text-gold-400" />
+                      <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
+                      </p>
+                      {(orgName || userName) && (
+                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
+                          {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
+                          {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
+                        </p>
+                      )}
+                    </div>
+                    <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verifyMfa()} />
+                    {error && <p className="text-sm text-severity-critical">{error}</p>}
+                    <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyMfa()}>
+                      {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : "Verify & sign in"}
+                    </button>
+                    <button type="button" onClick={() => void resendInviteOtp()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
+                      Resend code
+                    </button>
+                    <p className="text-center text-[11px] text-slate-600">
+                      No code? Check your inbox or spam.
                     </p>
-                  )}
-                </div>
-                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void (stage === "mfa" ? verifyMfa() : verifyDevice())} />
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void (stage === "mfa" ? verifyMfa() : verifyDevice())}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : stage === "device" ? "Verify device & sign in" : "Verify & sign in"}
-                </button>
-                <button type="button" onClick={() => void resendInviteOtp()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
-                  Resend code
-                </button>
-                {stage === "mfa" && (
-                  <p className="text-center text-[11px] text-slate-600">
-                    No code? Check your inbox or spam.
-                  </p>
+                  </>
                 )}
               </motion.div>
             )}

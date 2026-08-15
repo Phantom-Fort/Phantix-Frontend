@@ -35,6 +35,7 @@ import { cx, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
 import AgentAssistant from "@/components/AgentAssistant";
+import OperationsWidget from "@/components/OperationsWidget";
 import AlertNotifications from "@/components/AlertNotifications";
 import { AGI_ENABLED } from "@/lib/agi";
 
@@ -501,6 +502,9 @@ export default function Layout() {
 
       {/* Phantix Agent — floating chatbot assistant */}
       <AgentAssistant />
+
+      {/* Running operations tray — bottom-right, redirects to the page of each pending action */}
+      <OperationsWidget />
 
       {/* Alert notifications — all severities toast, critical blocks */}
       <AlertNotifications />

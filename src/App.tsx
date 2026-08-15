@@ -1,10 +1,12 @@
 ﻿import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
+import { OperationsProvider } from "@/lib/operations";
 import Layout from "@/components/Layout";
 import DualControlOverlay from "@/components/DualControlOverlay";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
+import DeviceConfirm from "@/pages/DeviceConfirm";
 import Dashboard from "@/pages/Dashboard";
 import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
@@ -66,10 +68,12 @@ function DemoEntry() {
 export default function App() {
   return (
     <StoreProvider>
-      <BrowserRouter>
-        <Routes>
+      <OperationsProvider>
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/demo" element={<DemoEntry />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -95,7 +99,8 @@ export default function App() {
         </Routes>
         <DualControlOverlay />
         <ToastViewport />
-      </BrowserRouter>
+        </BrowserRouter>
+      </OperationsProvider>
     </StoreProvider>
   );
 }

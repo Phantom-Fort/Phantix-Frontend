@@ -1,17 +1,18 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadScansBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
+import { useOperations } from "@/lib/operations";
 import { timeAgo, formatDateTime, cx, severityHex } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { VerificationStatus } from "@/lib/types";
 
 export default function Scans() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadScansBundle, {
+  const { data, loading, reload } = useResource(loadScansBundle, {
     scanJobs: [],
     scanResults: [],
     securityDbBlocked: false,
@@ -22,6 +23,35 @@ export default function Scans() {
   const [verFilter, setVerFilter] = useState<"all" | VerificationStatus>("all");
   const [newOpen, setNewOpen] = useState(false);
   const active = scanJobs.find((j) => j.status === "running" || j.status === "queued");
+
+  // Surface the running scan job in the global operations tray (Coolify-style).
+  const { register, update } = useOperations();
+  const opIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (active) {
+      const label = `Scan job #${active.id}`;
+      if (!opIdRef.current) {
+        opIdRef.current = register({ label, route: "/scans", detail: `${(active.tools ?? []).join(" + ")} · ${active.progress}%` });
+      } else {
+        update(opIdRef.current, { label, status: "running", detail: `${(active.tools ?? []).join(" + ")} · ${active.progress}%` });
+      }
+    } else if (opIdRef.current) {
+      update(opIdRef.current, { status: "success", detail: "Scan job completed" });
+      opIdRef.current = null;
+    }
+  }, [active, register, update]);
+
+  // Poll while a job is running so the tray stays live.
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (active && !pollTimer.current) {
+      pollTimer.current = setInterval(() => { void reload(); }, 5000);
+    } else if (!active && pollTimer.current) {
+      clearInterval(pollTimer.current);
+      pollTimer.current = null;
+    }
+    return () => { if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; } };
+  }, [active, reload]);
 
   const results = useMemo(
     () => scanResults.filter((r) => verFilter === "all" || r.verification_status === verFilter),

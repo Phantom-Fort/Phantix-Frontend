@@ -155,11 +155,11 @@ export default function AgentAssistant() {
       {/* Floating launcher (bottom-right) */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-[75] flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950 shadow-card transition-transform hover:scale-105"
+        className="fixed bottom-10 right-10 z-[75] flex h-25 w-25 items-center justify-center overflow-hidden text-phantix-950 transition-transform hover:scale-105"
         title="Phantix Agent assistant"
         aria-label="Toggle Phantix Agent assistant"
       >
-        <LottiePlayer animationData={chatbotData} className="h-12 w-12" loop />
+        <LottiePlayer animationData={chatbotData} className="h-20 w-20" loop />
       </button>
 
       <AnimatePresence>
@@ -180,7 +180,7 @@ export default function AgentAssistant() {
             >
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
-                <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
+                <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
                 <div className="min-w-0">
                   <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
                   <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
