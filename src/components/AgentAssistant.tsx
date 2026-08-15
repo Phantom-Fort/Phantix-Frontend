@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown } from "lucide-react";
+import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown, BrainCircuit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
 import LottiePlayer from "@/components/LottiePlayer";
+import MarkdownView from "@/components/MarkdownView";
 import chatbotData from "@/lib/animations/chatbot.json";
-import ghostData from "@/lib/animations/ghostsmart.json";
 import flowData from "@/lib/animations/ai-flow.json";
 import { tryNavigationAnswer, helpOverview } from "@/lib/navigationGuide";
 
@@ -24,28 +24,45 @@ const SUGGESTIONS = [
 ];
 
 const WIDTH = 400;
+const MAX_MSGS = 60;
+
+function loadChat(email: string): Msg[] {
+  try {
+    const raw = localStorage.getItem(`phantix_agent_chat_${email}`);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Msg[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch { /* ignore */ }
+  return [{ role: "agent", text: DEFAULT_GREETING }];
+}
 
 export default function AgentAssistant() {
-  const { toast, requireDualControl } = useStore();
+  const { toast, requireDualControl, session } = useStore();
   const navigate = useNavigate();
+  const emailKey = session?.userEmail ?? "guest";
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Msg[]>([{ role: "agent", text: DEFAULT_GREETING }]);
+  const [messages, setMessages] = useState<Msg[]>(() => loadChat(emailKey));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"idle" | "connecting" | "streaming">("idle");
   const [liveAnswer, setLiveAnswer] = useState("");
   const [liveThinking, setLiveThinking] = useState("");
-  const [thinkingOpen, setThinkingOpen] = useState(false);
   const [connError, setConnError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
+  // Chat retention: keep the conversation so the user can always continue it.
+  useEffect(() => {
+    try {
+      localStorage.setItem(`phantix_agent_chat_${emailKey}`, JSON.stringify(messages.slice(-MAX_MSGS)));
+    } catch { /* quota */ }
+  }, [messages, emailKey]);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
 
-  // Track scroll position: show the "jump to bottom" button when the user
-  // scrolls up away from the latest messages.
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -64,13 +81,18 @@ export default function AgentAssistant() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  const resetLive = () => { setLiveAnswer(""); setLiveThinking(""); setThinkingOpen(false); };
+  const resetLive = () => { setLiveAnswer(""); setLiveThinking(""); };
+
+  const resetChat = () => {
+    setMessages([{ role: "agent", text: DEFAULT_GREETING }]);
+    resetLive();
+    try { localStorage.removeItem(`phantix_agent_chat_${emailKey}`); } catch { /* ignore */ }
+  };
 
   const send = async (text?: string) => {
     const msg = (text ?? input).trim();
     if (!msg || busy) return;
 
-    // Free, local navigation answers (no AI/plan call): "where do I find X".
     if (!msg.toLowerCase().startsWith("/")) {
       const nav = tryNavigationAnswer(msg);
       if (nav) {
@@ -79,7 +101,6 @@ export default function AgentAssistant() {
         return;
       }
     }
-    // Free, local help overview: "help", "where is everything", etc.
     if (/^(help|hi|hello|hey|what can you do|help me|where is everything|how do i use this|get started)\b/i.test(msg) && /navigat|find|where|page|module|help|guide|use|do/i.test(msg)) {
       setMessages((m) => [...m, { role: "user", text: msg }, { role: "agent", text: helpOverview() }]);
       setInput("");
@@ -102,7 +123,7 @@ export default function AgentAssistant() {
         { messages: [{ role: "user", content: msg }], thinking: true, reasoning_effort: "high", domain: "cross" },
         (event, data) => {
           if (event === "connected") setPhase("streaming");
-          else if (event === "reasoning") { thinking += data?.content ?? ""; setLiveThinking(thinking); setThinkingOpen(true); }
+          else if (event === "reasoning") { thinking += data?.content ?? ""; setLiveThinking(thinking); }
           else if (event === "delta") { answer += data?.content ?? ""; setLiveAnswer(answer); }
           else if (event === "done") {
             setMessages((prev) => [...prev, { role: "agent", text: answer || "No response from agent.", thinking: thinking || undefined }]);
@@ -117,10 +138,7 @@ export default function AgentAssistant() {
       if ((e as Error)?.name !== "AbortError") {
         const planRequired = (e as any)?.status === 402 || (e as any)?.detail?.code === "ai_agent_plan_required";
         if (planRequired) {
-          setMessages((m) => [...m, {
-            role: "agent",
-            text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data.",
-          }]);
+          setMessages((m) => [...m, { role: "agent", text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
         } else {
           const name = String((e as any)?.name ?? "");
           const message = String((e as any)?.message ?? "");
@@ -176,7 +194,7 @@ export default function AgentAssistant() {
               exit={{ opacity: 0, y: 20, scale: 0.97 }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
               className="fixed bottom-5 right-5 z-[85] flex flex-col overflow-hidden rounded-2xl border border-phantix-700/40 bg-phantix-950/95 shadow-card"
-              style={{ width: WIDTH, maxWidth: "calc(100vw - 40px)", height: "min(70vh, 640px)" }}
+              style={{ width: WIDTH, maxWidth: "calc(100vw - 40px)", height: "min(72vh, 660px)" }}
             >
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
@@ -189,72 +207,84 @@ export default function AgentAssistant() {
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
-                  <button onClick={() => { setMessages([{ role: "agent", text: DEFAULT_GREETING }]); resetLive(); }} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Reset conversation"><Trash2 size={14} /></button>
+                  <button onClick={resetChat} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Reset conversation"><Trash2 size={14} /></button>
                   <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Close"><X size={15} /></button>
                 </div>
               </div>
 
               {/* Messages */}
-              <div className="relative flex-1">
+              <div className="relative min-h-0 flex-1">
                 <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-3 overflow-y-auto p-3.5">
                   {connError && (
-                  <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
-                    <X size={13} className="shrink-0 text-severity-critical" />
-                    <p className="text-[11px] leading-4 text-red-300">{connError}</p>
-                  </div>
-                )}
-                <AnimatePresence initial={false}>
-                  {messages.map((m, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                      <div className={cx("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
-                        {m.role === "agent" && m.thinking && (
-                          <details className="mb-1.5">
-                            <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
-                            <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{m.thinking}</p>
-                          </details>
-                        )}
-                        <p className="whitespace-pre-wrap">{m.text}</p>
-                        {m.nav && (
-                          <div className="mt-2 space-y-1">
-                            <button
-                              onClick={() => { navigate(m.nav!.route); setOpen(false); }}
-                              className="flex w-full items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 text-left text-[11px] font-semibold text-gold-200 transition-colors hover:bg-gold-400/20"
-                            >
-                              <ArrowRight size={12} /> Go to {m.nav.label}
-                            </button>
-                            {m.nav.also?.map((a) => (
+                    <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
+                      <X size={13} className="shrink-0 text-severity-critical" />
+                      <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                    </div>
+                  )}
+                  <AnimatePresence initial={false}>
+                    {messages.map((m, i) => (
+                      <motion.div key={`${i}-${m.role}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                        <div className={cx("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
+                          {m.role === "agent" && m.thinking && (
+                            <details className="mb-1.5">
+                              <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                              <div className="mt-1 border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{m.thinking}</div>
+                            </details>
+                          )}
+                          {m.role === "agent" ? <MarkdownView source={m.text} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
+                          {m.nav && (
+                            <div className="mt-2 space-y-1">
                               <button
-                                key={a.route}
-                                onClick={() => { navigate(a.route); setOpen(false); }}
-                                className="flex w-full items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-1.5 text-left text-[11px] text-slate-300 transition-colors hover:border-phantix-500/50"
+                                onClick={() => { navigate(m.nav!.route); setOpen(false); }}
+                                className="flex w-full items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 text-left text-[11px] font-semibold text-gold-200 transition-colors hover:bg-gold-400/20"
                               >
-                                <ArrowRight size={12} /> {a.label}
+                                <ArrowRight size={12} /> Go to {m.nav.label}
                               </button>
-                            ))}
-                          </div>
+                              {m.nav.also?.map((a) => (
+                                <button
+                                  key={a.route}
+                                  onClick={() => { navigate(a.route); setOpen(false); }}
+                                  className="flex w-full items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-1.5 text-left text-[11px] text-slate-300 transition-colors hover:border-phantix-500/50"
+                                >
+                                  <ArrowRight size={12} /> {a.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+
+                  {/* Live streaming bubble — steps transition gracefully like a chat box */}
+                  {busy && (
+                    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+                      <div className="max-w-[85%] min-w-[230px] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-3.5 py-2.5 text-[13px] leading-6 text-slate-200">
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={phase + (liveThinking ? "-t" : "")}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-2 text-[11px] text-slate-400"
+                          >
+                            {phase === "connecting" && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream…</>)}
+                            {phase === "streaming" && !liveThinking && !liveAnswer && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Analysing…</>)}
+                            {liveThinking && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Thinking…</>)}
+                            {liveAnswer && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Responding…</>)}
+                          </motion.div>
+                        </AnimatePresence>
+                        {liveThinking && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+                            <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{liveThinking}</div>
+                          </motion.div>
                         )}
+                        {liveAnswer && <p className="mt-1.5 whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-3.5 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>}
                       </div>
                     </motion.div>
-                  ))}
-                </AnimatePresence>
-
-                {/* Live streaming bubble */}
-                {busy && (
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-                    <div className="max-w-[85%] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-3.5 py-2.5 text-[13px] leading-6 text-slate-200">
-                      {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream...</span>}
-                      {liveThinking && (
-                        <details className="mb-1.5" open>
-                          <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
-                          <p className="mt-1 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{liveThinking}</p>
-                        </details>
-                      )}
-                      {liveAnswer && <p className="whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-3.5 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>}
-                      {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Streaming...</span>}
-                    </div>
-                  </motion.div>
-                )}
-                <div ref={endRef} />
+                  )}
+                  <div ref={endRef} />
                 </div>
 
                 {/* Floating "jump to bottom" */}

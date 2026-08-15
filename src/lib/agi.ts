@@ -266,7 +266,7 @@ export async function createAgiEngagement(payload: {
     demoEngagements = [eng, ...demoEngagements];
     return eng;
   }
-  return api.post<AgiEngagement>("/agi/engagements", payload);
+  return api.post<AgiEngagement>("/agi/engagements", payload, { dualControl: true });
 }
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ export async function startAgiSession(engagementId: number, instruction: string)
     instruction,
     autonomy: "medium",
     include_org_assets: true,
-  });
+  }, { dualControl: true });
 }
 
 export async function agiChat(sessionId: number, message: string): Promise<Record<string, unknown>> {
@@ -304,7 +304,7 @@ export async function agiChat(sessionId: number, message: string): Promise<Recor
     }
     return { reply: "Understood — continuing within the approved scope." };
   }
-  return api.post<Record<string, unknown>>(`/agi/sessions/${sessionId}/chat`, { message });
+  return api.post<Record<string, unknown>>(`/agi/sessions/${sessionId}/chat`, { message }, { dualControl: true });
 }
 
 export async function loadAgiTranscript(sessionId: number, afterSeq: number): Promise<AgiTranscriptChunk[]> {
@@ -333,7 +333,7 @@ export async function decideAgiAction(actionId: number, approve: boolean, notes 
     }
     return a ?? { id: actionId, session_id: 0, action_type: "state_changing", proposed_command: "", rationale: "", status: "rejected", created_at: new Date().toISOString() };
   }
-  return api.post<AgiAction>(`/agi/actions/${actionId}/decide`, { approve, notes });
+  return api.post<AgiAction>(`/agi/actions/${actionId}/decide`, { approve, notes }, { dualControl: true });
 }
 
 export async function stopAgiSession(sessionId: number): Promise<AgiSession> {
@@ -346,7 +346,7 @@ export async function stopAgiSession(sessionId: number): Promise<AgiSession> {
     }
     return demoSession ?? { id: sessionId, engagement_id: 0, status: "stopped", started_at: new Date().toISOString() };
   }
-  return api.post<AgiSession>(`/agi/sessions/${sessionId}/stop`);
+  return api.post<AgiSession>(`/agi/sessions/${sessionId}/stop`, undefined, { dualControl: true });
 }
 
 export function isAgiPolicyBlocked(err: unknown): { code: string; message: string } | null {

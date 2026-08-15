@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
+import MarkdownView from "@/components/MarkdownView";
 import ghostData from "@/lib/animations/ghostsmart.json";
 import {
   loadAgiAccess,
@@ -35,6 +36,7 @@ function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
   const isTool = t.role === "tool";
   const isSystem = t.role === "system";
   const isOperator = t.role === "operator";
+  const isAssistant = !isTool && !isSystem && !isOperator;
   const toolName = t.meta && typeof t.meta.tool === "string" ? (t.meta.tool as string) : null;
   return (
     <div className={cx("flex", isOperator ? "justify-end" : "justify-start")}>
@@ -44,7 +46,7 @@ function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
           isOperator && "bg-gold-400/15 border border-gold-400/20 text-gold-100",
           !isOperator && isTool && "border border-phantix-700/40 bg-phantix-950/70 font-mono text-[11px] text-slate-300",
           !isOperator && isSystem && "font-mono text-[11px] text-slate-500",
-          !isOperator && !isTool && !isSystem && "border border-phantix-700/40 bg-phantix-800/60 text-slate-200",
+          isAssistant && "border border-phantix-700/40 bg-phantix-800/60 text-slate-200",
         )}
       >
         {isTool && (
@@ -53,7 +55,7 @@ function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
           </span>
         )}
         {isSystem && <span className="mr-1 text-[10px] text-slate-600">engine</span>}
-        <span className="whitespace-pre-wrap break-words">{t.content}</span>
+        {isAssistant ? <MarkdownView source={t.content} /> : <span className="whitespace-pre-wrap break-words">{t.content}</span>}
         {last && !isOperator && <span className="ml-0.5 inline-block h-3 w-[6px] animate-pulse rounded-sm bg-gold-400/70 align-middle" />}
       </div>
     </div>

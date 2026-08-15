@@ -8,6 +8,7 @@ import {
 import { PageHeader, Card } from "@/components/ui";
 import AgiWorkspace from "@/components/AgiWorkspace";
 import LottiePlayer from "@/components/LottiePlayer";
+import MarkdownView from "@/components/MarkdownView";
 import chatbotData from "@/lib/animations/chatbot.json";
 import ghostData from "@/lib/animations/ghostsmart.json";
 import flowData from "@/lib/animations/ai-flow.json";
@@ -294,6 +295,23 @@ function AgentChat({
   const abortRef = useRef<AbortController | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Chat retention — the conversation persists so the user can continue it later.
+  const { session } = useStore();
+  const storageKey = `phantix_agent_page_${session?.userEmail ?? "guest"}`;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as ChatMsg[];
+        if (Array.isArray(parsed) && parsed.length > 0) setMessages(parsed);
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(storageKey, JSON.stringify(messages.slice(-60))); } catch { /* quota */ }
+  }, [messages, storageKey]);
+
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
 
   const resetLive = () => {
@@ -434,7 +452,7 @@ function AgentChat({
           >
             <Lock size={10} /> {operate.unlocked ? "Operate unlocked" : "Dual-control required"}
           </span>
-          <button onClick={() => { setMessages([]); }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
+          <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
         {/* Domain specialists */}
@@ -453,7 +471,7 @@ function AgentChat({
           ))}
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {messages.length === 0 && !busy && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-phantix-800/70"><LottiePlayer animationData={chatbotData} className="h-12 w-12" loop /></span>
@@ -476,7 +494,7 @@ function AgentChat({
                     </details>
                   )}
                   {m.runId && <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
-                  <p className="whitespace-pre-wrap">{m.text}</p>
+                  {m.role === "agent" ? <MarkdownView source={m.text} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
                   {m.role === "agent" && m.skills && m.skills.length > 0 && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <span className="text-[10px] text-slate-500">Skills:</span>
@@ -505,12 +523,27 @@ function AgentChat({
             </div>
           )}
 
-          {/* Live streaming panel */}
+          {/* Live streaming panel — steps transition gracefully */}
           {busy && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-              <div className="max-w-[82%] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-4 py-3 text-sm leading-6 text-slate-200">
-                {phase === "connecting" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream...</span>}
-                {phase === "synthesizing" && tools.length === 0 && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Synthesizing...</span>}
+            <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
+              <div className="max-w-[82%] min-w-[240px] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-4 py-3 text-sm leading-6 text-slate-200">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={phase + (liveThinking ? "-t" : "") + (liveAnswer ? "-a" : "")}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center gap-2 text-[11px] text-slate-400"
+                  >
+                    <LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} />
+                    {phase === "connecting" && "Connecting to stream…"}
+                    {phase === "streaming" && !liveThinking && !liveAnswer && "Analysing…"}
+                    {phase === "synthesizing" && tools.length === 0 && "Synthesizing…"}
+                    {liveThinking && "Thinking…"}
+                    {liveAnswer && "Responding…"}
+                  </motion.div>
+                </AnimatePresence>
                 {tools.length > 0 && (
                   <div className="mb-2 flex flex-wrap items-center gap-1.5">
                     {tools.map((t, idx) => (
@@ -522,17 +555,13 @@ function AgentChat({
                 )}
                 {liveRunId && <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveThinking && (
-                  <details className="mb-2" open>
-                    <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
-                    <p className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{liveThinking}</p>
-                  </details>
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
+                    <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{liveThinking}</div>
+                  </motion.div>
                 )}
                 {liveAnswer && (
-                  <>
-                    <p className="whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-4 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>
-                  </>
+                  <p className="mt-1.5 whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-4 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>
                 )}
-                {!liveAnswer && phase === "streaming" && <span className="flex items-center gap-2 text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Streaming...</span>}
               </div>
             </motion.div>
           )}
