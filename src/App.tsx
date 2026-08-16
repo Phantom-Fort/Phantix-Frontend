@@ -7,6 +7,7 @@ import DualControlOverlay from "@/components/DualControlOverlay";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import DeviceConfirm from "@/pages/DeviceConfirm";
+import GithubCallback from "@/pages/GithubCallback";
 import Dashboard from "@/pages/Dashboard";
 import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
@@ -74,6 +75,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/device-confirm" element={<DeviceConfirm />} />
+          <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />

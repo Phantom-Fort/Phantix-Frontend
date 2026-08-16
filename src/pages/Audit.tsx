@@ -4,6 +4,7 @@ import { ScrollText, Download, Filter, X, Loader2 } from "lucide-react";
 import { PageHeader, Card, Spinner } from "@/components/ui";
 import { loadAuditBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
+import { describeEndpoint } from "@/lib/auditExplain";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api";
@@ -151,7 +152,7 @@ export default function Audit() {
               <thead>
                 <tr className="border-b border-phantix-700/40">
                   <th className="th w-10" />
-                  <th className="th">Path</th>
+                  <th className="th">Action</th>
                   <th className="th">Method</th>
                   <th className="th">Engine</th>
                   <th className="th">Initiator</th>
@@ -166,6 +167,7 @@ export default function Audit() {
                   const method = e.details?.method ?? "GET";
                   const engine = parseEngine(path);
                   const em = engineMeta(engine);
+                  const desc = describeEndpoint(method, path);
                   return (
                     <motion.tr
                       key={e.id}
@@ -182,9 +184,9 @@ export default function Audit() {
                           {e.details?.passive !== false ? "R" : "W"}
                         </span>
                       </td>
-                      <td className="td max-w-[240px]">
-                        <p className="truncate font-mono text-[11px] text-slate-300">{path}</p>
-                        <p className="text-[10px] text-slate-500">{e.summary}</p>
+                      <td className="td max-w-[340px]">
+                        <p className="font-medium text-slate-200">{(desc?.label ?? e.action_label) || "Activity"}</p>
+                        <p className="text-[11px] leading-5 text-slate-400">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</p>
                       </td>
                       <td className="td">
                         <span className={cx("rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold", METHOD_COLORS[method] ?? "border-slate-500/50 bg-slate-800/50 text-slate-400")}>

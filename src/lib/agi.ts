@@ -266,7 +266,16 @@ export async function createAgiEngagement(payload: {
     demoEngagements = [eng, ...demoEngagements];
     return eng;
   }
-  return api.post<AgiEngagement>("/agi/engagements", payload, { dualControl: true });
+  return api.post<AgiEngagement>("/agi/engagements", {
+    ...payload,
+    scope: {
+      target_allowlist: payload.scope.target_allowlist,
+      forbidden_actions: payload.scope.forbidden_actions,
+      rules_of_engagement: payload.scope.rules_of_engagement ?? "",
+      target_environment: "staging",
+      production_ack: false,
+    },
+  }, { dualControl: true });
 }
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
