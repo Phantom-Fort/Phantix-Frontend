@@ -148,7 +148,7 @@ export default function Vapt() {
       const existing = opIdsRef.current[c.id];
       const label = "VAPT scan";
       if (!existing) {
-        opIdsRef.current[c.id] = register({ label, route: "/vapt", detail: `${c.name} · ${c.progress ?? 0}%` });
+        opIdsRef.current[c.id] = register({ key: `vapt:${c.id}`, label, route: "/vapt", detail: `${c.name} · ${c.progress ?? 0}%` });
       } else {
         update(existing, { label, status: "running", detail: `${c.name} · ${c.progress ?? 0}%` });
       }

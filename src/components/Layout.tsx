@@ -36,7 +36,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
 import AgentAssistant from "@/components/AgentAssistant";
 import OperationsWidget from "@/components/OperationsWidget";
-import AlertNotifications from "@/components/AlertNotifications";
+import AlertNotifications, { NotificationBell, NotificationProvider } from "@/components/AlertNotifications";
 import { AGI_ENABLED } from "@/lib/agi";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
@@ -240,6 +240,7 @@ export default function Layout() {
   if (isLanding) return <Outlet />;
 
   return (
+    <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/40 bg-phantix-950/85 backdrop-blur-xl">
@@ -378,6 +379,7 @@ export default function Layout() {
 
           <div className="ml-auto flex items-center gap-2.5">
             <ThemeToggle />
+            <NotificationBell />
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
               <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>
@@ -405,7 +407,7 @@ export default function Layout() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 6 }}
-                    className="absolute right-0 top-full mt-2 w-56 overflow-hidden rounded-xl glass-bright shadow-card"
+                    className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card"
                   >
                     <div className="border-b border-phantix-700/40 px-4 py-3">
                       <p className="text-sm font-semibold text-slate-100">{session?.userName ?? "Guest"}</p>
@@ -509,5 +511,6 @@ export default function Layout() {
       {/* Alert notifications — all severities toast, critical blocks */}
       <AlertNotifications />
     </div>
+    </NotificationProvider>
   );
 }

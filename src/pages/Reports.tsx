@@ -7,6 +7,8 @@ import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { useSearchParams } from "react-router-dom";
+import { isDemoMode } from "@/lib/api";
 import { marked } from "marked";
 import type { TrackerFinding } from "@/lib/types";
 
@@ -114,6 +116,9 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
 
 export default function Reports() {
   const { toast } = useStore();
+  const [params] = useSearchParams();
+  const fromAgi = params.get("from") === "agi";
+  const agiSession = params.get("session");
   const { data, loading, reload, setData } = useResource(loadReportsBundle, { reports: [], trackerFindings: [] }, "reports");
   const { reports, trackerFindings } = data;
   const [tab, setTab] = useState("reports");
@@ -129,6 +134,13 @@ export default function Reports() {
   const [detailTab, setDetailTab] = useState("");
 
   useEffect(() => {
+    if (!fromAgi) return;
+    setTab("reports");
+    setGenOpen(true);
+    setGenForm((p) => ({ ...p, report_type: "vapt_campaign" }));
+  }, [fromAgi]);
+
+  useEffect(() => {
     if (genOpen && !fetchedCampaigns.current && api) {
       fetchedCampaigns.current = true;
       api.get<any>("/vapt/campaigns?limit=50").then((r) => {
@@ -139,27 +151,52 @@ export default function Reports() {
 
   const handleGenerate = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!genForm.campaign_id) {
+    if (!fromAgi && !genForm.campaign_id) {
       toast("error", "Validation", "Please select a campaign.");
       return;
     }
     setGenSubmitting(true);
     try {
+      if (isDemoMode() && fromAgi) {
+        const queued = {
+          id: Number(params.get("report")) || Date.now() % 100000,
+          report_type: genForm.report_type as "vapt_campaign",
+          title: `Autonomous pentest · session #${agiSession ?? "—"}`,
+          status: "generating" as const,
+          formats_requested: genForm.formats,
+          campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : null,
+          version: 1,
+          stats: { after_dedupe: 4, after_verification: 4, excluded_from_report: 0, impact_analyzed: 4 },
+          created_at: new Date().toISOString(),
+          size_bytes: 0,
+        };
+        setData((prev) => ({ ...prev, reports: [queued, ...prev.reports] }));
+        setGenOpen(false);
+        toast("success", "Report queued", "phantix_agi findings are in the report engine.");
+        window.setTimeout(() => {
+          setData((prev) => ({
+            ...prev,
+            reports: prev.reports.map((r) => r.id === queued.id ? { ...r, status: "complete" as const, size_bytes: 1_280_000 } : r),
+          }));
+        }, 1600);
+        return;
+      }
       await api.post("/reports", {
         report_type: genForm.report_type,
-        campaign_id: Number(genForm.campaign_id),
+        campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : undefined,
         formats: genForm.formats,
         run_inline: genForm.run_inline,
+        ...(fromAgi ? { source: "phantix_agi", session_id: agiSession ? Number(agiSession) : undefined } : {}),
       });
       setGenOpen(false);
-      toast("success", "Report queued", "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
+      toast("success", "Report queued", fromAgi ? "Autonomous agent findings submitted to the report engine." : "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
       setTimeout(() => reload(), 800);
     } catch (err: any) {
       toast("error", "Failed", err.message ?? "Report generation failed");
     } finally {
       setGenSubmitting(false);
     }
-  }, [genForm, toast, reload]);
+  }, [genForm, toast, reload, fromAgi, agiSession, params, setData]);
 
   const openDetail = useCallback(async (report: any) => {
     setDetail(report);
@@ -371,6 +408,11 @@ export default function Reports() {
       {/* Generate modal */}
       <Modal open={genOpen} onClose={() => setGenOpen(false)} title="Generate report">
         <form className="space-y-4" onSubmit={handleGenerate}>
+          {fromAgi && (
+            <div className="rounded-xl border border-gold-400/30 bg-gold-400/10 px-3.5 py-2.5 text-xs leading-5 text-gold-200">
+              Autonomous Pentest Agent submitted session #{agiSession ?? "—"} (tag <span className="font-mono">phantix_agi</span>). Generate the client package from those verified findings.
+            </div>
+          )}
           <div>
             <label className="label">Report type</label>
             <select className="input" value={genForm.report_type} onChange={(e) => setGenForm((p) => ({ ...p, report_type: e.target.value }))}>
@@ -383,7 +425,7 @@ export default function Reports() {
           <div>
             <label className="label">Campaign</label>
             <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
-              <option value="">Select campaign...</option>
+              <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
               {campaigns.map((c: any) => (
                 <option key={c.id} value={c.id}>
                   #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})

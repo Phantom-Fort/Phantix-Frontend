@@ -1,18 +1,23 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, X, BellRing, ShieldAlert, ShieldCheck, ShieldQuestion, Info } from "lucide-react";
+import { AlertTriangle, X, Bell, BellRing, ShieldAlert, ShieldCheck, ShieldQuestion, Info } from "lucide-react";
 import { loadAlertsBundle } from "@/lib/data";
 import { isDemoMode } from "@/lib/api";
+import { timeAgo, cx } from "@/lib/utils";
 import type { AlertEvent } from "@/lib/types";
 
 type Severity = "critical" | "high" | "medium" | "low" | "info";
 
-interface AlertNotice {
+export interface AlertNotice {
   id: number;
   severity: Severity;
   title: string;
   eventType: string;
   createdAt: string;
+}
+
+interface InboxNotice extends AlertNotice {
+  read: boolean;
 }
 
 const SEV_META: Record<Severity, { label: string; chip: string; bar: string; icon: React.ReactNode }> = {
@@ -23,20 +28,120 @@ const SEV_META: Record<Severity, { label: string; chip: string; bar: string; ico
   info: { label: "Info", chip: "border-phantix-500/40 bg-phantix-500/15 text-slate-300", bar: "bg-phantix-500", icon: <Info size={14} /> },
 };
 
-function cx(...parts: (string | false | null | undefined)[]): string {
-  return parts.filter(Boolean).join(" ");
+const TOAST_MS = 3000;
+
+type NotifyCtx = {
+  inbox: InboxNotice[];
+  unread: number;
+  panelOpen: boolean;
+  setPanelOpen: (v: boolean | ((p: boolean) => boolean)) => void;
+  push: (n: AlertNotice) => void;
+  markAllRead: () => void;
+  dismissInbox: (id: number) => void;
+};
+
+const Ctx = createContext<NotifyCtx | null>(null);
+
+export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const [inbox, setInbox] = useState<InboxNotice[]>([]);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  const push = useCallback((n: AlertNotice) => {
+    setInbox((prev) => (prev.some((x) => x.id === n.id) ? prev : [{ ...n, read: false }, ...prev].slice(0, 50)));
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setInbox((prev) => prev.map((x) => ({ ...x, read: true })));
+  }, []);
+
+  const dismissInbox = useCallback((id: number) => {
+    setInbox((prev) => prev.filter((x) => x.id !== id));
+  }, []);
+
+  const unread = useMemo(() => inbox.filter((x) => !x.read).length, [inbox]);
+
+  const value = useMemo(
+    () => ({ inbox, unread, panelOpen, setPanelOpen, push, markAllRead, dismissInbox }),
+    [inbox, unread, panelOpen, push, markAllRead, dismissInbox],
+  );
+
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/**
- * App-wide alert notifications for ALL org users.
- *
- * - Every delivered alert (any severity) surfaces as an in-app notification
- *   toast with the alert level clearly indicated (color-coded badge + side bar).
- * - Critical alerts additionally trigger a blocking, manually-dismissed overlay.
- * - Non-critical toasts auto-dismiss after 9s or are closed manually; dismissed
- *   alerts stay hidden for this session; new alerts pop again.
- */
+export function useNotifications(): NotifyCtx {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error("useNotifications requires NotificationProvider");
+  return ctx;
+}
+
+export function NotificationBell() {
+  const { inbox, unread, panelOpen, setPanelOpen, markAllRead, dismissInbox } = useNotifications();
+
+  useEffect(() => {
+    if (panelOpen) markAllRead();
+  }, [panelOpen, markAllRead]);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setPanelOpen((v) => !v)}
+        className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-phantix-700/50 bg-phantix-900 text-slate-300 transition-colors hover:border-phantix-500/50 hover:text-white"
+        title="Notifications"
+        aria-label="Notifications"
+      >
+        <Bell size={16} />
+        {unread > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[9px] font-bold text-white">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+      <AnimatePresence>
+        {panelOpen && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80]" onClick={() => setPanelOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              className="absolute right-0 top-full z-[85] mt-2 w-80 overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card"
+            >
+              <div className="flex items-center justify-between border-b border-phantix-700/40 px-3.5 py-2.5">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Notifications</p>
+                <span className="text-[10px] text-slate-500">{inbox.length} total</span>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {inbox.length === 0 && <p className="px-4 py-8 text-center text-xs text-slate-500">No alerts yet.</p>}
+                {inbox.map((n) => {
+                  const meta = SEV_META[n.severity] ?? SEV_META.info;
+                  return (
+                    <div key={n.id} className="flex items-start gap-2.5 border-b border-phantix-700/30 px-3.5 py-2.5 last:border-0">
+                      <span className={cx("mt-0.5 h-2 w-2 shrink-0 rounded-full", meta.bar)} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={cx("chip !px-1.5 !py-0 !text-[9px]", meta.chip)}>{meta.label}</span>
+                          <span className="text-[10px] text-slate-500">{timeAgo(n.createdAt)}</span>
+                        </div>
+                        <p className="mt-0.5 text-[12px] leading-4 text-slate-200">{n.title}</p>
+                        {n.eventType && <p className="mt-0.5 font-mono text-[10px] text-slate-500">{n.eventType}</p>}
+                      </div>
+                      <button onClick={() => dismissInbox(n.id)} className="rounded p-1 text-slate-500 hover:text-slate-200" aria-label="Dismiss">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function AlertNotifications() {
+  const { push } = useNotifications();
   const [stack, setStack] = useState<AlertNotice[]>([]);
   const [blocking, setBlocking] = useState<AlertNotice | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
@@ -47,6 +152,16 @@ export default function AlertNotifications() {
     if (blocking) seenRef.current.add(`${blocking.severity}:${blocking.id}`);
     setBlocking(null);
   };
+
+  const ingest = useCallback((notice: AlertNotice) => {
+    push(notice);
+    if (notice.severity === "critical") {
+      setBlocking((cur) => cur ?? notice);
+      return;
+    }
+    setStack((s) => (s.some((x) => x.id === notice.id) ? s : [notice, ...s].slice(0, 4)));
+    window.setTimeout(() => setStack((s) => s.filter((x) => x.id !== notice.id)), TOAST_MS);
+  }, [push]);
 
   const check = useCallback(async () => {
     try {
@@ -59,16 +174,10 @@ export default function AlertNotifications() {
       for (const e of fresh) {
         seenRef.current.add(`${e.severity}:${e.id}`);
         const sev = (["critical", "high", "medium", "low", "info"].includes(e.severity) ? e.severity : "info") as Severity;
-        const notice: AlertNotice = { id: e.id, severity: sev, title: e.title, eventType: e.event_type, createdAt: e.created_at };
-        if (sev === "critical") {
-          setBlocking((cur) => cur ?? notice);
-        } else {
-          setStack((s) => (s.some((x) => x.id === e.id) ? s : [notice, ...s].slice(0, 6)));
-          window.setTimeout(() => setStack((s) => s.filter((x) => x.id !== e.id)), 9000);
-        }
+        ingest({ id: e.id, severity: sev, title: e.title, eventType: e.event_type, createdAt: e.created_at });
       }
-    } catch { /* transient — keep app usable */ }
-  }, []);
+    } catch { /* transient */ }
+  }, [ingest]);
 
   useEffect(() => {
     void check();
@@ -76,24 +185,20 @@ export default function AlertNotifications() {
     return () => clearInterval(t);
   }, [check]);
 
-  // Demo mode: surface a few alerts so the notifications are visible.
   const demoSeeded = useRef(false);
   useEffect(() => {
     if (!isDemoMode() || demoSeeded.current) return;
     demoSeeded.current = true;
     const now = Date.now();
-    const demoHigh: AlertNotice = { id: 9992, severity: "high", title: "New risk: JWT algorithm confusion", eventType: "risk.created", createdAt: new Date(now - 15_000).toISOString() };
-    const demoMedium: AlertNotice = { id: 9993, severity: "medium", title: "Scan #87 completed — 23 findings", eventType: "scan.completed", createdAt: new Date(now - 25_000).toISOString() };
-    setStack([demoHigh, demoMedium]);
-    const t1 = window.setTimeout(() => setStack((s) => s.filter((x) => x.id !== 9992)), 9000);
-    const t2 = window.setTimeout(() => setStack((s) => s.filter((x) => x.id !== 9993)), 9000);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+    ingest({ id: 9992, severity: "high", title: "New risk: JWT algorithm confusion", eventType: "risk.created", createdAt: new Date(now - 15_000).toISOString() });
+    window.setTimeout(() => {
+      ingest({ id: 9993, severity: "medium", title: "Scan #87 completed — 23 findings", eventType: "scan.completed", createdAt: new Date(now - 25_000).toISOString() });
+    }, 400);
+  }, [ingest]);
 
   return (
     <>
-      {/* Notification stack (top-right) — all severities */}
-      <div className="pointer-events-none fixed right-4 top-4 z-[95] flex w-80 max-w-[calc(100vw-32px)] flex-col gap-2">
+      <div className="pointer-events-none fixed right-4 top-16 z-[90] flex w-80 max-w-[calc(100vw-32px)] flex-col gap-2">
         <AnimatePresence>
           {stack.map((n) => {
             const meta = SEV_META[n.severity] ?? SEV_META.info;
@@ -104,7 +209,7 @@ export default function AlertNotifications() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 60 }}
                 transition={{ type: "spring", stiffness: 320, damping: 30 }}
-                className="pointer-events-auto relative overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900/95 shadow-card backdrop-blur-xl"
+                className="pointer-events-auto relative overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card"
               >
                 <span className={cx("absolute inset-y-0 left-0 w-1", meta.bar)} />
                 <div className="flex items-start gap-3 p-3 pl-4">
@@ -123,7 +228,6 @@ export default function AlertNotifications() {
         </AnimatePresence>
       </div>
 
-      {/* Critical blocking overlay */}
       <AnimatePresence>
         {blocking && (
           <motion.div

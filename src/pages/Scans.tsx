@@ -31,7 +31,7 @@ export default function Scans() {
     if (active) {
       const label = `Scan job #${active.id}`;
       if (!opIdRef.current) {
-        opIdRef.current = register({ label, route: "/scans", detail: `${(active.tools ?? []).join(" + ")} · ${active.progress}%` });
+        opIdRef.current = register({ key: `scan:${active.id}`, label, route: "/scans", detail: `${(active.tools ?? []).join(" + ")} · ${active.progress}%` });
       } else {
         update(opIdRef.current, { label, status: "running", detail: `${(active.tools ?? []).join(" + ")} · ${active.progress}%` });
       }

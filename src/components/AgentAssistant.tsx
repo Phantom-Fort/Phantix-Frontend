@@ -10,6 +10,8 @@ import MarkdownView from "@/components/MarkdownView";
 import chatbotData from "@/lib/animations/chatbot.json";
 import flowData from "@/lib/animations/ai-flow.json";
 import { tryNavigationAnswer, helpOverview } from "@/lib/navigationGuide";
+import { useChatSend } from "@/lib/useChatSend";
+import { useStickToBottom } from "@/lib/useStickToBottom";
 
 type Msg = { role: "user" | "agent"; text: string; thinking?: string; nav?: { route: string; label: string; also?: { route: string; label: string }[] } };
 
@@ -50,9 +52,11 @@ export default function AgentAssistant() {
   const [liveThinking, setLiveThinking] = useState("");
   const [connError, setConnError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const chatSend = useChatSend();
+  const stick = useStickToBottom([messages, liveAnswer, busy]);
+  const endRef = stick.endRef;
+  const scrollRef = stick.scrollerRef;
+  const showScrollBtn = stick.showJump;
 
   // Chat retention: keep the conversation so the user can always continue it.
   useEffect(() => {
@@ -61,19 +65,8 @@ export default function AgentAssistant() {
     } catch { /* quota */ }
   }, [messages, emailKey]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
-
-  const onScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    setShowScrollBtn(!atBottom);
-  };
-
-  const scrollToBottom = () => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowScrollBtn(false);
-  };
+  const onScroll = stick.onScroll;
+  const scrollToBottom = stick.jump;
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -89,9 +82,15 @@ export default function AgentAssistant() {
     try { localStorage.removeItem(`phantix_agent_chat_${emailKey}`); } catch { /* ignore */ }
   };
 
-  const send = async (text?: string) => {
+  const send = (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || busy) return;
+    if (!msg) return;
+    setInput("");
+    chatSend.requestSend(msg, (m) => dispatchSend(m));
+  };
+
+  const dispatchSend = async (msg: string) => {
+    if (busy) abortRef.current?.abort();
 
     if (!msg.toLowerCase().startsWith("/")) {
       const nav = tryNavigationAnswer(msg);
@@ -173,11 +172,11 @@ export default function AgentAssistant() {
       {/* Floating launcher (bottom-right) */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-10 right-10 z-[75] flex h-25 w-25 items-center justify-center overflow-hidden text-phantix-950 transition-transform hover:scale-105"
+        className="fixed bottom-8 right-8 z-[75] flex h-40 w-40 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105"
         title="Phantix Agent assistant"
         aria-label="Toggle Phantix Agent assistant"
       >
-        <LottiePlayer animationData={chatbotData} className="h-20 w-20" loop />
+        <LottiePlayer animationData={chatbotData} className="h-40 w-40" loop />
       </button>
 
       <AnimatePresence>
@@ -319,7 +318,11 @@ export default function AgentAssistant() {
                   <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !busy) void send(); }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
+                      e.preventDefault();
+                      send();
+                    }}
                     placeholder="Ask about assets, findings, risks, or reports..."
                     className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
                   />
@@ -329,7 +332,12 @@ export default function AgentAssistant() {
                     <button onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
                   )}
                 </div>
-                <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600"><Sparkles size={10} /> PII redacted before provider calls · every interaction audited · agent never changes findings or risk scores</p>
+                <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
+                  <Sparkles size={10} />
+                  {chatSend.hint === "queued"
+                    ? "Queued — press Enter again to send now, or wait for the current reply."
+                    : "PII redacted before provider calls · every interaction audited · agent never changes findings or risk scores"}
+                </p>
               </div>
             </motion.div>
           </>

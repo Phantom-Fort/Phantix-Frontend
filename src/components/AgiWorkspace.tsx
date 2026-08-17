@@ -7,6 +7,7 @@ import {
 import { Modal, Spinner } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
 import MarkdownView from "@/components/MarkdownView";
+import AgiConsole from "@/components/AgiConsole";
 import ghostData from "@/lib/animations/ghostsmart.json";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
@@ -27,11 +28,14 @@ import {
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { useStickToBottom } from "@/lib/useStickToBottom";
+import { useChatSend } from "@/lib/useChatSend";
+import { useNavigate } from "react-router-dom";
 
 const POLL_MS = 2000;
 const ACTION_POLL_MS = 3000;
 
-type WorkspaceVariant = "drawer" | "page";
+type WorkspaceVariant = "drawer" | "page" | "console";
 
 /** Render one transcript line as a terminal-ish stream. */
 function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
@@ -103,7 +107,9 @@ function ActionCard({
 }
 
 export default function AgiWorkspace({ variant = "drawer" }: { variant?: WorkspaceVariant }) {
-  const { toast, requireDualControl } = useStore();
+  const { toast, requireDualControl, demoActive } = useStore();
+  const navigate = useNavigate();
+  const reportSubmitted = useRef(false);
   const [access, setAccess] = useState<AgiAccess | null>(null);
   const [booting, setBooting] = useState(true);
 
@@ -142,9 +148,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [policyBanner, setPolicyBanner] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   const [connError, setConnError] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [overrideDrafts, setOverrideDrafts] = useState<Record<number, string>>({});
+  const stick = useStickToBottom([transcript, actions, running, thinking]);
+  const chatSend = useChatSend();
 
   const boot = useCallback(async () => {
     setBooting(true);
@@ -175,22 +182,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
   useEffect(() => { void boot(); }, [boot]);
 
-  // Scroll to bottom on new lines.
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [transcript, actions, running]);
-
-  // Track scroll position: show the "jump to bottom" button when the user
-  // scrolls up away from the latest terminal output.
-  const onScroll = () => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
-    setShowScrollBtn(!atBottom);
-  };
-
-  const scrollToBottom = () => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowScrollBtn(false);
-  };
+  const onScroll = stick.onScroll;
+  const scrollToBottom = stick.jump;
+  const showScrollBtn = stick.showJump;
+  const scrollRef = stick.scrollerRef;
+  const endRef = stick.endRef;
 
   const openAgreement = async () => {
     try {
@@ -264,9 +260,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       const s = await startAgiSession(selectedEng, msg);
       setSession(s);
       setRunning(true);
+      reportSubmitted.current = false;
+      setPaused(false);
       setTranscript([]);
       afterSeqRef.current = 0;
       setActions([]);
+      setOverrideDrafts({});
       setInstruction("");
       toast("success", "Session started", "Streaming live from the engagement container...");
     } catch (e) {
@@ -278,6 +277,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
+  const goToReports = (s: AgiSession) => {
+    const reportId = (s.meta as { report?: { report_id?: number } } | null)?.report?.report_id;
+    const qs = new URLSearchParams({ from: "agi", session: String(s.id) });
+    if (reportId) qs.set("report", String(reportId));
+    navigate(`/reports?${qs.toString()}`);
+  };
+
   const stop = async () => {
     if (!session) return;
     if (!(await requireDualControl("Stopping an Autonomous Pentest Agent session requires a dual-control operate session."))) return;
@@ -286,7 +292,9 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       const s = await stopAgiSession(session.id);
       setSession(s);
       setRunning(false);
-      toast("success", "Session stopped", "Container destroyed · report tagged phantix_agi");
+      reportSubmitted.current = true;
+      toast("success", "Report submitted", "Opening the report engine…");
+      goToReports(s);
     } catch (e) {
       toast("error", "Stop failed", e instanceof Error ? e.message : "");
     } finally {
@@ -294,11 +302,9 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
-  const send = async () => {
-    const msg = instruction.trim();
-    if (!session || !msg || !running) return;
+  const dispatchChat = async (msg: string) => {
+    if (!session || !running || paused) return;
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
-    setInstruction("");
     setConnError(null);
     setTranscript((prev) => [...prev, { seq: -1, role: "operator", content: msg, meta: null, created_at: new Date().toISOString() }]);
     setThinking(true);
@@ -308,7 +314,6 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       setThinking(false);
       const blocked = isAgiPolicyBlocked(e);
       if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return; }
-      // Connection failures: "Failed to fetch" (network/backend down) vs timeout (server unavailability).
       const name = String(e?.name ?? "");
       const message = String(e?.message ?? "");
       if (name === "TimeoutError" || name === "AbortError" || /timeout|timed out/i.test(message)) {
@@ -324,12 +329,30 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
-  const decide = async (action: AgiAction, approve: boolean) => {
+  const send = () => {
+    const msg = instruction.trim();
+    if (!session || !running || paused) return;
+    if (!msg) return;
+    setInstruction("");
+    chatSend.requestSend(msg, dispatchChat);
+  };
+
+  const decide = async (action: AgiAction, approve: boolean, overrideCmd?: string) => {
     if (!(await requireDualControl("Approving a state-changing step requires a dual-control operate session."))) return;
     setActionBusy(action.id);
     try {
-      await decideAgiAction(action.id, approve, approve ? "Within ROE" : "");
+      const notes = !approve
+        ? ""
+        : overrideCmd && overrideCmd !== action.proposed_command
+          ? `Override: ${overrideCmd}`
+          : "Within ROE";
+      await decideAgiAction(action.id, approve, notes);
       setActions((prev) => prev.filter((x) => x.id !== action.id));
+      setOverrideDrafts((prev) => {
+        const next = { ...prev };
+        delete next[action.id];
+        return next;
+      });
       toast("success", approve ? "Step approved" : "Step rejected");
     } catch (e: any) {
       const code = e?.detail?.code;
@@ -341,9 +364,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
-  // Transcript poll while running.
   useEffect(() => {
-    if (!running || !session) return;
+    if (!running || !session || paused) return;
     const t = window.setInterval(async () => {
       try {
         const chunks = await loadAgiTranscript(session.id, afterSeqRef.current);
@@ -355,13 +377,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           setConnError(null);
         }
       } catch { /* transient — keep polling */ }
-    }, POLL_MS);
+    }, demoActive ? 350 : POLL_MS);
     return () => window.clearInterval(t);
-  }, [running, session]);
+  }, [running, session, paused, demoActive]);
 
-  // Pending actions poll while running.
   useEffect(() => {
-    if (!running || !session) return;
+    if (!running || !session || paused) return;
     const t = window.setInterval(async () => {
       try {
         const acts = await loadAgiPendingActions(session.id);
@@ -369,7 +390,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       } catch { /* transient */ }
     }, ACTION_POLL_MS);
     return () => window.clearInterval(t);
-  }, [running, session]);
+  }, [running, session, paused]);
+
+  const stopRef = useRef(stop);
+  stopRef.current = stop;
+  useEffect(() => {
+    if (!demoActive || !running || !session || reportSubmitted.current) return;
+    const last = transcript[transcript.length - 1]?.content ?? "";
+    if (!/Engagement complete|Report tagged `phantix_agi`/i.test(last)) return;
+    const id = window.setTimeout(() => { void stopRef.current(); }, 1400);
+    return () => window.clearTimeout(id);
+  }, [transcript, demoActive, running, session]);
 
   if (booting) {
     return (
@@ -582,8 +613,30 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 </button>
               </div>
             </div>
+          ) : variant === "console" ? (
+            <AgiConsole
+              running={running}
+              paused={paused}
+              onTogglePause={() => setPaused((v) => !v)}
+              stopping={stopping}
+              onStop={() => void stop()}
+              session={session}
+              engagement={selected}
+              transcript={transcript}
+              actions={actions}
+              actionBusy={actionBusy}
+              onDecide={(a, ok, cmd) => void decide(a, ok, cmd)}
+              thinking={thinking}
+              connError={connError}
+              instruction={instruction}
+              onInstruction={setInstruction}
+              onSend={send}
+              sendHint={chatSend.hint}
+              policyBanner={null}
+              overrideDrafts={overrideDrafts}
+              onOverrideDraft={(id, cmd) => setOverrideDrafts((prev) => ({ ...prev, [id]: cmd }))}
+            />
           ) : (
-            /* Live session — streaming terminal */
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-center gap-2 border-b border-phantix-700/40 px-4 py-2">
                 <span className={cx("chip !text-[9px]", running ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
@@ -656,15 +709,22 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   <input
                     value={instruction}
                     onChange={(e) => setInstruction(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) void send(); }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
+                      e.preventDefault();
+                      send();
+                    }}
                     placeholder={running ? "Further instructions for the agent..." : "Session stopped"}
                     disabled={!running}
                     className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50"
                   />
-                  <button onClick={() => void send()} disabled={!running || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
+                  <button onClick={send} disabled={!running || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
                 </div>
                 <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600">
-                  <ShieldCheck size={10} /> Read-only steps stream live · state-changing steps wait for your approval · container destroyed on stop
+                  <ShieldCheck size={10} />
+                  {chatSend.hint === "queued"
+                    ? "Queued — press Enter again to send now, or wait for the current reply."
+                    : "Read-only steps stream live · state-changing steps wait for your approval · container destroyed on stop"}
                 </p>
               </div>
             </div>

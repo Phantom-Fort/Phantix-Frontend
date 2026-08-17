@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Maximize2, Minimize2, Radar, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import AgiWorkspace from "@/components/AgiWorkspace";
 
 /** Floating right-edge launcher + slide-in drawer for the Autonomous Pentest Agent. */
 export default function AgiDrawer() {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname.startsWith("/reports")) {
+      setOpen(false);
+      setFullscreen(false);
+    }
+  }, [location.pathname]);
 
   // Close on Escape (drawer not full-screen).
   useEffect(() => {
@@ -58,7 +67,7 @@ export default function AgiDrawer() {
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={15} /></span>
               <div className="min-w-0">
                 <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
-                <p className="text-[10px] text-slate-500">human-gated · scoped · terminal-access</p>
+                <p className="text-[10px] text-slate-500">{fullscreen ? "operator console · attack tree · live terminal" : "human-gated · scoped · terminal-access"}</p>
               </div>
               <div className="ml-auto flex items-center gap-1">
                 <button
@@ -79,7 +88,7 @@ export default function AgiDrawer() {
             </div>
             {/* Workspace body — fills remaining height */}
             <div className="min-h-0 flex-1 bg-phantix-950/95">
-              <AgiWorkspace variant={fullscreen ? "page" : "drawer"} />
+              <AgiWorkspace variant={fullscreen ? "console" : "drawer"} />
             </div>
           </motion.aside>
         )}

@@ -12,6 +12,7 @@ export type OperationStatus = "running" | "success" | "error";
 
 export interface Operation {
   id: string;
+  key: string;
   label: string;
   route: string;
   status: OperationStatus;
@@ -24,6 +25,7 @@ export interface OperationInput {
   label: string;
   route: string;
   detail?: string;
+  key?: string;
 }
 
 export interface OperationsApi {
@@ -49,6 +51,8 @@ function nextId() {
 export function OperationsProvider({ children }: { children: React.ReactNode }) {
   const [operations, setOperations] = useState<Operation[]>([]);
   const timersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const opsRef = useRef<Operation[]>([]);
+  opsRef.current = operations;
 
   const clearTimer = useCallback((id: string) => {
     const t = timersRef.current[id];
@@ -91,10 +95,22 @@ export function OperationsProvider({ children }: { children: React.ReactNode }) 
   );
 
   const register = useCallback((input: OperationInput) => {
+    const key = input.key ?? `${input.route}:${input.label}`;
+    const existing = opsRef.current.find(
+      (o) => o.status === "running" && (o.key === key || (o.route === input.route && o.label === input.label)),
+    );
+    if (existing) {
+      setOperations((prev) =>
+        prev
+          .filter((o) => o.id === existing.id || o.status !== "running" || (o.key !== key && !(o.route === input.route && o.label === input.label)))
+          .map((o) => (o.id === existing.id ? { ...o, key, label: input.label, detail: input.detail ?? o.detail } : o)),
+      );
+      return existing.id;
+    }
     const id = nextId();
     setOperations((prev) => [
       ...prev,
-      { id, label: input.label, route: input.route, detail: input.detail, status: "running", startedAt: Date.now() },
+      { id, key, label: input.label, route: input.route, detail: input.detail, status: "running", startedAt: Date.now() },
     ]);
     return id;
   }, []);

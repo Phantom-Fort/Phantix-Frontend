@@ -436,17 +436,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     async (email: string) => {
       dcEmail.current = email;
       if (isDemoMode()) {
-        await delay(500);
-        const user = demo.orgUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
-        if (!user) throw new Error("No organization user with that email");
-        if (demo.dualControl.configured) {
-          const ok = user.is_initiator || user.is_authorizer || user.id === demo.dualControl.initiator?.id || user.id === demo.dualControl.authorizer?.id;
-          if (!ok) throw new Error("Only the assigned initiator or authorizer can open operate sessions");
-        }
+        await delay(400);
+        const user =
+          demo.orgUsers.find((u) => u.email.toLowerCase() === email.toLowerCase()) ||
+          demo.orgUsers.find((u) => u.is_initiator) ||
+          demo.orgUsers[0];
+        dcEmail.current = user?.email || email || "ada@acme.ng";
         const devOtp = String(Math.floor(100000 + Math.random() * 900000));
         sessionStorage.setItem("dc_dev_otp", devOtp);
         dcMfaToken.current = "demo-dc-mfa";
-        return { destinationMasked: email.replace(/(.{2}).+(@.+)/, "$1***$2"), devOtp };
+        const shown = dcEmail.current;
+        return { destinationMasked: shown.replace(/(.{2}).+(@.+)/, "$1***$2"), devOtp };
       }
       const res = await api.post<{
         mfa_required?: boolean;
@@ -480,16 +480,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const verifyDualControlOtp = useCallback(
     async (code: string) => {
       if (isDemoMode()) {
-        await delay(600);
+        await delay(500);
         const expected = sessionStorage.getItem("dc_dev_otp");
-        if (expected && code !== expected) throw new Error("That code isn't right");
+        if (expected && code && code !== expected) throw new Error("That code isn't right");
         const email = dcEmail.current;
-        const user = demo.orgUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+        const user =
+          demo.orgUsers.find((u) => u.email.toLowerCase() === email.toLowerCase()) ||
+          demo.orgUsers.find((u) => u.is_initiator);
         tokens.orgUser = "demo.org_user.jwt";
         tokens.dualControl = `dc_${crypto.randomUUID()}`;
         setOperate({
           unlocked: true,
-          actingUser: user?.full_name || email || "Operate user",
+          actingUser: user?.full_name || email || "Demo Explorer",
           actingRole: user?.is_authorizer && !user?.is_initiator ? "authorizer" : "initiator",
           expiresAt: Date.now() + 30 * 60_000,
         });

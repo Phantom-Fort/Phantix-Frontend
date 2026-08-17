@@ -22,9 +22,9 @@ export default function DualControlOverlay() {
     confirmDualControlDevice,
     dualControl,
     toast,
+    demoActive,
+    session,
   } = useStore();
-
-  const { session } = useStore();
 
   const open = dualControlPrompt.open;
   const reason = dualControlPrompt.reason;
@@ -43,7 +43,6 @@ export default function DualControlOverlay() {
   useEffect(() => {
     if (!open) return;
     setStage("email");
-    // Per 03_APPLICATION_IMPLEMENTATION.md §5.2: use app session email, never ask to re-enter
     setEmail(session?.userEmail ?? "");
     setCode("");
     setMasked("");
@@ -52,6 +51,39 @@ export default function DualControlOverlay() {
     setBusy(false);
     setDeviceWait(false);
   }, [open, session?.userEmail]);
+
+  useEffect(() => {
+    if (!open || !demoActive) return;
+    let cancelled = false;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    void (async () => {
+      setBusy(true);
+      try {
+        await wait(500);
+        if (cancelled) return;
+        const addr = session?.userEmail?.includes("@") ? session.userEmail : "ada@acme.ng";
+        setEmail(addr);
+        const res = await requestDualControlOtp(addr);
+        if (cancelled) return;
+        setMasked(res.destinationMasked || maskEmail(addr));
+        setDevOtp(res.devOtp || null);
+        setStage("otp");
+        const otp = res.devOtp || "000000";
+        setCode(otp);
+        await wait(900);
+        if (cancelled) return;
+        await verifyDualControlOtp(otp);
+        if (cancelled) return;
+        toast("success", "Operate mode unlocked", "Demo dual-control session granted.");
+        closeDualControlPrompt(true);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Demo unlock failed");
+      } finally {
+        if (!cancelled) setBusy(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, demoActive, session?.userEmail, requestDualControlOtp, verifyDualControlOtp, toast, closeDualControlPrompt]);
 
   // Device stage: the org-specific confirmation link was emailed. Poll until it
   // is opened (plus a BroadcastChannel shortcut when the link is in the same browser).
@@ -184,6 +216,11 @@ export default function DualControlOverlay() {
               {reason && (
                 <p className="mt-3 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3.5 py-2.5 text-xs leading-5 text-slate-300">
                   {reason}
+                </p>
+              )}
+              {demoActive && (
+                <p className="mt-2 flex items-center gap-1.5 text-[11px] text-gold-300">
+                  <Loader2 size={11} className="animate-spin" /> Demo tenant — dual-control is completing automatically
                 </p>
               )}
             </div>

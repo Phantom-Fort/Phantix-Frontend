@@ -23,6 +23,8 @@ import {
 import { PLATFORM_AI_URL } from "@/lib/links";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
+import { useChatSend } from "@/lib/useChatSend";
+import { useStickToBottom } from "@/lib/useStickToBottom";
 import type { AiStatus, AgentSkill } from "@/lib/types";
 
 type ChatMsg = {
@@ -207,7 +209,7 @@ export default function Agent() {
   const streamEnabled = status?.agent?.stream?.enabled ?? true;
 
   return (
-    <div className="mx-auto max-w-[900px]">
+    <div className={cx("mx-auto", mode === "agi" ? "max-w-none" : "max-w-[900px]")}>
       <PageHeader
         title="Phantix Agent"
         description="Chief Security Agent routes to specialists (SOC, GRC, VAPT, Threat Intel, Asset). AI orchestrates; engines execute — AI never discovers a vulnerability without a finding ID."
@@ -240,8 +242,8 @@ export default function Agent() {
       {mode === "agi" && AGI_ENABLED ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="!p-0 overflow-hidden">
-            <div className="h-[72vh]">
-              <AgiWorkspace variant="page" />
+            <div className="h-[calc(100vh-220px)] min-h-[640px]">
+              <AgiWorkspace variant="console" />
             </div>
           </Card>
           <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -293,7 +295,9 @@ function AgentChat({
   const [tools, setTools] = useState<{ tool: string; ok: boolean }[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const chatSend = useChatSend();
+  const stick = useStickToBottom([messages, liveAnswer, busy]);
+  const endRef = stick.endRef;
 
   // Chat retention — the conversation persists so the user can continue it later.
   const { session } = useStore();
@@ -312,7 +316,7 @@ function AgentChat({
     try { localStorage.setItem(storageKey, JSON.stringify(messages.slice(-60))); } catch { /* quota */ }
   }, [messages, storageKey]);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, liveAnswer, busy]);
+
 
   const resetLive = () => {
     setLiveAnswer("");
@@ -322,9 +326,15 @@ function AgentChat({
     setThinkingOpen(false);
   };
 
-  const send = async (text?: string) => {
+  const send = (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || busy) return;
+    if (!msg) return;
+    setInput("");
+    chatSend.requestSend(msg, dispatchSend);
+  };
+
+  const dispatchSend = async (msg: string) => {
+    if (busy) abortRef.current?.abort();
     // Phantix Agent operates on org data — require an unlocked dual-control session.
     if (!(await requireDualControl("Using the Phantix Agent requires a dual-control operate session."))) return;
 
@@ -471,7 +481,7 @@ function AgentChat({
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        <div ref={stick.scrollerRef} onScroll={stick.onScroll} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
           {messages.length === 0 && !busy && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-phantix-800/70"><LottiePlayer animationData={chatbotData} className="h-12 w-12" loop /></span>
@@ -573,7 +583,11 @@ function AgentChat({
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !busy) void send(); }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
+                e.preventDefault();
+                send();
+              }}
               placeholder="Ask about your assets, findings, risks, or reports..."
               className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
             />
@@ -583,7 +597,12 @@ function AgentChat({
               <button onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3.5 !py-2 !text-xs" aria-label="Send"><Send size={14} /></button>
             )}
           </div>
-          <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600"><ShieldCheck size={10} /> PII redacted before provider calls · skills governed (candidate/active/quarantined) · every interaction audited · agent never changes findings or risk scores</p>
+          <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600">
+            <ShieldCheck size={10} />
+            {chatSend.hint === "queued"
+              ? "Queued — press Enter again to send now, or wait for the current reply."
+              : "PII redacted before provider calls · skills governed · every interaction audited · agent never changes findings or risk scores"}
+          </p>
         </div>
       </Card>
     </motion.div>
