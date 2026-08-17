@@ -620,7 +620,10 @@ export default function Assets() {
                   await api.upload("/assets/upload/apk", form);
                   toast("success", "APK uploaded", "Analysis running in background");
                   reload();
-                } catch (e: any) { toast("error", "Upload failed", e.message || ""); }
+                } catch (e: any) {
+                  const st = Number(e?.status ?? 0);
+                  toast("error", st === 502 || st === 503 ? "Storage unavailable" : "Upload failed", st === 502 || st === 503 ? "Storage unavailable — retry." : (e?.message ?? ""));
+                }
                 finally { setImporting(false); }
               };
               input.click();

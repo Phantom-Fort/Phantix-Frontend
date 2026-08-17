@@ -245,7 +245,7 @@ export default function Layout() {
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/40 bg-phantix-950/85 backdrop-blur-xl">
         <NavLink to="/" className="flex items-center gap-3 px-5 pb-5 pt-5">
-          <img src="/logo-transparent.png" alt="Phantix" className="h-9 w-9 object-contain" />
+          <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
           <div>
             <p className="font-display text-[15px] font-bold leading-tight text-white">Phantix</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gold-400">Command Centre</p>

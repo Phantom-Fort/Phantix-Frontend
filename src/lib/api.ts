@@ -288,10 +288,25 @@ export const api = {
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
     applyTokenRenewal(res);
-    if (!res.ok) throw new ApiError(res.status, res.statusText);
+    if (!res.ok) {
+      let detail: unknown = res.statusText;
+      try { detail = (await res.json()).detail; } catch { /* non-JSON */ }
+      throw new ApiError(res.status, detail);
+    }
     return res.json() as T;
   },
 };
+
+/** Resolve a media/object path returned by the API (e.g. `/api/v1/media/{token}`)
+ *  to a full URL for <img>/download. Prefix the API origin when it is absolute. */
+export function mediaUrl(path?: string | null): string {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+  if (path.startsWith("/") && API_BASE && !API_BASE.startsWith("/")) {
+    return `${API_BASE}${path}`;
+  }
+  return path;
+}
 
 // Simulated latency for demo mode so loading states are visible
 export const delay = (ms = 420) => new Promise((r) => setTimeout(r, ms));
