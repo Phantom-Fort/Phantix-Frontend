@@ -31,6 +31,7 @@ import { cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useStickToBottom } from "@/lib/useStickToBottom";
 import { useChatSend } from "@/lib/useChatSend";
+import { sanitizeAgiChunks } from "@/lib/agiSanitize";
 import { useNavigate } from "react-router-dom";
 
 const POLL_MS = 2000;
@@ -170,7 +171,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           setRunning(live.status === "running" || live.status === "provisioning");
           setPaused(live.status === "paused");
           const chunks = await loadAgiTranscript(live.id, 0);
-          setTranscript(chunks);
+          setTranscript(sanitizeAgiChunks(chunks));
           afterSeqRef.current = chunks.length ? Math.max(...chunks.map((c) => c.seq)) : 0;
           try { setActions(await loadAgiPendingActions(live.id)); } catch { /* ignore */ }
         }
@@ -386,7 +387,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       try {
         const chunks = await loadAgiTranscript(session.id, afterSeqRef.current);
         if (chunks.length > 0) {
-          setTranscript((prev) => [...prev, ...chunks]);
+          const safe = sanitizeAgiChunks(chunks);
+          setTranscript((prev) => [...prev, ...safe]);
           afterSeqRef.current = Math.max(afterSeqRef.current, ...chunks.map((c) => c.seq));
           // New engine output means the agent has replied — drop the thinking cue.
           setThinking(false);

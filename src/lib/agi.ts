@@ -154,22 +154,23 @@ function demoSeedEngagements(): void {
 }
 
 const DEMO_TX: { role: string; content: string; meta?: Record<string, unknown>; gate?: boolean; clearGate?: boolean }[] = [
-  { role: "system", content: "[engine] Engagement container provisioned\n[engine] Scope guard loaded\n[engine] allowlist = lab.acme.example, api.acme-lab.example\n[engine] forbidden = dos, ransomware, data_exfil_bulk" },
-  { role: "assistant", content: "Acknowledged. I will stay **read-only** until you approve anything that changes state.\n\n**Attack plan**\n1. Recon — enumerate services on the allowlisted host\n2. Endpoint discovery — map HTTP surface and interesting paths\n3. Vuln identification — banner, headers, signature scan\n4. Exploit chain — one gated credential probe, then stop and report" },
+  { role: "system", content: "thinking…" },
+  { role: "assistant", content: "Here's what I understood: **run a scoped security assessment of the allowlisted web application** — enumerate, discover endpoints, identify vulnerabilities, and verify with evidence. I'll stay read-only unless you approve an active step." },
+  { role: "assistant", content: "Resolved skill: **agi.recon.http-surface** (HTTP surface mapping) — matching this objective." },
   { role: "tool", content: "nmap -sV -T3 --top-ports 100 lab.acme.example", meta: { tool: "nmap", action_class: "read" } },
-  { role: "tool", content: "PORT    STATE    SERVICE  VERSION\n80/tcp  open     http     nginx 1.24.0\n443/tcp open     ssl/http nginx 1.24.0\n22/tcp  filtered ssh", meta: { tool: "nmap", action_class: "read" } },
-  { role: "assistant", content: "Recon is clean.\n\n- Web only on 80/443 (nginx 1.24.0)\n- SSH is filtered — I will not touch it\n- No unexpected ports, no shadow admin listeners\n\nNext I fingerprint the HTTP origin and walk a small path dictionary." },
-  { role: "tool", content: "httpx -silent -status-code -title -tech-detect https://lab.acme.example", meta: { tool: "httpx", action_class: "read" } },
-  { role: "tool", content: "https://lab.acme.example  [200]  [Acme Lab Portal]  [nginx/1.24.0]  [jquery]", meta: { tool: "httpx", action_class: "read" } },
-  { role: "tool", content: "ffuf -u https://lab.acme.example/FUZZ -w common.txt -mc 200,302 -t 20", meta: { tool: "ffuf", action_class: "read" } },
-  { role: "tool", content: "/login   200\n/api/v1  200\n/admin   302 → /login\n/health  200\n/assets  200", meta: { tool: "ffuf", action_class: "read" } },
-  { role: "assistant", content: "Surface mapped. Two notes before I go any further:\n\n- **Info** — application title and tech stack are public (`Acme Lab Portal`, nginx + jQuery)\n- **Low** — `Server: nginx/1.24.0` banner is leaking a precise version\n\nAuth lives at `/login`; `/admin` just redirects there. I will run a safe nuclei template pack next — still read-only." },
-  { role: "tool", content: "nuclei -u https://lab.acme.example -severity info,low,medium,high -rate-limit 20", meta: { tool: "nuclei", action_class: "read" } },
-  { role: "tool", content: "[info] outdated-jquery  CVE-2020-11022\n[low]  nginx-version-disclose\n[medium] missing-security-headers  (CSP, X-Frame-Options)", meta: { tool: "nuclei", action_class: "read" } },
-  { role: "assistant", content: "Signature scan is in. Nothing critical yet.\n\nI want **one** state-changing check: a single POST to `/login` with lab-only default credentials (`admin` / `test`). No spray, no lockout loop, no host outside the allowlist.\n\nQueuing that step for your approval.", gate: true },
-  { role: "system", content: "[engine] Operator approved state-changing step · within ROE · lab target only", clearGate: true },
-  { role: "tool", content: "POST https://lab.acme.example/login\nusername=admin&password=test\n→ HTTP 302 Location: /admin  Set-Cookie: session=a1b2…; Path=/", meta: { tool: "http_probe", action_class: "state_changing" } },
-  { role: "assistant", content: "**Engagement complete — verified results**\n\n| Sev | Finding |\n|---|---|\n| High | Default credentials accepted on `/login` → session cookie issued, `/admin` reachable |\n| Medium | Missing security headers (CSP, clickjacking) |\n| Low | nginx version banner |\n| Info | Public app fingerprint |\n\n**Residual risk:** authenticated admin surface is now proven, not theoretical. I will not pivot, dump data, or leave the allowlist.\n\nReport tagged `phantix_agi`. Container will destroy on stop." },
+  { role: "tool", content: "80/tcp open http nginx 1.24.0\n443/tcp open ssl/http nginx 1.24.0\n22/tcp filtered ssh", meta: { tool: "nmap", action_class: "read" } },
+  { role: "assistant", content: "Recon looks clean: web on 80/443 only, SSH filtered. I'll fingerprint the HTTP origin and walk common paths next." },
+  { role: "tool", content: "httpx -silent -status-code -title https://lab.acme.example", meta: { tool: "httpx", action_class: "read" } },
+  { role: "tool", content: "https://lab.acme.example [200] \"Acme Lab Portal\"", meta: { tool: "httpx", action_class: "read" } },
+  { role: "tool", content: "ffuf -u https://lab.acme.example/FUZZ -w common.txt -mc 200,302", meta: { tool: "ffuf", action_class: "read" } },
+  { role: "tool", content: "/login 200\n/api/v1 200\n/admin 302 → /login\n/health 200", meta: { tool: "ffuf", action_class: "read" } },
+  { role: "assistant", content: "Surface mapped. Notes so far:\n\n- **Info** — public app title and tech stack are visible\n- **Low** — server version banner is exposed\n\nAuth sits at `/login`; `/admin` redirects there. I'll run a safe signature scan next — still read-only." },
+  { role: "tool", content: "nuclei -u https://lab.acme.example -severity info,low,medium,high", meta: { tool: "nuclei", action_class: "read" } },
+  { role: "tool", content: "[info] outdated-jquery\n[low] server-version-disclose\n[medium] missing-security-headers", meta: { tool: "nuclei", action_class: "read" } },
+  { role: "assistant", content: "Nothing critical yet. I'd like **one** active check: a single login probe with lab-only default credentials. No spray, no lockout loop. Queuing it for your approval.", gate: true },
+  { role: "system", content: "Approved — running within scope.", clearGate: true },
+  { role: "tool", content: "POST /login → 302 Location: /admin · session cookie issued", meta: { tool: "http_probe", action_class: "state_changing" } },
+  { role: "assistant", content: "**Assessment complete**\n\n| Severity | Finding |\n|---|---|\n| High | Default credentials accepted on `/login` — session issued |\n| Medium | Missing security headers |\n| Low | Server version banner |\n| Info | Public app fingerprint |\n\n**Residual risk:** the authenticated admin surface is now proven. I will not pivot or leave the allowlist. Report tagged for your team." },
 ];
 
 function demoStartSession(engagementId: number, instruction: string): AgiSession {
@@ -423,7 +424,7 @@ export async function decideAgiAction(actionId: number, approve: boolean, notes 
       a.decided_at = new Date().toISOString();
       a.executed_at = approve ? new Date().toISOString() : null;
       demoActions = demoActions.filter((x) => x.id !== actionId);
-      demoTx.push({ seq: demoTx.length, role: "system", content: `[engine] Action ${approve ? "approved and executed" : "rejected"}: ${a.proposed_command}`, created_at: new Date().toISOString() });
+      demoTx.push({ seq: demoTx.length, role: "system", content: approve ? "Approved — running within scope." : "Rejected — step skipped.", created_at: new Date().toISOString() });
     }
     return a ?? { id: actionId, session_id: 0, action_type: "state_changing", proposed_command: "", rationale: "", status: "rejected", created_at: new Date().toISOString() };
   }
@@ -437,7 +438,7 @@ export async function stopAgiSession(sessionId: number): Promise<AgiSession> {
       demoSession.status = "stopped";
       demoSession.ended_at = new Date().toISOString();
       demoSession.meta = { ...(demoSession.meta ?? {}), report: { report_id: 4600 + (demoSession.id % 100), source: "phantix_agi" } };
-      demoTx.push({ seq: demoTx.length, role: "system", content: "[engine] Session stopped · container destroyed · report tagged phantix_agi · submitted to report engine", created_at: new Date().toISOString() });
+      demoTx.push({ seq: demoTx.length, role: "system", content: "Session stopped · report submitted to your team.", created_at: new Date().toISOString() });
     }
     persistAgiSession(null);
     return demoSession ?? { id: sessionId, engagement_id: 0, status: "stopped", started_at: new Date().toISOString() };
