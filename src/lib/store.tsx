@@ -369,11 +369,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const requireDualControl = useCallback(
     (reason = "This action requires an active dual-control operate session.") => {
-      // Check expiry first --- clear if token is stale (tab hidden, setTimeout delayed)
-      if (operate.unlocked && operate.expiresAt && operate.expiresAt <= Date.now()) {
-        tokens.dualControl = null;
+      // The backend idle window is authoritative — we only lock when the backend
+      // actually rejects a mutation with a dual-control session error, or when the
+      // token is genuinely gone. A stale local clock must not force a re-code.
+      if (operate.expiresAt && operate.expiresAt <= Date.now() && !tokens.dualControl) {
         setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-        toast("warning", "Operate session expired", "Unlock dual-control again to continue.");
       }
       // Already have an active DC session token and operate is unlocked
       if (operate.unlocked && tokens.dualControl) {
@@ -400,37 +400,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [operate.unlocked, operate.expiresAt, dualControl.configured, session?.isInitiator, session?.isAuthorizer, session?.initiatorName, session?.authorizerName, toast],
   );
 
-  // Auto-lock when the dual-control idle window expires.
+  // Slide the operate expiry on real activity. Backend inactivity window is
+  // what actually matters — this only keeps the FE in sync so it stops asking
+  // for a fresh code on every action while the operate session is still valid.
   useEffect(() => {
-    if (!operate.unlocked || !operate.expiresAt) return;
-    const lock = () => {
+    const onActivity = () => {
+      setOperate((prev) => {
+        if (!prev.unlocked) return prev;
+        return { ...prev, expiresAt: Date.now() + 20 * 60_000 };
+      });
+    };
+    window.addEventListener("phantix:operate-activity", onActivity);
+    return () => window.removeEventListener("phantix:operate-activity", onActivity);
+  }, []);
+
+  // Lock only when the backend reports the operate session is gone/expired.
+  useEffect(() => {
+    const onExpired = () => {
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
+      toast("warning", "Operate session expired", "Unlock dual-control again to continue.");
     };
-    const checkAndLock = () => {
-      if (Date.now() >= operate.expiresAt!) {
-        lock();
-        toast("warning", "Operate session expired", "Unlock dual-control again to continue mutations.");
-      }
-    };
-    // Immediate check (handles tab-hidden setTimeout delay)
-    const ms = operate.expiresAt - Date.now();
-    if (ms <= 0) { checkAndLock(); return; }
-    // Primary timer
-    const t = window.setTimeout(checkAndLock, ms);
-    // Poll fallback --- catches delayed setTimeout in background tabs
-    const fallback = window.setInterval(() => {
-      if (Date.now() >= operate.expiresAt!) { checkAndLock(); }
-    }, 10000);
-    // Visibility change --- check when tab returns to foreground
-    const onVisible = () => { if (document.visibilityState === "visible") checkAndLock(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      window.clearTimeout(t);
-      window.clearInterval(fallback);
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [operate.unlocked, operate.expiresAt, toast]);
+    window.addEventListener("phantix:operate-expired", onExpired);
+    return () => window.removeEventListener("phantix:operate-expired", onExpired);
+  }, [toast]);
 
   const requestDualControlOtp = useCallback(
     async (email: string) => {

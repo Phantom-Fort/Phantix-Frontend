@@ -166,6 +166,8 @@ async function request<T>(
     return res;
   };
 
+  const sentDualControl = !!tokens.dualControl && (opts.dualControl || ["POST", "PUT", "PATCH", "DELETE"].includes(method));
+
   let res = await doFetch();
 
   // Concurrent-renewal race: another request already bumped the token version,
@@ -174,6 +176,13 @@ async function request<T>(
   // mid-session).
   if (res.status === 401 && (await isSessionSuperseded(res))) {
     res = await doFetch();
+  }
+
+  // The operate session is an *idle* session on the backend: every successful
+  // mutation that used it counts as activity and slides the FE expiry forward so
+  // the user is not asked for another code while still working.
+  if (res.ok && sentDualControl) {
+    window.dispatchEvent(new CustomEvent("phantix:operate-activity"));
   }
 
   if (!res.ok) {
@@ -190,6 +199,13 @@ async function request<T>(
     // A missing/expired dual-control operate session is NOT a dropped org/app
     // session. It only blocks sensitive actions; the user stays signed in.
     const dcSessionIssue = /authenticator session|dual.?control session|X-Dual-Control-Session/i.test(msg);
+    // The backend is authoritative for the operate idle window: if it rejected
+    // a mutation because the dual-control session is gone/expired, tell the store
+    // to lock so the next action prompts cleanly (instead of the FE guessing).
+    if ((res.status === 401 || res.status === 403) && sentDualControl && dcSessionIssue) {
+      tokens.dualControl = null;
+      window.dispatchEvent(new CustomEvent("phantix:operate-expired"));
+    }
     const superseded = detailObj?.error === "session_superseded" || /superseded by renewal/i.test(msg);
     const sessionInvalid =
       relogin ||
