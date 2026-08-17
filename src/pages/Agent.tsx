@@ -6,7 +6,6 @@ import {
   ThumbsUp, AlertTriangle, RotateCcw, Cpu,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
-import AgiWorkspace from "@/components/AgiWorkspace";
 import LottiePlayer from "@/components/LottiePlayer";
 import MarkdownView from "@/components/MarkdownView";
 import chatbotData from "@/lib/animations/chatbot.json";
@@ -224,14 +223,20 @@ export default function Agent() {
       {/* Mode switch — Phantix Agent vs Autonomous Pentest Agent */}
       <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
         <button
-          onClick={() => setMode("agent")}
+          onClick={() => {
+            setMode("agent");
+            window.dispatchEvent(new CustomEvent("phantix:agi-close"));
+          }}
           className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agent" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
         >
           <Bot size={15} /> Phantix Agent
         </button>
         {AGI_ENABLED && (
           <button
-            onClick={() => setMode("agi")}
+            onClick={() => {
+              setMode("agi");
+              window.dispatchEvent(new CustomEvent("phantix:agi-open", { detail: { fullscreen: true } }));
+            }}
             className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agi" ? "bg-gradient-to-r from-gold-400/20 to-gold-600/20 text-gold-200 ring-1 ring-gold-400/30" : "text-slate-400 hover:text-slate-200")}
           >
             <Radar size={15} /> Autonomous Pentest Agent
@@ -241,14 +246,17 @@ export default function Agent() {
 
       {mode === "agi" && AGI_ENABLED ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <Card className="!p-0 overflow-hidden">
-            <div className="h-[calc(100vh-220px)] min-h-[640px]">
-              <AgiWorkspace variant="console" />
-            </div>
+          <Card className="p-8 text-center">
+            <Radar size={28} className="mx-auto text-gold-400" />
+            <p className="mt-3 font-display text-sm font-semibold text-white">Session stays in the pentest console</p>
+            <p className="mx-auto mt-1.5 max-w-md text-xs leading-5 text-slate-400">Closing or leaving this tab does not stop a running session. Reopen the Pentest Agent rail anytime to continue from the last transcript.</p>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("phantix:agi-open", { detail: { fullscreen: true } }))}
+              className="btn-primary mt-4 !text-xs"
+            >
+              <Radar size={13} className="mr-1 inline" /> Open console
+            </button>
           </Card>
-          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
-            <ShieldCheck size={11} className="text-gold-400" /> Human-gated, scoped, container-isolated. Read-only steps stream live; state-changing steps pause for your approval. Sessions destroy their containers when stopped.
-          </p>
         </motion.div>
       ) : (
         <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">

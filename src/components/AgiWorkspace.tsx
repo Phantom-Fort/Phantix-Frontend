@@ -24,6 +24,7 @@ import {
   decideAgiAction,
   stopAgiSession,
   isAgiPolicyBlocked,
+  loadActiveAgiSession,
 } from "@/lib/agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -162,6 +163,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         const engs = await loadAgiEngagements();
         setEngagements(engs);
         if (engs.length > 0) setSelectedEng(engs[0].id);
+        const live = await loadActiveAgiSession();
+        if (live) {
+          setSession(live);
+          setSelectedEng(live.engagement_id);
+          setRunning(live.status === "running" || live.status === "provisioning");
+          setPaused(live.status === "paused");
+          const chunks = await loadAgiTranscript(live.id, 0);
+          setTranscript(chunks);
+          afterSeqRef.current = chunks.length ? Math.max(...chunks.map((c) => c.seq)) : 0;
+          try { setActions(await loadAgiPendingActions(live.id)); } catch { /* ignore */ }
+        }
       }
     } catch (e) {
       toast("error", "Could not load AGI access", e instanceof Error ? e.message : "");
@@ -181,6 +193,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   }, [toast]);
 
   useEffect(() => { void boot(); }, [boot]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("phantix:agi-live", { detail: { running: Boolean(session && running) } }));
+  }, [session, running]);
 
   const onScroll = stick.onScroll;
   const scrollToBottom = stick.jump;

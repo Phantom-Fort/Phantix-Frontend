@@ -16,6 +16,29 @@ import type {
 /** Build-time master switch — mirrors backend PHANTIX_AGI_ENABLED (default on). */
 export const AGI_ENABLED = (import.meta.env.VITE_AGI_ENABLED ?? "true") !== "false";
 
+const ACTIVE_SESSION_KEY = "phantix_agi_active_session";
+
+export function persistAgiSession(s: { id: number; engagement_id: number } | null): void {
+  try {
+    if (!s) localStorage.removeItem(ACTIVE_SESSION_KEY);
+    else localStorage.setItem(ACTIVE_SESSION_KEY, JSON.stringify({ id: s.id, engagement_id: s.engagement_id }));
+  } catch { /* ignore */ }
+}
+
+export function readPersistedAgiSession(): { id: number; engagement_id: number } | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_SESSION_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as { id?: number; engagement_id?: number };
+    if (typeof p.id === "number") return { id: p.id, engagement_id: Number(p.engagement_id ?? 0) };
+  } catch { /* ignore */ }
+  return null;
+}
+
+function isLiveStatus(status: string): boolean {
+  return status === "running" || status === "provisioning" || status === "paused";
+}
+
 // ── Demo fixtures ─────────────────────────────────────────────────────────────
 let demoAgreed = false;
 let demoEngagements: AgiEngagement[] = [];
@@ -295,13 +318,53 @@ export async function createAgiEngagement(payload: {
 
 // ── Sessions ──────────────────────────────────────────────────────────────────
 
+export async function loadAgiSession(sessionId: number): Promise<AgiSession | null> {
+  if (isDemoMode()) {
+    if (demoSession && demoSession.id === sessionId) return demoSession;
+    return null;
+  }
+  try {
+    return await api.get<AgiSession>(`/agi/sessions/${sessionId}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function loadActiveAgiSession(): Promise<AgiSession | null> {
+  const persisted = readPersistedAgiSession();
+  if (persisted) {
+    const s = await loadAgiSession(persisted.id);
+    if (s && isLiveStatus(s.status)) return s;
+    persistAgiSession(null);
+  }
+  if (isDemoMode()) {
+    return demoSession && isLiveStatus(demoSession.status) ? demoSession : null;
+  }
+  try {
+    const res = await api.get<AgiSession[] | { items?: AgiSession[] }>("/agi/sessions?status=running,paused,provisioning");
+    const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+    const live = list.find((s) => isLiveStatus(s.status)) ?? null;
+    if (live) persistAgiSession(live);
+    return live;
+  } catch {
+    return null;
+  }
+}
+
 export async function startAgiSession(engagementId: number, instruction: string): Promise<AgiSession> {
-  if (isDemoMode()) { await delay(180); return demoStartSession(engagementId, instruction); }
-  return api.post<AgiSession>(`/agi/engagements/${engagementId}/sessions`, {
+  if (isDemoMode()) {
+    const s = demoStartSession(engagementId, instruction);
+    persistAgiSession(s);
+    return s;
+  }
+  const s = await api.post<AgiSession>(`/agi/engagements/${engagementId}/sessions`, {
     instruction,
     autonomy: "medium",
     include_org_assets: true,
+    confirm_environment: "staging",
   }, { dualControl: true });
+  persistAgiSession(s);
+  return s;
 }
 
 export async function agiChat(sessionId: number, message: string): Promise<Record<string, unknown>> {
@@ -376,9 +439,12 @@ export async function stopAgiSession(sessionId: number): Promise<AgiSession> {
       demoSession.meta = { ...(demoSession.meta ?? {}), report: { report_id: 4600 + (demoSession.id % 100), source: "phantix_agi" } };
       demoTx.push({ seq: demoTx.length, role: "system", content: "[engine] Session stopped · container destroyed · report tagged phantix_agi · submitted to report engine", created_at: new Date().toISOString() });
     }
+    persistAgiSession(null);
     return demoSession ?? { id: sessionId, engagement_id: 0, status: "stopped", started_at: new Date().toISOString() };
   }
-  return api.post<AgiSession>(`/agi/sessions/${sessionId}/stop`, undefined, { dualControl: true });
+  const s = await api.post<AgiSession>(`/agi/sessions/${sessionId}/stop`, undefined, { dualControl: true });
+  persistAgiSession(null);
+  return s;
 }
 
 export function isAgiPolicyBlocked(err: unknown): { code: string; message: string } | null {
