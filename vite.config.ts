@@ -2,6 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+/** Upstream backend — only used by the dev proxy, never by browser bundles. */
+const UPSTREAM = "https://staging.phantix.site";
+const SANDBOX_APPLY = "http://127.0.0.1:8787";
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
@@ -15,9 +19,15 @@ export default defineConfig({
     host: true,
     proxy: {
       "/api": {
-        target: "https://staging.phantix.site",
+        target: UPSTREAM,
         changeOrigin: true,
         secure: true,
+        ws: true,
+      },
+      "/sandbox-apply": {
+        target: SANDBOX_APPLY,
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/sandbox-apply/, ""),
       },
     },
   },

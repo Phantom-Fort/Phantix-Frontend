@@ -40,7 +40,7 @@
 } from "./types";
 
 // Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
-// (/demo, ?demo=1, or VITE_API_BASE unset). Live mode must never import this
+// (/demo or demo session flag). Live mode must never import this
 // from pages; shapes still mirror the endpoint catalog.
 
 export const organization: Organization = {

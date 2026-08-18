@@ -31,5 +31,6 @@ Seats held by **pending + approved** only (max 20).
 
 Data file: `data/store.json` (gitignored).
 
-Wire landing: `VITE_SANDBOX_APPLY_API=http://localhost:8787`  
-Wire staff portal: same + `VITE_SANDBOX_STAFF_KEY=<STAFF_API_KEY>`
+Browser calls **same-origin** `/sandbox-apply/...` (never the Node host).  
+Vite proxies `/sandbox-apply` → `http://127.0.0.1:8787`.  
+Staff key: `staff-portal/src/lib/config.ts` → `SANDBOX_STAFF_KEY`.

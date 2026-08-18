@@ -3,6 +3,7 @@
 // UI is testable without a live runner.
 
 import { api, ApiError, delay, isDemoMode } from "./api";
+import { AGI_ENABLED as AGI_FLAG } from "./config";
 import type {
   AgiAccess,
   AgiAction,
@@ -16,8 +17,8 @@ import type {
   AgiTranscriptChunk,
 } from "./types";
 
-/** Build-time master switch — mirrors backend PHANTIX_AGI_ENABLED (default on). */
-export const AGI_ENABLED = (import.meta.env.VITE_AGI_ENABLED ?? "true") !== "false";
+/** Master switch — mirrors backend PHANTIX_AGI_ENABLED (see config.ts). */
+export const AGI_ENABLED = AGI_FLAG;
 export const AGI_SESSION_START_TIMEOUT_MS = 180_000;
 
 function asObj(v: unknown): Record<string, unknown> {

@@ -1,29 +1,10 @@
 ﻿// ── Phantix API client ────────────────────────────────────────────────────────
-// Implements the token model from the FE guides:
-//   platform_access_token  (company JWT, type=access)
-//   platform_org_user_token (type=org_user)
-//   platform_dual_control  (X-Dual-Control-Session, 3-min idle)
-//   app_session_token + app_device_token (application dual-token)
-//   staff_access_token     (type=staff)
-//   phantix_device_id      (stable browser UUID)
-//
-// Demo mode: active when VITE_API_BASE is unset, OR when the visitor enters the
-// demo from the landing page (runtime flag) --- even against a configured API.
-// Set VITE_API_BASE (e.g. https://staging.phantix.site/api/v1) for live data.
-// Normalize: tolerate "staging.phantix.site/api/v1" (missing protocol) so the
-// fetch never resolves against the page origin. Also guarantee the `/api/v1`
-// prefix so no endpoint is ever called without it. Relative "/api/v1" is kept
-// for same-origin dev proxies.
-const RAW_API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
-export const API_BASE = (() => {
-  if (!RAW_API_BASE) return RAW_API_BASE;
-  let base = RAW_API_BASE.replace(/\/+$/, "").replace(/^(?!https?:\/\/|\/)/i, "https://");
-  if (base.startsWith("/")) return base; // relative — dev proxy already targets /api/v1
-  if (!/\/api\/v1(?:\/|$)/i.test(base)) base = `${base}/api/v1`;
-  return base;
-})();
-
+// Token model: app_session + device, platform, dual-control, staff (never mixed).
+// API base from src/lib/config.ts (no Vite env). Demo only via /demo flag.
+import { API_BASE as CONFIG_API_BASE } from "./config";
 import { dedupedRequest } from "./dedupe";
+
+export const API_BASE = CONFIG_API_BASE;
 
 const DEMO_FLAG = "phantix_demo";
 
@@ -42,9 +23,9 @@ export function isDemoFlagSet(): boolean {
   return sessionStorage.getItem(DEMO_FLAG) === "1" || localStorage.getItem(DEMO_FLAG) === "1";
 }
 
-/** Demo mode = no API configured, or the visitor explicitly chose the demo. */
+/** Demo mode = visitor explicitly entered the guided demo tenant. */
 export function isDemoMode(): boolean {
-  return !API_BASE || isDemoFlagSet();
+  return isDemoFlagSet();
 }
 
 // ── Token stores (per-surface, never mixed) ──────────────────────────────────
@@ -319,15 +300,20 @@ export const api = {
   },
 };
 
-/** Resolve a media/object path returned by the API (e.g. `/api/v1/media/{token}`)
- *  to a full URL for <img>/download. Prefix the API origin when it is absolute. */
+/**
+ * Media/download URLs stay same-origin so the Network tab never shows upstream.
+ * Absolute backend URLs from the API are rewritten to path-only.
+ */
 export function mediaUrl(path?: string | null): string {
   if (!path) return "";
-  if (/^https?:\/\//i.test(path)) return path;
-  if (path.startsWith("/") && API_BASE && !API_BASE.startsWith("/")) {
-    return `${API_BASE}${path}`;
+  if (/^https?:\/\//i.test(path)) {
+    try {
+      const u = new URL(path);
+      if (u.pathname.startsWith("/api/")) return `${u.pathname}${u.search}`;
+    } catch { /* keep original */ }
+    return path;
   }
-  return path;
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
 // Simulated latency for demo mode so loading states are visible
