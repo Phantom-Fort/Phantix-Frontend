@@ -559,9 +559,9 @@ export interface EvidenceItem {
 
 export interface Report {
   id: number;
-  report_type: "vapt_campaign" | "executive" | "compliance" | "tracker";
+  report_type: "vapt_campaign" | "executive" | "compliance" | "tracker" | "agi_session" | string;
   title: string;
-  status: "queued" | "generating" | "complete" | "failed";
+  status: "queued" | "generating" | "complete" | "failed" | string;
   formats_requested: string[];
   campaign_id: number | null;
   version: number;
@@ -575,6 +575,22 @@ export interface Report {
   };
   created_at: string;
   size_bytes: number;
+  /** storage paths and optional `<fmt>_error` strings */
+  output_files?: Record<string, string>;
+  ai_narratives?: {
+    executive_summary?: string;
+    current_development?: string;
+    remediation_guidance?: string;
+    attack_path_descriptions?: string;
+    web_research?: {
+      queries?: string[];
+      source_count?: number;
+      brief_md?: string;
+      items?: Array<{ title?: string; url?: string; snippet?: string; source?: string }>;
+    };
+    source?: string;
+  } | null;
+  error_message?: string | null;
 }
 
 export interface TrackerFinding {
@@ -824,6 +840,56 @@ export interface AgiEngagement {
   updated_at: string;
 }
 
+/** Loop brief (phantix.agi.loop_brief.v1). */
+export interface AgiLoopItem {
+  title: string;
+  detail: string;
+  severity: string;
+  target: string;
+  tool: string;
+  reason: string;
+  action: string;
+}
+
+export interface AgiLoopBrief {
+  schema?: string;
+  event?: string;
+  session_id?: number;
+  turn?: number;
+  working_on?: string;
+  summary?: string;
+  content?: string;
+  found?: AgiLoopItem[];
+  next?: AgiLoopItem[];
+  blockers?: AgiLoopItem[];
+  job_status?: string;
+  active_phase?: string;
+  phase?: string;
+  loop_status?: string;
+  findings_count?: number;
+  pending_approvals?: number;
+}
+
+export interface AgiChatResponse {
+  schema_version?: string;
+  ok?: boolean;
+  session_id?: number;
+  accepted?: boolean;
+  queued?: boolean;
+  blocked?: boolean;
+  mock?: boolean;
+  code?: string;
+  reply?: string;
+  reply_kind?: string;
+  findings_count?: number;
+  job?: Record<string, unknown>;
+  loop?: AgiLoopBrief;
+  found?: AgiLoopItem[];
+  next?: AgiLoopItem[];
+  blockers?: AgiLoopItem[];
+  transcript_seq?: number | null;
+}
+
 /** Live agent run (AgiSessionRead). */
 export interface AgiSession {
   id: number;
@@ -835,6 +901,8 @@ export interface AgiSession {
   ended_at?: string | null;
   teardown_reason?: string | null;
   meta?: Record<string, unknown> | null;
+  job?: Record<string, unknown> | null;
+  loop?: AgiLoopBrief | null;
 }
 
 /** One terminal history line (AgiTranscriptChunk). */

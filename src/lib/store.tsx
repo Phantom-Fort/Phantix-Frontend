@@ -419,7 +419,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const onExpired = () => {
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      toast("warning", "Operate session expired", "Unlock dual-control again to continue.");
+      toast("warning", "Operate session released", "Re-unlock dual-control to continue approvals (your login stays active).");
     };
     window.addEventListener("phantix:operate-expired", onExpired);
     return () => window.removeEventListener("phantix:operate-expired", onExpired);

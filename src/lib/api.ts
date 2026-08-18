@@ -122,10 +122,19 @@ export function isSecurityDbBlocked(err: unknown): boolean {
 
 type Realm = "platform" | "application" | "staff";
 
+type RequestOpts = {
+  body?: unknown;
+  realm?: Realm;
+  dualControl?: boolean;
+  form?: Record<string, string>;
+  /** Per-request timeout in ms (e.g. 180_000 for AGI session start). */
+  timeoutMs?: number;
+};
+
 async function request<T>(
   method: string,
   path: string,
-  opts: { body?: unknown; realm?: Realm; dualControl?: boolean; form?: Record<string, string> } = {},
+  opts: RequestOpts = {},
 ): Promise<T> {
   const realm = opts.realm ?? (tokens.appSession ? "application" : "platform");
 
@@ -159,11 +168,24 @@ async function request<T>(
       body = JSON.stringify(opts.body);
     }
 
-    const res = await fetch(`${API_BASE}${path}`, { method, headers, body });
-    // App session token renewal (APP_SESSION_TOKEN_RENEWAL.md): the backend bumps
-    // token versions on activity and returns refreshed tokens in response headers.
-    applyTokenRenewal(res);
-    return res;
+    const controller = opts.timeoutMs != null ? new AbortController() : null;
+    const timer = controller && opts.timeoutMs != null
+      ? window.setTimeout(() => controller.abort(), opts.timeoutMs)
+      : null;
+    try {
+      const res = await fetch(`${API_BASE}${path}`, { method, headers, body, signal: controller?.signal });
+      // App session token renewal (APP_SESSION_TOKEN_RENEWAL.md): the backend bumps
+      // token versions on activity and returns refreshed tokens in response headers.
+      applyTokenRenewal(res);
+      return res;
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new ApiError(408, "Request timed out");
+      }
+      throw err;
+    } finally {
+      if (timer != null) window.clearTimeout(timer);
+    }
   };
 
   const sentDualControl = !!tokens.dualControl && (opts.dualControl || ["POST", "PUT", "PATCH", "DELETE"].includes(method));
@@ -242,11 +264,11 @@ async function isSessionSuperseded(res: Response): Promise<boolean> {
 }
 
 export const api = {
-  get: <T>(path: string, opts?: Parameters<typeof request>[2]) =>
+  get: <T>(path: string, opts?: RequestOpts) =>
     dedupedRequest("GET", path, opts?.body, () => request<T>("GET", path, opts)),
-  post: <T>(path: string, body?: unknown, opts?: Parameters<typeof request>[2]) => request<T>("POST", path, { ...opts, body }),
-  put: <T>(path: string, body?: unknown, opts?: Parameters<typeof request>[2]) => request<T>("PUT", path, { ...opts, body }),
-  patch: <T>(path: string, body?: unknown, opts?: Parameters<typeof request>[2]) => request<T>("PATCH", path, { ...opts, body }),
+  post: <T>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("POST", path, { ...opts, body }),
+  put: <T>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("PUT", path, { ...opts, body }),
+  patch: <T>(path: string, body?: unknown, opts?: RequestOpts) => request<T>("PATCH", path, { ...opts, body }),
   delete: <T>(path: string, opts?: Parameters<typeof request>[2]) => request<T>("DELETE", path, opts),
   postForm: <T>(path: string, form: Record<string, string>, opts?: Parameters<typeof request>[2]) =>
     request<T>("POST", path, { ...opts, form }),

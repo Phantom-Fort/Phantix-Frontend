@@ -25,6 +25,7 @@ import {
   stopAgiSession,
   isAgiPolicyBlocked,
   loadActiveAgiSession,
+  loadAgiSession,
 } from "@/lib/agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -63,7 +64,7 @@ function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
           </span>
         )}
         {isSystem && <span className="mr-1 text-[10px] text-slate-600">engine</span>}
-        {isAssistant ? <MarkdownView source={t.content} /> : <span className="whitespace-pre-wrap break-words">{t.content}</span>}
+        <span className="whitespace-pre-wrap break-words">{t.content}</span>
         {last && !isOperator && <span className="ml-0.5 inline-block h-3 w-[6px] animate-pulse rounded-sm bg-gold-400/70 align-middle" />}
       </div>
     </div>
@@ -144,11 +145,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [stopping, setStopping] = useState(false);
   const [transcript, setTranscript] = useState<AgiTranscriptChunk[]>([]);
   const afterSeqRef = useRef(0);
+  const pendingOpsRef = useRef<string[]>([]);
   const [actions, setActions] = useState<AgiAction[]>([]);
   const [actionBusy, setActionBusy] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [policyBanner, setPolicyBanner] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [workingOn, setWorkingOn] = useState<string | null>(null);
   const [connError, setConnError] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [overrideDrafts, setOverrideDrafts] = useState<Record<number, string>>({});
@@ -274,7 +277,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     setStarting(true);
     setPolicyBanner(null);
     try {
-      const s = await startAgiSession(selectedEng, msg);
+      toast("info", "Provisioning container…", "Workspace setup can take up to ~2 minutes.");
+      const s = await startAgiSession(selectedEng, msg, { include_org_assets: false, autonomy: "medium" });
       setSession(s);
       setRunning(true);
       reportSubmitted.current = false;
@@ -284,6 +288,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       setActions([]);
       setOverrideDrafts({});
       setInstruction("");
+      if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
       toast("success", "Session started", "Streaming live from the engagement container...");
     } catch (e) {
       const blocked = isAgiPolicyBlocked(e);
@@ -323,16 +328,37 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     if (!session || !running || paused) return;
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
     setConnError(null);
+    pendingOpsRef.current.push(msg);
     setTranscript((prev) => [...prev, { seq: -1, role: "operator", content: msg, meta: null, created_at: new Date().toISOString() }]);
     setThinking(true);
     try {
-      await agiChat(session.id, msg);
+      const res = await agiChat(session.id, msg);
+      if (res.loop?.working_on) setWorkingOn(res.loop.working_on);
+      if (res.queued) setThinking(false);
+      if (res.reply && !res.queued) {
+        setTranscript((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant" && last.content === res.reply) return prev;
+          return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: res.reply || "", meta: { kind: res.reply_kind || "assistant" }, created_at: new Date().toISOString() }];
+        });
+      } else if (res.reply && res.queued) {
+        setTranscript((prev) => [...prev, { seq: afterSeqRef.current + 1, role: "system", content: res.reply || "Queued for the next turn.", meta: { kind: "queued" }, created_at: new Date().toISOString() }]);
+      }
+      if (typeof res.transcript_seq === "number" && res.transcript_seq > afterSeqRef.current) {
+        afterSeqRef.current = res.transcript_seq;
+      }
     } catch (e: any) {
       setThinking(false);
       const blocked = isAgiPolicyBlocked(e);
       if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return; }
       const name = String(e?.name ?? "");
       const message = String(e?.message ?? "");
+      // Dual-control expired while session still running — clearer copy
+      if (/dual.?control|authenticator session|X-Dual-Control/i.test(message) && running) {
+        setConnError("Operate session was released — re-unlock dual-control to continue approvals.");
+        toast("warning", "Operate session released", "Re-unlock dual-control to continue approvals.");
+        return;
+      }
       if (name === "TimeoutError" || name === "AbortError" || /timeout|timed out/i.test(message)) {
         setConnError("Timed out — the agent server is unavailable. Check your connection and try again.");
       } else if (/failed to fetch|networkerror|network error|load failed|fetch/i.test(message)) {
@@ -388,7 +414,21 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         const chunks = await loadAgiTranscript(session.id, afterSeqRef.current);
         if (chunks.length > 0) {
           const safe = sanitizeAgiChunks(chunks);
-          setTranscript((prev) => [...prev, ...safe]);
+          setTranscript((prev) => {
+            const pend = pendingOpsRef.current;
+            let taken = 0;
+            const out: AgiTranscriptChunk[] = [];
+            for (const c of safe) {
+              if (c.role === "operator" && taken < pend.length && pend[taken] === c.content) {
+                taken += 1;
+                continue;
+              }
+              out.push(c);
+            }
+            if (taken > 0) pendingOpsRef.current = pend.slice(taken);
+            if (out.length === 0) return prev;
+            return [...prev, ...out];
+          });
           afterSeqRef.current = Math.max(afterSeqRef.current, ...chunks.map((c) => c.seq));
           // New engine output means the agent has replied — drop the thinking cue.
           setThinking(false);
@@ -409,6 +449,33 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }, ACTION_POLL_MS);
     return () => window.clearInterval(t);
   }, [running, session, paused]);
+
+  // Session poll (3–5s): job + loop.working_on — never silent thinking
+  useEffect(() => {
+    if (!running || !session || paused) return;
+    const tick = async () => {
+      try {
+        const s = await loadAgiSession(session.id);
+        if (!s) return;
+        setSession(s);
+        if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
+        if (s.loop?.content && s.loop.event === "loop_progress") {
+          setTranscript((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant" && last.content === s.loop?.content) return prev;
+            return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: s.loop?.content || "", meta: { kind: "turn_brief", event: "loop_progress" }, created_at: new Date().toISOString() }];
+          });
+          setThinking(false);
+        }
+        if (s.status === "stopped" || s.status === "torn_down" || s.status === "failed") {
+          setRunning(false);
+        }
+      } catch { /* transient */ }
+    };
+    void tick();
+    const t = window.setInterval(() => void tick(), 4000);
+    return () => window.clearInterval(t);
+  }, [running, session?.id, paused]);
 
   const stopRef = useRef(stop);
   stopRef.current = stop;
@@ -645,6 +712,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               actionBusy={actionBusy}
               onDecide={(a, ok, cmd) => void decide(a, ok, cmd)}
               thinking={thinking}
+              workingOn={workingOn}
               connError={connError}
               instruction={instruction}
               onInstruction={setInstruction}
@@ -685,7 +753,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   ))}
                   {thinking && (
                     <p className="flex items-center gap-2 text-[11px] text-gold-300">
-                      <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> thinking...
+                      <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} />
+                      {(workingOn || "").trim() || "Working on the scoped assessment."}
                     </p>
                   )}
                   {running && transcript.length > 0 && !thinking && !connError && (
@@ -754,7 +823,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       <Modal open={agreementOpen} onClose={() => setAgreementOpen(false)} title="Autonomous Pentest Agent — Usage Agreement">
         <div className="space-y-3">
           <div className="max-h-[40vh] overflow-y-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4">
-            <p className="whitespace-pre-wrap text-xs leading-6 text-slate-300">{agreementBody}</p>
+            <MarkdownView source={agreementBody} />
           </div>
           <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-phantix-700/40 p-3">
             <input

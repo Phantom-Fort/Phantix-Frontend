@@ -1,6 +1,6 @@
 import type { AgiAction, AgiEngagement, AgiTranscriptChunk, Severity } from "./types";
 
-export type AttackPhase = "recon" | "discovery" | "vuln" | "exploit";
+export type AttackPhase = "recon" | "discovery" | "vuln" | "exploit" | "auth";
 export type NodeStatus = "pending" | "active" | "succeeded" | "blocked" | "failed";
 export type AgentPersona = "orchestrator" | "recon" | "exploit";
 
@@ -35,13 +35,18 @@ export interface AgiFinding {
     summary: string;
   };
   nodeId?: string;
+  highlight?: boolean;
+  report_highlight?: boolean;
+  business_impact?: string;
+  impact_level?: string;
 }
 
 export const PHASES: { id: AttackPhase; label: string }[] = [
   { id: "recon", label: "Recon" },
-  { id: "discovery", label: "Endpoint Discovery" },
-  { id: "vuln", label: "Vuln Identification" },
-  { id: "exploit", label: "Exploit Chain" },
+  { id: "discovery", label: "Discovery" },
+  { id: "vuln", label: "Vuln confirmation" },
+  { id: "exploit", label: "Exploit / verify" },
+  { id: "auth", label: "Authenticated" },
 ];
 
 export const PERSONAS: { id: AgentPersona | "all"; label: string }[] = [

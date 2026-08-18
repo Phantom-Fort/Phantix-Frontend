@@ -7,14 +7,105 @@ import type {
   AgiAccess,
   AgiAction,
   AgiAgreement,
+  AgiChatResponse,
   AgiEngagement,
   AgiIntentRecommendation,
+  AgiLoopBrief,
+  AgiLoopItem,
   AgiSession,
   AgiTranscriptChunk,
 } from "./types";
 
 /** Build-time master switch — mirrors backend PHANTIX_AGI_ENABLED (default on). */
 export const AGI_ENABLED = (import.meta.env.VITE_AGI_ENABLED ?? "true") !== "false";
+export const AGI_SESSION_START_TIMEOUT_MS = 180_000;
+
+function asObj(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+function asStr(v: unknown, fallback = ""): string {
+  if (v == null) return fallback;
+  return String(v);
+}
+function asLoopItem(raw: unknown): AgiLoopItem {
+  const o = asObj(raw);
+  return {
+    title: asStr(o.title),
+    detail: asStr(o.detail),
+    severity: asStr(o.severity),
+    target: asStr(o.target),
+    tool: asStr(o.tool),
+    reason: asStr(o.reason),
+    action: asStr(o.action),
+  };
+}
+
+export function normalizeAgiLoop(raw: unknown): AgiLoopBrief {
+  const o = asObj(raw);
+  return {
+    schema: asStr(o.schema, "phantix.agi.loop_brief.v1"),
+    event: asStr(o.event),
+    session_id: o.session_id != null ? Number(o.session_id) : undefined,
+    turn: o.turn != null ? Number(o.turn) : undefined,
+    working_on: asStr(o.working_on),
+    summary: asStr(o.summary),
+    content: asStr(o.content),
+    found: Array.isArray(o.found) ? o.found.map(asLoopItem) : [],
+    next: Array.isArray(o.next) ? o.next.map(asLoopItem) : [],
+    blockers: Array.isArray(o.blockers) ? o.blockers.map(asLoopItem) : [],
+    job_status: asStr(o.job_status),
+    active_phase: asStr(o.active_phase),
+    phase: asStr(o.phase),
+    loop_status: asStr(o.loop_status),
+    findings_count: o.findings_count != null ? Number(o.findings_count) : 0,
+    pending_approvals: o.pending_approvals != null ? Number(o.pending_approvals) : 0,
+  };
+}
+
+export function normalizeAgiSession(raw: unknown): AgiSession {
+  const o = asObj(raw);
+  const meta = asObj(o.meta);
+  return {
+    id: Number(o.id ?? 0),
+    engagement_id: Number(o.engagement_id ?? 0),
+    container_id: o.container_id == null ? null : String(o.container_id),
+    runner_session_id: o.runner_session_id == null ? null : String(o.runner_session_id),
+    status: asStr(o.status, "unknown"),
+    started_at: asStr(o.started_at, new Date().toISOString()),
+    ended_at: o.ended_at == null ? null : String(o.ended_at),
+    teardown_reason: o.teardown_reason == null ? null : String(o.teardown_reason),
+    meta: Object.keys(meta).length ? meta : {},
+    job: asObj(o.job),
+    loop: normalizeAgiLoop(o.loop),
+  };
+}
+
+export function normalizeAgiChat(raw: unknown): AgiChatResponse {
+  if (typeof raw === "string") {
+    return { ok: true, accepted: true, queued: false, reply: raw, reply_kind: "assistant", job: {}, loop: normalizeAgiLoop({}), found: [], next: [], blockers: [] };
+  }
+  const o = asObj(raw);
+  const reply = typeof o.reply === "string" ? o.reply : typeof o.message === "string" ? o.message : typeof o.content === "string" ? o.content : "";
+  return {
+    schema_version: asStr(o.schema_version, "phantix.agi.chat.v1"),
+    ok: o.ok !== false,
+    session_id: o.session_id != null ? Number(o.session_id) : undefined,
+    accepted: o.accepted !== false,
+    queued: Boolean(o.queued),
+    blocked: Boolean(o.blocked),
+    mock: Boolean(o.mock),
+    code: asStr(o.code),
+    reply,
+    reply_kind: asStr(o.reply_kind, "assistant"),
+    findings_count: o.findings_count != null ? Number(o.findings_count) : 0,
+    job: asObj(o.job),
+    loop: normalizeAgiLoop(o.loop),
+    found: Array.isArray(o.found) ? o.found.map(asLoopItem) : [],
+    next: Array.isArray(o.next) ? o.next.map(asLoopItem) : [],
+    blockers: Array.isArray(o.blockers) ? o.blockers.map(asLoopItem) : [],
+    transcript_seq: o.transcript_seq == null ? null : Number(o.transcript_seq),
+  };
+}
 
 const ACTIVE_SESSION_KEY = "phantix_agi_active_session";
 
@@ -321,11 +412,12 @@ export async function createAgiEngagement(payload: {
 
 export async function loadAgiSession(sessionId: number): Promise<AgiSession | null> {
   if (isDemoMode()) {
-    if (demoSession && demoSession.id === sessionId) return demoSession;
+    if (demoSession && demoSession.id === sessionId) return normalizeAgiSession(demoSession);
     return null;
   }
   try {
-    return await api.get<AgiSession>(`/agi/sessions/${sessionId}`);
+    const raw = await api.get<AgiSession>(`/agi/sessions/${sessionId}`);
+    return normalizeAgiSession(raw);
   } catch {
     return null;
   }
@@ -352,23 +444,45 @@ export async function loadActiveAgiSession(): Promise<AgiSession | null> {
   }
 }
 
-export async function startAgiSession(engagementId: number, instruction: string): Promise<AgiSession> {
+export type AgiSessionStartOpts = {
+  autonomy?: "low" | "medium" | "high";
+  include_org_assets?: boolean;
+  preapprove_lab_auth?: boolean;
+  confirm_environment?: string;
+  credentials?: { login_url: string; username: string; password: string; label?: string };
+  credential_accounts?: Array<{ login_url: string; username: string; password: string; label?: string }>;
+};
+
+export async function startAgiSession(
+  engagementId: number,
+  instruction: string,
+  opts: AgiSessionStartOpts = {},
+): Promise<AgiSession> {
   if (isDemoMode()) {
     const s = demoStartSession(engagementId, instruction);
     persistAgiSession(s);
-    return s;
+    return normalizeAgiSession(s);
   }
-  const s = await api.post<AgiSession>(`/agi/engagements/${engagementId}/sessions`, {
+  const body: Record<string, unknown> = {
     instruction,
-    autonomy: "medium",
-    include_org_assets: true,
-    confirm_environment: "staging",
-  }, { dualControl: true });
-  persistAgiSession(s);
-  return s;
+    autonomy: opts.autonomy ?? "medium",
+    include_org_assets: opts.include_org_assets ?? false,
+    confirm_environment: opts.confirm_environment ?? "staging",
+  };
+  if (opts.preapprove_lab_auth != null) body.preapprove_lab_auth = opts.preapprove_lab_auth;
+  if (opts.credentials) body.credentials = opts.credentials;
+  if (opts.credential_accounts?.length) body.credential_accounts = opts.credential_accounts;
+  const s = await api.post<AgiSession>(
+    `/agi/engagements/${engagementId}/sessions`,
+    body,
+    { dualControl: true, timeoutMs: AGI_SESSION_START_TIMEOUT_MS },
+  );
+  const normalized = normalizeAgiSession(s);
+  persistAgiSession(normalized);
+  return normalized;
 }
 
-export async function agiChat(sessionId: number, message: string): Promise<Record<string, unknown>> {
+export async function agiChat(sessionId: number, message: string): Promise<AgiChatResponse> {
   if (isDemoMode()) {
     await delay(500);
     demoTx.push({ seq: demoTx.length, role: "operator", content: message, created_at: new Date().toISOString() });
@@ -397,9 +511,24 @@ export async function agiChat(sessionId: number, message: string): Promise<Recor
         created_at: new Date().toISOString(),
       }];
     }
-    return { reply: "Understood — continuing within the approved scope." };
+    return normalizeAgiChat({ reply, queued: false, loop: { working_on: "Continuing within the approved scope.", content: reply } });
   }
-  return api.post<Record<string, unknown>>(`/agi/sessions/${sessionId}/chat`, { message }, { dualControl: true });
+  const raw = await api.post<unknown>(`/agi/sessions/${sessionId}/chat`, { message }, { dualControl: true });
+  return normalizeAgiChat(raw);
+}
+
+export async function loadAgiFindings(sessionId: number): Promise<Array<Record<string, unknown>>> {
+  if (isDemoMode()) return [];
+  try {
+    const res = await api.get<unknown>(`/agi/sessions/${sessionId}/findings`);
+    if (Array.isArray(res)) return res as Array<Record<string, unknown>>;
+    if (res && typeof res === "object" && Array.isArray((res as { findings?: unknown }).findings)) {
+      return (res as { findings: Array<Record<string, unknown>> }).findings;
+    }
+    return [];
+  } catch {
+    return [];
+  }
 }
 
 export async function loadAgiTranscript(sessionId: number, afterSeq: number): Promise<AgiTranscriptChunk[]> {

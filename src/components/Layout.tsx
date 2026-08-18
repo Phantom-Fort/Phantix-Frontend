@@ -486,7 +486,9 @@ export default function Layout() {
 
         {/* Content */}
         <main className="flex-1 px-6 py-6 lg:px-8">
-          <Outlet />
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
         </main>
 
         <footer className="border-t border-phantix-700/30 px-8 py-4 text-[11px] text-slate-600 flex items-center justify-between">

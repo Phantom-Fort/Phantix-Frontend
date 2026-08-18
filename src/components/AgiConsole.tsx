@@ -6,7 +6,6 @@ import {
   Terminal, XCircle,
 } from "lucide-react";
 import LottiePlayer from "@/components/LottiePlayer";
-import MarkdownView from "@/components/MarkdownView";
 import { SeverityBadge } from "@/components/ui";
 import ghostData from "@/lib/animations/ghostsmart.json";
 import {
@@ -67,7 +66,7 @@ function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
           </span>
         )}
         {isSystem && <span className="mr-1 text-[10px] text-slate-600">engine</span>}
-        {!isTool && !isSystem && !isOperator ? <MarkdownView source={t.content} /> : <span className="whitespace-pre-wrap break-words">{t.content}</span>}
+        <span className="whitespace-pre-wrap break-words">{t.content}</span>
         {last && !isOperator && <span className="ml-0.5 inline-block h-3 w-[6px] animate-pulse rounded-sm bg-gold-400/70 align-middle" />}
       </div>
     </div>
@@ -194,6 +193,7 @@ export type AgiConsoleProps = {
   actionBusy: number | null;
   onDecide: (action: AgiAction, approve: boolean, overrideCmd?: string) => void;
   thinking: boolean;
+  workingOn?: string | null;
   connError: string | null;
   instruction: string;
   onInstruction: (v: string) => void;
@@ -217,6 +217,7 @@ export default function AgiConsole({
   actionBusy,
   onDecide,
   thinking,
+  workingOn = null,
   connError,
   instruction,
   onInstruction,
@@ -410,7 +411,8 @@ export default function AgiConsole({
                 ))}
                 {thinking && !paused && (
                   <p className="flex items-center gap-2 text-[11px] text-gold-300">
-                    <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> thinking…
+                    <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} />
+                    {(workingOn || "").trim() || "Working on the scoped assessment."}
                   </p>
                 )}
                 {paused && <p className="text-[10px] text-severity-medium">Loop paused — agent will not advance.</p>}
@@ -509,11 +511,17 @@ export default function AgiConsole({
         </aside>
       </div>
 
-      <div className="w-full shrink-0 border-t border-phantix-700/40 p-3">
-        <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
-          <input
+        <div className="w-full shrink-0 border-t border-phantix-700/40 p-3">
+        <div className="mx-auto flex max-w-3xl items-start gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
+          <textarea
             value={instruction}
-            onChange={(e) => onInstruction(e.target.value)}
+            onChange={(e) => {
+              onInstruction(e.target.value);
+              const el = e.currentTarget;
+              el.style.height = "auto";
+              const newH = Math.min(el.scrollHeight, 120);
+              el.style.height = `${newH}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
               e.preventDefault();
@@ -521,9 +529,11 @@ export default function AgiConsole({
             }}
             placeholder={paused ? "Paused — resume to send" : running ? "Further instructions or override the next step…" : "Session stopped"}
             disabled={!running || paused}
-            className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50"
+            rows={1}
+            className="flex-1 resize-none bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50 overflow-hidden"
+            style={{ minHeight: "24px", maxHeight: "120px" }}
           />
-          <button onClick={onSend} disabled={!running || paused || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
+          <button onClick={onSend} disabled={!running || paused || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs mt-0.5" aria-label="Send"><Send size={13} /></button>
         </div>
         <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
           <ShieldCheck size={10} />

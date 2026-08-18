@@ -14,8 +14,38 @@ import type { TrackerFinding } from "@/lib/types";
 
 marked.setOptions({ breaks: true, gfm: true });
 
+function downloadExt(format: string): string {
+  if (format === "markdown") return "md";
+  if (format === "docx") return "docx";
+  if (format === "xlsx") return "xlsx";
+  if (format === "pptx") return "pptx";
+  if (format === "html") return "html";
+  return format;
+}
+
+/** Split output_files into downloadable paths vs error keys (`pptx_error`, etc.). */
+function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
+  downloads: Array<{ format: string; path: string }>;
+  errors: Array<{ format: string; error: string }>;
+} {
+  const downloads: Array<{ format: string; path: string }> = [];
+  const errors: Array<{ format: string; error: string }> = [];
+  if (!files || typeof files !== "object") return { downloads, errors };
+  for (const [key, val] of Object.entries(files)) {
+    if (key.endsWith("_error")) {
+      const format = key.slice(0, -"_error".length);
+      if (typeof val === "string" && val.trim()) errors.push({ format, error: val });
+      continue;
+    }
+    if (typeof val === "string" && val.trim() && !val.startsWith("error")) {
+      downloads.push({ format: key, path: val });
+    }
+  }
+  return { downloads, errors };
+}
+
 function handleDownload(reportId: number, format: string) {
-  const ext = format === "docx" ? "docx" : format === "markdown" ? "md" : format === "xlsx" ? "xlsx" : format;
+  const ext = downloadExt(format);
   api.download(`/reports/${reportId}/download?format=${format}`).then((blob) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -124,7 +154,7 @@ export default function Reports() {
   const [tab, setTab] = useState("reports");
   const [genOpen, setGenOpen] = useState(false);
   const [genSubmitting, setGenSubmitting] = useState(false);
-  const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf"] as string[], run_inline: false });
+  const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const fetchedCampaigns = useRef(false);
 
@@ -309,12 +339,12 @@ export default function Reports() {
                           onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f); }}
                           className={cx(
                             "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
-                            f === "pdf" || f === "docx"
+                            f === "pdf" || f === "docx" || f === "pptx" || f === "html"
                               ? "border-gold-400/40 bg-gold-400/10 text-gold-300 hover:bg-gold-400/20"
                               : "border-phantix-700/50 text-slate-400 hover:bg-phantix-800/60",
                           )}
                         >
-                          {f}
+                          {f === "pptx" ? "Board deck" : f}
                         </button>
                       ))}
                     </div>
@@ -436,7 +466,7 @@ export default function Reports() {
           <div>
             <label className="label">Formats</label>
             <div className="grid grid-cols-3 gap-2">
-              {["markdown", "json", "csv", "xlsx", "pdf", "docx"].map((f) => (
+              {["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"].map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -505,24 +535,55 @@ export default function Reports() {
                     <div className="mt-2 whitespace-pre-wrap leading-5">{detail.ai_narratives.remediation_guidance}</div>
                   </details>
                 )}
+                {detail.ai_narratives.web_research?.items?.length > 0 && (
+                  <details className="text-xs text-slate-400">
+                    <summary className="cursor-pointer font-semibold text-slate-300">Sources consulted</summary>
+                    <ul className="mt-2 space-y-1.5">
+                      {(detail.ai_narratives.web_research.items as Array<{ title?: string; url?: string; snippet?: string }>).map((it, i) => (
+                        <li key={i} className="rounded-lg border border-phantix-700/30 px-2.5 py-1.5">
+                          <p className="font-medium text-slate-300">{it.title || it.url || "Source"}</p>
+                          {it.url && <a href={it.url} target="_blank" rel="noreferrer" className="break-all text-[10px] text-gold-300 underline">{it.url}</a>}
+                          {it.snippet && <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{it.snippet}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                    {detail.ai_narratives.source && (
+                      <p className="mt-1.5 text-[10px] text-slate-600">{detail.ai_narratives.source}</p>
+                    )}
+                  </details>
+                )}
               </div>
             )}
 
-            {/* Output files */}
-            {(detail as any).output_files && (
-              <div className="flex flex-wrap items-center gap-2">
-                <FileCode size={13} className="text-slate-500" />
-                {Object.entries((detail as any).output_files as Record<string, string>).map(([fmt, _path]) => (
-                  <button
-                    key={fmt}
-                    onClick={() => handleDownload(detail.id, fmt)}
-                    className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
-                  >
-                    <Download size={10} className="mr-1 inline" /> {fmt}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Output files — skip *_error keys; show failures as chips */}
+            {(detail as any).output_files && (() => {
+              const { downloads, errors } = parseOutputFiles((detail as any).output_files);
+              return (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FileCode size={13} className="text-slate-500" />
+                    {downloads.map(({ format: fmt }) => (
+                      <button
+                        key={fmt}
+                        onClick={() => handleDownload(detail.id, fmt)}
+                        className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
+                      >
+                        <Download size={10} className="mr-1 inline" /> {fmt === "pptx" ? "Board deck (.pptx)" : fmt}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {errors.map(({ format: fmt, error }) => (
+                        <span key={fmt} className="rounded-lg border border-severity-critical/30 bg-severity-critical/10 px-2 py-1 text-[10px] text-red-300" title={error}>
+                          {fmt} failed
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Markdown viewer */}
             <MarkdownReportView reportId={detail.id} />
