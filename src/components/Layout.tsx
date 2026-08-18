@@ -28,6 +28,7 @@ import {
   Activity,
   UserCheck,
   Bot,
+  FlaskConical as FlaskNav,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
@@ -37,7 +38,9 @@ import AgiDrawer from "@/components/AgiDrawer";
 import AgentAssistant from "@/components/AgentAssistant";
 import OperationsWidget from "@/components/OperationsWidget";
 import AlertNotifications, { NotificationBell, NotificationProvider } from "@/components/AlertNotifications";
+import SandboxBanner from "@/components/SandboxBanner";
 import { AGI_ENABLED } from "@/lib/agi";
+import { loadSandboxMe } from "@/lib/sandbox";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
@@ -84,7 +87,25 @@ const navSections: {
   },
 ];
 
-const searchIndex = navSections.flatMap((s) => s.items);
+function useNavSections() {
+  const [sandboxEnrolled, setSandboxEnrolled] = useState(false);
+  useEffect(() => {
+    void loadSandboxMe().then((m) => setSandboxEnrolled(!!m?.enrolled));
+  }, []);
+  return useMemo(() => {
+    if (!sandboxEnrolled) return navSections;
+    return navSections.map((section) => {
+      if (section.label !== "Overview") return section;
+      return {
+        ...section,
+        items: [
+          ...section.items,
+          { to: "/sandbox", label: "BETA sandbox", icon: <FlaskNav size={17} />, badge: "β" },
+        ],
+      };
+    });
+  }, [sandboxEnrolled]);
+}
 
 function OperateCountdown({ expiresAt }: { expiresAt: number }) {
   const [now, setNow] = useState(Date.now());
@@ -103,13 +124,13 @@ function OperateCountdown({ expiresAt }: { expiresAt: number }) {
   );
 }
 
-function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CommandPalette({ open, onClose, index }: { open: boolean; onClose: () => void; index: { to: string; label: string; icon: React.ReactNode }[] }) {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   const results = useMemo(() => {
     const needle = q.toLowerCase();
-    return searchIndex.filter((i) => i.label.toLowerCase().includes(needle)).slice(0, 8);
-  }, [q]);
+    return index.filter((i) => i.label.toLowerCase().includes(needle)).slice(0, 8);
+  }, [q, index]);
 
   useEffect(() => {
     if (open) setQ("");
@@ -147,7 +168,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
               </kbd>
             </div>
             <div className="max-h-80 overflow-y-auto p-2">
-              {(q ? results : searchIndex).map((item) => (
+              {(q ? results : index).map((item) => (
                 <button
                   key={item.to}
                   onClick={() => {
@@ -178,6 +199,8 @@ export default function Layout() {
   const [userMenu, setUserMenu] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const sections = useNavSections();
+  const searchIndex = useMemo(() => sections.flatMap((s) => s.items), [sections]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -253,7 +276,7 @@ export default function Layout() {
         </NavLink>
 
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
-          {navSections.map((section) => (
+          {sections.map((section) => (
             <div key={section.label}>
               <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
                 {section.label}
@@ -487,6 +510,7 @@ export default function Layout() {
         {/* Content */}
         <main className="flex-1 px-6 py-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
+            {session?.authenticated && <SandboxBanner />}
             <Outlet />
           </div>
         </main>
@@ -499,7 +523,7 @@ export default function Layout() {
         </footer>
       </div>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} index={searchIndex} />
 
       {/* Autonomous Pentest Agent — right-side drawer with full-screen option */}
       {AGI_ENABLED && <AgiDrawer />}

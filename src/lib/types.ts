@@ -572,6 +572,8 @@ export interface Report {
     impact_analyzed?: number;
     attack_paths?: number;
     require_verified?: boolean;
+    /** Unverified / candidate findings (appendix-only under verified-only policy). */
+    candidates?: number;
   };
   created_at: string;
   size_bytes: number;
@@ -593,21 +595,161 @@ export interface Report {
   error_message?: string | null;
 }
 
+/** Living remediation board row — statuses from ORG_COMMAND_CENTER_PAGES_FE §7.2 */
+export type TrackerStatus =
+  | "open"
+  | "in_progress"
+  | "fixed"
+  | "accepted"
+  | "retest_failed"
+  | "regressed";
+
 export interface TrackerFinding {
   finding_key: string;
   title: string;
   severity: Severity;
-  status:
-    | "open"
-    | "in_progress"
-    | "resolved"
-    | "accepted"
-    | "false_positive"
-    | "verified";
+  status: TrackerStatus | string;
   owner: string | null;
   campaign_name: string;
   asset_value: string;
   updated_at: string;
+  surface?: string;
+  priority?: string;
+  asset_id?: number | null;
+  assigned_owner?: string | null;
+  assigned_owner_email?: string | null;
+  target_fix_date?: string | null;
+  detection_count?: number;
+  retest_status?: string | null;
+  description?: string | null;
+}
+
+export interface TrackerSummary {
+  total?: number;
+  open?: number;
+  in_progress?: number;
+  fixed?: number;
+  retest_failed?: number;
+  regressed?: number;
+  accepted?: number;
+  bySeverity?: Record<string, number>;
+  bySurface?: Record<string, number>;
+  unassigned?: number;
+}
+
+export interface OrgIdentity {
+  id: number;
+  name?: string | null;
+  legalName?: string | null;
+  slug?: string | null;
+  industry?: string | null;
+  subIndustry?: string | null;
+  website?: string | null;
+  country?: string | null;
+  city?: string | null;
+  logoUrl?: string | null;
+  primaryContactName?: string | null;
+  primaryContactEmail?: string | null;
+  authorizedLab?: boolean;
+  isActive?: boolean;
+  setupCompleted?: boolean;
+  emailVerified?: boolean;
+}
+
+export interface LabCatalog {
+  authorizedLab: true;
+  domain?: string;
+  webmail?: string;
+  surfaces?: Array<{ key: string; name: string; host: string; kind: string; urls?: string[] }>;
+  note?: string;
+}
+
+export interface CommandCenter {
+  generatedAt?: string;
+  org?: OrgIdentity;
+  lab?: LabCatalog | null;
+  links?: Record<string, string>;
+  pages?: Record<string, string>;
+  stream?: {
+    commandCenter?: string;
+    intelligence?: string;
+    soc?: string;
+    protocol?: string;
+    auth?: string;
+    eventTypes?: string[];
+  };
+  posture?: {
+    organizationId?: number;
+    postureScore?: number | null;
+    totals?: Record<string, number>;
+    criticalAssetsAtRisk?: Array<Record<string, unknown>>;
+    newlyDiscoveredUnscanned?: Array<Record<string, unknown>>;
+    available?: boolean;
+  };
+  assets?: {
+    totals?: Record<string, number>;
+    criticalAtRisk?: unknown[];
+    neverScanned?: unknown[];
+  };
+  risks?: {
+    total?: number;
+    open?: number;
+    byLevel?: Record<string, number>;
+    byStatus?: Record<string, number>;
+    top?: Array<Record<string, unknown>>;
+    available?: boolean;
+  };
+  soc?: {
+    available?: boolean;
+    queue?: {
+      openTotal?: number;
+      byStatus?: Record<string, number>;
+      bySeverityOpen?: Record<string, number>;
+    };
+    topDetections?: Array<Record<string, unknown>>;
+  };
+  tracker?: {
+    available?: boolean;
+    total?: number;
+    summary?: TrackerSummary;
+    criticalOpen?: Array<Record<string, unknown>>;
+  };
+  reports?: {
+    available?: boolean;
+    total?: number;
+    recent?: Array<Record<string, unknown>>;
+  };
+}
+
+export interface SocAgentDownload {
+  os: "linux" | "macos" | "windows" | "python" | string;
+  label: string;
+  filename: string;
+  sizeBytes: number;
+  sha256: string;
+  contentType?: string;
+  downloadPath?: string;
+  href?: string;
+}
+
+export interface SocAgentInstallCatalog {
+  organizationId?: number;
+  version?: string;
+  supportedOs?: string[];
+  authHeader?: string;
+  authHint?: string;
+  endpoint?: string;
+  walkthrough?: string;
+  downloads?: SocAgentDownload[];
+  channels?: Array<{
+    id: string;
+    os: string;
+    title: string;
+    download: string | null;
+    commands: string[];
+  }>;
+  afterInstall?: string[];
+  docs?: string[];
 }
 
 export interface AlertEvent {

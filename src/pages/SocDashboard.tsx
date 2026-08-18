@@ -1,7 +1,7 @@
 ﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, Gauge, Shield, Wifi, WifiOff, Monitor, Clock, AlertTriangle, Crosshair,
+  Activity, Gauge, Shield, Wifi, Monitor, Clock, AlertTriangle, Crosshair,
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
   ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio,
 } from "lucide-react";
@@ -338,35 +338,48 @@ export default function SocDashboard() {
     );
   }
 
+  const livePreview = useMemo(
+    () => liveEvents.filter((e) => e.event !== "heartbeat").slice(-12).reverse(),
+    [liveEvents],
+  );
+
   return (
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Security Operations Center"
-        description="Detection triage, cases, rules and live monitoring from the SOC Engine"
+        description="Detection triage, cases, rules, and live monitoring"
         actions={
           <div className="flex items-center gap-2">
-            <span className={cx("flex items-center gap-1.5 text-xs font-mono", liveConnected ? "text-emerald-400" : "text-slate-500")}>
-              {liveConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              {liveConnected ? "SSE Live" : "Reconnecting..."}
+            <span
+              className={cx(
+                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                liveConnected
+                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
+                  : "border-phantix-700/50 bg-phantix-950/60 text-slate-500",
+              )}
+            >
+              <span className={cx("h-1.5 w-1.5 rounded-full", liveConnected ? "bg-emerald-400 animate-pulse" : "bg-slate-600")} />
+              {liveConnected ? "Live" : "Offline"}
             </span>
-            <button className="btn-ghost text-sm px-3 py-1.5" onClick={reloadQueue}><RefreshCw size={14} /></button>
+            <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={reloadQueue} title="Refresh">
+              <RefreshCw size={14} />
+            </button>
           </div>
         }
       />
 
       {socData.data.message && (
-        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-phantix-700/40 bg-phantix-800/40 px-4 py-2.5 text-sm text-slate-400">
+        <div className="mb-4 flex items-start gap-3 rounded-xl border border-phantix-700/30 bg-phantix-900/40 px-4 py-2.5 text-sm text-slate-400">
           <Monitor size={15} className="mt-0.5 shrink-0 text-phantix-400" />
-          {socData.data.message}
+          <span className="leading-5">{socData.data.message}</span>
         </div>
       )}
 
-      {/* Engine + queue summary */}
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Engine" value={<span className={cx("capitalize", status.data?.status === "implemented" ? "text-emerald-400" : "text-slate-300")}>{status.data?.status ?? "loading"}</span>} icon={<Gauge size={18} />} />
-        <StatCard label="Open queue" value={<span className="text-white">{openCount}</span>} icon={<Crosshair size={18} />} />
-        <StatCard label="Critical open" value={<span className="text-severity-critical">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} icon={<AlertTriangle size={18} />} accent="red" />
-        <StatCard label="Posture" value={<span className="text-gold-400">{score}</span>} icon={<Activity size={18} />} />
+        <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} icon={<Crosshair size={18} />} />
+        <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} icon={<AlertTriangle size={18} />} accent="red" />
+        <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} icon={<Activity size={18} />} />
       </div>
 
       <Tabs
@@ -383,47 +396,18 @@ export default function SocDashboard() {
       />
 
       {tab === "overview" && (
-        <div className="space-y-6">
-          {/* Live strip */}
-          <Card>
-            <CardHeader
-              title={<><Radio size={16} className="inline text-gold-400 mr-1" /> Live events</>}
-              subtitle={liveConnected ? "Streaming from the SOC hub via SSE" : "Reconnecting to event stream..."}
-              action={liveEvents.length > 0 ? <span className="text-xs text-slate-500">{liveEvents.length} recent</span> : undefined}
-            />
-            {liveEvents.length > 0 ? (
-              <div className="space-y-1.5 max-h-56 overflow-y-auto px-5 pb-5">
-                {liveEvents.slice(-14).reverse().map((evt, i) => {
-                  const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Record<string, unknown>;
-                  const isSoc = evt.event.startsWith("soc");
-                  const sev = payload.severity ? String(payload.severity) : undefined;
-                  return (
-                    <div key={`${evt.ts}-${i}`} className="flex items-center gap-2 text-xs">
-                      <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", evt.event === "socDetectionMatched" || evt.event === "socAlertRaised" ? "bg-severity-critical animate-pulse-soft" : evt.event === "heartbeat" ? "bg-slate-700" : isSoc ? "bg-gold-400" : "bg-emerald-400")} />
-                      <span className="text-slate-400 font-mono w-14 shrink-0">{timeAgo(evt.ts)}</span>
-                      <span className="text-slate-300 truncate">{ssePayloadLabel(evt.event, payload)}</span>
-                      {sev && <SeverityBadge severity={sevOf(sev)} />}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="px-5 pb-5 text-xs text-slate-500">
-                {liveConnected ? "Connected --- waiting for events..." : "Offline --- live updates will resume on reconnect."}
-              </div>
-            )}
-          </Card>
-
-          {/* Panels */}
-          <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-5 lg:grid-cols-12 lg:items-start">
+          {/* Main panels — flexible column */}
+          <div className="space-y-5 lg:col-span-8 min-w-0">
+            <div className="grid gap-4 sm:grid-cols-2">
             {socData.data.panels?.length ? socData.data.panels.map((panel) => (
-              <Card key={panel.id} className={cx(!panel.ready && "opacity-50")}>
+              <Card key={panel.id} className={cx("h-full", !panel.ready && "opacity-60")}>
                 <CardHeader
                   title={
-                    <div className="flex items-center gap-2">
-                      {panel.source.includes("soc") ? <Crosshair size={16} className="text-gold-400" /> : <Shield size={16} className="text-phantix-400" />}
-                      {panel.title}
-                      {!panel.ready && <span className="chip text-[10px] text-severity-medium bg-severity-medium/10 border-severity-medium/20">Coming Soon</span>}
+                    <div className="flex items-center gap-2 min-w-0">
+                      {panel.source.includes("soc") ? <Crosshair size={15} className="shrink-0 text-gold-400" /> : <Shield size={15} className="shrink-0 text-phantix-400" />}
+                      <span className="truncate">{panel.title}</span>
+                      {!panel.ready && <span className="chip shrink-0 text-[10px] text-amber-300/90 bg-amber-400/10 border-amber-400/20">Soon</span>}
                     </div>
                   }
                   subtitle={panel.note || panel.source}
@@ -431,20 +415,20 @@ export default function SocDashboard() {
                 {panel.ready ? (
                   <div className="space-y-2">
                     {panel.source.includes("asset_intelligence") && (
-                      <div className="flex items-center justify-between rounded-lg bg-phantix-950/50 border border-phantix-700/40 p-3">
+                      <div className="flex items-center justify-between rounded-xl bg-phantix-950/40 border border-phantix-700/30 p-3.5">
                         <div>
-                          <p className="font-display text-3xl font-bold text-white">{score}</p>
+                          <p className="font-display text-3xl font-bold tabular-nums text-white">{score}</p>
                           <p className="text-xs text-slate-500">Posture score</p>
                         </div>
-                        <div className="space-y-1 text-right text-xs">
-                          <div className="flex gap-3"><span className="text-slate-500">Assets</span><span className="font-mono text-white">{intelData.data?.totals?.activeAssets ?? intelData.data?.total_assets ?? 0}</span></div>
-                          <div className="flex gap-3"><span className="text-slate-500">Critical</span><span className="font-mono text-severity-critical">{intelData.data?.totals?.highRiskAssets ?? 0}</span></div>
+                        <div className="space-y-1.5 text-right text-xs">
+                          <div className="flex justify-end gap-3"><span className="text-slate-500">Assets</span><span className="font-mono tabular-nums text-slate-200">{intelData.data?.totals?.activeAssets ?? intelData.data?.total_assets ?? 0}</span></div>
+                          <div className="flex justify-end gap-3"><span className="text-slate-500">Critical</span><span className="font-mono tabular-nums text-severity-critical">{intelData.data?.totals?.highRiskAssets ?? 0}</span></div>
                         </div>
                       </div>
                     )}
                     {panel.source.includes("soc_engine") && (
-                      <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 p-3">
-                        <p className="text-xs text-slate-400">{openCount} open detections</p>
+                      <div className="rounded-xl bg-phantix-950/40 border border-phantix-700/30 p-3.5">
+                        <p className="text-xs text-slate-400"><span className="font-mono tabular-nums text-slate-200">{openCount}</span> open detections</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {Object.entries(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {}).map(([s, n]) => (
                             <span key={s} className="chip text-[10px] capitalize"><SeverityBadge severity={sevOf(s)} /> {String(n)}</span>
@@ -461,15 +445,66 @@ export default function SocDashboard() {
                 )}
               </Card>
             )) : (
-              <EmptyState icon={<Gauge size={24} />} title="No monitoring panels" body="SOC dashboard panels are not available yet" />
+              <div className="sm:col-span-2">
+                <EmptyState icon={<Gauge size={24} />} title="No monitoring panels" body="SOC dashboard panels are not available yet" />
+              </div>
             )}
+            </div>
           </div>
+
+          {/* Fixed-height live feed — never grows the page */}
+          <aside className="lg:col-span-4 min-w-0">
+            <Card className="flex flex-col overflow-hidden border-phantix-700/30 lg:sticky lg:top-4 !p-0">
+              <div className="flex items-center justify-between gap-2 border-b border-phantix-800/50 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+                    <Radio size={14} className={cx(liveConnected ? "text-emerald-400" : "text-slate-500")} />
+                    Live feed
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                    {liveConnected ? "SSE · last 12 non-heartbeat events" : "Reconnecting…"}
+                  </p>
+                </div>
+                <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{livePreview.length}</span>
+              </div>
+              <div className="h-64 max-h-64 overflow-y-auto overscroll-contain px-3 py-2 space-y-1">
+                {livePreview.length > 0 ? livePreview.map((evt, i) => {
+                  const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Record<string, unknown>;
+                  const isSoc = evt.event.startsWith("soc");
+                  const sev = payload.severity ? String(payload.severity) : undefined;
+                  const hot = evt.event === "socDetectionMatched" || evt.event === "socAlertRaised";
+                  return (
+                    <div
+                      key={`${evt.ts}-${evt.event}-${i}`}
+                      className="flex items-start gap-2 rounded-lg px-2 py-1.5 text-xs hover:bg-phantix-800/40"
+                    >
+                      <span className={cx(
+                        "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                        hot ? "bg-severity-critical" : isSoc ? "bg-gold-400" : "bg-emerald-400/80",
+                      )} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[10px] text-slate-500 shrink-0">{timeAgo(evt.ts)}</span>
+                          {sev && <SeverityBadge severity={sevOf(sev)} />}
+                        </div>
+                        <p className="mt-0.5 text-slate-300 leading-snug line-clamp-2">{ssePayloadLabel(evt.event, payload)}</p>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div className="flex h-full min-h-[12rem] flex-col items-center justify-center gap-1 px-4 text-center text-xs text-slate-500">
+                    <Wifi size={16} className={cx(liveConnected ? "text-emerald-500/50" : "text-slate-600")} />
+                    {liveConnected ? "Connected — waiting for events" : "Stream offline"}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </aside>
         </div>
       )}
 
       {tab === "queue" && (
         <div className="space-y-4">
-          {/* Filters + create */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -492,9 +527,9 @@ export default function SocDashboard() {
             ) : filtered.length === 0 ? (
               <EmptyState icon={<Crosshair size={24} />} title="No detections" body="Nothing in the queue matching current filters" />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="max-h-[min(65vh,640px)] overflow-auto">
                 <table className="w-full">
-                  <thead>
+                  <thead className="sticky top-0 z-10 bg-phantix-900/95 backdrop-blur-sm">
                     <tr className="border-b border-phantix-700/40">
                       <th className="th">Detection</th>
                       <th className="th">Severity</th>
@@ -510,16 +545,16 @@ export default function SocDashboard() {
                     {filtered.map((d) => (
                       <tr key={d.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors" onClick={() => setDetail(d)}>
                         <td className="td">
-                          <div>
-                            <p className="font-medium text-slate-100">{d.title}</p>
-                            <p className="text-[11px] text-slate-500">{d.correlator_id ?? d.source} · asset #{d.asset_id ?? "—"} · {d.risk_id ? `risk #${d.risk_id}` : ""}</p>
+                          <div className="min-w-0 max-w-md">
+                            <p className="font-medium text-slate-100 truncate">{d.title}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{d.correlator_id ?? d.source} · asset #{d.asset_id ?? "—"}{d.risk_id ? ` · risk #${d.risk_id}` : ""}</p>
                           </div>
                         </td>
                         <td className="td"><SeverityBadge severity={sevOf(String(d.severity))} /></td>
                         <td className="td"><StatusBadge status={String(d.status)} /></td>
-                        <td className="td font-mono text-slate-200">{Math.round(Number(d.priority_score ?? 0))}</td>
+                        <td className="td font-mono tabular-nums text-slate-200">{Math.round(Number(d.priority_score ?? 0))}</td>
                         <td className="td text-xs text-slate-400">{d.assignee_ref || "—"}</td>
-                        <td className="td font-mono text-slate-300">{d.occurrence_count}</td>
+                        <td className="td font-mono tabular-nums text-slate-300">{d.occurrence_count}</td>
                         <td className="td text-xs text-slate-500 whitespace-nowrap">{d.last_seen_at ? timeAgo(d.last_seen_at) : "—"}</td>
                         <td className="td"><ChevronRight size={14} className="text-slate-500" /></td>
                       </tr>

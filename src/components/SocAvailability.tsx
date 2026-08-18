@@ -6,14 +6,15 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, Modal, EmptyState, StatusBadge, SeverityBadge, Spinner } from "@/components/ui";
 import { useStore } from "@/lib/store";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
+import { timeAgo, cx, titleCase, formatBytes } from "@/lib/utils";
 import {
   loadAvailabilitySummary, loadAvailabilityChecks, loadAvailabilityIncidents,
   createAvailabilityCheck, updateAvailabilityCheck, deleteAvailabilityCheck,
   runAvailabilityCheck, acknowledgeAvailabilityIncident, markAvailabilityFalsePositive,
-  formatDuration,
+  formatDuration, loadSocAgentInstall, downloadSocAgent, loadSocAgentWalkthrough,
 } from "@/lib/data";
-import type { AvailabilityCheck, AvailabilityIncident, AvailabilitySummary } from "@/lib/types";
+import type { AvailabilityCheck, AvailabilityIncident, AvailabilitySummary, SocAgentInstallCatalog } from "@/lib/types";
+import { Link } from "react-router-dom";
 
 const CHECK_TYPES = ["http", "https", "tcp", "tls", "dns"];
 
@@ -47,6 +48,12 @@ export default function SocAvailability() {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [detail, setDetail] = useState<AvailabilityIncident | null>(null);
   const [, setTick] = useState(0);
+  const [agentCatalog, setAgentCatalog] = useState<SocAgentInstallCatalog | null>(null);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
+  const [walkthroughMd, setWalkthroughMd] = useState<string | null>(null);
+  const [walkthroughLoading, setWalkthroughLoading] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState<string | null>(null);
+  const [channelOpen, setChannelOpen] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,11 +79,47 @@ export default function SocAvailability() {
 
   useEffect(() => { void load(); }, [load]);
 
+  useEffect(() => {
+    void loadSocAgentInstall().then(setAgentCatalog).catch(() => setAgentCatalog(null));
+  }, []);
+
   // Live elapsed ticker for open incidents (update every 1s).
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  const openWalkthrough = async () => {
+    setWalkthroughOpen(true);
+    if (walkthroughMd != null) return;
+    setWalkthroughLoading(true);
+    try {
+      setWalkthroughMd(await loadSocAgentWalkthrough());
+    } catch (e) {
+      toast("error", "Walkthrough failed", e instanceof Error ? e.message : "");
+      setWalkthroughMd("*Could not load walkthrough.*");
+    } finally {
+      setWalkthroughLoading(false);
+    }
+  };
+
+  const downloadAgent = async (os: string, filenameHint?: string) => {
+    setDownloadBusy(os);
+    try {
+      const { blob, filename } = await downloadSocAgent(os);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filenameHint || filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("success", "Download started", filenameHint || filename);
+    } catch (e) {
+      toast("error", "Download failed", e instanceof Error ? e.message : "");
+    } finally {
+      setDownloadBusy(null);
+    }
+  };
 
   const refresh = async () => {
     setSummary(await loadAvailabilitySummary());
@@ -324,9 +367,85 @@ export default function SocAvailability() {
         )}
       </Card>
 
+      {/* Agent install (SOC_AGENT_WALKTHROUGH_FE) */}
+      <Card>
+        <CardHeader
+          title="Download heartbeat agent"
+          subtitle="Install on the host. Phantix does not VPN in."
+          action={<Server size={16} className="text-gold-400" />}
+        />
+        <div className="mb-3 rounded-xl border border-gold-400/20 bg-gold-400/5 px-3.5 py-2.5 text-xs leading-5 text-slate-400">
+          Auth header: <span className="font-mono text-gold-300">{agentCatalog?.authHeader ?? "X-Org-Api-Key"}</span>
+          {" — "}
+          {agentCatalog?.authHint ?? "Mint a service key on Platform. Never paste a user JWT on the server."}
+          {" "}
+          <Link to="/platform" className="font-semibold text-gold-400 hover:text-gold-300">Platform →</Link>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {(agentCatalog?.downloads ?? [
+            { os: "linux", label: "Linux", filename: "phantix-heartbeat-linux.tar.gz", sizeBytes: 0, sha256: "—" },
+            { os: "macos", label: "macOS", filename: "phantix-heartbeat-macos.tar.gz", sizeBytes: 0, sha256: "—" },
+            { os: "windows", label: "Windows", filename: "phantix-heartbeat-windows.zip", sizeBytes: 0, sha256: "—" },
+            { os: "python", label: "Python-only", filename: "phantix_heartbeat.py", sizeBytes: 0, sha256: "—" },
+          ]).map((d) => (
+            <div key={d.os} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5">
+              <p className="text-sm font-semibold text-slate-100">{d.label || titleCase(d.os)}</p>
+              <p className="mt-1 truncate font-mono text-[11px] text-slate-500" title={d.filename}>{d.filename}</p>
+              <p className="mt-1 text-[11px] text-slate-500">
+                {d.sizeBytes ? formatBytes(d.sizeBytes) : "—"}
+              </p>
+              <p className="mt-1 break-all font-mono text-[10px] text-slate-600" title={d.sha256}>
+                sha256: {d.sha256 ? `${d.sha256.slice(0, 16)}…` : "—"}
+              </p>
+              <button
+                type="button"
+                disabled={downloadBusy === d.os}
+                onClick={() => void downloadAgent(d.os, d.filename)}
+                className="btn-primary mt-3 w-full !py-2 !text-xs"
+              >
+                {downloadBusy === d.os ? <Spinner className="h-3 w-3" /> : <Terminal size={12} className="mr-1 inline" />}
+                Download
+              </button>
+            </div>
+          ))}
+        </div>
+        {(agentCatalog?.channels ?? []).length > 0 && (
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-semibold text-slate-300">Install commands</p>
+            {agentCatalog!.channels!.map((ch) => (
+              <div key={ch.id || ch.title} className="rounded-xl border border-phantix-700/40 bg-phantix-950/40">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between px-3.5 py-2.5 text-left text-xs font-medium text-slate-200"
+                  onClick={() => setChannelOpen((cur) => (cur === ch.id ? null : ch.id))}
+                >
+                  {ch.title}
+                  <span className="text-slate-500">{channelOpen === ch.id ? "−" : "+"}</span>
+                </button>
+                {channelOpen === ch.id && (
+                  <pre className="overflow-x-auto border-t border-phantix-800/50 px-3.5 py-2.5 font-mono text-[11px] leading-5 text-slate-300">
+                    {(ch.commands ?? []).join("\n")}
+                  </pre>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        {(agentCatalog?.afterInstall ?? []).length > 0 && (
+          <ul className="mt-3 list-inside list-disc text-[11px] leading-5 text-slate-500">
+            {agentCatalog!.afterInstall!.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        )}
+        <button type="button" onClick={() => void openWalkthrough()} className="btn-secondary mt-4 !text-xs">
+          <ExternalLink size={12} className="mr-1 inline" /> Open walkthrough
+        </button>
+      </Card>
+
       {/* Integrations help */}
       <Card>
-        <CardHeader title="Integrations" subtitle="Webhooks, agents, and external tools" action={<Terminal size={16} className="text-gold-400" />} />
+        <CardHeader title="Integrations" subtitle="Webhooks and external tools" action={<Terminal size={16} className="text-gold-400" />} />
         <div className="grid grid-cols-1 gap-3 text-xs text-slate-400 md:grid-cols-2">
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
             <p className="font-semibold text-slate-200">External tool events</p>
@@ -334,12 +453,22 @@ export default function SocAvailability() {
             <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[10px] text-slate-300">{"POST /api/v1/soc/availability/events\n{ \"event\": \"down\", \"target\": \"https://app/client.com\", \"title\": \"API production\", \"source\": \"uptime_kuma\" }"}</pre>
           </div>
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
-            <p className="font-semibold text-slate-200">Private-server agent</p>
-            <p className="mt-1 leading-5">Heartbeat every 30–60s from servers behind NAT. Missed heartbeats open downtime:</p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[10px] text-slate-300">{"POST /api/v1/soc/availability/heartbeat\n{ \"host\": \"app-prod-1\", \"status\": \"up\" }"}</pre>
+            <p className="font-semibold text-slate-200">Heartbeat endpoint</p>
+            <p className="mt-1 leading-5">Agent posts with org API key (not user JWT). Missed heartbeats open downtime automatically.</p>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[10px] text-slate-300">{agentCatalog?.endpoint ?? "POST /api/v1/soc/availability/heartbeat"}\nHeader: X-Org-Api-Key</pre>
           </div>
         </div>
       </Card>
+
+      <Modal open={walkthroughOpen} onClose={() => setWalkthroughOpen(false)} title="Agent walkthrough" wide>
+        {walkthroughLoading ? (
+          <div className="flex justify-center py-10"><Spinner className="h-6 w-6" /></div>
+        ) : (
+          <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4 text-xs leading-6 text-slate-300">
+            {walkthroughMd ?? ""}
+          </pre>
+        )}
+      </Modal>
 
       {/* Create / edit check modal */}
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? `Edit check — ${editing.name}` : "Add monitor"} wide>

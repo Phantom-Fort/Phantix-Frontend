@@ -25,6 +25,7 @@ import AssetIntelligence from "@/pages/AssetIntelligence";
 import SocDashboard from "@/pages/SocDashboard";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
+import Sandbox from "@/pages/Sandbox";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
+
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
@@ -88,6 +90,7 @@ export default function App() {
             <Route path="/compliance" element={<RequireAuth><Compliance /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
             <Route path="/agent" element={<RequireAuth><Agent /></RequireAuth>} />
+            <Route path="/sandbox" element={<RequireAuth><Sandbox /></RequireAuth>} />
             <Route path="/alerts" element={<RequireAuth><Alerts /></RequireAuth>} />
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />
             <Route path="/people" element={<RequireAuth><People /></RequireAuth>} />

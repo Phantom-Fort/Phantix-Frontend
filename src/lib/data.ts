@@ -46,10 +46,19 @@ import type {
   SocTriagePacket,
   SupportTicket,
   TrackerFinding,
+  TrackerSummary,
+  CommandCenter,
+  SocAgentInstallCatalog,
   VaptApproval,
   VaptCampaign,
   VaptFinding,
 } from "./types";
+import {
+  extractReportFindings,
+  findingDedupeKey,
+  normalizeReportRow,
+  normalizeTrackerFinding,
+} from "./utils";
 
 export const emptyOrganization: Organization = {
   id: 0,
@@ -76,7 +85,25 @@ function asList<T>(raw: unknown): T[] {
   if (Array.isArray(raw)) return raw as T[];
   if (raw && typeof raw === "object") {
     const o = raw as Record<string, unknown>;
-    for (const key of ["items", "data", "results", "rows", "events", "jobs", "campaigns", "findings", "risks", "assets", "users", "tickets", "reports"]) {
+    for (const key of [
+      "items",
+      "data",
+      "results",
+      "rows",
+      "events",
+      "jobs",
+      "campaigns",
+      "findings",
+      "risks",
+      "assets",
+      "users",
+      "tickets",
+      "reports",
+      "entries",
+      "tracker",
+      "tracker_findings",
+      "trackerFindings",
+    ]) {
       if (Array.isArray(o[key])) return o[key] as T[];
     }
   }
@@ -332,16 +359,305 @@ export async function loadComplianceBundle() {
   return { frameworks, assessments, controlResults, evidence };
 }
 
+function trackerFromReports(reports: any[]): TrackerFinding[] {
+  const byKey = new Map<string, TrackerFinding>();
+  for (const r of reports) {
+    const campaign = String(r?.title ?? r?.subtitle ?? "Report");
+    for (const f of extractReportFindings(r)) {
+      const row = normalizeTrackerFinding(f, campaign) as TrackerFinding;
+      const key = row.finding_key || findingDedupeKey(f);
+      const prev = byKey.get(key);
+      if (!prev || String(row.updated_at) > String(prev.updated_at)) {
+        byKey.set(key, { ...row, finding_key: key });
+      }
+    }
+  }
+  return Array.from(byKey.values()).sort((a, b) =>
+    String(b.updated_at).localeCompare(String(a.updated_at)),
+  );
+}
+
 export async function loadReportsBundle() {
   if (isDemoMode()) {
     await delay();
-    return { reports: demo.reports, trackerFindings: demo.trackerFindings };
+    const open = demo.trackerFindings.filter((t) => t.status === "open").length;
+    const inProgress = demo.trackerFindings.filter((t) => t.status === "in_progress").length;
+    const fixed = demo.trackerFindings.filter((t) => t.status === "fixed").length;
+    return {
+      reports: demo.reports,
+      trackerFindings: demo.trackerFindings,
+      trackerSummary: {
+        total: demo.trackerFindings.length,
+        open,
+        in_progress: inProgress,
+        fixed,
+        accepted: demo.trackerFindings.filter((t) => t.status === "accepted").length,
+        retest_failed: 0,
+        regressed: demo.trackerFindings.filter((t) => t.status === "regressed").length,
+        unassigned: demo.trackerFindings.filter((t) => !t.owner).length,
+      } as TrackerSummary,
+      trackerNote: "Living remediation board (demo).",
+    };
   }
-  const [reports, trackerFindings] = await Promise.all([
-    softList<Report>("/reports"),
-    softList<TrackerFinding>("/reports/tracker"),
-  ]);
-  return { reports, trackerFindings };
+  let trackerSummary: TrackerSummary | null = null;
+  let trackerNote: string | null = null;
+  let rawTrackerItems: any[] = [];
+  try {
+    const envelope = await api.get<any>("/reports/tracker?limit=200");
+    if (envelope && typeof envelope === "object") {
+      trackerSummary = (envelope.summary ?? null) as TrackerSummary | null;
+      trackerNote = envelope.note != null ? String(envelope.note) : null;
+      rawTrackerItems = asList<any>(envelope);
+    }
+  } catch {
+    rawTrackerItems = await softList<any>("/reports/tracker");
+  }
+  const rawReports = await softList<Report>("/reports");
+  const reports = rawReports.map((r) => normalizeReportRow(r) as Report);
+  let trackerFindings = (rawTrackerItems ?? []).map(
+    (t) => normalizeTrackerFinding(t) as TrackerFinding,
+  );
+  // AGI sessions often never seed /reports/tracker — surface session findings so the tab is usable.
+  if (trackerFindings.length === 0 && reports.length > 0) {
+    trackerFindings = trackerFromReports(reports);
+  }
+  return { reports, trackerFindings, trackerSummary, trackerNote };
+}
+
+/** PATCH tracker row — dual-control when org has DC configured. */
+export async function patchTrackerFinding(
+  findingKey: string,
+  body: {
+    status?: string;
+    assigned_owner?: string | null;
+    assigned_owner_email?: string | null;
+    target_fix_date?: string | null;
+    retest_status?: string | null;
+    notes?: string | null;
+  },
+): Promise<TrackerFinding | null> {
+  if (isDemoMode()) {
+    await delay(200);
+    return normalizeTrackerFinding({ finding_key: findingKey, ...body, title: findingKey }) as TrackerFinding;
+  }
+  const raw = await api.patch<any>(
+    `/reports/tracker/${encodeURIComponent(findingKey)}`,
+    body,
+  );
+  return raw ? (normalizeTrackerFinding(raw) as TrackerFinding) : null;
+}
+
+export async function loadTrackerDetail(findingKey: string): Promise<any | null> {
+  if (isDemoMode()) {
+    await delay(200);
+    const row = demo.trackerFindings.find((t) => t.finding_key === findingKey);
+    return row ? { ...row, related: { asset: null, risks: [], detections: [], reports: [] }, history: [] } : null;
+  }
+  return softOne<any>(`/reports/tracker/${encodeURIComponent(findingKey)}`);
+}
+
+/** Preferred dashboard first-paint: GET /org/command-center */
+export async function loadCommandCenter(): Promise<{
+  cc: CommandCenter | null;
+  securityDbBlocked: boolean;
+  error: string | null;
+}> {
+  if (isDemoMode()) {
+    await delay();
+    const openRisks = demo.risks.filter((r) => !["closed", "accepted"].includes(r.status));
+    const cc: CommandCenter = {
+      generatedAt: new Date().toISOString(),
+      org: {
+        id: demo.organization.id,
+        name: demo.organization.name,
+        slug: demo.organization.slug,
+        industry: demo.organization.industry,
+        country: demo.organization.country,
+        authorizedLab: false,
+      },
+      lab: null,
+      pages: {
+        dashboard: "/dashboard",
+        assets: "/assets",
+        intelligence: "/assets/intelligence",
+        risks: "/risks",
+        soc: "/soc",
+        reports: "/reports",
+        tracker: "/reports?tab=tracker",
+      },
+      stream: {
+        commandCenter: "/org/command-center/stream",
+        intelligence: "/assets/intelligence/stream",
+        soc: "/soc/dashboard/stream",
+        protocol: "text/event-stream",
+      },
+      posture: {
+        postureScore: demo.postureTrend[demo.postureTrend.length - 1]?.score ?? 72,
+        totals: {
+          activeAssets: demo.assets.length,
+          verified: demo.assets.filter((a) => a.is_verified).length,
+          openFindings: demo.trackerFindings.filter((t) => t.status === "open" || t.status === "in_progress").length,
+          highRiskAssets: demo.assets.filter((a) => a.criticality === "critical" || a.criticality === "high").length,
+        },
+        criticalAssetsAtRisk: demo.assets
+          .filter((a) => a.criticality === "critical")
+          .slice(0, 5)
+          .map((a) => ({
+            id: a.id,
+            value: a.value,
+            assetType: a.asset_type,
+            riskLevel: a.criticality,
+            openFindingsCount: a.open_findings ?? 0,
+            isVerified: a.is_verified,
+          })),
+        newlyDiscoveredUnscanned: [],
+        available: true,
+      },
+      risks: {
+        total: demo.risks.length,
+        open: openRisks.length,
+        byLevel: {},
+        top: openRisks
+          .sort((a, b) => b.priority_score - a.priority_score)
+          .slice(0, 5)
+          .map((r) => ({
+            id: r.id,
+            title: r.title,
+            riskLevel: r.level,
+            riskScore: r.priority_score,
+            status: r.status,
+            assetId: (r as any).asset_id ?? null,
+          })),
+        available: true,
+      },
+      soc: {
+        available: true,
+        queue: { openTotal: 3, byStatus: { open: 3 }, bySeverityOpen: { critical: 1, high: 2 } },
+        topDetections: [
+          { id: 1, title: "Brute force on portal login", severity: "high", status: "open", priorityScore: 88 },
+          { id: 2, title: "WAF block spike — API", severity: "medium", status: "triaged", priorityScore: 61 },
+        ],
+      },
+      tracker: {
+        available: true,
+        total: demo.trackerFindings.length,
+        summary: {
+          total: demo.trackerFindings.length,
+          open: demo.trackerFindings.filter((t) => t.status === "open").length,
+          in_progress: demo.trackerFindings.filter((t) => t.status === "in_progress").length,
+          fixed: demo.trackerFindings.filter((t) => t.status === "fixed").length,
+          accepted: demo.trackerFindings.filter((t) => t.status === "accepted").length,
+          regressed: demo.trackerFindings.filter((t) => t.status === "regressed").length,
+        },
+        criticalOpen: demo.trackerFindings
+          .filter((t) => t.severity === "critical" && (t.status === "open" || t.status === "in_progress" || t.status === "regressed"))
+          .map((t) => ({
+            findingKey: t.finding_key,
+            title: t.title,
+            severity: t.severity,
+            status: t.status,
+            priority: t.priority ?? "P1",
+            assignedOwner: t.owner,
+          })),
+      },
+      reports: {
+        available: true,
+        total: demo.reports.length,
+        recent: demo.reports.slice(0, 5).map((r) => ({
+          id: r.id,
+          title: r.title,
+          reportType: r.report_type,
+          status: r.status,
+          campaignId: r.campaign_id,
+          generatedAt: r.created_at,
+          formats: r.formats_requested,
+        })),
+      },
+    };
+    return { cc, securityDbBlocked: false, error: null };
+  }
+  const meta: LoadMeta = {};
+  const cc = await softOne<CommandCenter>("/org/command-center", meta);
+  return {
+    cc,
+    securityDbBlocked: !!meta.securityDbBlocked,
+    error: meta.error ?? null,
+  };
+}
+
+export async function loadSocAgentInstall(): Promise<SocAgentInstallCatalog | null> {
+  if (isDemoMode()) {
+    await delay(200);
+    return {
+      organizationId: 11,
+      version: "1.0.0-demo",
+      supportedOs: ["linux", "macos", "windows"],
+      authHeader: "X-Org-Api-Key",
+      authHint: "Mint a service key on Platform → Connections. Never paste a user JWT on the host.",
+      endpoint: "/api/v1/soc/availability/heartbeat",
+      walkthrough: "/api/v1/soc/availability/agent/walkthrough",
+      downloads: [
+        { os: "linux", label: "Linux (systemd)", filename: "phantix-heartbeat-linux.tar.gz", sizeBytes: 2_400_000, sha256: "demo".repeat(16) },
+        { os: "macos", label: "macOS (launchd)", filename: "phantix-heartbeat-macos.tar.gz", sizeBytes: 2_350_000, sha256: "demo".repeat(16) },
+        { os: "windows", label: "Windows (Task Scheduler)", filename: "phantix-heartbeat-windows.zip", sizeBytes: 2_500_000, sha256: "demo".repeat(16) },
+        { os: "python", label: "Python-only", filename: "phantix_heartbeat.py", sizeBytes: 48_000, sha256: "demo".repeat(16) },
+      ],
+      channels: [
+        {
+          id: "linux",
+          os: "linux",
+          title: "Linux install",
+          download: "/soc/availability/agent/download/linux",
+          commands: [
+            "tar -xzf phantix-heartbeat-linux.tar.gz",
+            "sudo ./install.sh --api-key $PHANTIX_ORG_API_KEY",
+          ],
+        },
+      ],
+      afterInstall: [
+        "Agent appears as check_type=agent with target agent://<hostname>",
+        "last_status should become up within one interval",
+      ],
+      docs: [],
+    };
+  }
+  return softOne<SocAgentInstallCatalog>("/soc/availability/agent-install");
+}
+
+export async function downloadSocAgent(os: string): Promise<{ blob: Blob; filename: string }> {
+  if (isDemoMode()) {
+    await delay(300);
+    const blob = new Blob([`# phantix heartbeat agent (${os}) demo stub\n`], { type: "application/octet-stream" });
+    return { blob, filename: `phantix-heartbeat-${os}.bin` };
+  }
+  const path = `/soc/availability/agent/download/${encodeURIComponent(os)}`;
+  const headers: Record<string, string> = {};
+  const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+  if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+  if (tokens.device) headers["X-Device-Token"] = tokens.device;
+  const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
+  if (!res.ok) throw new ApiError(res.status, res.statusText);
+  const cd = res.headers.get("content-disposition") || "";
+  const match = cd.match(/filename="?([^";]+)"?/i);
+  const filename = match?.[1] || `phantix-heartbeat-${os}.bin`;
+  return { blob: await res.blob(), filename };
+}
+
+export async function loadSocAgentWalkthrough(): Promise<string> {
+  if (isDemoMode()) {
+    await delay(200);
+    return [
+      "# Phantix heartbeat agent",
+      "",
+      "Install on the host. Phantix does **not** VPN in.",
+      "",
+      "1. Mint an org service key on Platform (not a user JWT).",
+      "2. Download the installer for your OS.",
+      "3. Run install with `X-Org-Api-Key`.",
+      "4. Confirm the check appears under Availability with `check_type: agent`.",
+    ].join("\n");
+  }
+  return api.fetchText("/soc/availability/agent/walkthrough");
 }
 
 export async function loadAlertsBundle() {

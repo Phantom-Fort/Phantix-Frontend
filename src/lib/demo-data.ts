@@ -332,14 +332,14 @@ export const reports: Report[] = [
 ];
 
 export const trackerFindings: TrackerFinding[] = [
-  { finding_key: "VAPT-301", title: "Edge → Portal → Core ledger attack path", severity: "critical", status: "in_progress", owner: "appsec@acme.ng", campaign_name: "Q3 External Assessment", asset_value: "portal.acme.ng", updated_at: "2026-07-21T06:30:00Z" },
-  { finding_key: "VAPT-302", title: "IDOR exposes customer statements", severity: "critical", status: "open", owner: null, campaign_name: "Q3 External Assessment", asset_value: "portal.acme.ng", updated_at: "2026-07-20T09:35:00Z" },
-  { finding_key: "VAPT-303", title: "JWT alg=none auth bypass", severity: "high", status: "open", owner: "platform@acme.ng", campaign_name: "Q3 External Assessment", asset_value: "api.acme.ng", updated_at: "2026-07-20T11:00:00Z" },
-  { finding_key: "VAPT-287", title: "Mass assignment on transfers", severity: "high", status: "verified", owner: "payments@acme.ng", campaign_name: "Payments API Deep Dive", asset_value: "payments-v2", updated_at: "2026-07-19T15:00:00Z" },
-  { finding_key: "VAPT-279", title: "Hardcoded API secret in APK", severity: "high", status: "in_progress", owner: "mobile@acme.ng", campaign_name: "Payments API Deep Dive", asset_value: "ng.acme.mobile", updated_at: "2026-07-20T10:00:00Z" },
-  { finding_key: "VAPT-264", title: "Outdated OpenSSH on edge", severity: "medium", status: "accepted", owner: "infra@acme.ng", campaign_name: "Monthly Infrastructure Sweep", asset_value: "41.58.130.44", updated_at: "2026-07-12T10:00:00Z" },
-  { finding_key: "VAPT-251", title: "Reflected XSS on search", severity: "medium", status: "resolved", owner: "portal@acme.ng", campaign_name: "Monthly Infrastructure Sweep", asset_value: "portal.acme.ng", updated_at: "2026-06-20T14:00:00Z" },
-  { finding_key: "VAPT-249", title: "Rate limit bypass (reachability)", severity: "low", status: "false_positive", owner: null, campaign_name: "Monthly Infrastructure Sweep", asset_value: "api.acme.ng", updated_at: "2026-06-18T09:00:00Z" },
+  { finding_key: "VAPT-301", title: "Edge → Portal → Core ledger attack path", severity: "critical", status: "in_progress", owner: "appsec@acme.ng", campaign_name: "Q3 External Assessment", asset_value: "portal.acme.ng", updated_at: "2026-07-21T06:30:00Z", priority: "P0", surface: "Web" },
+  { finding_key: "VAPT-302", title: "IDOR exposes customer statements", severity: "critical", status: "open", owner: null, campaign_name: "Q3 External Assessment", asset_value: "portal.acme.ng", updated_at: "2026-07-20T09:35:00Z", priority: "P0", surface: "Web" },
+  { finding_key: "VAPT-303", title: "JWT alg=none auth bypass", severity: "high", status: "open", owner: "platform@acme.ng", campaign_name: "Q3 External Assessment", asset_value: "api.acme.ng", updated_at: "2026-07-20T11:00:00Z", priority: "P1", surface: "API" },
+  { finding_key: "VAPT-287", title: "Mass assignment on transfers", severity: "high", status: "fixed", owner: "payments@acme.ng", campaign_name: "Payments API Deep Dive", asset_value: "payments-v2", updated_at: "2026-07-19T15:00:00Z", priority: "P1", surface: "API" },
+  { finding_key: "VAPT-279", title: "Hardcoded API secret in APK", severity: "high", status: "in_progress", owner: "mobile@acme.ng", campaign_name: "Payments API Deep Dive", asset_value: "ng.acme.mobile", updated_at: "2026-07-20T10:00:00Z", priority: "P1", surface: "Mobile" },
+  { finding_key: "VAPT-264", title: "Outdated OpenSSH on edge", severity: "medium", status: "accepted", owner: "infra@acme.ng", campaign_name: "Monthly Infrastructure Sweep", asset_value: "41.58.130.44", updated_at: "2026-07-12T10:00:00Z", priority: "P3", surface: "Infrastructure" },
+  { finding_key: "VAPT-251", title: "Reflected XSS on search", severity: "medium", status: "fixed", owner: "portal@acme.ng", campaign_name: "Monthly Infrastructure Sweep", asset_value: "portal.acme.ng", updated_at: "2026-06-20T14:00:00Z", priority: "P2", surface: "Web" },
+  { finding_key: "VAPT-249", title: "Rate limit bypass (reachability)", severity: "low", status: "regressed", owner: null, campaign_name: "Monthly Infrastructure Sweep", asset_value: "api.acme.ng", updated_at: "2026-06-18T09:00:00Z", priority: "P3", surface: "API" },
 ];
 
 export const alertEvents: AlertEvent[] = [

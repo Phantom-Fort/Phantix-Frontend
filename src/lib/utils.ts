@@ -103,6 +103,9 @@ export const statusColor: Record<string, string> = {
   gap: "text-severity-critical bg-severity-critical/10 border-severity-critical/30",
   unknown: "text-slate-400 bg-slate-400/10 border-slate-500/30",
   accepted: "text-severity-low bg-severity-low/10 border-severity-low/30",
+  fixed: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  retest_failed: "text-severity-high bg-severity-high/10 border-severity-high/30",
+  regressed: "text-severity-critical bg-severity-critical/10 border-severity-critical/30",
   false_positive: "text-slate-400 bg-slate-400/10 border-slate-500/30",
   not_bootstrapped: "text-severity-medium bg-severity-medium/10 border-severity-medium/30",
   collected: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
@@ -132,8 +135,198 @@ export const assetTypeIcon: Record<string, string> = {
 // ── Finding verification & impact helpers ─────────────────────────────────────
 export function isReportable(f: any): boolean {
   if (f.reportable === true) return true;
-  const s = f.verification_status ?? f.evidence?.verification?.verification_status;
-  return s === "auto_verified" || s === "manually_verified";
+  const s = String(f.verification_status ?? f.evidence?.verification?.verification_status ?? f.status ?? "").toLowerCase();
+  return s === "auto_verified" || s === "manually_verified" || s === "verified";
+}
+
+const VERIFIED_STATUSES = new Set(["auto_verified", "manually_verified", "verified"]);
+const EXCLUDED_STATUSES = new Set(["rejected", "false_positive", "excluded", "noise"]);
+
+/** Pull findings arrays from report list/detail payloads (AGI sections, structured content, etc.). */
+export function extractReportFindings(report: any): any[] {
+  if (!report || typeof report !== "object") return [];
+  const sections = report.sections;
+  if (Array.isArray(report.findings)) return report.findings;
+  if (!sections || typeof sections !== "object") return [];
+  if (Array.isArray(sections.findings)) return sections.findings;
+  const out: any[] = [];
+  for (const val of Object.values(sections as Record<string, unknown>)) {
+    if (!val || typeof val !== "object") continue;
+    const s = val as Record<string, unknown>;
+    if (Array.isArray(s.findings)) out.push(...s.findings);
+    if (Array.isArray(s.content)) {
+      const looksLikeFinding = s.content.some(
+        (c: any) => c && typeof c === "object" && (c.severity != null || c.finding_key != null || c.title != null),
+      );
+      if (looksLikeFinding) out.push(...(s.content as any[]));
+    }
+  }
+  return out;
+}
+
+/** Dedupe key for AGI/tool findings (stable across sessions when ids differ). */
+export function findingDedupeKey(f: any): string {
+  if (f?.finding_key) return String(f.finding_key);
+  if (f?.id != null && String(f.id).length < 48) return String(f.id);
+  const title = String(f?.title ?? "").trim().toLowerCase();
+  const target = String(f?.target ?? f?.asset_value ?? "").trim().toLowerCase();
+  const sev = String(f?.severity ?? "").toLowerCase();
+  return `${title}|${target}|${sev}`;
+}
+
+/** Derive report pipeline chips when API omits `stats` (common for agi_session list payloads). */
+export function deriveReportStats(report: any): {
+  after_dedupe: number;
+  after_verification: number;
+  excluded_from_report: number;
+  impact_analyzed?: number;
+  attack_paths?: number;
+  require_verified?: boolean;
+  candidates?: number;
+} {
+  const existing = report?.stats && typeof report.stats === "object" ? report.stats : null;
+  const findings = extractReportFindings(report);
+  const rawCount =
+    Number(report?.sections?.findings_count) ||
+    Number(report?.output_files?.json?.findings_count) ||
+    findings.length;
+
+  const seen = new Set<string>();
+  let verified = 0;
+  let excluded = 0;
+  let impact = 0;
+  let candidates = 0;
+  let attackPaths = 0;
+
+  for (const f of findings) {
+    const key = findingDedupeKey(f);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const st = String(f?.status ?? f?.verification_status ?? "").toLowerCase();
+    if (VERIFIED_STATUSES.has(st) || isReportable(f)) verified += 1;
+    else if (EXCLUDED_STATUSES.has(st)) excluded += 1;
+    else candidates += 1;
+    if (f?.impact != null || f?.impact_level != null || f?.impact_analysis != null || f?.business_impact != null) {
+      impact += 1;
+    }
+    if (f?.attack_path || f?.attack_paths || f?.category === "attack_path") attackPaths += 1;
+  }
+
+  const afterDedupe = seen.size || rawCount;
+  const apiDedupe = existing?.after_dedupe;
+  const apiVerified = existing?.after_verification;
+  const apiExcluded = existing?.excluded_from_report;
+  const apiImpact = existing?.impact_analyzed;
+
+  // Prefer API stats when present and non-zero; otherwise fill from sections.findings.
+  const useDerived = findings.length > 0 || rawCount > 0;
+  return {
+    after_dedupe: typeof apiDedupe === "number" && (apiDedupe > 0 || !useDerived) ? apiDedupe : afterDedupe,
+    after_verification:
+      typeof apiVerified === "number" && (apiVerified > 0 || !useDerived) ? apiVerified : verified,
+    excluded_from_report:
+      typeof apiExcluded === "number" && (apiExcluded > 0 || !useDerived) ? apiExcluded : excluded,
+    impact_analyzed:
+      typeof apiImpact === "number"
+        ? apiImpact
+        : impact > 0
+          ? impact
+          : afterDedupe > 0
+            ? 0
+            : undefined,
+    attack_paths: existing?.attack_paths ?? (attackPaths || undefined),
+    require_verified: existing?.require_verified,
+    candidates,
+  };
+}
+
+export function normalizeReportRow(raw: any): any {
+  if (!raw || typeof raw !== "object") return raw;
+  const stats = deriveReportStats(raw);
+  return {
+    ...raw,
+    version: raw.version ?? raw.report_version ?? 1,
+    report_version: raw.report_version ?? raw.version ?? 1,
+    created_at: raw.created_at ?? raw.generated_at ?? raw.updated_at ?? new Date().toISOString(),
+    size_bytes: raw.size_bytes ?? 0,
+    formats_requested: raw.formats_requested ?? ["markdown", "json"],
+    stats,
+  };
+}
+
+/** Canonical tracker statuses (findings-tracker.md). */
+export const TRACKER_STATUSES = [
+  "open",
+  "in_progress",
+  "fixed",
+  "accepted",
+  "retest_failed",
+  "regressed",
+] as const;
+
+/** Map engine tracker / AGI finding rows into FE TrackerFinding shape. */
+export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
+  finding_key: string;
+  title: string;
+  severity: any;
+  status: string;
+  owner: string | null;
+  campaign_name: string;
+  asset_value: string;
+  updated_at: string;
+  surface?: string;
+  priority?: string;
+  asset_id?: number | null;
+  assigned_owner?: string | null;
+  target_fix_date?: string | null;
+  detection_count?: number;
+  retest_status?: string | null;
+  description?: string | null;
+} {
+  const statusRaw = String(raw?.status ?? "open").toLowerCase().replace(/-/g, "_");
+  // Map legacy / verification labels onto the living-board set only.
+  const statusMap: Record<string, string> = {
+    candidate: "open",
+    unverified: "open",
+    resolved: "fixed",
+    verified: "fixed",
+    false_positive: "accepted",
+    auto_verified: "open",
+    manually_verified: "open",
+  };
+  const status = statusMap[statusRaw] ?? statusRaw;
+  const key =
+    raw?.finding_key ??
+    raw?.key ??
+    (raw?.id != null ? String(raw.id) : findingDedupeKey(raw).slice(0, 36));
+  const owner =
+    raw?.assigned_owner ?? raw?.owner ?? raw?.assigned_owner_email ?? null;
+  const assetObj = raw?.asset && typeof raw.asset === "object" ? raw.asset : null;
+  return {
+    finding_key: String(key),
+    title: String(raw?.title ?? raw?.name ?? "Untitled finding"),
+    severity: (raw?.severity ?? "info") as any,
+    status,
+    owner: owner != null ? String(owner) : null,
+    assigned_owner: owner != null ? String(owner) : null,
+    campaign_name: String(raw?.campaign_name ?? raw?.campaign ?? fallbackCampaign ?? "—"),
+    asset_value: String(
+      raw?.asset_value ??
+        assetObj?.value ??
+        assetObj?.name ??
+        raw?.target ??
+        raw?.asset ??
+        "—",
+    ),
+    updated_at: String(raw?.updated_at ?? raw?.last_detected_at ?? raw?.created_at ?? new Date().toISOString()),
+    surface: raw?.surface != null ? String(raw.surface) : undefined,
+    priority: raw?.priority != null ? String(raw.priority) : undefined,
+    asset_id: raw?.asset_id != null ? Number(raw.asset_id) : assetObj?.id != null ? Number(assetObj.id) : null,
+    target_fix_date: raw?.target_fix_date ?? null,
+    detection_count: raw?.detection_count != null ? Number(raw.detection_count) : undefined,
+    retest_status: raw?.retest_status ?? null,
+    description: raw?.description ?? null,
+  };
 }
 
 export function impactLevelRank(level?: string): number {
