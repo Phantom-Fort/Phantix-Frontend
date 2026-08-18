@@ -31,8 +31,9 @@ import hcAiAgent from "@docs/docs/user-docs/10-ai-agent-api.md?raw";
 import hcPrivacy from "@docs/docs/user-docs/11-privacy-and-security.md?raw";
 import hcTroubleshoot from "@docs/docs/user-docs/12-troubleshooting.md?raw";
 
-// In-app user manuals (Command Centre help centre)
+// In-app user manuals + task how-tos (Command Centre help centre)
 import { manualDocs } from "@/lib/manualDocs";
+import { howToDocs } from "@/lib/howToDocs";
 
 export interface DocEntry {
   id: string;
@@ -45,6 +46,9 @@ export interface DocEntry {
 
 export const docCategories = [
   { id: "help", label: "Help Centre", blurb: "Setup, day-to-day use and integrations" },
+  { id: "how-to-platform", label: "How-to · Platform", blurb: "Step-by-step org admin tasks with process flows" },
+  { id: "how-to-app", label: "How-to · Command Centre", blurb: "Operator activities: scans, SOC, reports, tracker" },
+  { id: "how-to", label: "How-to index", blurb: "Platform and Command Centre at a glance" },
   { id: "guides", label: "Guides", blurb: "Public guides by audience and topic" },
   { id: "manuals", label: "User manuals", blurb: "Screenshotted guides for each product surface" },
 ] as const;
@@ -78,6 +82,7 @@ export const docs: DocEntry[] = [
   { id: "faq", title: "FAQ", description: "Answers for first contact and common questions.", category: "guides", content: faq },
   { id: "getting-started", title: "Getting started", description: "CTAs and the onboarding path for new organizations.", category: "guides", content: gettingStarted },
   ...(manualDocs as DocEntry[]),
+  ...(howToDocs as DocEntry[]),
 ];
 
 export function getDoc(id: string): DocEntry | undefined {

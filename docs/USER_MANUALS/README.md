@@ -1,29 +1,26 @@
 # Phantix User Manuals
 
-Complete user documentation for the Phantix product surfaces, with screenshots captured from the
-live applications.
+Customer-facing surface guides (with screenshots).
 
-| Manual | URL | Audience | Screenshots |
-|--------|-----|----------|-------------|
-| [01 — Landing site](01-landing.md) | https://phantix.site | Prospective customers, investors, partners | 5 |
-| [02 — Platform](02-platform.md) | https://platform.phantix.site | Organization administrators | 12 |
-| [03 — Staff portal](03-staff-portal.md) | https://staff.phantix.site | Phantix platform staff | 19 |
+| Manual | URL | Audience |
+|--------|-----|----------|
+| [02 — Platform](02-platform.md) | https://platform.phantix.site | Organization administrators |
+| [04 — Command Centre](04-command-centre.md) | https://app.phantix.site | Security operators |
 
-> **Note:** The **Command Centre** (`app.phantix.site`) manual is pending — its authenticated
-> screenshots could not be captured due to a backend "Failed to fetch" on the app-realm login
-> verification. See the open issue in the project backlog.
+## Task-level how-tos (process flows)
+
+- [Platform](../how-to/platform/) — add user, security DB, config DB, dual control, …
+- [Command Centre](../how-to/command-centre/) — scans, SOC, VAPT, tracker, reports, …
+
+## Lab credentials (staging / QA only)
+
+| Surface | Email | Password | MFA / notes |
+|---------|-------|----------|-------------|
+| **Platform** | `admin@phantixvulnserver.online` | `Phan7omSec4321` | Email OTP |
+| **Command Centre** | `admin@phantixvulnserver.online` | `Pa$$w0rd!` | App OTP or Platform login link |
+
+> Staging / lab only — not for production.
 
 ## Screenshots
 
-All screenshots live in `docs/../screenshots/`:
-
-- `docs/../screenshots/landing-*.png` — landing sections
-- `docs/../screenshots/platform-login.png`, `docs/../screenshots/platform/*` — platform pages
-- `docs/../screenshots/staff-login.png`, `docs/../screenshots/staff/*` — staff portal pages
-- `docs/../screenshots/app-login.png`, `docs/../screenshots/app-dashboard.png` — Command Centre (login only)
-
-## How these were produced
-
-Screenshots were captured with Google Chrome (headless) via Playwright against the live sites, after
-authenticating with a real account (email + password + email OTP). See `docs/../screenshots/README.md`
-for the full inventory.
+Under `docs/screenshots/platform/` and `docs/screenshots/app/` (also copied to `public/screenshots/` for in-app Docs).

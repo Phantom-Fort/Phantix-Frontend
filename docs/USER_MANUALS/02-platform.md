@@ -1,180 +1,183 @@
-# Phantix Platform — User Manual
+# How to use the Phantix Platform
 
-**URL:** https://platform.phantix.site
-**Audience:** Organization administrators (company owner / security team)
-**Last updated:** August 2026
-
----
-
-## 1. Signing in
-
-1. Go to `platform.phantix.site/login`.
-2. Enter your **company email** and **password**, then click **Continue**.
-3. An email OTP (6-digit code) is sent to your primary sign-in email. Enter it and click
-   **Verify & sign in**.
-4. If you don't receive the code, click **Resend code** — a fresh code is emailed.
-
-![Platform login](../screenshots/platform-login.png)
-
-> **First time?** Register your organization at `platform.phantix.site/register`. After registration
-> you'll verify your email via OTP, then complete onboarding (privacy, identity, and connection setup).
+**URL:** https://platform.phantix.site  
+**Audience:** Organization administrators  
+**Purpose:** Manage the company tenant (identity, people, security DB, billing). Day-to-day security work happens in the **Command Centre** (`app.phantix.site`).
 
 ---
 
-## 2. Dashboard (Tenant overview)
+## Lab credentials (QA / staging)
+
+| Field | Value |
+|-------|--------|
+| Email | `admin@phantixvulnserver.online` |
+| Password | `Phan7omSec4321` |
+| MFA | 6-digit code emailed to the same address (lab IMAP password for automation: `LabMail_Admin1!`) |
+
+---
+
+## 1. Sign in
+
+1. Open https://platform.phantix.site/login  
+2. Enter **company email** and **password** → **Continue**  
+
+![Platform login](../screenshots/platform/login.png)
+
+3. Enter the **email OTP** → **Verify & sign in**  
+4. You land on the tenant **Dashboard**
 
 ![Platform dashboard](../screenshots/platform/dashboard.png)
 
-The dashboard is the tenant home and shows:
+### First-time registration
 
-- **Getting-started checklist** — organization setup, two dual-control people, initiator/authorizer
-  assignment, first operate unlock.
-- **Key stats** — org users, connections, companies, service keys.
-- **Tenant identity** — tenant ID, slug, creator.
-- **Recent activity** — a feed of audit events.
-- **Ready for operations** — a link to the Command Centre (`app.phantix.site`), gated on the security
-  database being bootstrapped.
+1. https://platform.phantix.site/register  
+2. Create company + verify email  
+3. Complete **Setup** (privacy, identity, dual-control people, security DB)
+
+---
+
+## 2. Dashboard checklist
+
+Confirm:
+
+- Organization profile complete  
+- At least two people for dual control  
+- Initiator + authorizer assigned  
+- Security database connected and bootstrapped  
+- Then open **Command Centre** for operations  
 
 ---
 
 ## 3. Identity & service keys
 
+**Nav → Identity & Keys**
+
 ![Identity](../screenshots/platform/identity.png)
 
-- View and update **company identity** (legal name, industry, website, address, contacts).
-- **Service keys**: create/rotate/revoke the company's `pk_live_*` service key. This key is required
-  for application (Command Centre) access.
-- **Report branding**: upload or remove the company logo used on report covers and footers.
+1. Update legal name, industry, website, contacts  
+2. Create / rotate **service keys** (`pk_live_*`) used by machine agents and some integrations  
+3. Upload **report branding** logo if needed  
 
 ---
 
-## 4. Users & dual control
+## 4. People & dual control
+
+**Nav → People & Control**
 
 ![Users](../screenshots/platform/users.png)
 
-- **Create organization users** with a role (admin / security / viewer) and contact details.
-- Users are **OTP-only by default** — day-to-day sign-in uses a domain-email OTP via
-  `POST /org-users/auth/login`.
-- Assign the **initiator** and **authorizer** (dual-control slots). Writes require an operate session
-  opened by the initiator or authorizer.
-- Generate **application sign-in links** and manage **login-link history**.
+1. **Create users** (name, email, role)  
+2. Assign **Initiator** and **Authorizer** (required for operate sessions)  
+3. Issue **Command Centre login links** (invite / magic link) for operators  
+4. Unlock **Operate** when you need to approve mutations (OTP dual-control flow)  
 
 ---
 
-## 5. Connections (security database)
+## 5. Security database (Connections)
+
+**Nav → Security Database**
 
 ![Connections](../screenshots/platform/connections.png)
 
-- Register your dedicated **security data storage** database (PostgreSQL recommended).
-- **Test** connectivity and **bootstrap** the Phantix security schema.
-- Connection types: `security_data_storage` (full CRUD in the phantix schema) and
-  `config_inspection` (roles, privileges, policies).
-- Until a security DB is bootstrapped, scans/VAPT/findings are blocked server-side.
-
-![Driver availability](../screenshots/platform/connections.png)
+1. Add a PostgreSQL (or supported) database for **security data storage**  
+2. **Test** connection  
+3. **Bootstrap** Phantix schema  
+4. Until bootstrap succeeds, product modules (scans, VAPT, SOC data) stay blocked  
 
 ---
 
 ## 6. Companies (groups)
 
+**Nav → Companies**
+
 ![Companies](../screenshots/platform/companies.png)
 
-- For groups of companies: each child company gets its **own service key, users, security database,
-  and billing scope** — data stays isolated per company.
+For multi-company groups: each child company keeps its own keys, users, DB, and billing isolation.
 
 ---
 
-## 7. Billing
+## 7. GitHub
 
-![Billing](../screenshots/platform/billing.png)
+**Nav → GitHub**
 
-- View the current **subscription** and **payment history**.
-- **Subscribe** (monthly or yearly) and **pay** an invoice.
-- Redeem a **beta coupon** (Premium + all billable tools) if you have one.
-- Billing entitlements gate Premium features; a 402 from the API surfaces an upgrade prompt.
+![GitHub](../screenshots/platform/github.png)
 
----
-
-## 8. AI governance
-
-![AI settings](../screenshots/platform/ai-settings.png)
-
-- **AI engine** status, default provider, mode (economy / balanced / enterprise), and configured
-  providers.
-- **Usage this month** — tokens and estimated cost.
-- **Phantix Agent** toggle — enable/disable the conversational assistant in the Command Centre
-  (dual-control required to change).
+1. Connect GitHub App or PAT  
+2. Discover / import repositories as assets (used later in Command Centre)  
 
 ---
 
-## 9. Audit trail
+## 8. Tool catalog & billing
 
-![Audit](../screenshots/platform/audit.png)
-
-- Full audit trail of initiated + authorised actions (who, what, when).
-- **Export** the audit trail as CSV.
-
----
-
-## 10. Alerts
-
-![Alerts](../screenshots/platform/alerts.png)
-
-- **Delivery log** of alert events (email / WhatsApp / Telegram).
-- **Channels & SMTP** configuration — outbound email relay, WhatsApp (Meta Cloud), Telegram (Bot API),
-  recipients, and per-event notification toggles.
-
----
-
-## 11. Support
-
-![Support](../screenshots/platform/support.png)
-
-- Submit support tickets with subject, priority, and description.
-- Track your organization's open tickets.
-
----
-
-## 12. Tool catalog
+**Nav → Tool Catalog** · **Billing**
 
 ![Tools](../screenshots/platform/tools.png)
 
-- Browse the scanner/tooling catalog (Nmap, Nuclei, Subfinder, Katana, SQLMap, Gowitness, Caido, …).
-- **Subscribe** to paid add-ons or **request** a tool; staff review and provision it.
+![Billing](../screenshots/platform/billing.png)
+
+1. Review available tools and provisions  
+2. Subscribe (monthly/yearly) or redeem a coupon  
+3. Pay invoices via the configured gateway  
 
 ---
 
-## 13. Dual control & operate mode
+## 9. AI & Autonomous Agent settings
 
-- Sensitive actions open the **Dual-control overlay**: enter your work email → receive an OTP →
-  unlock an **operate session** (active for ~3 minutes of idle, or longer for initiator/authorizer).
-- Once unlocked, mutations send the `X-Dual-Control-Session` header and succeed.
+**Nav → AI settings** · **Autonomous Agent**
 
----
+![AI](../screenshots/platform/ai-settings.png)
 
-## 14. Troubleshooting
+![AGI](../screenshots/platform/agi.png)
 
-| Symptom | Resolution |
-|---------|------------|
-| Login shows "Failed to fetch" | Network/API hiccup — retry. Ensure you're on the live site and the API base is correct. |
-| OTP not received | Click **Resend code**; check spam. |
-| Scans/VAPT blocked | Bootstrap the security database in **Connections**. |
-| Command Centre can't sign in | Create a **service key** in Identity and generate an application **login link** in Users. |
-| Dual-control overlay won't unlock | You must be the assigned **initiator or authorizer**. |
+- Configure org AI preferences and AGI access agreement / scopes (product-side).  
+- Live AGI **sessions** for staff-run engagements are managed in the **Staff portal**.  
 
 ---
 
-## 15. Screenshots
+## 10. Alerts, support, audit
 
-- `../screenshots/platform-login.png`
-- `../screenshots/platform/dashboard.png`
-- `../screenshots/platform/identity.png`
-- `../screenshots/platform/users.png`
-- `../screenshots/platform/connections.png`
-- `../screenshots/platform/companies.png`
-- `../screenshots/platform/billing.png`
-- `../screenshots/platform/ai-settings.png`
-- `../screenshots/platform/audit.png`
-- `../screenshots/platform/support.png`
-- `../screenshots/platform/tools.png`
-- `../screenshots/platform/alerts.png`
+| Page | Use |
+|------|-----|
+| **Alerts** | SMTP / channel settings for org notifications |
+| **Support** | Open tickets to Phantix |
+| **Audit** | Tenant audit trail |
+
+![Alerts](../screenshots/platform/alerts.png)
+
+![Support](../screenshots/platform/support.png)
+
+![Audit](../screenshots/platform/audit.png)
+
+---
+
+## 11. Open Command Centre
+
+From the dashboard **Ready for operations** (or bookmark https://app.phantix.site):
+
+1. Use an **invite / login link** from People, or  
+2. Sign in with app credentials (see [Command Centre manual](04-command-centre.md))  
+
+Platform = tenant admin. Command Centre = scans, SOC, risks, reports.
+
+---
+
+## 12. BETA sandbox (enrolled orgs)
+
+If your org is enrolled in the design-partner cohort:
+
+1. Open **BETA sandbox** in the Platform sidebar (only visible when enrolled)  
+2. Read staff update notes, acknowledge them, and submit ratings  
+3. Also available on Command Centre `/sandbox`  
+
+Applications from the public site are reviewed by staff, not on Platform.
+
+---
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| No OTP email | Check spam; use **Resend**; confirm mailbox for lab tenant |
+| 402 upgrade required | Subscribe or redeem coupon under Billing |
+| 409 security DB | Bootstrap Connections before product modules |
+| Dual-control blocked | Unlock Operate as initiator/authorizer |
