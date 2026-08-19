@@ -316,7 +316,18 @@ export default function Reports() {
           {reports.map((r, i) => (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card hover>
-                <button onClick={() => openDetail(r)} className="flex w-full flex-wrap items-center gap-4 text-left">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openDetail(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      openDetail(r);
+                    }
+                  }}
+                  className="flex w-full flex-wrap cursor-pointer items-center gap-4 text-left"
+                >
                   <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
                     <FileText size={20} />
                   </span>
@@ -371,7 +382,7 @@ export default function Reports() {
                       ))}
                     </div>
                   )}
-                </button>
+                </div>
               </Card>
             </motion.div>
           ))}

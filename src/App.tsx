@@ -26,6 +26,7 @@ import SocDashboard from "@/pages/SocDashboard";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
 import Sandbox from "@/pages/Sandbox";
+import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -78,6 +79,8 @@ export default function App() {
           <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
+          {/* Public sandbox application — no auth (entry from phantix.site) */}
+          <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
 
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />

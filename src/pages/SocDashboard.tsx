@@ -330,6 +330,12 @@ export default function SocDashboard() {
     }
   };
 
+  // Must stay above the early return — hooks must run on every render.
+  const livePreview = useMemo(
+    () => liveEvents.filter((e) => e.event !== "heartbeat").slice(-12).reverse(),
+    [liveEvents],
+  );
+
   if (socData.loading && !socData.data.panels.length && !status.data) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
@@ -337,11 +343,6 @@ export default function SocDashboard() {
       </div>
     );
   }
-
-  const livePreview = useMemo(
-    () => liveEvents.filter((e) => e.event !== "heartbeat").slice(-12).reverse(),
-    [liveEvents],
-  );
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -376,7 +377,7 @@ export default function SocDashboard() {
       )}
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Engine" value={<span className={cx("capitalize", status.data?.status === "implemented" ? "text-emerald-400" : "text-slate-300")}>{status.data?.status ?? "loading"}</span>} icon={<Gauge size={18} />} />
+        <StatCard label="Engine" value={<span className={cx("capitalize", status.data?.status === "implemented" ? "text-emerald-400" : "text-slate-300")}>{status.data?.status === "implemented" ? "Online" : status.data?.status ?? "loading"}</span>} icon={<Gauge size={18} />} />
         <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} icon={<Crosshair size={18} />} />
         <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} icon={<AlertTriangle size={18} />} accent="red" />
         <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} icon={<Activity size={18} />} />
