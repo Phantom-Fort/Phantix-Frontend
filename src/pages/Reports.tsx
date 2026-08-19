@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState } from "@/components/ui";
@@ -75,10 +75,12 @@ function JsonPre({ data }: { data: unknown }) {
 }
 
 function MarkdownContent({ content }: { content: string }) {
+  const html = useMemo(() => (content ? (marked.parse(content) as string) : ""), [content]);
   return (
-    <div className="mt-2 rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4 text-xs leading-6 text-slate-300 max-h-[500px] overflow-auto whitespace-pre-wrap">
-      {content}
-    </div>
+    <div
+      className="prose-doc max-w-none mt-2 rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4 max-h-[500px] overflow-auto"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
   );
 }
 
@@ -135,7 +137,7 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
       <Modal open={open} onClose={() => setOpen(false)} title="Formatted Report" wide>
         {md && (
           <div
-            className="prose prose-invert prose-sm max-w-none overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-6 max-h-[70vh] text-slate-200"
+            className="prose-doc max-w-none overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-6 max-h-[70vh]"
             dangerouslySetInnerHTML={{ __html: marked.parse(md) as string }}
           />
         )}
@@ -623,7 +625,10 @@ export default function Reports() {
                 {detail.ai_narratives.remediation_guidance && (
                   <details className="text-xs text-slate-400">
                     <summary className="cursor-pointer font-semibold text-slate-300">Remediation Guidance</summary>
-                    <div className="mt-2 whitespace-pre-wrap leading-5">{detail.ai_narratives.remediation_guidance}</div>
+                    <div
+                      className="prose-doc max-w-none mt-2"
+                      dangerouslySetInnerHTML={{ __html: marked.parse(detail.ai_narratives.remediation_guidance) as string }}
+                    />
                   </details>
                 )}
                 {detail.ai_narratives.web_research?.items?.length > 0 && (

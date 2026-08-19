@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { marked } from "marked";
 import { FlaskConical, Star, Megaphone, CheckCircle2, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, Modal, Spinner, EmptyState, StatusBadge } from "@/components/ui";
 import { useStore } from "@/lib/store";
@@ -204,7 +205,12 @@ export default function Sandbox() {
                         {pub && <span className="ml-auto text-[11px] text-slate-600">{timeAgo(pub)}</span>}
                       </div>
                       <p className="mt-2 text-sm font-semibold text-slate-100">{u.title}</p>
-                      {body && <p className="mt-1.5 whitespace-pre-wrap text-xs leading-5 text-slate-400">{body}</p>}
+                      {body && (
+                        <div
+                          className="prose-doc max-w-none mt-1.5"
+                          dangerouslySetInnerHTML={{ __html: marked.parse(body) as string }}
+                        />
+                      )}
                       {!u.acked && (
                         <button type="button" className="btn-secondary mt-3 !py-1.5 !text-xs" onClick={() => void ack(u)}>
                           Mark read

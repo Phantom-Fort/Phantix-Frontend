@@ -2,12 +2,11 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
+"rewrites": [
     {
       "source": "/api/v1/:path*",
       "destination": "https://staging.phantix.site/api/v1/:path*"
     },
-    { "handle": "filesystem" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
