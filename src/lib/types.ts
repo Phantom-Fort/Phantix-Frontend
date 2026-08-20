@@ -464,10 +464,15 @@ export interface VaptFinding {
   title: string;
   severity: Severity;
   verification_status: VerificationStatus;
-  confidence: number;
+  confidence: number | string;
   asset_value: string;
   correlation_rule: string | null;
   attack_path: string[];
+  attack_path_object?: {
+    rule_key?: string;
+    steps?: { asset_id?: number | null; title?: string; severity?: string; types?: string[] }[];
+    risk_summary?: string;
+  };
   cve: string | null;
   cvss: number | null;
   created_at: string;
@@ -478,6 +483,10 @@ export interface VaptFinding {
   business_impact?: string;
   technical_impact?: string;
   impact_analysis?: Record<string, unknown>;
+  description?: string;
+  correlation_type?: string;
+  requires_human_review?: boolean;
+  ai_analysis_requested?: boolean;
 }
 
 export interface VaptApproval {
@@ -521,6 +530,7 @@ export interface ComplianceFramework {
   category: string;
   is_active: boolean;
   recommended: boolean;
+  controls?: { id: string; title?: string; category?: string; risk?: string; description?: string }[];
 }
 
 export interface ComplianceAssessment {

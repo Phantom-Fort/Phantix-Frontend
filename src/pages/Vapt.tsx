@@ -7,9 +7,9 @@ import { loadVaptBundle } from "@/lib/data";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
-import { timeAgo, titleCase, cx, isReportable, impactLevelRank } from "@/lib/utils";
+import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import type { VaptCampaign } from "@/lib/types";
+import type { VaptCampaign, VaptFinding } from "@/lib/types";
 
 export default function Vapt() {
   const { toast, requireDualControl, dualControl } = useStore();
@@ -27,6 +27,7 @@ export default function Vapt() {
   const loadError = data.error;
   const [tab, setTab] = useState("campaigns");
   const [selected, setSelected] = useState<VaptCampaign | null>(null);
+  const [findingSelected, setFindingSelected] = useState<VaptFinding | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
@@ -34,6 +35,8 @@ export default function Vapt() {
   const activeSelected = selected && vaptCampaigns.some((c) => c.id === selected.id) ? selected : vaptCampaigns[0] ?? null;
   const campaignFindings = activeSelected ? vaptFindings.filter((f) => f.campaign_id === activeSelected.id) : [];
   const pending = vaptApprovals.filter((a) => a.status === "pending");
+  const selectedFinding = findingSelected;
+  const selectedSteps = selectedFinding?.attack_path_object?.steps;
 
   // Campaign action handlers
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
@@ -526,32 +529,35 @@ export default function Vapt() {
                   <div className="space-y-2">
                     {campaignFindings.length === 0 && <p className="text-xs text-slate-500">No correlated attack paths yet. Raw findings are under Scans → Results.</p>}
                     {campaignFindings.slice(0, 5).map((f) => (
-                      <div key={f.id} className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="min-w-0 flex-1 text-sm text-slate-200 truncate">{f.title}</p>
-                          <SeverityBadge severity={f.severity} />
-                          <VerificationBadge status={f.verification_status} />
-                          {(f as any).impact_level && <ImpactBadge level={(f as any).impact_level} score={(f as any).impact_score} />}
-                          {isReportable(f) ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span> : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held</span>}
-                        </div>
-                        {f.attack_path?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
-                            <GitBranch size={11} className="text-gold-400" />
-                            {f.attack_path.map((hop, i) => (
-                              <span key={i} className="flex items-center gap-1.5">
-                                <span className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono">{hop}</span>
-                                {i < f.attack_path.length - 1 && <ChevronRight size={10} />}
-                              </span>
-                            ))}
+                      <button key={f.id} className="block w-full text-left" onClick={() => setFindingSelected(f)}>
+                        <div className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 p-3 transition-colors hover:border-gold-400/30 hover:bg-phantix-900/50">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="min-w-0 flex-1 text-sm text-slate-200 truncate">{f.title}</p>
+                            <SeverityBadge severity={f.severity} />
+                            <VerificationBadge status={f.verification_status} />
+                            {f.impact_level && <ImpactBadge level={f.impact_level} score={f.impact_score} />}
+                            {isReportable(f) ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span> : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held</span>}
+                            <ChevronRight size={14} className="shrink-0 text-slate-600" />
                           </div>
-                        )}
-                        <div className="mt-1.5 flex gap-3 text-[11px] text-slate-500">
-                          <span>{f.asset_value}</span>
-                          {f.cve && <span className="font-mono text-gold-400">{f.cve}</span>}
-                          {f.cvss && <span>CVSS {f.cvss.toFixed(1)}</span>}
-                          {f.correlation_rule && <span className="font-mono">{f.correlation_rule}</span>}
+                          {f.attack_path?.length > 0 && (
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                              <GitBranch size={11} className="text-gold-400" />
+                              {f.attack_path.map((hop, i) => (
+                                <span key={i} className="flex items-center gap-1.5">
+                                  <span className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono">{hop}</span>
+                                  {i < f.attack_path.length - 1 && <ChevronRight size={10} />}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-500">
+                            {f.asset_value && <span className="font-mono">{f.asset_value}</span>}
+                            {f.cve && <span className="font-mono text-gold-400">{f.cve}</span>}
+                            {f.cvss != null && <span>CVSS {f.cvss.toFixed(1)}</span>}
+                            {f.correlation_rule && <span className="font-mono">{f.correlation_rule}</span>}
+                          </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -571,33 +577,131 @@ export default function Vapt() {
               Correlated attack paths with verification and impact analysis. Only <strong className="text-slate-200">reportable</strong> findings are collated into client reports.
             </p>
           </div>
-          {vaptFindings.slice().sort((a, b) => impactLevelRank((b as any).impact_level) - impactLevelRank((a as any).impact_level) || b.id - a.id).map((f, i) => (
+          {vaptFindings.slice().sort((a, b) => impactLevelRank(b.impact_level) - impactLevelRank(a.impact_level) || b.id - a.id).map((f, i) => (
             <motion.div key={f.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card hover className="!p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-slate-100">{f.title}</p>
-                      {isReportable(f) ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[9px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
-                    </div>
-                    <p className="mt-0.5 text-xs text-slate-500">campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value}</span>{f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}{f.cvss && <> · CVSS {f.cvss.toFixed(1)}</>}</p>
-                  </div>
-                  {(f as any).impact_level ? <ImpactBadge level={(f as any).impact_level} score={(f as any).impact_score} /> : <SeverityBadge severity={f.severity} />}
-                  <VerificationBadge status={f.verification_status} />
-                  {(f as any).impact_analysis && (
-                    <details className="text-xs">
-                      <summary className="cursor-pointer text-slate-500 hover:text-slate-300 text-[10px]">Impact</summary>
-                      <div className="mt-2">
-                        <ImpactPanel impact={(f as any).impact_analysis} />
+              <button className="block w-full text-left" onClick={() => setFindingSelected(f)}>
+                <Card hover className="!p-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-slate-100">{f.title}</p>
+                        {isReportable(f) ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[9px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
                       </div>
-                    </details>
-                  )}
-                </div>
-              </Card>
+                      <p className="mt-0.5 text-xs text-slate-500">campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value || "—"}</span>{f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}{f.cvss != null && <> · CVSS {f.cvss.toFixed(1)}</>}{f.correlation_rule && <> · <span className="font-mono">{f.correlation_rule}</span></>}</p>
+                    </div>
+                    {f.impact_level ? <ImpactBadge level={f.impact_level} score={f.impact_score} /> : <SeverityBadge severity={f.severity} />}
+                    <VerificationBadge status={f.verification_status} />
+                    <ChevronRight size={15} className="shrink-0 text-slate-600" />
+                  </div>
+                </Card>
+              </button>
             </motion.div>
           ))}
         </motion.div>
       )}
+
+      {/* Finding detail modal */}
+      <Modal open={!!findingSelected} onClose={() => setFindingSelected(null)} title={findingSelected?.title ?? "Finding"} wide>
+        {findingSelected && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <SeverityBadge severity={findingSelected.severity} />
+              <VerificationBadge status={findingSelected.verification_status} />
+              {findingSelected.impact_level && <ImpactBadge level={findingSelected.impact_level} score={findingSelected.impact_score} />}
+              {isReportable(findingSelected)
+                ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span>
+                : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held from reports</span>}
+              {findingSelected.requires_human_review && <span className="chip text-[10px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">Human review</span>}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
+              {findingSelected.asset_value && (
+                <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500">Asset</p>
+                  <p className="mt-0.5 truncate font-mono text-slate-200">{findingSelected.asset_value}</p>
+                </div>
+              )}
+              {findingSelected.correlation_rule && (
+                <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500">Correlation rule</p>
+                  <p className="mt-0.5 truncate font-mono text-gold-300">{findingSelected.correlation_rule}</p>
+                </div>
+              )}
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Campaign</p>
+                <p className="mt-0.5 font-mono text-slate-200">#{findingSelected.campaign_id}</p>
+              </div>
+              {findingSelected.cve && (
+                <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500">CVE</p>
+                  <p className="mt-0.5 truncate font-mono text-gold-400">{findingSelected.cve}</p>
+                </div>
+              )}
+              {findingSelected.cvss != null && (
+                <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500">CVSS</p>
+                  <p className="mt-0.5 font-mono text-slate-200">{findingSelected.cvss.toFixed(1)}</p>
+                </div>
+              )}
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Detected</p>
+                <p className="mt-0.5 text-slate-200">{formatDateTime(findingSelected.created_at)}</p>
+              </div>
+            </div>
+
+            {findingSelected.description && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
+                <p className="text-sm leading-6 text-slate-300">{findingSelected.description}</p>
+              </div>
+            )}
+
+            {findingSelected.attack_path_object?.risk_summary && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Risk summary</p>
+                <p className="text-xs leading-5 text-slate-400">{findingSelected.attack_path_object.risk_summary}</p>
+              </div>
+            )}
+
+            {selectedSteps && selectedSteps.length > 0 && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Attack path</p>
+                <div className="flex flex-col gap-1">
+                  {selectedSteps.map((s, i, arr) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-phantix-800/70 font-mono text-[10px] font-bold text-slate-300">{i + 1}</span>
+                      <span className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[11px] text-slate-200">
+                        {s.title || `Asset #${s.asset_id}`}
+                      </span>
+                      {s.severity && <span className="text-[10px] text-slate-500">{s.severity}</span>}
+                      {i < arr.length - 1 && <ChevronRight size={12} className="shrink-0 text-slate-600" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!!selectedFinding?.impact_analysis?.impact_level && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
+                <ImpactPanel impact={selectedFinding.impact_analysis} />
+              </div>
+            )}
+
+            {findingSelected.verification_status && (
+              <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
+                <p className="text-slate-500">
+                  Verification: <span className="font-medium text-slate-200">{findingSelected.verification_status}</span>
+                  {findingSelected.confidence != null && <> · Confidence: <span className="font-mono text-slate-200">{findingSelected.confidence}</span></>}
+                </p>
+                <p className="mt-1 text-[10px] text-slate-500">
+                  Auto-classified by the verification engine from the correlated attack path and its underlying scan evidence.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Create modal */}
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="New campaign">

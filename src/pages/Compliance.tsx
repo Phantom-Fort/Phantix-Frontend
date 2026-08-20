@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner } from "@/components/ui";
-import { loadComplianceBundle } from "@/lib/data";
+import { loadComplianceBundle, runComplianceAssessment, collectComplianceEvidence, addComplianceEvidence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -11,7 +11,7 @@ const statusIcon = { pass: CheckCircle2, gap: XCircle, unknown: HelpCircle };
 
 export default function Compliance() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadComplianceBundle, {
+  const { data, loading, reload } = useResource(loadComplianceBundle, {
     frameworks: [],
     assessments: [],
     controlResults: [],
@@ -23,6 +23,85 @@ export default function Compliance() {
   const evidenceItems = data.evidence;
   const [tab, setTab] = useState("overview");
   const [assessOpen, setAssessOpen] = useState(false);
+  const [assessBusy, setAssessBusy] = useState(false);
+  const [assessForm, setAssessForm] = useState({
+    framework_id: "",
+    include_questionnaire: true,
+    include_posture: true,
+  });
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceBusy, setEvidenceBusy] = useState(false);
+  const [collectBusy, setCollectBusy] = useState(false);
+  const [evidenceForm, setEvidenceForm] = useState({
+    framework_id: "",
+    control_id: "",
+    title: "",
+    description: "",
+    evidence_type: "policy",
+    status: "unknown",
+  });
+
+  const openAssess = () => {
+    setAssessForm((f) => ({
+      ...f,
+      framework_id: f.framework_id || complianceFrameworks[0]?.id || "",
+    }));
+    setAssessOpen(true);
+  };
+
+  const submitAssessment = async () => {
+    if (!assessForm.framework_id) { toast("error", "Pick a framework"); return; }
+    if (!(await requireDualControl("Running a compliance assessment requires a dual-control operate session."))) return;
+    setAssessBusy(true);
+    try {
+      const created = await runComplianceAssessment(assessForm);
+      toast("success", "Assessment completed", created ? `${created.framework_name} scored ${created.score}%` : "Assessment queued");
+      setAssessOpen(false);
+      reload();
+    } catch (e: any) {
+      toast("error", "Assessment failed", e?.message || "Could not run assessment");
+    } finally {
+      setAssessBusy(false);
+    }
+  };
+
+  const submitEvidence = async () => {
+    if (!evidenceForm.framework_id || !evidenceForm.control_id) { toast("error", "Framework and control are required"); return; }
+    if (!(await requireDualControl("Registering evidence requires a dual-control operate session."))) return;
+    setEvidenceBusy(true);
+    try {
+      await addComplianceEvidence({
+        framework: evidenceForm.framework_id,
+        control_id: evidenceForm.control_id,
+        status: evidenceForm.status,
+        title: evidenceForm.title || undefined,
+        description: evidenceForm.description || undefined,
+        evidence_type: evidenceForm.evidence_type,
+      });
+      toast("success", "Evidence registered", `Mapped to ${evidenceForm.control_id}`);
+      setEvidenceOpen(false);
+      setEvidenceForm({ framework_id: "", control_id: "", title: "", description: "", evidence_type: "policy", status: "unknown" });
+      reload();
+    } catch (e: any) {
+      toast("error", "Evidence failed", e?.message || "Could not register evidence");
+    } finally {
+      setEvidenceBusy(false);
+    }
+  };
+
+  const collectEvidence = async () => {
+    if (!(await requireDualControl("Evidence collection requires a dual-control operate session."))) return;
+    setCollectBusy(true);
+    try {
+      const res = await collectComplianceEvidence();
+      toast("success", "Collection started", res.message);
+      reload();
+    } catch (e: any) {
+      toast("error", "Collection failed", e?.message || "Could not start evidence collection");
+    } finally {
+      setCollectBusy(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -31,6 +110,8 @@ export default function Compliance() {
       </div>
     );
   }
+
+  const defaultControlId = complianceFrameworks.find((f) => f.id === evidenceForm.framework_id)?.controls?.[0]?.id ?? "";
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -43,7 +124,7 @@ export default function Compliance() {
             onClick={() =>
               void (async () => {
                 if (await requireDualControl("Running a compliance assessment requires a dual-control operate session.")) {
-                  setAssessOpen(true);
+                  openAssess();
                 }
               })()
             }
@@ -110,14 +191,10 @@ export default function Compliance() {
               </div>
               <button
                 className="btn-secondary mt-4 w-full"
-                onClick={() =>
-                  void (async () => {
-                    if (!(await requireDualControl("Evidence collection requires a dual-control operate session."))) return;
-                    toast("success", "Collection started", "POST /compliance/evidence/collect");
-                  })()
-                }
+                onClick={() => void collectEvidence()}
+                disabled={collectBusy}
               >
-                <Database size={14} /> Collect evidence now
+                <Database size={14} /> {collectBusy ? "Collecting..." : "Collect evidence now"}
               </button>
             </Card>
 
@@ -129,7 +206,7 @@ export default function Compliance() {
                     <Scale size={15} className="text-gold-400" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-200">{f.name} <span className="text-xs text-slate-500">v{f.version}</span></p>
-                      <p className="text-xs text-slate-500">{f.category} · {f.control_count} controls</p>
+                      <p className="text-xs text-slate-500">{f.category} ï¿½ {f.control_count} controls</p>
                     </div>
                     <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">active</span>
                   </div>
@@ -216,7 +293,7 @@ export default function Compliance() {
               onClick={() =>
                 void (async () => {
                   if (!(await requireDualControl("Uploading evidence requires a dual-control operate session."))) return;
-                  toast("info", "Manual evidence", "POST /compliance/evidence");
+                  setEvidenceOpen(true);
                 })()
               }
             >
@@ -232,7 +309,7 @@ export default function Compliance() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{e.title}</p>
-                    <p className="text-xs text-slate-500">{e.summary} · {timeAgo(e.collected_at)}</p>
+                    <p className="text-xs text-slate-500">{e.summary} ï¿½ {timeAgo(e.collected_at)}</p>
                   </div>
                   <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{e.evidence_type}</span>
                   <StatusBadge status={e.status} />
@@ -287,35 +364,128 @@ export default function Compliance() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            setAssessOpen(false);
-            toast("success", "Assessment queued", "POST /compliance/assessments --- merges questionnaire + posture per control.");
+            void submitAssessment();
           }}
         >
           <div>
             <label className="label">Framework</label>
-            <select className="input">
+            <select
+              className="input"
+              value={assessForm.framework_id}
+              onChange={(e) => setAssessForm((f) => ({ ...f, framework_id: e.target.value }))}
+            >
               {complianceFrameworks.map((f) => (
-                <option key={f.id} value={f.id}>{f.name} v{f.version}</option>
+                <option key={f.id} value={f.id}>{f.name} v{f.version} Â· {f.control_count} controls</option>
               ))}
             </select>
           </div>
           <div className="space-y-2.5">
             <label className="flex items-center gap-2.5 text-sm text-slate-300">
-              <input type="checkbox" defaultChecked className="h-4 w-4 accent-gold-400" /> Include questionnaire (self-attestation)
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-gold-400"
+                checked={assessForm.include_questionnaire}
+                onChange={(e) => setAssessForm((f) => ({ ...f, include_questionnaire: e.target.checked }))}
+              /> Include questionnaire (self-attestation)
             </label>
             <label className="flex items-center gap-2.5 text-sm text-slate-300">
-              <input type="checkbox" defaultChecked className="h-4 w-4 accent-gold-400" /> Include posture (verified findings + asset signals)
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-gold-400"
+                checked={assessForm.include_posture}
+                onChange={(e) => setAssessForm((f) => ({ ...f, include_posture: e.target.checked }))}
+              /> Include posture (verified findings + asset signals)
             </label>
           </div>
-          <div>
-            <label className="label">Link campaign (optional)</label>
-            <select className="input">
-              <option value="">None</option>
-              <option value="13">Q3 External Assessment</option>
-              <option value="12">Payments API Deep Dive</option>
-            </select>
+          <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[11px] leading-5 text-slate-500">
+            POST /compliance/assessments â€” runs the merge engine per control and writes a scored assessment you can review under Control results.
+          </p>
+          <button className="btn-primary w-full" type="submit" disabled={assessBusy}>
+            {assessBusy ? <Spinner className="h-4 w-4" /> : <Play size={14} />} Run assessment
+          </button>
+        </form>
+      </Modal>
+
+      {/* Manual evidence modal */}
+      <Modal open={evidenceOpen} onClose={() => setEvidenceOpen(false)} title="Register manual evidence">
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submitEvidence();
+          }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Framework</label>
+              <select
+                className="input"
+                value={evidenceForm.framework_id}
+                onChange={(e) => setEvidenceForm((f) => ({ ...f, framework_id: e.target.value }))}
+              >
+                <option value="">Select framework</option>
+                {complianceFrameworks.map((f) => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Control</label>
+              <input
+                className="input"
+                placeholder={defaultControlId || "e.g. A.5.1"}
+                value={evidenceForm.control_id}
+                onChange={(e) => setEvidenceForm((f) => ({ ...f, control_id: e.target.value }))}
+              />
+            </div>
           </div>
-          <button className="btn-primary w-full">Run assessment</button>
+          <div>
+            <label className="label">Title</label>
+            <input
+              className="input"
+              placeholder="e.g. Annual access review report"
+              value={evidenceForm.title}
+              onChange={(e) => setEvidenceForm((f) => ({ ...f, title: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="label">Description</label>
+            <textarea
+              className="input min-h-[72px] w-full resize-y"
+              placeholder="What was reviewed and when"
+              value={evidenceForm.description}
+              onChange={(e) => setEvidenceForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Evidence type</label>
+              <select
+                className="input"
+                value={evidenceForm.evidence_type}
+                onChange={(e) => setEvidenceForm((f) => ({ ...f, evidence_type: e.target.value }))}
+              >
+                {["policy", "attestation", "scan_report", "training_record", "contract", "other"].map((t) => (
+                  <option key={t} value={t}>{t.replace("_", " ")}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Status</label>
+              <select
+                className="input"
+                value={evidenceForm.status}
+                onChange={(e) => setEvidenceForm((f) => ({ ...f, status: e.target.value }))}
+              >
+                {["unknown", "pass", "gap"].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button className="btn-primary w-full" type="submit" disabled={evidenceBusy}>
+            {evidenceBusy ? <Spinner className="h-4 w-4" /> : <FileUp size={14} />} Register evidence
+          </button>
         </form>
       </Modal>
     </div>

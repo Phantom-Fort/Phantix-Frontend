@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink } from "lucide-react";
+import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState } from "@/components/ui";
-import { loadReportsBundle, patchTrackerFinding } from "@/lib/data";
+import { loadReportsBundle, patchTrackerFinding, retestTrackerFinding } from "@/lib/data";
 import { api } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@/lib/utils";
@@ -165,6 +165,55 @@ export default function Reports() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const fetchedCampaigns = useRef(false);
   const highlightKey = params.get("key") || "";
+
+  // Unit retest state
+  const [retestTarget, setRetestTarget] = useState<TrackerFinding | null>(null);
+  const [retestBusy, setRetestBusy] = useState(false);
+  const [retestForm, setRetestForm] = useState({ tool: "", note: "" });
+
+  const runRetest = async () => {
+    if (!retestTarget) return;
+    if (!(await requireDualControl("Running a unit retest requires a dual-control operate session."))) return;
+    setRetestBusy(true);
+    const key = retestTarget.finding_key;
+    const previous = data;
+    try {
+      const updated = await retestTrackerFinding(key, {
+        tool: retestForm.tool.trim() || undefined,
+        note: retestForm.note.trim() || undefined,
+      });
+      const status = updated?.status ?? "retest_failed";
+      setData((bundle) => ({
+        ...bundle,
+        trackerFindings: bundle.trackerFindings.map((tf) =>
+          tf.finding_key === key
+            ? ({ ...tf, ...(updated ?? {}), status: status as TrackerFinding["status"] } as TrackerFinding)
+            : tf,
+        ),
+      }));
+      toast(
+        status === "fixed" ? "success" : status === "retest_failed" ? "error" : "info",
+        status === "fixed" ? "Fix confirmed — finding closed" : "Retest complete",
+        status === "fixed"
+          ? `${key} re-scanned clean — auto-closed as fixed`
+          : status === "retest_failed"
+            ? `${key} still matches — remains open for remediation`
+            : `${key} retest inconclusive — status unchanged`,
+      );
+      setRetestTarget(null);
+      setRetestForm({ tool: "", note: "" });
+      reload();
+    } catch (err: any) {
+      setData(previous);
+      if (err?.status === 403) {
+        toast("error", "Dual-control required", err.message ?? "Unlock operate and retry");
+      } else {
+        toast("error", "Retest failed", err?.message ?? "Could not run retest");
+      }
+    } finally {
+      setRetestBusy(false);
+    }
+  };
 
   // Detail modal
   const [detail, setDetail] = useState<any>(null);
@@ -515,6 +564,32 @@ export default function Reports() {
                                 <option key={s} value={s}>{titleCase(s)}</option>
                               ))}
                             </select>
+                            <button
+                              title="Run a targeted unit retest of just this finding's asset; auto-closes when the fix is confirmed"
+                              className="rounded-lg border border-gold-400/30 bg-gold-400/10 px-2 py-1 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-50"
+                              disabled={f.status === "fixed" || f.status === "accepted"}
+                              onClick={() => {
+                                setRetestTarget(f);
+                                setRetestForm({ tool: "", note: "" });
+                              }}
+                            >
+                              <RefreshCw size={12} className="mr-1 inline" /> Retest
+                            </button>
+                            {f.retest_status && (
+                              <span
+                                title={f.retest_status}
+                                className={cx(
+                                  "chip text-[9px]",
+                                  f.retest_status === "confirmed"
+                                    ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
+                                    : f.retest_status === "failed"
+                                      ? "border-severity-critical/40 bg-severity-critical/10 text-severity-critical"
+                                      : "border-slate-500/40 bg-slate-500/10 text-slate-400",
+                                )}
+                              >
+                                {f.retest_status}
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="td text-xs text-slate-500 whitespace-nowrap">{timeAgo(f.updated_at)}</td>
@@ -720,6 +795,64 @@ export default function Reports() {
                 )}
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Unit retest modal */}
+      <Modal
+        open={!!retestTarget}
+        onClose={() => setRetestTarget(null)}
+        title={retestTarget ? `Unit retest — ${retestTarget.finding_key}` : "Unit retest"}
+      >
+        {retestTarget && (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3 text-sm">
+              <p className="font-medium text-slate-100">{retestTarget.title}</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                <SeverityBadge severity={retestTarget.severity} />
+                {retestTarget.asset_value && <span className="font-mono">{retestTarget.asset_value}</span>}
+                {retestTarget.priority && <span>· {retestTarget.priority}</span>}
+              </div>
+            </div>
+            <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[11px] leading-5 text-slate-500">
+              Runs a targeted scan of only this finding's asset with the tool family that originally flagged it
+              (or the override below). If the retest comes back clean, the finding is{" "}
+              <strong className="text-emerald-300">closed automatically (fixed)</strong>.
+            </p>
+            <form
+              className="space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void runRetest();
+              }}
+            >
+              <div>
+                <label className="label">Tool override (optional)</label>
+                <input
+                  className="input"
+                  placeholder="nmap · nuclei · api_scan · apk ..."
+                  value={retestForm.tool}
+                  onChange={(e) => setRetestForm((f) => ({ ...f, tool: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="label">Note (optional)</label>
+                <textarea
+                  className="input min-h-[64px] w-full resize-y"
+                  placeholder="e.g. patch applied 2026-08-19, expecting clean retest"
+                  value={retestForm.note}
+                  onChange={(e) => setRetestForm((f) => ({ ...f, note: e.target.value }))}
+                />
+              </div>
+              <button className="btn-primary w-full" type="submit" disabled={retestBusy}>
+                {retestBusy ? <Spinner className="h-4 w-4" /> : <RefreshCw size={14} />} Run unit retest
+              </button>
+              <p className="text-[10px] text-slate-500">
+                <Lock size={10} className="mr-1 inline text-gold-400" />
+                POST /reports/tracker/{retestTarget.finding_key}/retest — needs dual-control when configured.
+              </p>
+            </form>
           </div>
         )}
       </Modal>

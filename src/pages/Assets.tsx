@@ -22,6 +22,18 @@ const typeIcon: Record<string, React.ReactNode> = {
   database_connection: <Boxes size={15} />,
 };
 
+/** Tier badge for discovery-tiered assets (metadata.tier / metadata.priority). */
+function assetTierBadge(a: Asset | null | undefined): { label: string; cls: string } | null {
+  const md = a?.metadata ?? ({} as Record<string, unknown>);
+  const raw = md.tier ?? md.priority ?? "";
+  const t = String(raw).toLowerCase();
+  if (t === "high") return { label: "High tier", cls: "border-gold-400/30 bg-gold-400/10 text-gold-300" };
+  if (t === "medium") return { label: "Medium tier", cls: "border-blue-400/30 bg-blue-400/10 text-blue-300" };
+  if (t === "low") return { label: "Low tier", cls: "border-slate-500/30 bg-slate-500/10 text-slate-400" };
+  if (t === "true" || t === "1") return { label: "Priority", cls: "border-gold-400/30 bg-gold-400/10 text-gold-300" };
+  return null;
+}
+
 export default function Assets() {
   const { toast, requireDualControl } = useStore();
   const { data, loading, reload } = useResource(loadAssetsBundle, {
@@ -385,6 +397,10 @@ export default function Assets() {
                           <div className="min-w-0">
                             <p className="truncate font-medium text-slate-200">{a.value}</p>
                             <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
+                            {(() => {
+                              const t = assetTierBadge(a);
+                              return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium ${t.cls}`}>{t.label}</span> : null;
+                            })()}
                           </div>
                         </div>
                       </td>
@@ -641,6 +657,10 @@ export default function Assets() {
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               {selected.is_verified && <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><ShieldCheck size={12} /> {selected.verification_method ?? "verified"}</span>}
+              {(() => {
+                const t = assetTierBadge(selected);
+                return t ? <span className={`chip ${t.cls}`}>{t.label}</span> : null;
+              })()}
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">{titleCase(selected.asset_type)}</span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300 capitalize">{selected.environment}</span>
               <span className="chip border-severity-high/30 bg-severity-high/10 text-severity-high capitalize">{selected.criticality} criticality</span>

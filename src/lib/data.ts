@@ -264,14 +264,65 @@ export async function loadScansBundle() {
   const meta: LoadMeta = {};
   const [scanJobs, scanResults] = await Promise.all([
     softList<ScanJob>("/scans/jobs", meta),
-    softList<ScanResult>("/scans/results", meta),
+    softList<ScanResult>("/scans/results?limit=500", meta),
   ]);
   return {
     scanJobs,
-    scanResults,
+    scanResults: scanResults.map(normalizeScanResult),
     securityDbBlocked: !!meta.securityDbBlocked,
     error: meta.error ?? null,
   };
+}
+
+/** Promote evidence.verification / evidence.impact_analysis to top-level ScanResult fields. */
+export function normalizeScanResult(raw: unknown): ScanResult {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const ver = (r.evidence as any)?.verification ?? {};
+  const impact = (r.evidence as any)?.impact_analysis ?? {};
+  return {
+    ...(r as unknown as ScanResult),
+    asset_value: r.asset_value != null ? String(r.asset_value) : undefined,
+    verification_status: (ver.verification_status ?? r.verification_status ?? "unverified") as ScanResult["verification_status"],
+    confidence: ver.confidence ?? r.confidence,
+    reportable: ver.reportable ?? r.reportable,
+    impact_level: impact.impact_level ?? r.impact_level,
+    impact_score: impact.impact_score ?? r.impact_score,
+  };
+}
+
+/** Apply a manual review decision to a scan result's verification gate. */
+export async function verifyScanResult(
+  resultId: number,
+  body: { verification_status: "manually_verified" | "rejected" | "false_positive"; note?: string },
+): Promise<ScanResult | null> {
+  if (isDemoMode()) {
+    await delay(200);
+    const idx = demo.scanResults.findIndex((s) => s.id === resultId);
+    if (idx < 0) return null;
+    const cur = demo.scanResults[idx];
+    const reportable = body.verification_status === "manually_verified";
+    const updated: ScanResult = {
+      ...cur,
+      verification_status: body.verification_status,
+      confidence: reportable ? 100 : 20,
+      reportable,
+      evidence: {
+        ...(cur.evidence ?? {}),
+        verification: {
+          ...(cur.evidence?.verification ?? {}),
+          confidence: reportable ? "manually-verified" : "heuristic",
+          verification_status: body.verification_status,
+          reportable,
+          method: "manual_review",
+          verification_reason: body.note || (reportable ? "Manually verified by analyst" : "Marked not-reportable by analyst"),
+        },
+      },
+    };
+    demo.scanResults[idx] = updated;
+    return updated;
+  }
+  const raw = await api.patch<any>(`/scans/results/${resultId}/verification`, body);
+  return raw ? normalizeScanResult(raw) : null;
 }
 
 export async function loadVaptBundle() {
@@ -286,16 +337,17 @@ export async function loadVaptBundle() {
     };
   }
   const meta: LoadMeta = {};
-  const campaigns = await softList<VaptCampaign>("/vapt/campaigns", meta);
+  const rawCampaigns = await softList<Record<string, unknown>>("/vapt/campaigns", meta);
+  const campaigns = rawCampaigns.map((c) => normalizeVaptCampaign(c)).filter(Boolean) as VaptCampaign[];
   const findings: VaptFinding[] = [];
   const approvals: VaptApproval[] = [];
   await Promise.all(
     campaigns.slice(0, 25).map(async (c) => {
       const [f, a] = await Promise.all([
-        softList<VaptFinding>(`/vapt/campaigns/${c.id}/findings`, meta),
+        softList<Record<string, unknown>>(`/vapt/campaigns/${c.id}/findings`, meta),
         softList<VaptApproval>(`/vapt/campaigns/${c.id}/approvals`, meta),
       ]);
-      for (const item of f) findings.push({ ...item, campaign_id: item.campaign_id ?? c.id });
+      for (const item of f) findings.push(normalizeVaptFinding(item, c.id));
       for (const item of a) {
         approvals.push({
           ...item,
@@ -311,6 +363,67 @@ export async function loadVaptBundle() {
     approvals,
     securityDbBlocked: !!meta.securityDbBlocked,
     error: meta.error ?? null,
+  };
+}
+
+/** Map CampaignRead (campaign_name / approval_required / asset_scope / total_findings) → VaptCampaign. */
+export function normalizeVaptCampaign(raw: Record<string, unknown>): VaptCampaign | null {
+  if (!raw || raw.id == null) return null;
+  const scope = (raw.asset_scope ?? {}) as Record<string, unknown>;
+  const assetIds = Array.isArray(scope.asset_ids) ? (scope.asset_ids as number[]) : [];
+  const assetTypes = Array.isArray(scope.asset_types) ? (scope.asset_types as string[]) : [];
+  const steps = (raw.procedure_snapshot as any)?.steps ?? [];
+  const stepIndex = Number(raw.current_step_index ?? 0);
+  const progress =
+    steps.length > 0 ? Math.min(100, Math.max(0, Math.round(((stepIndex + 1) / steps.length) * 100))) : 0;
+  const c = raw as unknown as VaptCampaign;
+  return {
+    ...c,
+    name: String(raw.campaign_name ?? c.name ?? "Untitled campaign"),
+    findings_count: Number(raw.findings_count ?? raw.total_findings ?? 0),
+    asset_count: Number(
+      raw.asset_count ??
+        (assetIds.length > 0 ? assetIds.length : assetTypes.length > 0 ? assetTypes.length : 0),
+    ),
+    requires_approval: Boolean(raw.requires_approval ?? raw.approval_required ?? false),
+    phase: String(raw.current_phase ?? c.phase ?? ""),
+    progress: Number(raw.progress ?? progress),
+    created_by: String(raw.created_by ?? ""),
+    finished_at: raw.finished_at != null ? String(raw.finished_at) : (raw.completed_at as string | null) ?? null,
+    asset_scope: { asset_ids: assetIds, asset_types: assetTypes },
+  };
+}
+
+/** Map enriched CorrelatedFindingRead → VaptFinding (attack_path dict → string[] of step titles). */
+export function normalizeVaptFinding(raw: Record<string, unknown>, fallbackCampaignId: number): VaptFinding {
+  const f = raw as unknown as VaptFinding;
+  const apObj = (raw.attack_path ?? undefined) as VaptFinding["attack_path_object"];
+  const steps = Array.isArray(apObj?.steps)
+    ? apObj.steps
+        .map((s) => (s && s.title ? String(s.title) : null))
+        .filter((s): s is string => !!s)
+    : [];
+  const attackPath = Array.isArray(raw.attack_path) ? (raw.attack_path as string[]) : steps;
+  return {
+    ...f,
+    campaign_id: Number(raw.campaign_id ?? fallbackCampaignId),
+    verification_status: (raw.verification_status ?? "unverified") as VaptFinding["verification_status"],
+    confidence: raw.confidence as VaptFinding["confidence"],
+    asset_value: raw.asset_value != null ? String(raw.asset_value) : "",
+    correlation_rule: raw.correlation_rule != null ? String(raw.correlation_rule) : null,
+    attack_path: attackPath,
+    attack_path_object: apObj as VaptFinding["attack_path_object"],
+    cve: raw.cve != null ? String(raw.cve) : null,
+    cvss: raw.cvss != null ? Number(raw.cvss) : null,
+    reportable: Boolean(raw.reportable ?? f.reportable),
+    impact_level: raw.impact_level != null ? String(raw.impact_level) : undefined,
+    impact_score: raw.impact_score != null ? Number(raw.impact_score) : undefined,
+    impact_analysis: (raw.impact_analysis as VaptFinding["impact_analysis"]) ?? undefined,
+    description: raw.description != null ? String(raw.description) : undefined,
+    correlation_type: raw.correlation_type != null ? String(raw.correlation_type) : undefined,
+    requires_human_review: Boolean(raw.requires_human_review),
+    ai_analysis_requested: Boolean(raw.ai_analysis_requested),
+    created_at: raw.created_at != null ? String(raw.created_at) : f.created_at,
   };
 }
 
@@ -346,17 +459,212 @@ export async function loadComplianceBundle() {
       evidence: demo.evidenceItems,
     };
   }
-  const [frameworks, assessments, evidence] = await Promise.all([
-    softList<ComplianceFramework>("/compliance/frameworks"),
-    softList<ComplianceAssessment>("/compliance/assessments"),
-    softList<EvidenceItem>("/compliance/evidence"),
-  ]);
+  const rawFrameworks = await softList<Record<string, unknown>>("/compliance/frameworks");
+  const rawAssessments = await softList<Record<string, unknown>>("/compliance/assessments");
+  const frameworks = rawFrameworks.map(normalizeComplianceFramework).filter(Boolean) as ComplianceFramework[];
+  const frameworkName = new Map<string, string>();
+  const controlMeta = new Map<string, { title: string; category: string }>();
+  for (const f of frameworks) {
+    frameworkName.set(f.id, f.name);
+    for (const c of (f as unknown as { controls?: { id?: string; title?: string; category?: string }[] }).controls ?? []) {
+      if (c.id) controlMeta.set(c.id, { title: c.title ?? c.id, category: c.category ?? "" });
+    }
+  }
+  const assessments = rawAssessments
+    .map((a) => normalizeComplianceAssessment(a, frameworkName))
+    .filter(Boolean) as ComplianceAssessment[];
   let controlResults: ComplianceControlResult[] = [];
   const latest = assessments[0];
   if (latest?.id != null) {
-    controlResults = await softList<ComplianceControlResult>(`/compliance/assessments/${latest.id}/results`);
+    const rawControlResults = await softList<Record<string, unknown>>(
+      `/compliance/assessments/${latest.id}/results`,
+    );
+    controlResults = rawControlResults
+      .map((c) => normalizeComplianceControlResult(c, controlMeta))
+      .filter(Boolean) as ComplianceControlResult[];
   }
+  const rawEvidence = await softList<Record<string, unknown>>("/compliance/evidence");
+  const evidence = rawEvidence.map(normalizeEvidenceItem).filter(Boolean) as EvidenceItem[];
   return { frameworks, assessments, controlResults, evidence };
+}
+
+/** Map FrameworkInfo → ComplianceFramework (id from framework_id, category/recommended derived). */
+export function normalizeComplianceFramework(raw: Record<string, unknown>): ComplianceFramework | null {
+  if (!raw || !raw.framework_id) return null;
+  const controls = Array.isArray(raw.controls) ? (raw.controls as Record<string, unknown>[]) : [];
+  const firstControl = controls[0] ?? {};
+  const triggers = (raw.jurisdiction_triggers ?? {}) as Record<string, unknown>;
+  return {
+    id: String(raw.framework_id),
+    name: String(raw.name ?? raw.framework_id),
+    version: String(raw.version ?? "1.0"),
+    description: String(raw.description ?? ""),
+    control_count: Number(raw.control_count ?? controls.length ?? 0),
+    category: String(firstControl.category ?? raw.category ?? "Framework"),
+    is_active: true,
+    recommended: Object.keys(triggers).length > 0,
+    controls,
+  } as ComplianceFramework;
+}
+
+/** Map AssessmentRead → ComplianceAssessment (score from overall_score, counts from pass/gap/total). */
+export function normalizeComplianceAssessment(
+  raw: Record<string, unknown>,
+  frameworkName: Map<string, string>,
+): ComplianceAssessment | null {
+  if (!raw || raw.id == null) return null;
+  const total = Number(raw.total_controls ?? 0);
+  const passed = Number(raw.pass_count ?? 0);
+  const gap = Number(raw.gap_count ?? 0);
+  const unknown = Math.max(0, total - passed - gap);
+  const mode = raw.evidence_mode != null ? String(raw.evidence_mode) : "questionnaire+posture";
+  return {
+    id: Number(raw.id),
+    framework_id: String(raw.framework_id ?? ""),
+    framework_name: frameworkName.get(String(raw.framework_id ?? "")) ?? String(raw.framework_name ?? raw.framework_id ?? ""),
+    status: (raw.status === "running" || raw.status === "completed" ? raw.status : "completed") as "completed" | "running",
+    score: Math.round(Number(raw.overall_score ?? 0)),
+    controls_passed: passed,
+    controls_gap: gap,
+    controls_unknown: unknown,
+    include_questionnaire: mode.includes("questionnaire"),
+    include_posture: mode.includes("posture"),
+    created_at: String(raw.created_at ?? new Date().toISOString()),
+  };
+}
+
+/** Map per-control assessment result → ComplianceControlResult, enriching title/category from the framework catalog. */
+export function normalizeComplianceControlResult(
+  raw: Record<string, unknown>,
+  controlMeta: Map<string, { title: string; category: string }>,
+): ComplianceControlResult | null {
+  if (!raw || !raw.control_id) return null;
+  const meta = controlMeta.get(String(raw.control_id));
+  const statusRaw = String(raw.status ?? "").toLowerCase();
+  const status =
+    statusRaw === "pass" || statusRaw === "gap" || statusRaw === "unknown" ? statusRaw : "unknown";
+  const sourceRaw = String(raw.evidence_source ?? raw.source ?? "").toLowerCase();
+  const source =
+    sourceRaw === "questionnaire" || sourceRaw === "posture" || sourceRaw === "merged"
+      ? sourceRaw
+      : "merged";
+  const evVal = Number(raw.evidence_value);
+  return {
+    control_id: String(raw.control_id),
+    title: meta?.title ?? String(raw.title ?? raw.control_id),
+    category: meta?.category ?? String(raw.category ?? ""),
+    status: status as "pass" | "gap" | "unknown",
+    source: source as "questionnaire" | "posture" | "merged",
+    evidence_count: Number.isFinite(evVal) ? evVal : 0,
+    recommendation: String(raw.recommendation ?? ""),
+  };
+}
+
+/** Map a stored compliance_evidence row → EvidenceItem. */
+export function normalizeEvidenceItem(raw: Record<string, unknown>): EvidenceItem | null {
+  if (!raw || raw.id == null) return null;
+  const ev = (raw.evidence ?? {}) as Record<string, unknown>;
+  const statusRaw = String(raw.status ?? "").toLowerCase();
+  const status =
+    statusRaw === "collected" || statusRaw === "manual" || statusRaw === "failed"
+      ? statusRaw
+      : "collected";
+  return {
+    id: Number(raw.id),
+    connector: String(ev.source ?? "manual"),
+    evidence_type: String(ev.evidence_type ?? ev.type ?? ""),
+    title: String(ev.title ?? `Evidence #${raw.id}`),
+    status: status as EvidenceItem["status"],
+    collected_at: String(raw.collected_at ?? raw.created_at ?? new Date().toISOString()),
+    summary: String(raw.notes ?? ev.description ?? ev.summary ?? ""),
+  };
+}
+
+/** Run a merged compliance assessment. */
+export async function runComplianceAssessment(body: {
+  framework_id: string;
+  campaign_id?: number | null;
+  include_questionnaire?: boolean;
+  include_posture?: boolean;
+}): Promise<ComplianceAssessment | null> {
+  if (isDemoMode()) {
+    await delay(400);
+    const idx = demo.complianceAssessments.length + 1;
+    const fw = demo.complianceFrameworks.find((f) => f.id === body.framework_id);
+    const score = Math.round(55 + Math.random() * 25);
+    const total = fw?.control_count ?? 60;
+    const passed = Math.round((score / 100) * total);
+    const created: ComplianceAssessment = {
+      id: idx,
+      framework_id: body.framework_id,
+      framework_name: fw?.name ?? body.framework_id,
+      status: "completed",
+      score,
+      controls_passed: passed,
+      controls_gap: Math.round((total - passed) * 0.6),
+      controls_unknown: total - passed,
+      include_questionnaire: body.include_questionnaire ?? true,
+      include_posture: body.include_posture ?? true,
+      created_at: new Date().toISOString(),
+    };
+    demo.complianceAssessments.unshift(created);
+    return created;
+  }
+  const raw = await api.post<any>("/compliance/assessments", {
+    framework_id: body.framework_id,
+    campaign_id: body.campaign_id ?? null,
+    include_questionnaire: body.include_questionnaire ?? true,
+    include_posture: body.include_posture ?? true,
+  });
+  return normalizeComplianceAssessment(raw ?? {}, new Map());
+}
+
+/** Trigger evidence connectors (POST /compliance/evidence/collect). */
+export async function collectComplianceEvidence(): Promise<{ ok: boolean; message: string }> {
+  if (isDemoMode()) {
+    await delay(300);
+    return { ok: true, message: "Evidence collection started (demo)" };
+  }
+  const raw = await api.post<any>("/compliance/evidence/collect", {});
+  return { ok: true, message: String(raw?.detail ?? raw?.status ?? "Evidence collection started") };
+}
+
+/** Register a manual evidence item for a control (POST /compliance/evidence). */
+export async function addComplianceEvidence(body: {
+  framework: string;
+  control_id: string;
+  status?: string;
+  title?: string;
+  description?: string;
+  evidence_type?: string;
+  source_ref?: string;
+  notes?: string;
+}): Promise<{ ok: boolean; evidence?: Record<string, unknown> }> {
+  if (isDemoMode()) {
+    await delay(200);
+    const item: EvidenceItem = {
+      id: 9000 + demo.evidenceItems.length,
+      connector: "manual",
+      evidence_type: body.evidence_type ?? "policy",
+      title: body.title ?? "Manual evidence",
+      status: "manual",
+      collected_at: new Date().toISOString(),
+      summary: body.description ?? "",
+    };
+    demo.evidenceItems.unshift(item);
+    return { ok: true, evidence: item as unknown as Record<string, unknown> };
+  }
+  const raw = await api.post<any>("/compliance/evidence", {
+    framework: body.framework,
+    control_id: body.control_id,
+    status: body.status ?? "unknown",
+    title: body.title,
+    description: body.description,
+    evidence_type: body.evidence_type,
+    source_ref: body.source_ref,
+    notes: body.notes,
+  });
+  return { ok: true, evidence: raw?.evidence };
 }
 
 function trackerFromReports(reports: any[]): TrackerFinding[] {
@@ -442,6 +750,33 @@ export async function patchTrackerFinding(
   }
   const raw = await api.patch<any>(
     `/reports/tracker/${encodeURIComponent(findingKey)}`,
+    body,
+  );
+  return raw ? (normalizeTrackerFinding(raw) as TrackerFinding) : null;
+}
+
+/** Unit retest for a single finding — targeted scan of that asset only.
+ *  Backend auto-closes the finding (status=fixed) when the fix is confirmed. */
+export async function retestTrackerFinding(
+  findingKey: string,
+  body: { tool?: string; note?: string } = {},
+): Promise<TrackerFinding | null> {
+  if (isDemoMode()) {
+    await delay(1200);
+    const row = demo.trackerFindings.find((t) => t.finding_key === findingKey);
+    if (!row) return null;
+    const fixed = (row.status as string) === "fixed" || !("error" in body);
+    const updated = {
+      ...row,
+      status: fixed ? ("fixed" as const) : ("retest_failed" as const),
+      retest_status: fixed ? "confirmed" : "failed",
+    } as TrackerFinding;
+    const idx = demo.trackerFindings.findIndex((t) => t.finding_key === findingKey);
+    if (idx >= 0) demo.trackerFindings[idx] = updated;
+    return updated;
+  }
+  const raw = await api.post<any>(
+    `/reports/tracker/${encodeURIComponent(findingKey)}/retest`,
     body,
   );
   return raw ? (normalizeTrackerFinding(raw) as TrackerFinding) : null;

@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
+import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadScansBundle } from "@/lib/data";
+import { loadScansBundle, verifyScanResult } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
 import { timeAgo, formatDateTime, cx, severityHex } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import type { VerificationStatus } from "@/lib/types";
+import type { VerificationStatus, ScanResult } from "@/lib/types";
+
+const PAGE_SIZES = [20, 50, 100];
 
 export default function Scans() {
   const { toast, requireDualControl } = useStore();
@@ -21,7 +23,13 @@ export default function Scans() {
   const { scanJobs, scanResults, securityDbBlocked, error: loadError } = data;
   const [tab, setTab] = useState("jobs");
   const [verFilter, setVerFilter] = useState<"all" | VerificationStatus>("all");
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [newOpen, setNewOpen] = useState(false);
+  const [selected, setSelected] = useState<ScanResult | null>(null);
+  const [note, setNote] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState<VerificationStatus | null>(null);
   const active = scanJobs.find((j) => j.status === "running" || j.status === "queued");
 
   // Surface the running scan job in the global operations tray (Coolify-style).
@@ -53,10 +61,44 @@ export default function Scans() {
     return () => { if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; } };
   }, [active, reload]);
 
-  const results = useMemo(
-    () => scanResults.filter((r) => verFilter === "all" || r.verification_status === verFilter),
-    [scanResults, verFilter],
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return scanResults.filter((r) => {
+      if (verFilter !== "all" && r.verification_status !== verFilter) return false;
+      if (!q) return true;
+      return [r.title, r.asset_value, r.tool, r.severity, String(r.id)]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(q));
+    });
+  }, [scanResults, verFilter, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filtered, safePage, pageSize],
   );
+
+  useEffect(() => { setPage(1); }, [query, verFilter, pageSize]);
+
+  const handleVerify = async (status: VerificationStatus) => {
+    if (!selected) return;
+    if (!(await requireDualControl("Changing a finding's verification status requires a dual-control operate session."))) return;
+    setVerifyBusy(status);
+    try {
+      const updated = await verifyScanResult(selected.id, { verification_status: status as "manually_verified" | "rejected" | "false_positive", note: note || undefined });
+      if (updated) {
+        setSelected(updated);
+        setNote("");
+        toast("success", "Verification updated", `${status.replace(/_/g, " ")} — the reporting gate now reflects this decision.`);
+        reload();
+      }
+    } catch (e: any) {
+      toast("error", "Verification failed", e?.message || "Could not update verification");
+    } finally {
+      setVerifyBusy(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -65,6 +107,9 @@ export default function Scans() {
       </div>
     );
   }
+
+  const selVer = selected ? ((selected.evidence?.verification ?? {}) as any) : {};
+  const selImpact = selected ? (selected.evidence?.impact_analysis ?? {}) : {};
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -103,7 +148,7 @@ export default function Scans() {
                   <StatusBadge status={active.status} />
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Started {timeAgo(active.started_at)} by {active.initiated_by} � idempotency {active.idempotency_key}
+                  Started {timeAgo(active.started_at)} by {active.initiated_by} · idempotency {active.idempotency_key}
                 </p>
                 <div className="mt-2.5 max-w-md"><ProgressBar value={active.progress} color="#38BDF8" /></div>
               </div>
@@ -183,63 +228,225 @@ export default function Scans() {
             <p className="text-xs leading-5 text-slate-400">
               Each result carries <span className="font-mono text-slate-300">evidence.verification</span>. Only{" "}
               <strong className="text-emerald-400">verified</strong> rows feed risks and client reports --- unverified
-              heuristics are held out by the reporting gate.
+              heuristics are held out by the reporting gate. Click a result to review it and apply a manual decision.
             </p>
           </div>
 
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {(["all", "auto_verified", "manually_verified", "unverified", "rejected"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setVerFilter(v)}
-                className={cx(
-                  "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border",
-                  verFilter === v ? "border-gold-400/40 bg-gold-400/12 text-gold-300" : "border-phantix-700/50 text-slate-400 hover:bg-phantix-800/60",
-                )}
-              >
-                {v === "all" ? "All" : v.replace("_", " ")}
-              </button>
-            ))}
+          {/* Filters + search */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                className="input !w-64 !py-2 pl-8"
+                placeholder="Search title, asset, tool, CVE..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {(["all", "auto_verified", "manually_verified", "unverified", "rejected", "false_positive"] as const).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setVerFilter(v)}
+                  className={cx(
+                    "rounded-lg px-3 py-1.5 text-xs font-medium transition-colors border",
+                    verFilter === v ? "border-gold-400/40 bg-gold-400/12 text-gold-300" : "border-phantix-700/50 text-slate-400 hover:bg-phantix-800/60",
+                  )}
+                >
+                  {v === "all" ? "All" : v.replace(/_/g, " ")}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2.5">
-            {results.map((r, i) => (
-              <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <Card hover className="!p-4">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: severityHex[r.severity], boxShadow: `0 0 10px ${severityHex[r.severity]}88` }} />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-slate-100">{r.title}</p>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        <span className="font-mono">{r.asset_value}</span> � {r.tool} � job #{r.scan_job_id} � {timeAgo(r.created_at)}
-                      </p>
+            {paginated.length === 0 && (
+              <Card><EmptyState icon={<Search size={20} />} title="No scan results" body="Adjust filters or run a new scan job." /></Card>
+            )}
+            {paginated.map((r, i) => (
+              <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+                <button className="block w-full text-left" onClick={() => { setSelected(r); setNote(""); }}>
+                  <Card hover className="!p-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: severityHex[r.severity], boxShadow: `0 0 10px ${severityHex[r.severity]}88` }} />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-100">{r.title}</p>
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          <span className="font-mono">{r.asset_value || "—"}</span> · {r.tool} · job #{r.scan_job_id} · {timeAgo(r.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const conf = r.evidence?.verification?.confidence ?? r.confidence;
+                          const reportable = r.evidence?.verification?.reportable ?? r.reportable;
+                          const verStatus = r.verification_status;
+                          const impact = r.impact_level;
+                          const impactScore = r.impact_score;
+                          return (
+                            <>
+                              {conf != null && <span className="hidden font-mono text-xs text-slate-500 sm:block">{conf} conf</span>}
+                              {reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
+                              {reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
+                              <SeverityBadge severity={r.severity} />
+                              {impact != null && <ImpactBadge level={impact} score={impactScore} />}
+                              <VerificationBadge status={verStatus} />
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <ChevronRight size={15} className="shrink-0 text-slate-600" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      {(() => {
-                        const conf = (r as any).evidence?.verification?.confidence ?? r.confidence;
-                        const reportable = (r as any).evidence?.verification?.reportable;
-                        const verStatus = (r as any).evidence?.verification?.verification_status ?? r.verification_status;
-                        const impact = (r as any).evidence?.impact_analysis?.impact_level ?? (r as any).impact_level;
-                        const impactScore = (r as any).evidence?.impact_analysis?.impact_score ?? (r as any).impact_score;
-                        return (
-                          <>
-                            {conf != null && <span className="hidden font-mono text-xs text-slate-500 sm:block">{conf}% conf</span>}
-                            {reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
-                            {reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
-                            <SeverityBadge severity={r.severity} />
-                            {impact != null && <ImpactBadge level={impact} score={impactScore} />}
-                            <VerificationBadge status={verStatus} />
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                </button>
               </motion.div>
             ))}
           </div>
+
+          {/* Pagination */}
+          {filtered.length > 0 && (
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-phantix-800/40 pt-4">
+              <p className="text-xs text-slate-500">
+                Showing <span className="font-mono text-slate-300">{(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}</span> of{" "}
+                <span className="font-mono text-slate-300">{filtered.length}</span> results
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-500">Per page</span>
+                  <select className="input !w-auto !py-1.5 text-xs" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                    {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    className="btn-secondary !px-2.5 !py-1.5"
+                    disabled={safePage <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="px-2 font-mono text-xs text-slate-300">{safePage} / {totalPages}</span>
+                  <button
+                    className="btn-secondary !px-2.5 !py-1.5"
+                    disabled={safePage >= totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       )}
+
+      {/* Result detail modal */}
+      <Modal open={!!selected} onClose={() => setSelected(null)} title={selected?.title ?? "Scan result"} wide>
+        {selected && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <SeverityBadge severity={selected.severity} />
+              <VerificationBadge status={selected.verification_status} />
+              {selected.reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
+              {selected.reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held from reports</span>}
+              {(selected.impact_level as string) && <ImpactBadge level={selected.impact_level} score={selected.impact_score} />}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Asset</p>
+                <p className="mt-0.5 font-mono text-slate-200">{selected.asset_value || "—"}</p>
+              </div>
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Tool / Job</p>
+                <p className="mt-0.5 font-mono text-slate-200">{selected.tool} · #{selected.scan_job_id}</p>
+              </div>
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Detected</p>
+                <p className="mt-0.5 text-slate-200">{formatDateTime(selected.created_at)}</p>
+              </div>
+              <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">Result ID</p>
+                <p className="mt-0.5 font-mono text-slate-200">#{selected.id}</p>
+              </div>
+            </div>
+
+            {selected.description && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
+                <p className="text-sm leading-6 text-slate-300">{selected.description}</p>
+              </div>
+            )}
+
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Verification</p>
+              <div className="space-y-1.5 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
+                <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <span className="text-slate-500">Status: <span className="font-medium text-slate-200">{selected.verification_status}</span></span>
+                  {selVer.confidence && <span className="text-slate-500">Confidence: <span className="font-mono text-slate-200">{selVer.confidence}</span></span>}
+                  {selVer.method && <span className="text-slate-500">Method: <span className="font-mono text-slate-200">{selVer.method}</span></span>}
+                </div>
+                {selVer.verification_reason && <p className="text-slate-400">{selVer.verification_reason}</p>}
+                {selVer.verified_by && <p className="text-[11px] text-slate-500">Reviewed by {selVer.verified_by}{selVer.verified_at ? ` · ${formatDateTime(selVer.verified_at)}` : ""}</p>}
+              </div>
+            </div>
+
+            {selImpact?.impact_level && (
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
+                <ImpactPanel impact={selImpact} />
+              </div>
+            )}
+
+            {(selected as any).evidence && Object.keys((selected as any).evidence).length > 0 && (
+              <details className="text-xs">
+                <summary className="flex cursor-pointer items-center gap-1 text-slate-500 hover:text-slate-300 text-[11px]">
+                  <ChevronDown size={12} /> Raw evidence
+                </summary>
+                <pre className="mt-2 max-h-60 overflow-auto rounded-lg border border-phantix-700/40 bg-phantix-950/70 p-2.5 font-mono text-[10px] leading-4 text-slate-400">
+                  {JSON.stringify((selected as any).evidence, null, 2)}
+                </pre>
+              </details>
+            )}
+
+            <div className="border-t border-phantix-700/40 pt-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Manual review decision</p>
+              <textarea
+                className="input mb-3 min-h-[64px] w-full resize-y"
+                placeholder="Optional note (e.g. evidence confirmed on retest, customer verified, duplicates CVE-XXXX...)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="btn-primary !py-2 text-sm"
+                  disabled={verifyBusy !== null || selected.verification_status === "manually_verified"}
+                  onClick={() => void handleVerify("manually_verified")}
+                >
+                  {verifyBusy === "manually_verified" ? <Spinner className="h-3.5 w-3.5" /> : <CheckCircle2 size={14} />} Verify
+                </button>
+                <button
+                  className="btn-danger !py-2 text-sm"
+                  disabled={verifyBusy !== null || selected.verification_status === "false_positive"}
+                  onClick={() => void handleVerify("false_positive")}
+                >
+                  {verifyBusy === "false_positive" ? <Spinner className="h-3.5 w-3.5" /> : <AlertTriangle size={14} />} False positive
+                </button>
+                <button
+                  className="btn-secondary !py-2 text-sm"
+                  disabled={verifyBusy !== null || selected.verification_status === "rejected"}
+                  onClick={() => void handleVerify("rejected")}
+                >
+                  {verifyBusy === "rejected" ? <Spinner className="h-3.5 w-3.5" /> : <Ban size={14} />} Reject
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] text-slate-500">
+                <Lock size={10} className="mr-1 inline text-gold-400" />
+                Decision persists via PATCH /scans/results/{selected.id}/verification and is picked up by the reporting gate.
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* New scan modal */}
       <Modal open={newOpen} onClose={() => setNewOpen(false)} title="New scan job">

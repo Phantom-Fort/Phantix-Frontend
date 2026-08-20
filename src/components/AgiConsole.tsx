@@ -89,7 +89,13 @@ function NodeInspector({ node }: { node: AttackNode }) {
             <p className="whitespace-pre-wrap break-words text-[11px] leading-5 text-slate-400">{node.reasoning[node.reasoning.length - 1]}</p>
           </div>
         ) : (
-          <p className="text-[11px] text-slate-500">No telemetry on this node yet.</p>
+          <p className="text-[11px] text-slate-500">
+            {node.status === "active"
+              ? "Working — waiting on first tool result…"
+              : node.status === "blocked"
+              ? "Blocked — awaiting approval."
+              : "No activity on this node yet."}
+          </p>
         )}
       </div>
       <div className="min-w-0 space-y-1.5">
@@ -239,6 +245,10 @@ export default function AgiConsole({
   const toolsStick = useStickToBottom([transcript, running]);
 
   const nodes = useMemo(() => deriveAttackGraph(transcript, actions, running && !paused), [transcript, actions, running, paused]);
+  const maxSlots = useMemo(
+    () => Math.max(1, ...PHASES.map((phase) => nodes.filter((n) => n.phase === phase.id).length)),
+    [nodes],
+  );
   const findings = useMemo(() => deriveFindings(transcript, actions, engagement), [transcript, actions, engagement]);
   const counts = useMemo(() => severityCounts(findings), [findings]);
   const selected = nodes.find((n) => n.id === selectedId) ?? nodes.find((n) => n.status === "active" || n.status === "blocked") ?? nodes[0];
@@ -279,11 +289,11 @@ export default function AgiConsole({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-phantix-950">
-      <div className="flex flex-wrap items-center gap-2 border-b border-phantix-700/40 bg-phantix-900/40 px-4 py-2">
-        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-          <Globe2 size={11} className="text-gold-400" /> Scope
-        </span>
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-phantix-700/40 bg-phantix-900/40 px-4 py-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+          <span className="flex shrink-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <Globe2 size={11} className="text-gold-400" /> Scope
+          </span>
           {allowlist.length === 0 && <span className="chip !text-[9px] text-slate-500">no allowlist</span>}
           {allowlist.map((t) => (
             <span key={t} className="chip !text-[9px] font-mono text-emerald-300">{t}</span>
@@ -292,21 +302,24 @@ export default function AgiConsole({
             <span key={f} className="chip !text-[9px] text-severity-critical">¬ {f}</span>
           ))}
         </div>
-        <span className={cx("chip !text-[9px]", running && !paused ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : paused ? "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" : "border-phantix-600/40 text-slate-400")}>
-          {paused ? "paused" : running ? "live" : session.status}
-        </span>
-        <span className="chip !text-[9px] font-mono text-slate-500">#{session.id}</span>
-        {running && (
-          <button onClick={onTogglePause} className="btn-secondary !px-2.5 !py-1 !text-[10px]" title={paused ? "Resume agent loop" : "Pause agent loop"}>
-            {paused ? <Play size={11} className="mr-1 inline" /> : <Pause size={11} className="mr-1 inline" />}
-            {paused ? "Resume" : "Pause"}
-          </button>
-        )}
-        {running && (
-          <button onClick={onStop} disabled={stopping} className="btn-secondary !px-2.5 !py-1 !text-[10px]">
-            <Square size={11} className="mr-1 inline" /> {stopping ? "Stopping…" : "Stop"}
-          </button>
-        )}
+
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={cx("chip !text-[9px]", running && !paused ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : paused ? "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" : "border-phantix-600/40 text-slate-400")}>
+            {paused ? "paused" : running ? "live" : session.status}
+          </span>
+          <span className="chip !text-[9px] font-mono text-slate-500">#{session.id}</span>
+          {running && (
+            <button onClick={onTogglePause} className="btn-secondary !px-2.5 !py-1 !text-[10px]" title={paused ? "Resume agent loop" : "Pause agent loop"}>
+              {paused ? <Play size={11} className="mr-1 inline" /> : <Pause size={11} className="mr-1 inline" />}
+              {paused ? "Resume" : "Pause"}
+            </button>
+          )}
+          {running && (
+            <button onClick={onStop} disabled={stopping} className="btn-secondary !px-2.5 !py-1 !text-[10px]">
+              <Square size={11} className="mr-1 inline" /> {stopping ? "Stopping…" : "Stop"}
+            </button>
+          )}
+        </div>
       </div>
 
       {policyBanner && (
@@ -322,13 +335,13 @@ export default function AgiConsole({
             <p className="mb-1.5 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
               <Crosshair size={11} className="text-gold-400" /> Attack tree
             </p>
-            <div className="grid grid-cols-4 gap-1">
+            <div className="grid grid-cols-5 gap-1">
               {PHASES.map((phase) => (
                 <p key={phase.id} className="truncate text-center text-[8px] font-semibold uppercase tracking-wider text-slate-500">{phase.label}</p>
               ))}
               {PHASES.map((phase) => {
                 const list = nodes.filter((n) => n.phase === phase.id);
-                const slots = [...list, ...Array.from({ length: Math.max(0, 4 - list.length) }, () => null)].slice(0, 4);
+                const slots = [...list, ...Array.from({ length: Math.max(0, maxSlots - list.length) }, () => null)];
                 return (
                   <div key={`${phase.id}-col`} className="flex flex-col gap-1">
                     {slots.map((n, i) => n ? (
@@ -420,46 +433,48 @@ export default function AgiConsole({
               </div>
             )}
 
-            {showTerm && (
-              <div className="absolute inset-x-2 bottom-2 z-10 max-h-[42%] overflow-hidden rounded-lg border border-phantix-700/40 bg-phantix-950/95 shadow-card">
-                <p className="flex items-center gap-1.5 border-b border-phantix-700/30 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-                  <Terminal size={10} /> Terminal
-                </p>
-                <div ref={toolsStick.scrollerRef} onScroll={toolsStick.onScroll} className="max-h-40 space-y-1.5 overflow-y-auto p-2 font-mono">
-                  {tools.length === 0 && <p className="py-3 text-center text-[10px] text-slate-600">No tool output yet.</p>}
-                  {tools.map((t, i) => (
-                    <TxLine key={`tl-${i}`} t={t} last={false} />
-                  ))}
-                  <div ref={toolsStick.endRef} />
+            <div className="pointer-events-none absolute inset-x-2 bottom-2 z-10 flex flex-col gap-2">
+              {showTerm && (
+                <div className="pointer-events-auto max-h-[42%] overflow-hidden rounded-lg border border-phantix-700/40 bg-phantix-950/95 shadow-card">
+                  <p className="flex items-center gap-1.5 border-b border-phantix-700/30 px-2 py-1 text-[9px] font-semibold uppercase tracking-wider text-slate-500">
+                    <Terminal size={10} /> Terminal
+                  </p>
+                  <div ref={toolsStick.scrollerRef} onScroll={toolsStick.onScroll} className="max-h-40 space-y-1.5 overflow-y-auto p-2 font-mono">
+                    {tools.length === 0 && <p className="py-3 text-center text-[10px] text-slate-600">No tool output yet.</p>}
+                    {tools.map((t, i) => (
+                      <TxLine key={`tl-${i}`} t={t} last={false} />
+                    ))}
+                    <div ref={toolsStick.endRef} />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {actions.length > 0 && (
-              <div className="absolute inset-x-2 bottom-2 z-20 max-h-[36%] space-y-1.5 overflow-y-auto rounded-lg border border-severity-medium/30 bg-phantix-950/95 p-2 shadow-card">
-                <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-severity-medium">
-                  <ShieldCheck size={10} /> Human gate · {actions.length}
-                </p>
-                {actions.map((a) => {
-                  const draft = overrideDrafts[a.id] ?? a.proposed_command;
-                  const risky = isHighRiskCommand(draft);
-                  return (
-                    <div key={a.id} className="rounded-lg border border-severity-medium/20 bg-severity-medium/5 p-2">
-                      <div className="mb-1 flex items-center gap-1.5">
-                        <Radar size={11} className="text-severity-medium" />
-                        <p className="text-[11px] font-semibold text-amber-200">{a.tool_name ?? "state-changing step"}</p>
-                        {risky && <span className="chip !text-[8px] text-severity-critical">gate</span>}
+              {actions.length > 0 && (
+                <div className="pointer-events-auto max-h-[36%] space-y-1.5 overflow-y-auto rounded-lg border border-severity-medium/30 bg-phantix-950/95 p-2 shadow-card">
+                  <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-severity-medium">
+                    <ShieldCheck size={10} /> Human gate · {actions.length}
+                  </p>
+                  {actions.map((a) => {
+                    const draft = overrideDrafts[a.id] ?? a.proposed_command;
+                    const risky = isHighRiskCommand(draft);
+                    return (
+                      <div key={a.id} className="rounded-lg border border-severity-medium/20 bg-severity-medium/5 p-2">
+                        <div className="mb-1 flex items-center gap-1.5">
+                          <Radar size={11} className="text-severity-medium" />
+                          <p className="text-[11px] font-semibold text-amber-200">{a.tool_name ?? "state-changing step"}</p>
+                          {risky && <span className="chip !text-[8px] text-severity-critical">gate</span>}
+                        </div>
+                        <textarea value={draft} onChange={(e) => onOverrideDraft(a.id, e.target.value)} rows={2} className="w-full rounded-md border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 font-mono text-[10px] text-slate-200 outline-none" />
+                        <div className="mt-1 flex gap-1.5">
+                          <button onClick={() => tryApprove(a)} disabled={actionBusy === a.id} className="btn-primary flex-1 !px-2 !py-1 !text-[10px]"><CheckCircle2 size={11} className="mr-1 inline" /> Approve</button>
+                          <button onClick={() => onDecide(a, false)} disabled={actionBusy === a.id} className="btn-ghost flex-1 !px-2 !py-1 !text-[10px] text-severity-critical"><XCircle size={11} className="mr-1 inline" /> Reject</button>
+                        </div>
                       </div>
-                      <textarea value={draft} onChange={(e) => onOverrideDraft(a.id, e.target.value)} rows={2} className="w-full rounded-md border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 font-mono text-[10px] text-slate-200 outline-none" />
-                      <div className="mt-1 flex gap-1.5">
-                        <button onClick={() => tryApprove(a)} disabled={actionBusy === a.id} className="btn-primary flex-1 !px-2 !py-1 !text-[10px]"><CheckCircle2 size={11} className="mr-1 inline" /> Approve</button>
-                        <button onClick={() => onDecide(a, false)} disabled={actionBusy === a.id} className="btn-ghost flex-1 !px-2 !py-1 !text-[10px] text-severity-critical"><XCircle size={11} className="mr-1 inline" /> Reject</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <AnimatePresence>
               {thoughtsStick.showJump && (
@@ -472,6 +487,38 @@ export default function AgiConsole({
                 </motion.button>
               )}
             </AnimatePresence>
+          </div>
+
+          <div className="shrink-0 border-t border-phantix-700/40 p-3">
+            <div className="mx-auto flex max-w-3xl items-start gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
+              <textarea
+                value={instruction}
+                onChange={(e) => {
+                  onInstruction(e.target.value);
+                  const el = e.currentTarget;
+                  el.style.height = "auto";
+                  const newH = Math.min(el.scrollHeight, 120);
+                  el.style.height = `${newH}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
+                  e.preventDefault();
+                  onSend();
+                }}
+                placeholder={paused ? "Paused — resume to send" : running ? "Further instructions or override the next step…" : "Session stopped"}
+                disabled={!running || paused}
+                rows={1}
+                className="flex-1 resize-none bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50 overflow-hidden"
+                style={{ minHeight: "24px", maxHeight: "120px" }}
+              />
+              <button onClick={onSend} disabled={!running || paused || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs mt-0.5" aria-label="Send"><Send size={13} /></button>
+            </div>
+            <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
+              <ShieldCheck size={10} />
+              {sendHint === "queued"
+                ? "Queued — press Enter again to send now, or wait for the current reply."
+                : "Scoped to allowlist · high-risk actions require a second confirmation · pause freezes the loop"}
+            </p>
           </div>
         </div>
 
@@ -509,38 +556,6 @@ export default function AgiConsole({
             {openFinding && <EvidenceDrawer finding={openFinding} onClose={() => setFindingId(null)} />}
           </AnimatePresence>
         </aside>
-      </div>
-
-        <div className="w-full shrink-0 border-t border-phantix-700/40 p-3">
-        <div className="mx-auto flex max-w-3xl items-start gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
-          <textarea
-            value={instruction}
-            onChange={(e) => {
-              onInstruction(e.target.value);
-              const el = e.currentTarget;
-              el.style.height = "auto";
-              const newH = Math.min(el.scrollHeight, 120);
-              el.style.height = `${newH}px`;
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
-              e.preventDefault();
-              onSend();
-            }}
-            placeholder={paused ? "Paused — resume to send" : running ? "Further instructions or override the next step…" : "Session stopped"}
-            disabled={!running || paused}
-            rows={1}
-            className="flex-1 resize-none bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50 overflow-hidden"
-            style={{ minHeight: "24px", maxHeight: "120px" }}
-          />
-          <button onClick={onSend} disabled={!running || paused || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs mt-0.5" aria-label="Send"><Send size={13} /></button>
-        </div>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
-          <ShieldCheck size={10} />
-          {sendHint === "queued"
-            ? "Queued — press Enter again to send now, or wait for the current reply."
-            : "Scoped to allowlist · high-risk actions require a second confirmation · pause freezes the loop"}
-        </p>
       </div>
 
       <AnimatePresence>
