@@ -369,6 +369,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const requireDualControl = useCallback(
     (reason = "This action requires an active dual-control operate session.") => {
+      // Demo: the dual-control requirement is auto-provisioned on the frontend.
+      // No operate overlay, no OTP, no backend contact — every gated action passes.
+      if (isDemoMode()) {
+        if (!tokens.dualControl) tokens.dualControl = `dc_${crypto.randomUUID()}`;
+        setOperate({
+          unlocked: true,
+          actingUser: session?.userName ?? "Demo Explorer",
+          actingRole: "initiator",
+          expiresAt: Date.now() + 60 * 60_000,
+        });
+        return Promise.resolve(true);
+      }
       // The backend idle window is authoritative — we only lock when the backend
       // actually rejects a mutation with a dual-control session error, or when the
       // token is genuinely gone. A stale local clock must not force a re-code.

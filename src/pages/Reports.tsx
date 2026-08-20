@@ -23,7 +23,9 @@ function downloadExt(format: string): string {
   return format;
 }
 
-/** Split output_files into downloadable paths vs error keys (`pptx_error`, etc.). */
+/** Split output_files into downloadable paths vs error keys (`pptx_error`, etc.).
+ *  A value is downloadable when it's a storage path/URL string, or an inline
+ *  object (`{ inline: "<text>" }`, e.g. AGI session reports). */
 function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
   downloads: Array<{ format: string; path: string }>;
   errors: Array<{ format: string; error: string }>;
@@ -37,8 +39,13 @@ function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
       if (typeof val === "string" && val.trim()) errors.push({ format, error: val });
       continue;
     }
-    if (typeof val === "string" && val.trim() && !val.startsWith("error")) {
-      downloads.push({ format: key, path: val });
+    const isInline = !!val && typeof val === "object" && typeof (val as { inline?: unknown }).inline === "string" && !!(val as { inline?: string }).inline?.trim();
+    const isString = typeof val === "string" && val.trim() && !val.startsWith("error");
+    if (isInline || isString) {
+      downloads.push({
+        format: key,
+        path: typeof val === "string" ? val : (val as { inline: string }).inline,
+      });
     }
   }
   return { downloads, errors };
@@ -416,7 +423,10 @@ export default function Reports() {
                     </div>
                   ) : (
                     <div className="flex gap-1.5">
-                      {(r.formats_requested || []).map((f: string) => (
+                      {(parseOutputFiles(r.output_files).downloads.length > 0
+                        ? parseOutputFiles(r.output_files).downloads
+                        : (r.formats_requested || []).map((f: string) => ({ format: f, path: "" }))
+                      ).map(({ format: f }) => (
                         <button
                           key={f}
                           type="button"

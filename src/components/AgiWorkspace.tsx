@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Send, ShieldCheck, Loader2, Radar, Square, Terminal, ChevronDown, ChevronRight,
+  Send, ShieldCheck, Loader2, Radar, Square, ChevronDown, ChevronRight,
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
-import LottiePlayer from "@/components/LottiePlayer";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
-import ghostData from "@/lib/animations/ghostsmart.json";
+import { StreamMessage, TypingIndicator } from "@/components/AgiStream";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
@@ -39,37 +38,6 @@ const POLL_MS = 2000;
 const ACTION_POLL_MS = 3000;
 
 type WorkspaceVariant = "drawer" | "page" | "console";
-
-/** Render one transcript line as a terminal-ish stream. */
-function TxLine({ t, last }: { t: AgiTranscriptChunk; last: boolean }) {
-  const isTool = t.role === "tool";
-  const isSystem = t.role === "system";
-  const isOperator = t.role === "operator";
-  const isAssistant = !isTool && !isSystem && !isOperator;
-  const toolName = t.meta && typeof t.meta.tool === "string" ? (t.meta.tool as string) : null;
-  return (
-    <div className={cx("flex", isOperator ? "justify-end" : "justify-start")}>
-      <div
-        className={cx(
-          "max-w-[92%] rounded-xl px-3 py-2 text-[12.5px] leading-5",
-          isOperator && "bg-gold-400/15 border border-gold-400/20 text-gold-100",
-          !isOperator && isTool && "border border-phantix-700/40 bg-phantix-950/70 font-mono text-[11px] text-slate-300",
-          !isOperator && isSystem && "font-mono text-[11px] text-slate-500",
-          isAssistant && "border border-phantix-700/40 bg-phantix-800/60 text-slate-200",
-        )}
-      >
-        {isTool && (
-          <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400">
-            <Terminal size={10} /> {toolName ?? "tool"}
-          </span>
-        )}
-        {isSystem && <span className="mr-1 text-[10px] text-slate-600">engine</span>}
-        <span className="whitespace-pre-wrap break-words">{t.content}</span>
-        {last && !isOperator && <span className="ml-0.5 inline-block h-3 w-[6px] animate-pulse rounded-sm bg-gold-400/70 align-middle" />}
-      </div>
-    </div>
-  );
-}
 
 function ActionCard({
   a,
@@ -738,7 +706,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               </div>
 
               <div className="relative min-h-0 flex-1">
-                <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-2 overflow-y-auto p-3 font-mono">
+                <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-2 overflow-y-auto p-3">
                   {connError && (
                     <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
                       <Lock size={13} className="shrink-0 text-severity-critical" />
@@ -746,19 +714,22 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     </div>
                   )}
                   {transcript.length === 0 && !connError && (
-                    <p className="py-6 text-center text-[11px] text-slate-600">Connecting to engagement container...</p>
+                    <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-phantix-700/40 bg-phantix-900/60 text-gold-400">
+                        <Radar size={16} className="animate-pulse" />
+                      </span>
+                      <p className="text-[11px] font-medium text-slate-400">Connecting to engagement container…</p>
+                      <p className="max-w-[240px] text-[10px] leading-4 text-slate-600">Live turns, tool calls, and engine events will stream here.</p>
+                    </div>
                   )}
                   {transcript.map((t, i) => (
-                    <TxLine key={i} t={t} last={i === transcript.length - 1 && running} />
+                    <StreamMessage key={i} t={t} last={i === transcript.length - 1 && running && t.role !== "operator"} />
                   ))}
                   {thinking && (
-                    <p className="flex items-center gap-2 text-[11px] text-gold-300">
-                      <LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} />
-                      {(workingOn || "").trim() || "Working on the scoped assessment."}
-                    </p>
+                    <TypingIndicator label={(workingOn || "").trim() || undefined} />
                   )}
                   {running && transcript.length > 0 && !thinking && !connError && (
-                    <p className="text-[10px] text-slate-600">— awaiting engine output —</p>
+                    <p className="text-center text-[10px] text-slate-600">— awaiting engine output —</p>
                   )}
                   <div ref={endRef} />
                 </div>
@@ -772,9 +743,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       exit={{ opacity: 0, y: 6, scale: 0.9 }}
                       onClick={scrollToBottom}
                       aria-label="Scroll to bottom"
-                      className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full border border-phantix-700/50 bg-phantix-900/90 text-gold-300 shadow-card backdrop-blur-xl transition-colors hover:border-gold-400/40 hover:bg-phantix-800/90"
+                      className="absolute bottom-3 right-3 flex h-9 items-center justify-center gap-1.5 rounded-full border border-phantix-700/50 bg-phantix-900/90 px-2.5 text-gold-300 shadow-card backdrop-blur-xl transition-colors hover:border-gold-400/40 hover:bg-phantix-800/90"
                     >
                       <ArrowDown size={16} />
+                      {stick.unseen > 0 && (
+                        <span className="rounded-full bg-gold-400/20 px-1.5 text-[9px] font-semibold tabular-nums text-gold-300">
+                          {stick.unseen > 99 ? "99+" : stick.unseen}
+                        </span>
+                      )}
                     </motion.button>
                   )}
                 </AnimatePresence>
@@ -792,7 +768,21 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
               {/* Composer */}
               <div className="border-t border-phantix-700/40 p-3">
-                <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
+                {running && !instruction.trim() && (
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    {["Summarize findings so far", "Next planned step?", "Stay read-only"].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setInstruction(s)}
+                        className="rounded-full border border-phantix-700/50 bg-phantix-900/50 px-2.5 py-0.5 text-[10px] text-slate-400 transition-colors hover:border-gold-400/40 hover:text-gold-200"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 transition-colors focus-within:border-gold-400/40">
                   <input
                     value={instruction}
                     onChange={(e) => setInstruction(e.target.value)}

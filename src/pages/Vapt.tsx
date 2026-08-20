@@ -4,7 +4,7 @@ import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, Chev
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadVaptBundle } from "@/lib/data";
-import { api } from "@/lib/api";
+import { api, isDemoMode } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
 import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@/lib/utils";
@@ -57,6 +57,15 @@ export default function Vapt() {
   const handleApprove = async (approvalId: number, approve: boolean) => {
     if (!(await requireDualControl("Approval requires the assigned controller's dual-control session."))) return;
     try {
+      if (isDemoMode()) {
+        // Demo dual control is auto-provisioned: flip the local approval so the
+        // gate visibly passes without any backend contact.
+        const target = data.approvals.find((a) => a.id === approvalId);
+        if (target) target.status = approve ? "approved" : "rejected";
+        toast("success", approve ? "Approved" : "Rejected", "Demo dual-control session auto-provisioned");
+        reload();
+        return;
+      }
       await api.post(`/vapt/approvals/${approvalId}/decide`, approve
         ? { approve: true, notes: "Approved" }
         : { approve: false, rejection_reason: "Rejected" });

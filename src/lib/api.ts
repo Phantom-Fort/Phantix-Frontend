@@ -119,6 +119,14 @@ async function request<T>(
 ): Promise<T> {
   const realm = opts.realm ?? (tokens.appSession ? "application" : "platform");
 
+  // Demo mode never touches the backend: mutations resolve as a no-op success so
+  // every gated action (approve/start/pause/cancel/create, decisions, etc.) passes
+  // entirely on the frontend. Data loads already short-circuit via data.ts demo
+  // branches and are not routed through this client.
+  if (isDemoMode() && ["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+    return { ok: true } as T;
+  }
+
   // Build headers fresh on every attempt so a renewal applied by another
   // in-flight response is picked up on retry.
   const doFetch = async (): Promise<Response> => {
