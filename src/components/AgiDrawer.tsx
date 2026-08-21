@@ -3,13 +3,21 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Maximize2, Minimize2, Radar, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import AgiWorkspace from "@/components/AgiWorkspace";
+import { ResizeHandle } from "@/components/workbench";
 import { readPersistedAgiSession } from "@/lib/agi";
+import { useDragResize } from "@/lib/useDragResize";
+import { cx } from "@/lib/utils";
+
+// The compact right-hand rail is drag-resizable. Its content is a `.wb-pane`,
+// so all `.wb-*` type inside scales down as the rail is narrowed.
+const DRAWER = { min: 360, max: 760, reset: 440 };
 
 export default function AgiDrawer() {
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [live, setLive] = useState(() => Boolean(readPersistedAgiSession()));
   const location = useLocation();
+  const drawer = useDragResize({ initial: DRAWER.reset, min: DRAWER.min, max: DRAWER.max, side: "end" });
 
   useEffect(() => {
     if (location.pathname.startsWith("/reports")) {
@@ -77,14 +85,26 @@ export default function AgiDrawer() {
 
       <aside
         className={cxPanel(fullscreen, open)}
+        style={fullscreen ? undefined : { width: drawer.size, maxWidth: "94vw" }}
         onClick={(e) => e.stopPropagation()}
         aria-hidden={!open}
       >
-        <div className="flex items-center gap-2 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={15} /></span>
+        {/* Left-edge drag handle — resize the rail (not shown in fullscreen). */}
+        {!fullscreen && (
+          <ResizeHandle
+            onMouseDown={drawer.onHandleMouseDown}
+            dragging={drawer.dragging}
+            label="Resize agent panel"
+            onDoubleClick={() => drawer.setSize(DRAWER.reset)}
+            className="absolute left-0 top-0 bottom-0 z-20"
+          />
+        )}
+
+        <div className="wb-pane flex items-center gap-2 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
+          <span className="wb-iconbox flex items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={15} /></span>
           <div className="min-w-0">
-            <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
-            <p className="text-[10px] text-slate-500">{live ? "session running in background · close does not stop it" : fullscreen ? "operator console · attack tree · live terminal" : "human-gated · scoped · terminal-access"}</p>
+            <p className="wb-md font-display font-semibold text-white">Autonomous Pentest Agent</p>
+            <p className="wb-2xs truncate text-slate-500">{live ? "session running in background · close does not stop it" : fullscreen ? "operator console · attack tree · live terminal" : "human-gated · scoped · terminal-access"}</p>
           </div>
           <div className="ml-auto flex items-center gap-1">
             <button
@@ -103,7 +123,7 @@ export default function AgiDrawer() {
             </button>
           </div>
         </div>
-        <div className="min-h-0 flex-1 bg-phantix-950/95">
+        <div className="wb-pane min-h-0 flex-1 bg-phantix-950/95">
           <AgiWorkspace variant={fullscreen ? "console" : "drawer"} />
         </div>
       </aside>
@@ -114,6 +134,6 @@ export default function AgiDrawer() {
 function cxPanel(fullscreen: boolean, open: boolean): string {
   const base = "fixed z-[85] flex flex-col overflow-hidden bg-phantix-950/95 shadow-card border-l border-phantix-700/40 transition-transform duration-300";
   const hidden = open ? "" : "pointer-events-none translate-x-full";
-  if (fullscreen) return `${base} inset-0 !border-l-0 ${hidden}`;
-  return `${base} right-0 top-0 bottom-0 w-[420px] max-w-[92vw] ${hidden}`;
+  if (fullscreen) return cx(base, "inset-0 !border-l-0", hidden);
+  return cx(base, "right-0 top-0 bottom-0", hidden);
 }

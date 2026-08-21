@@ -406,3 +406,122 @@
     @apply rounded-xl my-4;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WORKBENCH — fluid, pane-aware scaling for the Autonomous Pentest Agent
+   ------------------------------------------------------------------------
+   Every resizable pane is a CSS size container (`.wb-pane`). Descendants use
+   the `.wb-*` type scale, whose font-size is a `clamp(min, cqi, max)` — so
+   text smoothly DECREASES as a pane is narrowed and grows as it widens,
+   always bounded by a readable floor and a comfortable ceiling.
+
+   Research basis: CSS container queries + `cqi` units (1cqi = 1% of the
+   pane's inline size) give true container-relative fluid type, unlike media
+   queries which only see the viewport.
+   ══════════════════════════════════════════════════════════════════════════ */
+@layer components {
+  /* A resizable workbench pane. `inline-size` containment lets descendants
+     resolve `cqi` against this pane's own width. Width must come from flex or
+     an explicit style (never from content), which our panes already satisfy. */
+  .wb-pane {
+    container-type: inline-size;
+    container-name: pane;
+    min-width: 0;
+  }
+
+  /* ── Fluid type scale. Each rule declares a static fallback FIRST, then the
+        fluid `clamp()`; browsers without `cqi` support drop the second
+        declaration and keep the fallback, so text never breaks. ──────────── */
+  .wb-2xs { font-size: 9px;   font-size: clamp(8px, 5px + 0.62cqi, 9.5px); }
+  .wb-xs  { font-size: 10px;  font-size: clamp(9px, 6px + 0.72cqi, 11px); }
+  .wb-sm  { font-size: 11px;  font-size: clamp(10px, 7px + 0.86cqi, 12px); }
+  .wb-base{ font-size: 12.5px;font-size: clamp(11px, 8px + 1cqi, 13px); line-height: 1.5; }
+  .wb-md  { font-size: 13.5px;font-size: clamp(12px, 9px + 1.15cqi, 14px); line-height: 1.5; }
+  .wb-lg  { font-size: 15px;  font-size: clamp(13px, 10px + 1.4cqi, 16px); }
+
+  /* Fluid spacing helpers that tighten as the pane narrows. */
+  .wb-pad   { padding: 10px; padding: clamp(6px, 4px + 0.9cqi, 12px); }
+  .wb-pad-x { padding-left: 10px; padding-left: clamp(6px, 4px + 0.9cqi, 12px); padding-right: 10px; padding-right: clamp(6px, 4px + 0.9cqi, 12px); }
+  .wb-pad-y { padding-top: 6px; padding-top: clamp(4px, 3px + 0.6cqi, 9px); padding-bottom: 6px; padding-bottom: clamp(4px, 3px + 0.6cqi, 9px); }
+  .wb-gap   { gap: 6px; gap: clamp(4px, 3px + 0.6cqi, 8px); }
+
+  /* Icon chip that scales with the pane. */
+  .wb-iconbox {
+    height: 24px; height: clamp(20px, 14px + 1.6cqi, 28px);
+    width: 24px;  width: clamp(20px, 14px + 1.6cqi, 28px);
+  }
+
+  /* ── Smooth height-collapsible (grid-rows trick animates 0 ↔ auto) ──────── */
+  .wb-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.24s ease;
+    opacity: 0.4;
+  }
+  .wb-collapse.open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .wb-collapse > .wb-collapse-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ── Resize handle — a visible, grabbable affordance between panes ──────── */
+  .wb-resize {
+    position: relative;
+    flex: 0 0 auto;
+    cursor: col-resize;
+    background: rgb(var(--phantix-800) / 0.4);
+    transition: background 0.15s ease;
+    touch-action: none;
+  }
+  .wb-resize::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    height: 34px;
+    width: 3px;
+    border-radius: 999px;
+    background: rgb(var(--phantix-600) / 0.6);
+    opacity: 0;
+    transition: opacity 0.15s ease, background 0.15s ease;
+  }
+  .wb-resize:hover::after,
+  .wb-resize[data-dragging="true"]::after {
+    opacity: 1;
+    background: rgb(var(--gold-400) / 0.7);
+  }
+  .wb-resize:hover { background: rgb(var(--phantix-700) / 0.5); }
+  .wb-resize[data-dragging="true"] { background: rgb(var(--gold-400) / 0.3); }
+
+  /* ── Thin, unobtrusive workbench scrollbars ─────────────────────────────── */
+  .wb-scroll { scrollbar-width: thin; scrollbar-color: rgb(var(--phantix-600) / 0.5) transparent; }
+  .wb-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+  .wb-scroll::-webkit-scrollbar-thumb { background: rgb(var(--phantix-600) / 0.45); border-radius: 999px; }
+  .wb-scroll::-webkit-scrollbar-thumb:hover { background: rgb(var(--phantix-500) / 0.6); }
+
+  /* ── Pane section header — sticky label that scales and stays legible ───── */
+  .wb-pane-title {
+    @apply flex items-center font-semibold uppercase tracking-wider text-slate-500;
+    font-size: 9px; font-size: clamp(8px, 5px + 0.7cqi, 10px);
+    gap: 5px; gap: clamp(4px, 3px + 0.5cqi, 6px);
+    letter-spacing: 0.08em;
+  }
+
+  /* Fade the leading edge of horizontally-scrollable chip rows. */
+  .wb-fade-x {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
+}
+
+/* Respect users who prefer less motion across all workbench transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .wb-collapse,
+  .wb-resize,
+  .wb-resize::after {
+    transition: none !important;
+  }
+}

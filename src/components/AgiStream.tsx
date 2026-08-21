@@ -102,15 +102,15 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
         <span className="flex h-4 w-4 items-center justify-center rounded bg-gold-400/10 text-gold-400">
           <Terminal size={10} />
         </span>
-        <span className="font-mono text-[10px] font-semibold text-gold-300">{toolName}</span>
-        <span className="chip !px-1.5 !py-0 !text-[8px] font-normal text-slate-500">tool call</span>
+        <span className="wb-xs font-mono font-semibold text-gold-300">{toolName}</span>
+        <span className="chip !px-1.5 !py-0 wb-2xs font-normal text-slate-500">tool call</span>
         <span className="ml-auto flex items-center gap-0.5">
-          {time && <span className="mr-0.5 text-[9px] tabular-nums text-slate-600">{time}</span>}
+          {time && <span className="wb-2xs mr-0.5 tabular-nums text-slate-600">{time}</span>}
           {long && (
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] text-slate-500 transition-colors hover:bg-phantix-800 hover:text-slate-200"
+              className="wb-2xs flex items-center gap-0.5 rounded px-1 py-0.5 text-slate-500 transition-colors hover:bg-phantix-800 hover:text-slate-200"
             >
               {open ? "Collapse" : `${bodyLines.length} lines`}
               <ChevronRight size={10} className={cx("transition-transform duration-150", open && "rotate-90")} />
@@ -119,7 +119,7 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
           <CopyBtn text={t.content} />
         </span>
       </div>
-      <div className={cx("font-mono leading-[1.5]", dense ? "px-2 py-1.5 text-[10px]" : "px-2.5 py-2 text-[11px]")}>
+      <div className={cx("font-mono leading-[1.5]", dense ? "wb-xs px-2 py-1.5" : "wb-sm px-2.5 py-2")}>
         {command && (
           <p className={cx("flex gap-1.5 text-emerald-300", shownBody && "mb-1")}>
             <span className="shrink-0 select-none text-slate-600">$</span>
@@ -133,7 +133,7 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="mt-1 text-[9px] font-semibold text-gold-400/80 hover:text-gold-300"
+            className="wb-2xs mt-1 font-semibold text-gold-400/80 hover:text-gold-300"
           >
             Show {bodyLines.length - 5} more lines…
           </button>
@@ -158,13 +158,13 @@ function SystemLine({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boole
       <div className="group flex justify-start">
         <div className="flex max-w-[94%] items-start gap-2 rounded-xl border border-phantix-700/30 bg-phantix-900/50 px-2.5 py-1.5">
           <ShieldAlert size={12} className={cx("mt-0.5 shrink-0", sev === "critical" ? "text-severity-critical" : sev === "high" ? "text-severity-high" : sev === "medium" ? "text-severity-medium" : "text-slate-500")} />
-          <p className={cx("min-w-0 font-mono leading-5 text-slate-400", dense ? "text-[10px]" : "text-[11px]")}>
+          <p className={cx("min-w-0 font-mono leading-5 text-slate-400", dense ? "wb-xs" : "wb-sm")}>
             <span className="mr-1.5 inline-flex items-center gap-1 font-semibold capitalize">
               <span className={cx("h-1.5 w-1.5 rounded-full", SEV_DOT[sev])} />
               {sev}
             </span>
             <span className="break-words">{m[3]}</span>
-            {time && <span className="ml-1.5 text-[9px] tabular-nums text-slate-600">{time}</span>}
+            {time && <span className="wb-2xs ml-1.5 tabular-nums text-slate-600">{time}</span>}
           </p>
         </div>
       </div>
@@ -173,12 +173,12 @@ function SystemLine({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boole
 
   return (
     <div className="group flex justify-start">
-      <p className={cx("max-w-[94%] font-mono leading-5 text-slate-500", dense ? "text-[10px]" : "text-[11px]")}>
-        <span className="mr-1.5 inline-flex items-center gap-1 rounded border border-phantix-700/40 bg-phantix-900/60 px-1 py-px text-[8px] font-sans font-semibold uppercase tracking-wider text-slate-500">
+      <p className={cx("max-w-[94%] font-mono leading-5 text-slate-500", dense ? "wb-xs" : "wb-sm")}>
+        <span className="wb-2xs mr-1.5 inline-flex items-center gap-1 rounded border border-phantix-700/40 bg-phantix-900/60 px-1 py-px font-sans font-semibold uppercase tracking-wider text-slate-500">
           <Radar size={8} /> engine
         </span>
         <span className="whitespace-pre-wrap break-words">{t.content}</span>
-        {time && <span className="ml-1.5 text-[9px] tabular-nums text-slate-600">{time}</span>}
+        {time && <span className="wb-2xs ml-1.5 tabular-nums text-slate-600">{time}</span>}
       </p>
     </div>
   );
@@ -230,7 +230,7 @@ export function StreamMessage({ t, last = false, dense = false }: StreamMessageP
         className="group flex justify-end"
       >
         <div className={cx("min-w-0", dense ? "max-w-full" : "max-w-[85%]")}>
-          <p className="mb-0.5 flex items-center justify-end gap-1.5 px-0.5 text-[9px] text-slate-500">
+          <p className="wb-2xs mb-0.5 flex items-center justify-end gap-1.5 px-0.5 text-slate-500">
             {sending && (
               <span className="flex items-center gap-1 text-gold-400/80">
                 <Loader2 size={9} className="animate-spin" /> sending…
@@ -242,7 +242,7 @@ export function StreamMessage({ t, last = false, dense = false }: StreamMessageP
           </p>
           <div
             className={cx(
-              "rounded-xl rounded-tr-sm border border-gold-400/25 bg-gold-400/12 px-3 py-2 text-[12.5px] leading-5 text-gold-100 shadow-sm",
+              "wb-base rounded-xl rounded-tr-sm border border-gold-400/25 bg-gold-400/12 px-3 py-2 text-gold-100 shadow-sm",
               sending && "animate-pulse",
             )}
           >
@@ -266,12 +266,12 @@ export function StreamMessage({ t, last = false, dense = false }: StreamMessageP
         <Bot size={12} />
       </span>
       <div className={cx("min-w-0", dense ? "max-w-full" : "max-w-[92%]")}>
-        <p className="mb-0.5 flex items-center gap-1.5 px-0.5 text-[9px] text-slate-500">
+        <p className="wb-2xs mb-0.5 flex items-center gap-1.5 px-0.5 text-slate-500">
           <span className={cx("font-semibold uppercase tracking-wider", persona.tint)}>{persona.label}</span>
           {time && <span className="tabular-nums">{time}</span>}
           <CopyBtn text={t.content} className="!p-0.5" />
         </p>
-        <div className="rounded-xl rounded-tl-sm border border-phantix-700/40 bg-phantix-800/55 px-3 py-2 text-[12.5px] leading-5 text-slate-200 shadow-sm">
+        <div className="wb-base rounded-xl rounded-tl-sm border border-phantix-700/40 bg-phantix-800/55 px-3 py-2 text-slate-200 shadow-sm">
           <MarkdownView source={t.content} />
           {last && <StreamCaret />}
         </div>
@@ -300,10 +300,10 @@ export function TypingIndicator({ label, tool }: { label?: string | null; tool?:
           />
         ))}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[11px] text-slate-300">
+      <span className="wb-sm min-w-0 flex-1 truncate text-slate-300">
         {text || "Working on the scoped assessment."}
       </span>
-      {tool && <span className="chip shrink-0 !px-1.5 !py-0 !text-[9px] font-mono text-gold-300">{tool}</span>}
+      {tool && <span className="chip shrink-0 !px-1.5 !py-0 wb-2xs font-mono text-gold-300">{tool}</span>}
     </motion.div>
   );
 }
@@ -316,8 +316,8 @@ export function StreamEmpty({ title, hint }: { title: string; hint?: string }) {
       <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-phantix-700/40 bg-phantix-900/60 text-gold-400">
         <Crosshair size={16} className="animate-pulse" />
       </span>
-      <p className="text-[11px] font-medium text-slate-400">{title}</p>
-      {hint && <p className="max-w-[240px] text-[10px] leading-4 text-slate-600">{hint}</p>}
+      <p className="wb-sm font-medium text-slate-400">{title}</p>
+      {hint && <p className="wb-xs max-w-[260px] leading-relaxed text-slate-600">{hint}</p>}
     </div>
   );
 }

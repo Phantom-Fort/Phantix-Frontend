@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Loader2, ShieldCheck, Info, Globe, Building2, Server } from "lucide-react";
+import { X, Loader2, ShieldCheck, Info, Globe, Building2, Server, ChevronDown } from "lucide-react";
 import { cx, severityMeta, verificationMeta, statusColor, titleCase, impactLevelColor, categoryLabels, blastRadiusLabels, impactLevelRank } from "@/lib/utils";
 import type { Severity, VerificationStatus } from "@/lib/types";
 
@@ -430,5 +430,172 @@ export function ProgressBar({ value, color = "rgb(var(--gold-400))" }: { value: 
         style={{ background: color, boxShadow: `0 0 10px ${color}` }}
       />
     </div>
+  );
+}
+
+// ── Collapsible ─────────────────────────────────────────────────────────────
+// Smooth height-animated disclosure built on the `.wb-collapse` grid-rows
+// technique. Accessible via a real <button> trigger with aria-expanded.
+export function Collapsible({
+  title,
+  children,
+  defaultOpen = true,
+  open,
+  onOpenChange,
+  right,
+  className,
+  bodyClassName,
+  dense = false,
+}: {
+  title: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Optional content rendered on the right of the header (badges, actions). */
+  right?: React.ReactNode;
+  className?: string;
+  bodyClassName?: string;
+  dense?: boolean;
+}) {
+  const [internal, setInternal] = useState(defaultOpen);
+  const controlled = open !== undefined;
+  const isOpen = controlled ? open : internal;
+  const toggle = () => {
+    if (controlled) onOpenChange?.(!isOpen);
+    else setInternal((v) => !v);
+  };
+  return (
+    <div className={cx("min-w-0", className)}>
+      <div className={cx("flex items-center gap-2", dense ? "py-0.5" : "py-1")}>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={isOpen}
+          className="group flex min-w-0 flex-1 items-center gap-1.5 text-left outline-none"
+        >
+          <ChevronDown
+            size={dense ? 12 : 14}
+            className={cx(
+              "shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-gold-300",
+              !isOpen && "-rotate-90",
+            )}
+          />
+          <span className="min-w-0 truncate">{title}</span>
+        </button>
+        {right && <div className="ml-auto flex shrink-0 items-center gap-1.5">{right}</div>}
+      </div>
+      <div className={cx("wb-collapse", isOpen && "open")}>
+        <div className={cx("wb-collapse-inner", bodyClassName)}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Menu (dropdown) ─────────────────────────────────────────────────────────
+// A lightweight popover menu with Escape / outside-click dismissal, designed
+// for compact workbench toolbars and pane headers.
+export function Menu({
+  trigger,
+  children,
+  align = "right",
+  className,
+  menuClassName,
+  disabled,
+}: {
+  trigger: React.ReactNode;
+  children: React.ReactNode | ((close: () => void) => React.ReactNode);
+  align?: "left" | "right";
+  className?: string;
+  menuClassName?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("mousedown", onDown);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mousedown", onDown);
+    };
+  }, [open]);
+
+  const close = () => setOpen(false);
+
+  return (
+    <div ref={ref} className={cx("relative inline-block", className)}>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => !disabled && setOpen((v) => !v)}
+        className={cx("inline-flex outline-none", disabled && "pointer-events-none opacity-50")}
+      >
+        {trigger}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.97 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
+            role="menu"
+            className={cx(
+              "absolute z-[60] mt-1.5 min-w-[180px] overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900/95 p-1 shadow-card backdrop-blur-xl",
+              align === "right" ? "right-0" : "left-0",
+              menuClassName,
+            )}
+          >
+            {typeof children === "function" ? children(close) : children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export function MenuItem({
+  icon,
+  children,
+  onClick,
+  active,
+  danger,
+  disabled,
+}: {
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  onClick?: () => void;
+  active?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      disabled={disabled}
+      className={cx(
+        "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
+        danger
+          ? "text-severity-critical hover:bg-severity-critical/10"
+          : active
+            ? "bg-phantix-800 text-gold-200"
+            : "text-slate-300 hover:bg-phantix-800/70 hover:text-white",
+        disabled && "pointer-events-none opacity-50",
+      )}
+    >
+      {icon && <span className="shrink-0 text-slate-500">{icon}</span>}
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-gold-400" />}
+    </button>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Send, ShieldCheck, Loader2, Radar, Square, ChevronDown, ChevronRight,
+  Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
@@ -51,28 +51,28 @@ function ActionCard({
   const [open, setOpen] = useState(true);
   return (
     <div className="rounded-xl border border-severity-medium/30 bg-severity-medium/5 p-3">
-      <div className="flex items-start justify-between gap-2">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="group flex w-full items-start justify-between gap-2 text-left">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-severity-medium/15 text-severity-medium"><ShieldCheck size={13} /></span>
+          <span className="wb-iconbox flex items-center justify-center rounded-lg bg-severity-medium/15 text-severity-medium"><ShieldCheck size={13} /></span>
           <div>
-            <p className="text-xs font-semibold text-amber-200">State-changing step</p>
-            <p className="text-[10px] text-slate-500">pending approval</p>
+            <p className="wb-sm font-semibold text-amber-200">State-changing step</p>
+            <p className="wb-2xs text-slate-500">pending approval</p>
           </div>
         </div>
-        <button onClick={() => setOpen((v) => !v)} className="text-slate-500 hover:text-slate-300">
-          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        </button>
+        <ChevronDown size={14} className={cx("shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-slate-300", !open && "-rotate-90")} />
+      </button>
+      <div className={cx("wb-collapse", open && "open")}>
+        <div className="wb-collapse-inner">
+          <div className="mt-2.5 space-y-2">
+            <p className="wb-xs rounded-lg bg-phantix-950/70 px-2.5 py-2 font-mono leading-relaxed text-slate-200">{a.proposed_command}</p>
+            {a.rationale && <p className="wb-xs leading-relaxed text-slate-400">{a.rationale}</p>}
+            <div className="flex items-center gap-2 pt-0.5">
+              <button onClick={() => onDecide(true)} disabled={busy} className="btn-primary flex-1 !px-2 !py-1.5 wb-xs"><CheckCircle2 size={12} className="mr-1 inline" /> Approve</button>
+              <button onClick={() => onDecide(false)} disabled={busy} className="btn-ghost flex-1 !px-2 !py-1.5 wb-xs text-severity-critical hover:text-severity-critical"><XCircle size={12} className="mr-1 inline" /> Reject</button>
+            </div>
+          </div>
+        </div>
       </div>
-      {open && (
-        <div className="mt-2.5 space-y-2">
-          <p className="rounded-lg bg-phantix-950/70 px-2.5 py-2 font-mono text-[11px] leading-5 text-slate-200">{a.proposed_command}</p>
-          {a.rationale && <p className="text-[11px] leading-4 text-slate-400">{a.rationale}</p>}
-          <div className="flex items-center gap-2 pt-0.5">
-            <button onClick={() => onDecide(true)} disabled={busy} className="btn-primary flex-1 !px-2 !py-1.5 !text-[11px]"><CheckCircle2 size={12} className="mr-1 inline" /> Approve</button>
-            <button onClick={() => onDecide(false)} disabled={busy} className="btn-ghost flex-1 !px-2 !py-1.5 !text-[11px] text-severity-critical hover:text-severity-critical"><XCircle size={12} className="mr-1 inline" /> Reject</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -478,7 +478,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-phantix-950"><Radar size={18} /></span>
           <div className="min-w-0">
             <p className="font-display text-sm font-semibold text-white">Autonomous Pentest Agent</p>
-            <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <p className="wb-xs flex items-center gap-1.5 text-slate-500">
               human-gated · scoped · terminal-access
               {running && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
             </p>
@@ -495,7 +495,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       {policyBanner && (
         <div className="flex items-center gap-2 border-b border-severity-critical/30 bg-severity-critical/10 px-4 py-2">
           <Lock size={13} className="shrink-0 text-severity-critical" />
-          <p className="text-[11px] leading-4 text-red-300">{policyBanner}</p>
+          <p className="wb-xs leading-relaxed text-red-300">{policyBanner}</p>
         </div>
       )}
 
@@ -533,8 +533,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
             /* No session — engagement picker / create */
             <div className="flex-1 space-y-3 overflow-y-auto p-4">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">1 · Choose an engagement</p>
-                <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 !text-[11px]"><Plus size={12} className="mr-1 inline" /> New</button>
+                <p className="wb-pane-title">1 · Choose an engagement</p>
+                <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 wb-xs"><Plus size={12} className="mr-1 inline" /> New</button>
               </div>
               {engLoading ? (
                 <div className="space-y-2">
@@ -544,7 +544,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               ) : (
                 <div className="space-y-2">
                   {engagements.length === 0 && !createOpen && (
-                    <p className="rounded-xl border border-dashed border-phantix-700/50 px-3 py-4 text-center text-xs text-slate-500">No engagements yet. Create one with a tight allowlist to start.</p>
+                    <p className="wb-sm rounded-xl border border-dashed border-phantix-700/50 px-3 py-4 text-center text-slate-500">No engagements yet. Create one with a tight allowlist to start.</p>
                   )}
                   {engagements.map((e) => (
                     <button
@@ -557,10 +557,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     >
                       <div className="flex items-center gap-2">
                         <Globe2 size={13} className="shrink-0 text-gold-400" />
-                        <span className="truncate text-xs font-semibold text-slate-200">{e.name}</span>
-                        <span className={cx("ml-auto chip !text-[9px]", e.status === "ready" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{e.status}</span>
+                        <span className="wb-sm min-w-0 truncate font-semibold text-slate-200">{e.name}</span>
+                        <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{e.status}</span>
                       </div>
-                      <p className="mt-1 truncate font-mono text-[10px] text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
+                      <p className="wb-2xs mt-1 truncate font-mono text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
                     </button>
                   ))}
                 </div>
@@ -568,17 +568,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
               {createOpen && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">New engagement</p>
+                  <p className="wb-pane-title">New engagement</p>
                   <input
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="Name (e.g. Lab external web)"
-                    className="w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
+                    className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
                   />
                   <div className="rounded-lg border border-phantix-700/50 bg-phantix-950/60 p-2">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Target assets (from your inventory)</p>
-                      <label className="flex cursor-pointer items-center gap-1.5 text-[10px] text-slate-400">
+                      <p className="wb-pane-title">Target assets (from your inventory)</p>
+                      <label className="wb-xs flex cursor-pointer items-center gap-1.5 text-slate-400">
                         <input
                           type="checkbox"
                           checked={selectAllAssets}
@@ -593,14 +593,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       onChange={(e) => setAssetSearch(e.target.value)}
                       placeholder={selectAllAssets ? "All assets selected" : "Search assets…"}
                       disabled={selectAllAssets}
-                      className="mt-1.5 w-full rounded-md border border-phantix-700/50 bg-phantix-950/70 px-2 py-1.5 text-[11px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
+                      className="wb-xs mt-1.5 w-full rounded-md border border-phantix-700/50 bg-phantix-950/70 px-2 py-1.5 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
                     />
                     {assetLoading ? (
-                      <p className="py-3 text-center text-[10px] text-slate-500"><Loader2 size={11} className="mr-1 animate-spin inline" /> Loading assets…</p>
+                      <p className="wb-xs py-3 text-center text-slate-500"><Loader2 size={11} className="mr-1 animate-spin inline" /> Loading assets…</p>
                     ) : orgAssets.length === 0 ? (
-                      <p className="py-3 text-center text-[10px] text-slate-500">No assets in your inventory yet. Add assets first, then create an engagement.</p>
+                      <p className="wb-xs py-3 text-center text-slate-500">No assets in your inventory yet. Add assets first, then create an engagement.</p>
                     ) : (
-                      <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto pr-1">
+                      <div className="wb-scroll mt-1.5 max-h-40 space-y-1 overflow-y-auto pr-1">
                         {orgAssets
                           .filter((a) => !selectAllAssets && (!assetSearch.trim() || a.value.toLowerCase().includes(assetSearch.toLowerCase()) || a.name.toLowerCase().includes(assetSearch.toLowerCase())))
                           .map((a) => (
@@ -626,13 +626,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                                 className="h-3 w-3 shrink-0 accent-gold-400"
                               />
                               <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", a.criticality === "critical" ? "bg-severity-critical" : a.criticality === "high" ? "bg-severity-high" : a.criticality === "medium" ? "bg-severity-medium" : "bg-severity-low")} />
-                              <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-slate-200">{a.value}</span>
-                              <span className="shrink-0 text-[9px] uppercase tracking-wider text-slate-500">{a.asset_type}</span>
+                              <span className="wb-xs min-w-0 flex-1 truncate font-mono text-slate-200">{a.value}</span>
+                              <span className="wb-2xs shrink-0 uppercase tracking-wider text-slate-500">{a.asset_type}</span>
                             </label>
                           ))}
                       </div>
                     )}
-                    <p className="mt-1.5 text-[10px] text-slate-600">
+                    <p className="wb-2xs mt-1.5 text-slate-600">
                       {selectAllAssets
                         ? `${orgAssets.length} asset${orgAssets.length === 1 ? "" : "s"} selected (all)`
                         : `${selectedAssetIds.size} of ${orgAssets.length} selected`}
@@ -642,16 +642,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     value={newRoe}
                     onChange={(e) => setNewRoe(e.target.value)}
                     placeholder="Rules of engagement (optional)"
-                    className="w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-[11px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
+                    className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
                   />
-                  <button onClick={() => void createEngagement()} disabled={creating} className="btn-primary w-full !py-2 !text-xs">
+                  <button onClick={() => void createEngagement()} disabled={creating} className="btn-primary w-full !py-2 wb-sm">
                     {creating ? <Loader2 size={12} className="mr-1 animate-spin inline" /> : <Plus size={12} className="mr-1 inline" />} Create engagement
                   </button>
                 </motion.div>
               )}
 
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">2 · Instruction</p>
+                <p className="wb-pane-title">2 · Instruction</p>
                 <textarea
                   value={instruction}
                   onChange={(e) => setInstruction(e.target.value)}
@@ -659,9 +659,9 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   placeholder="Give the agent an explicit instruction, e.g. “Perform read-only recon of the allowlisted hosts and propose any active verification steps.”"
                   rows={3}
                   disabled={!selectedEng}
-                  className="mt-2 w-full rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-xs leading-5 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
+                  className="wb-sm mt-2 w-full rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 leading-relaxed text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
                 />
-                <button onClick={() => void start()} disabled={!selectedEng || !instruction.trim() || starting} className="btn-primary mt-2 w-full !py-2.5 !text-xs">
+                <button onClick={() => void start()} disabled={!selectedEng || !instruction.trim() || starting} className="btn-primary mt-2 w-full !py-2.5 wb-sm">
                   {starting ? <Loader2 size={13} className="mr-1 animate-spin inline" /> : <Radar size={13} className="mr-1 inline" />} Start session
                 </button>
               </div>
@@ -692,25 +692,25 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
             />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
-              <div className="flex items-center gap-2 border-b border-phantix-700/40 px-4 py-2">
-                <span className={cx("chip !text-[9px]", running ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
+              <div className="flex items-center gap-1.5 border-b border-phantix-700/40 px-3 py-2">
+                <span className={cx("chip !px-2 !py-0.5 wb-2xs", running ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
                   {running ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> running</span> : "stopped"}
                 </span>
-                <span className="chip !text-[9px] text-slate-500">{selected?.name}</span>
-                <span className="chip !text-[9px] font-mono text-slate-500">session #{session.id}</span>
+                <span className="chip !px-2 !py-0.5 wb-2xs min-w-0 truncate text-slate-500">{selected?.name}</span>
+                <span className="chip !px-2 !py-0.5 wb-2xs shrink-0 font-mono text-slate-500">#{session.id}</span>
                 {running && (
-                  <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-2.5 !py-1 !text-[10px]" title="Stop session">
+                  <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-2.5 !py-1 wb-xs shrink-0" title="Stop session">
                     <Square size={11} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
                   </button>
                 )}
               </div>
 
               <div className="relative min-h-0 flex-1">
-                <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-2 overflow-y-auto p-3">
+                <div ref={scrollRef} onScroll={onScroll} className="wb-scroll h-full space-y-2 overflow-y-auto p-3">
                   {connError && (
                     <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
                       <Lock size={13} className="shrink-0 text-severity-critical" />
-                      <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                      <p className="wb-xs leading-relaxed text-red-300">{connError}</p>
                     </div>
                   )}
                   {transcript.length === 0 && !connError && (
@@ -718,8 +718,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-phantix-700/40 bg-phantix-900/60 text-gold-400">
                         <Radar size={16} className="animate-pulse" />
                       </span>
-                      <p className="text-[11px] font-medium text-slate-400">Connecting to engagement container…</p>
-                      <p className="max-w-[240px] text-[10px] leading-4 text-slate-600">Live turns, tool calls, and engine events will stream here.</p>
+                      <p className="wb-sm font-medium text-slate-400">Connecting to engagement container…</p>
+                      <p className="wb-xs max-w-[240px] leading-relaxed text-slate-600">Live turns, tool calls, and engine events will stream here.</p>
                     </div>
                   )}
                   {transcript.map((t, i) => (
@@ -729,7 +729,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     <TypingIndicator label={(workingOn || "").trim() || undefined} />
                   )}
                   {running && transcript.length > 0 && !thinking && !connError && (
-                    <p className="text-center text-[10px] text-slate-600">— awaiting engine output —</p>
+                    <p className="wb-xs text-center text-slate-600">— awaiting engine output —</p>
                   )}
                   <div ref={endRef} />
                 </div>
@@ -747,7 +747,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     >
                       <ArrowDown size={16} />
                       {stick.unseen > 0 && (
-                        <span className="rounded-full bg-gold-400/20 px-1.5 text-[9px] font-semibold tabular-nums text-gold-300">
+                        <span className="wb-2xs rounded-full bg-gold-400/20 px-1.5 font-semibold tabular-nums text-gold-300">
                           {stick.unseen > 99 ? "99+" : stick.unseen}
                         </span>
                       )}
@@ -758,8 +758,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
               {/* Pending approvals */}
               {actions.length > 0 && (
-                <div className="max-h-[38%] space-y-2 overflow-y-auto border-t border-phantix-700/40 bg-phantix-950/60 p-3">
-                  <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-severity-medium"><ShieldCheck size={11} /> Awaiting your approval ({actions.length})</p>
+                <div className="wb-scroll max-h-[40%] space-y-2 overflow-y-auto border-t border-phantix-700/40 bg-phantix-950/60 p-3">
+                  <p className="wb-pane-title !text-severity-medium mb-1"><ShieldCheck size={12} /> Awaiting your approval ({actions.length})</p>
                   {actions.map((a) => (
                     <ActionCard key={a.id} a={a} busy={actionBusy === a.id} onDecide={(ok) => void decide(a, ok)} />
                   ))}
@@ -775,7 +775,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                         key={s}
                         type="button"
                         onClick={() => setInstruction(s)}
-                        className="rounded-full border border-phantix-700/50 bg-phantix-900/50 px-2.5 py-0.5 text-[10px] text-slate-400 transition-colors hover:border-gold-400/40 hover:text-gold-200"
+                        className="wb-xs rounded-full border border-phantix-700/50 bg-phantix-900/50 px-2.5 py-0.5 text-slate-400 transition-colors hover:border-gold-400/40 hover:text-gold-200"
                       >
                         {s}
                       </button>
@@ -793,12 +793,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     }}
                     placeholder={running ? "Further instructions for the agent..." : "Session stopped"}
                     disabled={!running}
-                    className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50"
+                    className="wb-md flex-1 bg-transparent text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50"
                   />
-                  <button onClick={send} disabled={!running || !instruction.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
+                  <button onClick={send} disabled={!running || !instruction.trim()} className="btn-primary !px-3 !py-1.5 wb-xs" aria-label="Send"><Send size={14} /></button>
                 </div>
-                <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600">
-                  <ShieldCheck size={10} />
+                <p className="wb-xs mt-2 flex items-center gap-1.5 text-slate-600">
+                  <ShieldCheck size={11} className="shrink-0" />
                   {chatSend.hint === "queued"
                     ? "Queued — press Enter again to send now, or wait for the current reply."
                     : "Read-only steps stream live · state-changing steps wait for your approval · container destroyed on stop"}
