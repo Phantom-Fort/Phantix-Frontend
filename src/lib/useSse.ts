@@ -32,7 +32,7 @@ const demoEvent = (event: string, payload: Record<string, unknown>): SseEvent =>
  * and reconnects with exponential backoff on disconnect.
  */
 export function useSseStream(path: string, opts: SseOptions = {}) {
-  const { baseDelayMs = 1000, maxDelayMs = 30000, enabled = true, onEvent } = opts;
+  const { baseDelayMs = 5000, maxDelayMs = 30000, enabled = true, onEvent } = opts;
   const [connected, setConnected] = useState(false);
   const [events, setEvents] = useState<SseEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);

@@ -791,6 +791,8 @@ export async function loadTrackerDetail(findingKey: string): Promise<any | null>
   return softOne<any>(`/reports/tracker/${encodeURIComponent(findingKey)}`);
 }
 
+const CC_CACHE_KEY = "phantix.command-center.cache";
+
 /** Preferred dashboard first-paint: GET /org/command-center */
 export async function loadCommandCenter(): Promise<{
   cc: CommandCenter | null;
@@ -913,11 +915,25 @@ export async function loadCommandCenter(): Promise<{
   }
   const meta: LoadMeta = {};
   const cc = await softOne<CommandCenter>("/org/command-center", meta);
-  return {
-    cc,
-    securityDbBlocked: !!meta.securityDbBlocked,
-    error: meta.error ?? null,
-  };
+  if (cc !== null) {
+    try {
+      localStorage.setItem(CC_CACHE_KEY, JSON.stringify(cc));
+    } catch { /* storage may be unavailable */ }
+    return { cc, securityDbBlocked: !!meta.securityDbBlocked, error: null };
+  }
+  // Backend unavailable — stay optimistic and serve the last good snapshot
+  // instead of falling back to zeros. Only throw when we have nothing cached.
+  try {
+    const cached = localStorage.getItem(CC_CACHE_KEY);
+    if (cached) {
+      return {
+        cc: JSON.parse(cached) as CommandCenter,
+        securityDbBlocked: !!meta.securityDbBlocked,
+        error: meta.error ?? null,
+      };
+    }
+  } catch { /* ignore corrupt cache */ }
+  throw new Error(meta.error || "Command center unavailable");
 }
 
 export async function loadSocAgentInstall(): Promise<SocAgentInstallCatalog | null> {

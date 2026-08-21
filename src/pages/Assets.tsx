@@ -107,7 +107,7 @@ export default function Assets() {
 
   useEffect(() => {
     if (activeJobs.length > 0 && !pollRef.current) {
-      pollRef.current = setInterval(pollDiscovery, 3000);
+      pollRef.current = setInterval(pollDiscovery, 5000);
     } else if (activeJobs.length === 0 && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
