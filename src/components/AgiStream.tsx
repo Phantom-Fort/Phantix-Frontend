@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Bot, Check, ChevronRight, Copy, Crosshair, Loader2, Radar, ShieldAlert, Terminal, User,
+  ArrowRight, Bot, Check, ChevronRight, Copy, Crosshair, Loader2, Radar, ShieldAlert, ShieldCheck, Terminal, User,
 } from "lucide-react";
 import MarkdownView from "@/components/MarkdownView";
 import { personaForChunk, type AgentPersona } from "@/lib/agiGraph";
@@ -304,6 +304,61 @@ export function TypingIndicator({ label, tool }: { label?: string | null; tool?:
         {text || "Working on the scoped assessment."}
       </span>
       {tool && <span className="chip shrink-0 !px-1.5 !py-0 wb-2xs font-mono text-gold-300">{tool}</span>}
+    </motion.div>
+  );
+}
+
+// ── Awaiting-authorization cue ──────────────────────────────────────────────
+// Rendered inline in the stream when one or more steps are gated. Instead of a
+// generic "awaiting engine output", it reveals the approval path: the operator
+// reviews in the Human gate, and for state-changing steps a second authorizer
+// must approve in the Authorizations queue.
+
+export function ApprovalNotice({
+  count = 1,
+  stateChanging = true,
+  authorizationsHref,
+  dense = false,
+}: {
+  count?: number;
+  /** State-changing steps require a second authorizer via the queue. */
+  stateChanging?: boolean;
+  /** Link to the authorizer approval queue (command centre: "/authorizations"). */
+  authorizationsHref?: string;
+  dense?: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="flex justify-start"
+    >
+      <div className={cx("flex items-start gap-2.5 rounded-xl border border-severity-medium/40 bg-severity-medium/10 px-3 py-2.5", dense ? "max-w-full" : "max-w-[94%]")}>
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-severity-medium/15 text-severity-medium">
+          <ShieldCheck size={13} className="animate-pulse" />
+        </span>
+        <div className="min-w-0">
+          <p className={cx("font-semibold text-amber-200", dense ? "wb-xs" : "wb-sm")}>
+            Paused — awaiting authorization{count > 1 ? ` (${count} steps)` : ""}
+          </p>
+          <p className={cx("mt-0.5 leading-relaxed text-slate-400", dense ? "wb-2xs" : "wb-xs")}>
+            {stateChanging
+              ? authorizationsHref
+                ? "This state-changing step is held for dual control. Ask an authorizer to approve it in the Authorizations queue."
+                : "This state-changing step is held for approval. Review and decide it in the Human gate."
+              : "This step is held pending approval."}
+          </p>
+          {stateChanging && authorizationsHref && (
+            <a
+              href={authorizationsHref}
+              className={cx("mt-1 inline-flex items-center gap-1 font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200", dense ? "wb-2xs" : "wb-xs")}
+            >
+              Open the Authorizations queue <ArrowRight size={11} />
+            </a>
+          )}
+        </div>
+      </div>
     </motion.div>
   );
 }

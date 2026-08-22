@@ -7,7 +7,7 @@ import {
 import { Modal, Spinner } from "@/components/ui";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
-import { StreamMessage, TypingIndicator } from "@/components/AgiStream";
+import { ApprovalNotice, StreamMessage, TypingIndicator } from "@/components/AgiStream";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
@@ -728,7 +728,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   {thinking && (
                     <TypingIndicator label={(workingOn || "").trim() || undefined} />
                   )}
-                  {running && transcript.length > 0 && !thinking && !connError && (
+                  {!connError && actions.length > 0 && (
+                    <ApprovalNotice
+                      count={actions.length}
+                      stateChanging={actions.some((a) => a.action_type === "state_changing")}
+                      authorizationsHref="/authorizations"
+                    />
+                  )}
+                  {running && transcript.length > 0 && !thinking && !connError && actions.length === 0 && (
                     <p className="wb-xs text-center text-slate-600">— awaiting engine output —</p>
                   )}
                   <div ref={endRef} />

@@ -6,7 +6,7 @@ import {
   Pause, Play, Radar, Send, ShieldAlert, ShieldCheck, Sparkles, Square,
   Terminal, XCircle,
 } from "lucide-react";
-import { CopyBtn, StreamEmpty, StreamMessage, TypingIndicator } from "@/components/AgiStream";
+import { ApprovalNotice, CopyBtn, StreamEmpty, StreamMessage, TypingIndicator } from "@/components/AgiStream";
 import { Menu, MenuItem, SeverityBadge } from "@/components/ui";
 import { PaneHeader, ResizeHandle } from "@/components/workbench";
 import { useDragResize } from "@/lib/useDragResize";
@@ -527,6 +527,13 @@ export default function AgiConsole({
                 {filtered.map((t, i) => (
                   <StreamMessage key={`st-${i}`} t={t} last={i === lastIdx && running && !paused && t.role !== "operator"} />
                 ))}
+                {!connError && actions.length > 0 && (
+                  <ApprovalNotice
+                    count={actions.length}
+                    stateChanging={actions.some((a) => a.action_type === "state_changing")}
+                    authorizationsHref="/authorizations"
+                  />
+                )}
                 {thinking && !paused && <TypingIndicator label={(workingOn || "").trim() || undefined} />}
                 {paused && <p className="wb-xs text-severity-medium">Loop paused — agent will not advance.</p>}
                 <div ref={thoughtsStick.endRef} />

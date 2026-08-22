@@ -1,5 +1,5 @@
 ﻿import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
@@ -336,7 +336,7 @@ function ReturningLogin({
                   {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
                 <NewsletterField />
-                <a href={`${PLATFORM_URL}/password-reset`} className="block text-center text-xs text-slate-500 hover:text-slate-300">Forgot password?</a>
+                <Link to="/password-reset" className="block text-center text-xs text-slate-500 hover:text-slate-300">Forgot password?</Link>
               </motion.form>
             )}
 

@@ -27,6 +27,8 @@ import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
 import Sandbox from "@/pages/Sandbox";
 import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
+import PasswordResetRequest from "@/pages/auth/PasswordResetRequest";
+import PasswordResetComplete from "@/pages/auth/PasswordResetComplete";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -76,6 +78,8 @@ export default function App() {
           <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/password-reset" element={<PasswordResetRequest />} />
+          <Route path="/reset-password" element={<PasswordResetComplete />} />
           <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
