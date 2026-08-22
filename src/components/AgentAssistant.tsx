@@ -181,14 +181,8 @@ export default function AgentAssistant() {
 
       <AnimatePresence>
         {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[80] bg-phantix-950/50 backdrop-blur-sm"
-              onClick={() => setOpen(false)}
-            />
-            <motion.div
-              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.97 }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
@@ -340,7 +334,6 @@ export default function AgentAssistant() {
                 </p>
               </div>
             </motion.div>
-          </>
         )}
       </AnimatePresence>
     </>

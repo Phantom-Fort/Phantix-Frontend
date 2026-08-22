@@ -108,7 +108,7 @@ export default function DualControlOverlay() {
       }).catch(() => { /* keep polling */ });
     };
     const unsubscribe = listenDeviceConfirmed(attempt);
-    const timer = setInterval(attempt, 2500);
+    const timer = setInterval(attempt, 5000);
     const timeout = setTimeout(() => {
       if (!disposed) {
         clearInterval(timer);

@@ -34,8 +34,8 @@ import { useChatSend } from "@/lib/useChatSend";
 import { sanitizeAgiChunks } from "@/lib/agiSanitize";
 import { useNavigate } from "react-router-dom";
 
-const POLL_MS = 2000;
-const ACTION_POLL_MS = 3000;
+const POLL_MS = 5000;
+const ACTION_POLL_MS = 8000;
 
 type WorkspaceVariant = "drawer" | "page" | "console";
 
@@ -441,7 +441,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       } catch { /* transient */ }
     };
     void tick();
-    const t = window.setInterval(() => void tick(), 4000);
+    const t = window.setInterval(() => void tick(), 10000);
     return () => window.clearInterval(t);
   }, [running, session?.id, paused]);
 
