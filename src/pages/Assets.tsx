@@ -65,7 +65,55 @@ export default function Assets() {
   const [apiFormat, setApiFormat] = useState("openapi");
   const [importing, setImporting] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [checked, setChecked] = useState<Set<number>>(new Set());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /** Map an asset to the discovery job spec the backend expects. */
+  const discoveryForAsset = (a: Asset): { job_type: string; config: Record<string, unknown>; target_asset_id?: number } | null => {
+    switch (a.asset_type) {
+      case "domain":
+        return { job_type: "domain_enum", config: { domain: a.value, include_subdomains: true, include_directories: true } };
+      case "subdomain":
+        return { job_type: "subdomain_enum", config: { domain: a.value } };
+      case "web_app":
+      case "api":
+        return { job_type: "directory_enum", config: { url: a.value } };
+      case "ip_address":
+        return { job_type: "nmap", config: { target: a.value } };
+      case "port_service":
+        return { job_type: "nmap", config: { target: a.value.split("/")[0] } };
+      case "mobile_apk":
+        return { job_type: "apk_analyze", config: { asset_id: a.id }, target_asset_id: a.id };
+      case "github_repo":
+        return { job_type: "github_sync", config: {} };
+      default:
+        return null;
+    }
+  };
+
+  const runDiscovery = async (list: Asset[]) => {
+    if (!(await requireDualControl("Running discovery jobs requires a dual-control operate session."))) return;
+    const targets = list.filter((a) => a && discoveryForAsset(a));
+    if (targets.length === 0) {
+      toast("error", "No discovery available", "Selected asset type has no supported discovery job.");
+      return;
+    }
+    let ok = 0;
+    let fail = 0;
+    for (const a of targets) {
+      const spec = discoveryForAsset(a)!;
+      try {
+        await api.post("/assets/discovery/jobs", { ...spec, run_inline: true });
+        ok += 1;
+      } catch {
+        fail += 1;
+      }
+    }
+    if (ok > 0) toast("success", "Discovery started", `${ok} job${ok > 1 ? "s" : ""} queued — watch the Discovery jobs tab.`);
+    if (fail > 0) toast("error", "Some jobs failed", `${fail} asset(s) could not start discovery.`);
+    setChecked(new Set());
+    setTab("discovery");
+  };
 
   useEffect(() => {
     if (!selected) { setSelectedIntel(null); return; }
@@ -357,84 +405,121 @@ export default function Assets() {
               </div>
             </div>
 
-            {assetsWithDiscovery.filter(
-              (a) =>
-                (typeFilter === "all" || a.asset_type === typeFilter) &&
-                (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
-            ).length === 0 ? (
-              <EmptyState icon={<Boxes size={22} />} title="No assets match" body="Adjust filters or add your first in-scope host." />
-            ) : (
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-phantix-700/40">
-                    <th className="th">Asset</th>
-                    <th className="th">Type</th>
-                    <th className="th">Discovery</th>
-                    <th className="th">Criticality</th>
-                    <th className="th">Verified</th>
-                    <th className="th">Last seen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assetsWithDiscovery.filter(
-                    (a) =>
-                      (typeFilter === "all" || a.asset_type === typeFilter) &&
-                      (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
-                  ).map((a, i) => (
-                    <motion.tr
-                      key={a.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.03 }}
-                      onClick={() => setSelected(a)}
-                      className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35"
-                    >
-                      <td className="td">
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-phantix-800/70 text-phantix-300">
-                            {typeIcon[a.asset_type] ?? <Boxes size={15} />}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="truncate font-medium text-slate-200">{a.value}</p>
-                            <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
-                            {(() => {
-                              const t = assetTierBadge(a);
-                              return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium ${t.cls}`}>{t.label}</span> : null;
-                            })()}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="td"><span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span></td>
-                      <td className="td">
-                        {a.discoveryStatus ? (
-                          <span className="flex items-center gap-1.5">
-                            <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-blue-400 animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
-                            <StatusBadge status={a.discoveryStatus} />
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-600">--</span>
-                        )}
-                      </td>
-                      <td className="td">
-                        <span className={cx("text-xs font-semibold capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
-                          {a.criticality}
-                        </span>
-                      </td>
-                      <td className="td">
-                        {a.is_verified ? (
-                          <span className="inline-flex items-center gap-1 text-xs text-emerald-400"><ShieldCheck size={13} /> Verified</span>
-                        ) : (
-                          <span className="text-xs text-severity-medium">Unverified</span>
-                        )}
-                      </td>
-                      <td className="td"><span className="text-xs text-slate-500">{timeAgo(a.last_seen_at)}</span></td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
-        </motion.div>
+            {(() => {
+              const filtered = assetsWithDiscovery.filter(
+                (a) =>
+                  (typeFilter === "all" || a.asset_type === typeFilter) &&
+                  (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
+              );
+              if (filtered.length === 0) {
+                return <EmptyState icon={<Boxes size={22} />} title="No assets match" body="Adjust filters or add your first in-scope host." />;
+              }
+              const selectedInView = filtered.filter((a) => checked.has(a.id));
+              const allChecked = selectedInView.length === filtered.length;
+              const toggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+                const s = new Set(checked);
+                if (e.target.checked) filtered.forEach((a) => s.add(a.id));
+                else filtered.forEach((a) => s.delete(a.id));
+                setChecked(s);
+              };
+              return (
+                <>
+                  {checked.size > 0 && (
+                    <div className="flex flex-wrap items-center gap-3 border-b border-phantix-700/40 bg-phantix-800/40 px-4 py-2.5">
+                      <span className="text-xs font-medium text-slate-300">{checked.size} selected</span>
+                      <button
+                        onClick={() => void runDiscovery(assets.filter((a) => checked.has(a.id)))}
+                        className="btn-primary !py-1.5 !text-xs"
+                      >
+                        <Radar size={13} className="mr-1 inline" /> Run discovery
+                      </button>
+                      <button onClick={() => setChecked(new Set())} className="btn-ghost !py-1.5 !text-xs">Clear</button>
+                    </div>
+                  )}
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-phantix-700/40">
+                        <th className="th w-10"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="accent-gold-400" aria-label="Select all assets" /></th>
+                        <th className="th">Asset</th>
+                        <th className="th">Type</th>
+                        <th className="th">Discovery</th>
+                        <th className="th">Criticality</th>
+                        <th className="th">Verified</th>
+                        <th className="th">Last seen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((a, i) => (
+                        <motion.tr
+                          key={a.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.03 }}
+                          onClick={() => setSelected(a)}
+                          className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35"
+                        >
+                          <td className="td w-10" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={checked.has(a.id)}
+                              onChange={(e) => {
+                                const s = new Set(checked);
+                                if (e.target.checked) s.add(a.id);
+                                else s.delete(a.id);
+                                setChecked(s);
+                              }}
+                              className="accent-gold-400"
+                              aria-label={`Select ${a.value}`}
+                            />
+                          </td>
+                          <td className="td">
+                            <div className="flex items-center gap-3">
+                              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-phantix-800/70 text-phantix-300">
+                                {typeIcon[a.asset_type] ?? <Boxes size={15} />}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate font-medium text-slate-200">{a.value}</p>
+                                <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
+                                {(() => {
+                                  const t = assetTierBadge(a);
+                                  return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium ${t.cls}`}>{t.label}</span> : null;
+                                })()}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="td"><span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span></td>
+                          <td className="td">
+                            {a.discoveryStatus ? (
+                              <span className="flex items-center gap-1.5">
+                                <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-blue-400 animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
+                                <StatusBadge status={a.discoveryStatus} />
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-600">--</span>
+                            )}
+                          </td>
+                          <td className="td">
+                            <span className={cx("text-xs font-semibold capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
+                              {a.criticality}
+                            </span>
+                          </td>
+                          <td className="td">
+                            {a.is_verified ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-emerald-400"><ShieldCheck size={13} /> Verified</span>
+                            ) : (
+                              <span className="text-xs text-severity-medium">Unverified</span>
+                            )}
+                          </td>
+                          <td className="td"><span className="text-xs text-slate-500">{timeAgo(a.last_seen_at)}</span></td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
+              );
+            })()}
+            </Card>
+          </motion.div>
       )}
 
       {tab === "discovery" && (
@@ -739,6 +824,12 @@ export default function Assets() {
                 }
               >
                 Re-verify ownership
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => void runDiscovery([selected])}
+              >
+                <Radar size={13} className="mr-1 inline" /> Run discovery
               </button>
               <button className="btn-secondary" onClick={() => toast("info", "History", "asset_history tracks every change in your security DB.")}>
                 View history
