@@ -51,23 +51,37 @@ function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
   return { downloads, errors };
 }
 
-function handleDownload(reportId: number, format: string) {
+async function handleDownload(
+  reportId: number,
+  format: string,
+  onError?: (msg: string) => void,
+) {
   const ext = downloadExt(format);
-  api.download(`/reports/${reportId}/download?format=${format}`).then((blob) => {
+  try {
+    const blob = await api.download(`/reports/${reportId}/download?format=${format}`);
+    if (!blob || blob.size === 0) throw new Error("Server returned an empty file");
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `report-${reportId}.${ext}`;
+    // Anchor must be in the DOM for the download to fire in some browsers.
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
-  }).catch(() => {});
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not download this report format";
+    if (onError) onError(msg);
+    else console.error("Report download failed:", msg);
+  }
 }
 
 async function loadMarkdown(reportId: number): Promise<string> {
   try {
     return await api.fetchText(`/reports/${reportId}/download?format=markdown`);
-  } catch {
-    return "*Could not load markdown content.*";
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Could not load markdown content";
+    throw new Error(msg);
   }
 }
 
@@ -123,6 +137,7 @@ function SectionRenderer({ section }: { section: any }) {
 }
 
 function MarkdownReportView({ reportId }: { reportId: number }) {
+  const { toast } = useStore();
   const [md, setMd] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -130,10 +145,17 @@ function MarkdownReportView({ reportId }: { reportId: number }) {
   const handleLoad = async () => {
     if (md !== null) { setOpen(true); return; }
     setLoading(true);
-    const text = await loadMarkdown(reportId);
-    setMd(text);
-    setLoading(false);
-    setOpen(true);
+    try {
+      const text = await loadMarkdown(reportId);
+      setMd(text);
+      setOpen(true);
+    } catch (err) {
+      toast("error", "Could not load report", err instanceof Error ? err.message : "Markdown content unavailable");
+      setMd("*Could not load markdown content.*");
+      setOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -430,7 +452,7 @@ export default function Reports() {
                         <button
                           key={f}
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f); }}
+                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f, (m) => toast("error", "Download failed", m)); }}
                           className={cx(
                             "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
                             f === "pdf" || f === "docx" || f === "pptx" || f === "html"
@@ -746,7 +768,7 @@ export default function Reports() {
                     {downloads.map(({ format: fmt }) => (
                       <button
                         key={fmt}
-                        onClick={() => handleDownload(detail.id, fmt)}
+                        onClick={() => handleDownload(detail.id, fmt, (m) => toast("error", "Download failed", m))}
                         className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
                       >
                         <Download size={10} className="mr-1 inline" /> {fmt === "pptx" ? "Board deck (.pptx)" : fmt}
