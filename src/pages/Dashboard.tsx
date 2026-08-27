@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, SkeletonCard } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadCommandCenter } from "@/lib/data";
+import TrendChart from "@/components/TrendChart";
+import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useSmartPoll } from "@/lib/usePolling";
 import { useSseStream } from "@/lib/useSse";
@@ -34,6 +35,7 @@ function str(v: unknown, fallback = "—"): string {
 export default function Dashboard() {
   const { org: storeOrg, operate, requireDualControl } = useStore();
   const { data, loading, reload, setData } = useResource(loadCommandCenter, emptyDash, "command-center");
+  const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
   const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
   const skipFirstPoll = useRef(true);
 
@@ -176,6 +178,10 @@ export default function Dashboard() {
   const recentReports = (cc?.reports?.recent ?? []) as Array<Record<string, unknown>>;
   const pages = cc?.pages ?? {};
   const href = (key: string, fallback: string) => str(pages[key], fallback);
+  const trendPoints = (trendRes.data ?? []).map((p) => ({ label: p.day, value: Number(p.score ?? 0) }));
+  const trendFirst = trendPoints[0]?.value ?? null;
+  const trendLast = trendPoints[trendPoints.length - 1]?.value ?? null;
+  const trendDelta = trendFirst != null && trendLast != null ? Math.round(trendLast - trendFirst) : null;
 
   return (
     <div className="mx-auto max-w-[1400px]">
@@ -280,6 +286,39 @@ export default function Dashboard() {
           }
         />
       </div>
+
+      {/* Posture time series */}
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="mt-4">
+        <Card>
+          <CardHeader
+            title="Posture over time"
+            subtitle="Daily composite score — last 14 days"
+            action={
+              trendDelta != null ? (
+                <span
+                  className={cx(
+                    "chip text-xs",
+                    trendDelta > 0
+                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                      : trendDelta < 0
+                        ? "border-severity-critical/30 bg-severity-critical/10 text-severity-critical"
+                        : "text-slate-400",
+                  )}
+                >
+                  {trendDelta > 0 ? "▲" : trendDelta < 0 ? "▼" : "•"} {Math.abs(trendDelta)} pts / 14d
+                </span>
+              ) : undefined
+            }
+          />
+          {trendPoints.length > 1 ? (
+            <TrendChart points={trendPoints} color="#E8B54D" height={190} />
+          ) : (
+            <p className="py-10 text-center text-xs text-slate-500">
+              Posture history isn&apos;t available yet — it builds up as scans and intelligence runs accumulate.
+            </p>
+          )}
+        </Card>
+      </motion.div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="xl:col-span-2">

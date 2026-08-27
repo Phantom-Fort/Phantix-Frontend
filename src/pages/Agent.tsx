@@ -7,7 +7,26 @@ import {
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
-import MarkdownView from "@/components/MarkdownView";
+import { Markdown } from "@/components/prompt-kit/markdown";
+import {
+  ChatContainerRoot,
+  ChatContainerContent,
+  ChatContainerScrollAnchor,
+} from "@/components/prompt-kit/chat-container";
+import { ScrollButton } from "@/components/prompt-kit/scroll-button";
+import {
+  Steps,
+  StepsItem,
+  StepsTrigger,
+  StepsContent,
+} from "@/components/prompt-kit/steps";
+import { Tool } from "@/components/prompt-kit/tool";
+import {
+  PromptInput,
+  PromptInputTextarea,
+  PromptInputActions,
+  PromptInputAction,
+} from "@/components/prompt-kit/prompt-input";
 import chatbotData from "@/lib/animations/chatbot.json";
 import ghostData from "@/lib/animations/ghostsmart.json";
 import flowData from "@/lib/animations/ai-flow.json";
@@ -23,7 +42,6 @@ import { PLATFORM_AI_URL } from "@/lib/links";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
 import { useChatSend } from "@/lib/useChatSend";
-import { useStickToBottom } from "@/lib/useStickToBottom";
 import type { AiStatus, AgentSkill } from "@/lib/types";
 
 type ChatMsg = {
@@ -304,8 +322,6 @@ function AgentChat({
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const chatSend = useChatSend();
-  const stick = useStickToBottom([messages, liveAnswer, busy]);
-  const endRef = stick.endRef;
 
   // Chat retention — the conversation persists so the user can continue it later.
   const { session } = useStore();
@@ -489,7 +505,8 @@ function AgentChat({
           ))}
         </div>
 
-        <div ref={stick.scrollerRef} onScroll={stick.onScroll} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+        <ChatContainerRoot className="min-h-0 flex-1">
+          <ChatContainerContent className="space-y-5 px-5 py-4">
           {messages.length === 0 && !busy && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-phantix-800/70"><LottiePlayer animationData={chatbotData} className="h-12 w-12" loop /></span>
@@ -501,20 +518,29 @@ function AgentChat({
               </div>
             </div>
           )}
-          <AnimatePresence initial={false}>
-            {messages.map((m, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cx("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                <div className={cx("max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
-                  {m.role === "agent" && m.thinking && (
-                    <details className="mb-2">
-                      <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><LottiePlayer animationData={ghostData} className="h-4 w-4" loop speed={1.3} /> Thinking</summary>
-                      <p className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{m.thinking}</p>
-                    </details>
+          {messages.map((m, i) =>
+            m.role === "user" ? (
+              <div key={i} className="flex justify-end">
+                <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-sm border border-gold-400/25 bg-gold-400/12 px-3.5 py-2 text-sm leading-6 text-gold-100">{m.text}</div>
+              </div>
+            ) : (
+              <div key={i} className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+                <div className="min-w-0 max-w-[88%] space-y-2">
+                  {m.runId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
+                  {m.thinking && (
+                    <Steps defaultOpen={false} className="rounded-xl border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
+                      <StepsItem>
+                        <StepsTrigger leftIcon={<BrainCircuit size={13} className="text-gold-400" />}>Thinking</StepsTrigger>
+                        <StepsContent bar={<span className="block h-full w-[2px] rounded bg-phantix-600/50" />}>
+                          <p className="whitespace-pre-wrap text-xs leading-5 text-slate-500">{m.thinking}</p>
+                        </StepsContent>
+                      </StepsItem>
+                    </Steps>
                   )}
-                  {m.runId && <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
-                  {m.role === "agent" ? <MarkdownView source={m.text} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
-                  {m.role === "agent" && m.skills && m.skills.length > 0 && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
+                  {m.skills && m.skills.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[10px] text-slate-500">Skills:</span>
                       {m.skills.map((s) => (
                         <span key={s} className="chip border-gold-400/20 bg-gold-400/5 font-mono text-[10px] text-gold-300">{s}</span>
@@ -522,9 +548,9 @@ function AgentChat({
                     </div>
                   )}
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+              </div>
+            ),
+          )}
 
           {/* Follow-up suggestions from the clarification assistant */}
           {!busy && followUps.length > 0 && (
@@ -541,70 +567,73 @@ function AgentChat({
             </div>
           )}
 
-          {/* Live streaming panel — steps transition gracefully */}
+          {/* Live streaming turn — Tool calls, Steps thinking, streamed Markdown */}
           {busy && (
-            <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start">
-              <div className="max-w-[82%] min-w-[240px] rounded-2xl border border-phantix-700/40 bg-phantix-800/60 px-4 py-3 text-sm leading-6 text-slate-200">
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
-                    key={phase + (liveThinking ? "-t" : "") + (liveAnswer ? "-a" : "")}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center gap-2 text-[11px] text-slate-400"
-                  >
-                    <LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} />
-                    {phase === "connecting" && "Connecting to stream…"}
-                    {phase === "streaming" && !liveThinking && !liveAnswer && "Analysing…"}
-                    {phase === "synthesizing" && tools.length === 0 && "Synthesizing…"}
-                    {liveThinking && "Thinking…"}
-                    {liveAnswer && "Responding…"}
-                  </motion.div>
-                </AnimatePresence>
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+              <div className="min-w-0 max-w-[88%] space-y-2">
                 {tools.length > 0 && (
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  <div className="space-y-1.5">
                     {tools.map((t, idx) => (
-                      <span key={idx} className={cx("chip text-[10px]", t.ok ? "border-emerald-400/20 bg-emerald-400/5 text-emerald-300" : "border-severity-critical/30 bg-severity-critical/10 text-severity-critical")}>
-                        {t.ok ? "✓" : "✕"} {t.tool}
-                      </span>
+                      <Tool
+                        key={`${t.tool}-${idx}`}
+                        toolPart={{ type: t.tool, state: t.ok ? "output-available" : "output-error", toolCallId: `tool-${idx}` }}
+                        className="!mt-0 border-phantix-700/40"
+                      />
                     ))}
                   </div>
                 )}
-                {liveRunId && <span className="mb-1 flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
-                {liveThinking && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
-                    <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-3 text-[11px] leading-5 text-slate-500">{liveThinking}</div>
-                  </motion.div>
+                {(phase === "connecting" || liveThinking) && (
+                  <Steps defaultOpen={thinkingOpen || Boolean(liveThinking)} className="rounded-xl border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
+                    <StepsItem>
+                      <StepsTrigger leftIcon={liveThinking ? <BrainCircuit size={13} className="animate-pulse text-gold-400" /> : <Loader2 size={13} className="animate-spin text-slate-400" />}>
+                        {phase === "connecting" ? "Connecting to stream…" : "Thinking"}
+                      </StepsTrigger>
+                      <StepsContent bar={<span className="block h-full w-[2px] rounded bg-phantix-600/50" />}>
+                        {liveThinking && <p className="whitespace-pre-wrap text-xs leading-5 text-slate-500">{liveThinking}</p>}
+                      </StepsContent>
+                    </StepsItem>
+                  </Steps>
                 )}
+                {!liveThinking && !liveAnswer && tools.length === 0 && phase !== "connecting" && (
+                  <p className="flex items-center gap-2 text-[11px] text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Analysing…</p>
+                )}
+                {liveRunId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveAnswer && (
-                  <p className="mt-1.5 whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-4 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>
+                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
-          <div ref={endRef} />
-        </div>
+            <ChatContainerScrollAnchor />
+          </ChatContainerContent>
+          <div className="pointer-events-none sticky bottom-4 z-10 -mt-8 flex justify-center">
+            <ScrollButton className="pointer-events-auto border-phantix-700/50 bg-phantix-900/90 text-gold-300 hover:bg-phantix-800/90" />
+          </div>
+        </ChatContainerRoot>
 
         <div className="border-t border-phantix-700/40 p-3.5">
-          <div className="flex items-center gap-2.5 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3.5 py-2.5 focus-within:border-gold-400/40">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter" || e.shiftKey || e.repeat) return;
-                e.preventDefault();
-                send();
-              }}
-              placeholder="Ask about your assets, findings, risks, or reports..."
-              className="flex-1 bg-transparent text-sm text-slate-200 outline-none placeholder:text-slate-500"
-            />
-            {busy ? (
-              <button onClick={stop} className="btn-secondary !px-3.5 !py-2 !text-xs" aria-label="Stop stream"><Square size={13} className="mr-1 inline" /> Stop</button>
-            ) : (
-              <button onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3.5 !py-2 !text-xs" aria-label="Send"><Send size={14} /></button>
-            )}
-          </div>
+          <PromptInput
+            isLoading={busy}
+            value={input}
+            onValueChange={setInput}
+            onSubmit={() => send()}
+            maxHeight={160}
+            className="rounded-2xl border-phantix-700/50 bg-phantix-950/60 focus-within:border-gold-400/40"
+          >
+            <PromptInputTextarea placeholder="Ask about your assets, findings, risks, or reports..." className="text-sm text-slate-200 placeholder:text-slate-500" />
+            <PromptInputActions className="justify-end pt-1">
+              {busy ? (
+                <PromptInputAction tooltip="Stop the current stream">
+                  <button type="button" onClick={stop} className="btn-secondary !px-3 !py-1.5 !text-xs" aria-label="Stop stream"><Square size={13} /></button>
+                </PromptInputAction>
+              ) : (
+                <PromptInputAction tooltip="Send message">
+                  <button type="button" onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={14} /></button>
+                </PromptInputAction>
+              )}
+            </PromptInputActions>
+          </PromptInput>
           <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600">
             <ShieldCheck size={10} />
             {chatSend.hint === "queued"

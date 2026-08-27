@@ -8,14 +8,16 @@ import {
 import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import SocAvailability from "@/components/SocAvailability";
+import TrendChart from "@/components/TrendChart";
 import { useResource } from "@/lib/useResource";
 import {
-  loadSocStatus, loadSocDashboard, loadSocDetections,
+  loadSocStatus, loadSocDashboard, loadSocDetections, loadSocDetectionTrend,
   createSocDetection, patchSocDetection, escalateSocDetection,
   loadSocCases, loadSocCase, createSocCase, patchSocCase, addSocCaseNote,
   loadSocRules, createSocRule, patchSocRule, deleteSocRule, seedSocRules,
   loadSocAdapters, ingestSocWebhook,
   loadIntelligenceDashboard,
+  type TrendSeriesPoint,
 } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx, titleCase } from "@/lib/utils";
@@ -81,6 +83,13 @@ export default function SocDashboard() {
     },
     [],
     "soc-queue",
+  );
+
+  // Detections-per-day time series (14 days) for the overview tab
+  const detTrend = useResource<TrendSeriesPoint[]>(
+    () => loadSocDetectionTrend(14),
+    [] as TrendSeriesPoint[],
+    "soc-detection-trend",
   );
 
   // Reload queue when a live detection event arrives or triage actions happen
@@ -397,7 +406,30 @@ export default function SocDashboard() {
       />
 
       {tab === "overview" && (
-        <div className="grid gap-5 lg:grid-cols-12 lg:items-start">
+        <div className="space-y-5">
+          {/* Detections time series */}
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card>
+              <CardHeader
+                title="Detections over time"
+                subtitle="Signals per day — critical/high overlay · last 14 days"
+                action={
+                  (() => {
+                    const total = detTrend.data.reduce((s, p) => s + (p.value ?? 0), 0);
+                    const hot = detTrend.data.reduce((s, p) => s + (p.secondary ?? 0), 0);
+                    return total > 0 ? (
+                      <span className="font-mono text-[11px] text-slate-500">
+                        {total} signals <span className="text-severity-high">· {hot} crit/high</span>
+                      </span>
+                    ) : undefined;
+                  })()
+                }
+              />
+              <TrendChart points={detTrend.data} color="#7C8CF8" secondaryColor="#F43F5E" height={190} />
+            </Card>
+          </motion.div>
+
+          <div className="grid gap-5 lg:grid-cols-12 lg:items-start">
           {/* Main panels — flexible column */}
           <div className="space-y-5 lg:col-span-8 min-w-0">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -501,6 +533,7 @@ export default function SocDashboard() {
               </div>
             </Card>
           </aside>
+          </div>
         </div>
       )}
 

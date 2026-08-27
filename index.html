@@ -3,11 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <script>
+      // Apply the saved theme before first paint to avoid a flash of the wrong
+      // theme. Mirrors src/lib/theme.ts: default dark; "system" follows the OS.
       (function () {
         try {
-          var t = localStorage.getItem("phantix_theme");
-          if (t === "light") document.documentElement.setAttribute("data-theme", "light");
-          else document.documentElement.removeAttribute("data-theme");
+          var stored = localStorage.getItem("phantix_theme");
+          var dark;
+          if (stored === "light") dark = false;
+          else if (stored === "system")
+            dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          else dark = true; // "dark" or unset -> dark (historical default)
+          if (dark) {
+            document.documentElement.removeAttribute("data-theme");
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.setAttribute("data-theme", "light");
+            document.documentElement.classList.remove("dark");
+          }
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", dark ? "#0D1B3D" : "#F4F6FA");
         } catch (e) { /* ignore */ }
       })();
     </script>

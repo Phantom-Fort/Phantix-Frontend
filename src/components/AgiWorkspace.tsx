@@ -7,7 +7,9 @@ import {
 import { Modal, Spinner } from "@/components/ui";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
-import { ApprovalNotice, StreamMessage, TypingIndicator } from "@/components/AgiStream";
+import { ApprovalNotice } from "@/components/AgiStream";
+import { PromptKitStream } from "@/components/agent/PromptKitStream";
+import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
@@ -723,10 +725,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     </div>
                   )}
                   {transcript.map((t, i) => (
-                    <StreamMessage key={i} t={t} last={i === transcript.length - 1 && running && t.role !== "operator"} />
+                    <PromptKitStream key={i} t={t} last={i === transcript.length - 1 && running && t.role !== "operator"} />
                   ))}
                   {thinking && (
-                    <TypingIndicator label={(workingOn || "").trim() || undefined} />
+                    <ThinkingBar text={(workingOn || "").trim() || "Working on the scoped assessment"} />
                   )}
                   {!connError && actions.length > 0 && (
                     <ApprovalNotice

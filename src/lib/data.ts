@@ -16,15 +16,26 @@ import type {
   AvailabilityCheck,
   AvailabilityIncident,
   AvailabilitySummary,
+  CloudConnector,
+  CloudEvent,
+  CloudProvider,
   ComplianceAssessment,
   ComplianceControlResult,
   ComplianceFramework,
   DiscoveryJob,
   DualControlState,
   EvidenceItem,
+  IntelDashboard,
+  IntelEventsResponse,
+  IntelLookup,
   IntelligenceDashboard,
   OrgUser,
   Organization,
+  PentestEligibleResponse,
+  PentestScopeCreate,
+  PentestScopePattern,
+  PentestScopeRead,
+  PentestScopeList,
   PendingAction,
   PrioritizedAsset,
   RelationshipGraph,
@@ -1140,6 +1151,94 @@ function postureFromRisks(risks: Risk[]): { trend: PosturePoint[]; score: number
   return { trend, score };
 }
 
+// ── Time-series loaders (main + SOC dashboards) ───────────────────────────────
+
+export type TrendSeriesPoint = { label: string; value: number; secondary?: number | null };
+
+/** 14-day posture score trend for the main dashboard.
+ *  Prefers the intelligence dashboard's `posture_trend`, derives from open risks when absent. */
+export async function loadPostureTrend(): Promise<PosturePoint[]> {
+  if (isDemoMode()) {
+    await delay(150);
+    return demo.postureTrend as PosturePoint[];
+  }
+  const dash = await softOne<IntelligenceDashboard>("/assets/intelligence/dashboard");
+  const raw = (dash?.posture_trend ?? dash?.postureTrend ?? []) as Array<{ day?: string; date?: string; label?: string; score?: number }>;
+  if (raw.length) {
+    const mapped = raw
+      .map((p) => ({ day: String(p.day ?? p.date ?? p.label ?? ""), score: Number(p.score ?? 0), findings: 0 }))
+      .filter((p) => p.day);
+    if (mapped.length) return mapped;
+  }
+  try {
+    return postureFromRisks(await loadRisks()).trend;
+  } catch {
+    return [];
+  }
+}
+
+/** Bucket detections per day (oldest → newest): total seen + critical/high overlay. */
+export function buildDetectionTrend(items: SocDetection[], days = 14): TrendSeriesPoint[] {
+  const dayKey = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const now = new Date();
+  const buckets = new Map<string, { total: number; hot: number }>();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    buckets.set(dayKey(d), { total: 0, hot: 0 });
+  }
+  for (const det of items ?? []) {
+    const ts = det.created_at ?? det.first_seen_at ?? det.last_seen_at;
+    if (!ts) continue;
+    const dt = new Date(ts);
+    if (Number.isNaN(dt.getTime())) continue;
+    const b = buckets.get(dayKey(dt));
+    if (!b) continue;
+    b.total += Math.max(1, det.occurrence_count || 1);
+    if (["critical", "high"].includes(String(det.severity).toLowerCase())) b.hot += Math.max(1, Math.min(det.occurrence_count || 1, 5));
+  }
+  return [...buckets.entries()].map(([label, v]) => ({
+    label,
+    value: v.total,
+    ...(v.hot > 0 ? { secondary: v.hot } : {}),
+  }));
+}
+
+/** Deterministic demo distribution so the SOC chart reads well in demo mode. */
+function demoSocDetectionTrend(days = 14): TrendSeriesPoint[] {
+  let seed = 20260827;
+  const rand = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296;
+    return seed / 4294967296;
+  };
+  const now = new Date();
+  const out: TrendSeriesPoint[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    out.push({
+      label: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      value: 2 + Math.floor(rand() * 9),
+      secondary: rand() > 0.45 ? 1 + Math.floor(rand() * 3) : null,
+    });
+  }
+  return out;
+}
+
+/** SOC detections-per-day time series for the SOC overview tab. */
+export async function loadSocDetectionTrend(days = 14): Promise<TrendSeriesPoint[]> {
+  if (isDemoMode()) {
+    await delay(200);
+    return demoSocDetectionTrend(days);
+  }
+  try {
+    const res = await loadSocDetections({ limit: 500 });
+    return buildDetectionTrend(res.items ?? [], days);
+  } catch {
+    return [];
+  }
+}
+
 // ── Asset Intelligence loaders ────────────────────────────────────────────────
 export async function loadIntelligenceDashboard(): Promise<IntelligenceDashboard | null> {
   if (isDemoMode()) {
@@ -2011,4 +2110,156 @@ export function formatDuration(sec: number | null | undefined): string {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${h}h ${m}m`;
+}
+
+// ── Orchestration: Cloud Security + Threat Intel loaders ─────────────────────
+// Flat helpers that merge dashboard (camelCase) + intel (snake_case) payloads.
+
+function num(v: unknown): number | undefined {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function str(v: unknown): string | undefined {
+  return v == null ? undefined : String(v);
+}
+
+/** Normalize the intel / intel?ioc= snake_case payload into a TiSignal list. */
+export function normalizeIntelSignals(raw: unknown): IntelDashboard["signals"] {
+  const list = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.["signals"] as unknown[]);
+  if (!Array.isArray(list)) return [];
+  return list.map((item) => {
+    const s = (item ?? {}) as Record<string, unknown>;
+    return {
+      id: Number(s.id),
+      ioc: String(s.ioc ?? ""),
+      iocType: String(s.ioc_type ?? s.iocType ?? "unknown"),
+      title: String(s.title ?? ""),
+      severity: String(s.severity ?? "info"),
+      matchedAssetIds: ((s.matched_asset_ids ?? s.matchedAssetIds ?? []) as unknown[]).map(Number),
+      source: str(s.source),
+      evidence: (s.evidence as Record<string, unknown>) ?? {},
+      occurrenceCount: num(s.occurrence_count ?? s.occurrenceCount),
+      firstSeenAt: str(s.first_seen_at ?? s.firstSeenAt),
+      lastSeenAt: str(s.last_seen_at ?? s.lastSeenAt),
+    };
+  });
+}
+
+export function loadCloudProviders(): Promise<CloudProvider[]> {
+  if (isDemoMode()) { return delay(150).then(() => demo.cloudProviders); }
+  return softList<CloudProvider>("/cloud-security/providers");
+}
+
+export async function loadCloudConnectors(meta?: LoadMeta): Promise<CloudConnector[]> {
+  if (isDemoMode()) { await delay(150); return demo.cloudConnectors; }
+  return softList<CloudConnector>("/cloud-security/connectors", meta);
+}
+
+export async function createCloudConnector(body: Record<string, unknown>): Promise<CloudConnector> {
+  if (isDemoMode()) { await delay(350); return { id: Math.floor(100 + Math.random() * 900), provider: String(body.provider ?? ""), label: String(body.label ?? ""), is_active: true } as CloudConnector; }
+  return api.post<CloudConnector>("/cloud-security/connectors", body);
+}
+
+export async function patchCloudConnector(id: number, body: Record<string, unknown>): Promise<CloudConnector> {
+  if (isDemoMode()) { await delay(200); return body as unknown as CloudConnector; }
+  return api.patch<CloudConnector>(`/cloud-security/connectors/${id}`, body);
+}
+
+export async function rotateCloudSecret(id: number): Promise<{ webhookSecret?: string }> {
+  if (isDemoMode()) { await delay(250); return { webhookSecret: `whsec_${crypto.randomUUID().replace(/-/g, "").slice(0, 32)}` }; }
+  return api.post<{ webhookSecret?: string }>(`/cloud-security/connectors/${id}/rotate-secret`);
+}
+
+export async function deleteCloudConnector(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  return api.delete<void>(`/cloud-security/connectors/${id}`);
+}
+
+export function loadIntelDashboard(): Promise<IntelDashboard> {
+  if (isDemoMode()) { return delay(220).then(() => demo.intelDashboard); }
+  return api.get<IntelDashboard>("/cloud-security/dashboard");
+}
+
+export async function loadIntelLookup(ioc?: string): Promise<IntelLookup> {
+  if (isDemoMode()) {
+    await delay(300);
+    if (ioc && !demo.intelLookup.signals!.some((s) => s.ioc === ioc)) {
+      return {
+        ...demo.intelLookup,
+        new_signals: [{ id: 999, ioc, iocType: ioc.includes(".") ? (ioc.split(".").length === 4 ? "ip" : "domain") : "other", title: `New IOC: ${ioc}`, severity: "medium", matchedAssetIds: [], source: "agent.ti.correlate" }],
+        matched_count: 0,
+        unmatched_count: demo.intelLookup.unmatched_count! + 1,
+        signals: [...demo.intelLookup.signals!, { id: 999, ioc, iocType: ioc.includes(".") ? (ioc.split(".").length === 4 ? "ip" : "domain") : "other", title: `New IOC: ${ioc}`, severity: "medium", matchedAssetIds: [], source: "agent.ti.correlate" }],
+      };
+    }
+    return demo.intelLookup;
+  }
+  return api.get<IntelLookup>(`/cloud-security/intel${ioc ? `?ioc=${encodeURIComponent(ioc)}` : ""}`);
+}
+
+export function loadIntelEvents(): Promise<IntelEventsResponse> {
+  if (isDemoMode()) { return delay(150).then(() => demo.intelEvents); }
+  return api.get<IntelEventsResponse>("/cloud-security/events?limit=50&offset=0");
+}
+
+export async function startReputationScan(body: Record<string, unknown>): Promise<ScanJob> {
+  if (isDemoMode()) { await delay(300); return { id: 9100, job_type: "threat_intel_scan", tools: ["threat_intel_scan"], status: "queued", target_filter: body.target_filter ?? {}, progress: 0, findings_count: 0, initiated_by: "demo", idempotency_key: "", created_at: new Date().toISOString(), started_at: null, finished_at: null } as ScanJob; }
+  return api.post<ScanJob>("/scans/jobs", body);
+}
+
+// ── Orchestration: External pentest scope + ROE loaders ──────────────────────
+export function loadPentestPattern(): Promise<PentestScopePattern> {
+  if (isDemoMode()) { return delay(160).then(() => demo.pentestPattern); }
+  return api.get<PentestScopePattern>("/pentest-scope/pattern");
+}
+
+export function loadPentestEligible(meta?: LoadMeta): Promise<PentestEligibleResponse> {
+  if (isDemoMode()) { return delay(180).then(() => demo.pentestEligible); }
+  return api.get<PentestEligibleResponse>("/pentest-scope/eligible-assets");
+}
+
+export async function loadPentestScopes(): Promise<PentestScopeList> {
+  if (isDemoMode()) { await delay(180); return { items: demo.pentestScopes, total: demo.pentestScopes.length }; }
+  const raw = await api.get<unknown>("/pentest-scope?limit=50&offset=0");
+  const o = (raw ?? {}) as Record<string, unknown>;
+  return { items: (o.items as PentestScopeRead[] | undefined) ?? [], total: Number(o.total ?? (Array.isArray(raw) ? (raw as unknown[]).length : 0)) };
+}
+
+export async function createPentestScope(body: PentestScopeCreate): Promise<PentestScopeRead> {
+  if (isDemoMode()) {
+    await delay(400);
+    return { id: Math.floor(100 + Math.random() * 900), organization_id: 11, title: body.title, status: "draft", acks: { authorization_ack: body.authorization_ack, out_of_scope_ack: body.out_of_scope_ack, data_handling_ack: body.data_handling_ack, third_parties_ack: body.third_parties_ack }, in_scope_assets: demo.pentestEligible.in_scope.filter((a) => body.asset_ids.includes(a.id)), related_code_assets: demo.pentestEligible.related_code.filter((a) => (body.related_code_asset_ids ?? []).includes(a.id)), is_draft_watermark: true, created_by_name: "Jane Doe", created_at: new Date().toISOString() } as PentestScopeRead;
+  }
+  return api.post<PentestScopeRead>("/pentest-scope", body);
+}
+
+export async function patchPentestScope(id: number, body: Partial<PentestScopeCreate>): Promise<PentestScopeRead> {
+  if (isDemoMode()) { await delay(250); return { id, title: String(body.title ?? ""), status: "draft" } as PentestScopeRead; }
+  return api.patch<PentestScopeRead>(`/pentest-scope/${id}`, body);
+}
+
+export async function approvePentestScope(id: number): Promise<PentestScopeRead> {
+  if (isDemoMode()) { await delay(350); return { id, title: "", status: "approved", approved_by_name: "Alex Authorizer", approved_at: new Date().toISOString(), is_draft_watermark: false, content_hash: "a1b2..." } as PentestScopeRead; }
+  return api.post<PentestScopeRead>(`/pentest-scope/${id}/approve`, {});
+}
+
+export async function downloadPentestDoc(id: number, document: "scope" | "roe", format: "pdf" | "docx" | "markdown"): Promise<Blob> {
+  if (isDemoMode()) { await delay(250); return new Blob([`# ${document} (${format}) demo content`], { type: format === "pdf" ? "text/markdown" : "text/plain" }); }
+  return api.download(`/pentest-scope/${id}/download?document=${document}&format=${format}`);
+}
+
+// ── Orchestration: Cloud connector secret display (once) + webhook copy ──────
+export function cloudIngestUrl(connector: CloudConnector): string {
+  const hint = connector.ingestUrlHint ?? connector.webhook?.ingest_url_hint ?? "";
+  if (hint) return hint;
+  const pub = connector.webhook?.public_id ?? "";
+  if (pub && pub !== "...") return `${API_BASE}/cloud-security/hooks/${pub}`;
+  return "";
+}
+
+export function cloudConnectUrl(connector: CloudConnector): string {
+  const pub = connector.webhook?.public_id ?? "";
+  const privateId = (connector.webhook as Record<string, unknown> | null)?.["private_id"] ?? "";
+  return `${API_BASE}/cloud-security/hooks/${privateId || pub}`;
 }

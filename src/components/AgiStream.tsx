@@ -4,6 +4,7 @@ import {
   ArrowRight, Bot, Check, ChevronRight, Copy, Crosshair, Loader2, Radar, ShieldAlert, ShieldCheck, Terminal, User,
 } from "lucide-react";
 import MarkdownView from "@/components/MarkdownView";
+import { Tool } from "@/components/prompt-kit/tool";
 import { personaForChunk, type AgentPersona } from "@/lib/agiGraph";
 import type { AgiTranscriptChunk, Severity } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -63,7 +64,7 @@ export function CopyBtn({ text, className }: { text: string; className?: string 
 
 // ── Tool call / tool output ───────────────────────────────────────────────────
 
-const COLLAPSE_AT = 8;
+const CMD_RE = /^[a-z_][\w.-]*(\s+\S+)+$/i;
 
 function prettyJson(raw: string): string | null {
   const s = raw.trim();
@@ -75,70 +76,37 @@ function prettyJson(raw: string): string | null {
   }
 }
 
-const CMD_RE = /^[a-z_][\w.-]*(\s+\S+)+$/i;
-
 function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {
-  const [open, setOpen] = useState(false);
   const toolName = typeof t.meta?.tool === "string" ? (t.meta.tool as string) : "tool";
-  const time = streamTime(t.created_at);
 
-  const { command, body, totalLines } = useMemo(() => {
+  // First line that looks like a shell command becomes the "Input"; the rest is output.
+  const { command, body } = useMemo(() => {
     const lines = t.content.split("\n");
-    if (lines.length === 1) return { command: lines[0].trim(), body: "", totalLines: 1 };
+    if (lines.length === 1) return { command: lines[0].trim(), body: "" };
     const first = lines[0].trim();
     const looksLikeCmd = first.length > 0 && first.length <= 200 && CMD_RE.test(first) && !first.startsWith("{");
-    const rest = looksLikeCmd ? lines.slice(1).join("\n") : lines.join("\n");
-    return { command: looksLikeCmd ? first : "", body: rest, totalLines: lines.length };
+    return { command: looksLikeCmd ? first : "", body: looksLikeCmd ? lines.slice(1).join("\n") : lines.join("\n") };
   }, [t.content]);
 
   const pretty = useMemo(() => (body ? prettyJson(body) : null), [body]);
-  const bodyLines = useMemo(() => (pretty ?? body).split("\n"), [pretty, body]);
-  const long = bodyLines.length > COLLAPSE_AT;
-  const shownBody = long && !open ? bodyLines.slice(0, 5).join("\n") : (pretty ?? body);
+  const output = pretty ?? body;
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-phantix-700/40 bg-phantix-950/85 shadow-sm">
-      <div className="flex items-center gap-1.5 border-b border-phantix-700/30 bg-phantix-900/40 px-2.5 py-1.5">
-        <span className="flex h-4 w-4 items-center justify-center rounded bg-gold-400/10 text-gold-400">
-          <Terminal size={10} />
-        </span>
-        <span className="wb-xs font-mono font-semibold text-gold-300">{toolName}</span>
-        <span className="chip !px-1.5 !py-0 wb-2xs font-normal text-slate-500">tool call</span>
-        <span className="ml-auto flex items-center gap-0.5">
-          {time && <span className="wb-2xs mr-0.5 tabular-nums text-slate-600">{time}</span>}
-          {long && (
-            <button
-              type="button"
-              onClick={() => setOpen((v) => !v)}
-              className="wb-2xs flex items-center gap-0.5 rounded px-1 py-0.5 text-slate-500 transition-colors hover:bg-phantix-800 hover:text-slate-200"
-            >
-              {open ? "Collapse" : `${bodyLines.length} lines`}
-              <ChevronRight size={10} className={cx("transition-transform duration-150", open && "rotate-90")} />
-            </button>
-          )}
-          <CopyBtn text={t.content} />
-        </span>
-      </div>
-      <div className={cx("font-mono leading-[1.5]", dense ? "wb-xs px-2 py-1.5" : "wb-sm px-2.5 py-2")}>
-        {command && (
-          <p className={cx("flex gap-1.5 text-emerald-300", shownBody && "mb-1")}>
-            <span className="shrink-0 select-none text-slate-600">$</span>
-            <span className="min-w-0 break-all">{command}</span>
-          </p>
+    <div className="group relative min-w-0">
+      <Tool
+        defaultOpen={!dense}
+        toolPart={{
+          type: toolName,
+          state: "output-available",
+          input: command ? { command } : undefined,
+          output: output ? { output } : undefined,
+        }}
+        className={cx(
+          "mt-0 border-phantix-700/40 bg-phantix-950/70",
+          dense ? "[&_pre]:!max-h-32 [&_*]:!text-[11px]" : "[&_pre]:!max-h-60",
         )}
-        {shownBody && (
-          <pre className="whitespace-pre-wrap break-words text-slate-400">{shownBody}</pre>
-        )}
-        {long && !open && (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className="wb-2xs mt-1 font-semibold text-gold-400/80 hover:text-gold-300"
-          >
-            Show {bodyLines.length - 5} more lines…
-          </button>
-        )}
-      </div>
+      />
+      <CopyBtn text={t.content} className="absolute right-2 top-2 z-10 !opacity-0 group-hover:!opacity-100" />
     </div>
   );
 }

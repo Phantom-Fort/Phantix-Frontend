@@ -8,8 +8,16 @@ import {
 } from "lucide-react";
 import { ApprovalNotice, CopyBtn, StreamEmpty, StreamMessage, TypingIndicator } from "@/components/AgiStream";
 import { Menu, MenuItem, SeverityBadge } from "@/components/ui";
+import { VerificationBadge, verificationBadge } from "@/components/VerificationBadge";
+import {
+  Steps,
+  StepsItem,
+  StepsTrigger,
+  StepsContent,
+} from "@/components/prompt-kit/steps";
 import { PaneHeader, ResizeHandle } from "@/components/workbench";
 import { useDragResize } from "@/lib/useDragResize";
+import { loadAgiFindings, decideAgiFindingVerification } from "@/lib/agi";
 import {
   deriveAttackGraph,
   deriveFindings,
@@ -18,6 +26,7 @@ import {
   PHASES,
   PERSONAS,
   severityCounts,
+  phasesFromSession,
   type AgentPersona,
   type AgiFinding,
   type AttackNode,
@@ -111,25 +120,32 @@ function NodeInspector({ node }: { node: AttackNode }) {
         </p>
       )}
 
-      {node.commands.length > 0 && (
-        <div>
-          <p className="wb-pane-title mb-1"><Terminal size={10} /> Commands</p>
-          <div className="space-y-1">
-            {node.commands.slice(-6).map((c, i) => (
-              <p key={i} className="wb-2xs break-all rounded-md bg-phantix-950/70 px-2 py-1.5 font-mono text-slate-300">{c}</p>
-            ))}
-          </div>
-        </div>
-      )}
-      {node.outputs.length > 0 && (
-        <div>
-          <p className="wb-pane-title mb-1">Tool output</p>
-          <div className="wb-scroll max-h-44 space-y-1 overflow-y-auto pr-1">
-            {node.outputs.slice(-8).map((c, i) => (
-              <p key={i} className="wb-2xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-400">{c}</p>
-            ))}
-          </div>
-        </div>
+      {(node.commands.length > 0 || node.outputs.length > 0) && (
+        <Steps defaultOpen={false} className="pt-1">
+          <StepsItem>
+            <StepsTrigger leftIcon={<Terminal size={12} />}>
+              Activity
+              {node.commands.length > 0 && <span className="tabular-nums"> · {node.commands.length} cmd{node.commands.length !== 1 ? "s" : ""}</span>}
+              {node.outputs.length > 0 && <span className="tabular-nums"> · {node.outputs.length} output{node.outputs.length !== 1 ? "s" : ""}</span>}
+            </StepsTrigger>
+            <StepsContent bar={<span className="block h-full w-[2px] rounded bg-phantix-700/60" />}>
+              {node.commands.length > 0 && (
+                <div className="space-y-1">
+                  {node.commands.slice(-6).map((c, i) => (
+                    <p key={i} className="wb-2xs break-all rounded-md bg-phantix-950/70 px-2 py-1.5 font-mono text-slate-300">{c}</p>
+                  ))}
+                </div>
+              )}
+              {node.outputs.length > 0 && (
+                <div className="wb-scroll max-h-44 space-y-1 overflow-y-auto pr-1">
+                  {node.outputs.slice(-8).map((c, i) => (
+                    <p key={i} className="wb-2xs whitespace-pre-wrap break-words font-mono leading-relaxed text-slate-400">{c}</p>
+                  ))}
+                </div>
+              )}
+            </StepsContent>
+          </StepsItem>
+        </Steps>
       )}
     </div>
   );
@@ -138,11 +154,26 @@ function NodeInspector({ node }: { node: AttackNode }) {
 function EvidenceDrawer({
   finding,
   onClose,
+  sessionId,
+  onVerify,
 }: {
   finding: AgiFinding;
   onClose: () => void;
+  sessionId?: number;
+  onVerify?: (verdict: "confirmed" | "rejected", note?: string) => Promise<boolean>;
 }) {
   const [tab, setTab] = useState<"evidence" | "autofix">("evidence");
+  const [verifying, setVerifying] = useState<"confirmed" | "rejected" | null>(null);
+  const v = finding.verification;
+  const badge = verificationBadge(v);
+
+  const humanVerify = async (verdict: "confirmed" | "rejected") => {
+    if (!onVerify) return;
+    setVerifying(verdict);
+    await onVerify(verdict);
+    setVerifying(null);
+  };
+
   return (
     <motion.div
       initial={{ y: 16, opacity: 0 }}
@@ -163,6 +194,38 @@ function EvidenceDrawer({
       <div className="wb-scroll min-h-0 flex-1 overflow-y-auto wb-pad">
         {tab === "evidence" ? (
           <div className="space-y-2">
+            {/* Verification layer */}
+            <div className="rounded-lg border border-phantix-700/40 bg-phantix-900/40 p-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cx("inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium", badge.cls)}>
+                  {badge.icon} {badge.label}
+                </span>
+                {v?.verifier && <span className="wb-2xs font-mono text-slate-500">{v.verifier}</span>}
+                {v?.by && <span className="wb-2xs text-slate-600">by {v.by}</span>}
+              </div>
+              {v?.reason && <p className="wb-2xs mt-1.5 leading-relaxed text-slate-400">{v.reason}</p>}
+              {v?.attempted_at && <p className="wb-2xs mt-1 text-slate-600">checked {new Date(v.attempted_at).toLocaleString()}</p>}
+              {onVerify && finding.status !== "validated" && finding.status !== "rejected" && (
+                <div className="mt-2 flex gap-1.5">
+                  <button
+                    onClick={() => void humanVerify("confirmed")}
+                    disabled={verifying !== null}
+                    className="btn-primary flex-1 !py-1 wb-2xs"
+                  >
+                    {verifying === "confirmed" ? <Loader2 size={11} className="mr-1 inline animate-spin" /> : <CheckCircle2 size={11} className="mr-1 inline" />}
+                    Verify
+                  </button>
+                  <button
+                    onClick={() => void humanVerify("rejected")}
+                    disabled={verifying !== null}
+                    className="btn-ghost flex-1 !py-1 wb-2xs text-severity-critical"
+                  >
+                    {verifying === "rejected" ? <Loader2 size={11} className="mr-1 inline animate-spin" /> : <XCircle size={11} className="mr-1 inline" />}
+                    Dismiss
+                  </button>
+                </div>
+              )}
+            </div>
             <p className="wb-2xs break-all font-mono text-slate-500">{finding.target}</p>
             {finding.evidence.request && (
               <div className="group relative">
@@ -256,24 +319,79 @@ export default function AgiConsole({
   const [findingId, setFindingId] = useState<string | null>(null);
   const [sevFilter, setSevFilter] = useState<Severity | null>(null);
   const [gate, setGate] = useState<AgiAction | null>(null);
+  const [liveFindings, setLiveFindings] = useState<Record<string, unknown>[]>([]);
   const thoughtsStick = useStickToBottom([transcript, thinking, running]);
   const toolsStick = useStickToBottom([transcript, running]);
+
+  // Findings verification layer: poll the backend's live findings so the
+  // verification verdict (auto / subagent / human) rides onto the derived
+  // console findings.
+  useEffect(() => {
+    if (!session?.id) return;
+    let cancelled = false;
+    const load = () =>
+      loadAgiFindings(session.id).then((fs) => {
+        if (!cancelled) setLiveFindings(Array.isArray(fs) ? fs : []);
+      }).catch(() => {});
+    load();
+    const t = window.setInterval(load, 15000);
+    return () => { cancelled = true; window.clearInterval(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
+
+  const verificationMap = useMemo(() => {
+    const m: Record<string, { id?: string; verification?: Record<string, unknown>; status?: string }> = {};
+    for (const f of liveFindings) {
+      const key = `${String(f.title ?? "").toLowerCase()}|${String(f.target ?? "").toLowerCase()}`;
+      if (key !== "|") {
+        m[key] = {
+          id: String(f.id ?? ""),
+          verification: (f.verification as Record<string, unknown> | undefined) ?? undefined,
+          status: String(f.status ?? ""),
+        };
+      }
+    }
+    return m;
+  }, [liveFindings]);
+
+  const findings = useMemo(() => {
+    const derived = deriveFindings(transcript, actions, engagement);
+    return derived.map((f) => {
+      const live = verificationMap[`${f.title.toLowerCase()}|${f.target.toLowerCase()}`];
+      if (!live?.verification) return f;
+      return { ...f, verification: live.verification as AgiFinding["verification"] };
+    });
+  }, [transcript, actions, engagement, verificationMap]);
+
+  const handleFindingVerify = async (finding: AgiFinding, verdict: "confirmed" | "rejected") => {
+    if (!session?.id) return false;
+    const live = verificationMap[`${finding.title.toLowerCase()}|${finding.target.toLowerCase()}`];
+    if (!live?.id) return false;
+    const ok = await decideAgiFindingVerification(session.id, live.id, verdict);
+    if (ok) {
+      const fs = await loadAgiFindings(session.id);
+      setLiveFindings(Array.isArray(fs) ? fs : []);
+    }
+    return ok;
+  };
 
   const left = useDragResize({ initial: LEFT.initial, min: LEFT.min, max: LEFT.max, side: "start" });
   const right = useDragResize({ initial: RIGHT.initial, min: RIGHT.min, max: RIGHT.max, side: "end" });
 
-  const nodes = useMemo(() => deriveAttackGraph(transcript, actions, running && !paused), [transcript, actions, running, paused]);
+  const nodes = useMemo(
+    () => deriveAttackGraph(transcript, actions, running && !paused, phasesFromSession(session.job)),
+    [transcript, actions, running, paused, session.job],
+  );
   const maxSlots = useMemo(
     () => Math.max(1, ...PHASES.map((phase) => nodes.filter((n) => n.phase === phase.id).length)),
     [nodes],
   );
-  const findings = useMemo(() => deriveFindings(transcript, actions, engagement), [transcript, actions, engagement]);
+
   const counts = useMemo(() => severityCounts(findings), [findings]);
   const selected = nodes.find((n) => n.id === selectedId) ?? nodes.find((n) => n.status === "active" || n.status === "blocked") ?? nodes[0];
   const openFinding = findings.find((f) => f.id === findingId) ?? null;
   const allowlist = engagement?.scope_definition.target_allowlist ?? [];
   const forbidden = engagement?.scope_definition.forbidden_actions ?? [];
-
   const filtered = useMemo(
     () => transcript.filter((t) => persona === "all" || personaForChunk(t) === persona),
     [transcript, persona],
@@ -390,7 +508,7 @@ export default function AgiConsole({
                     </>
                   }
                 />
-                <div className="mt-2 grid grid-cols-5 gap-1">
+                <div className="mt-2 grid gap-1" style={{ gridTemplateColumns: `repeat(${PHASES.length}, minmax(0, 1fr))` }}>
                   {PHASES.map((phase) => {
                     const stat = phaseStats.find((p) => p.id === phase.id);
                     const pct = stat && stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
@@ -727,12 +845,24 @@ export default function AgiConsole({
                           <><Clock size={9} className="text-severity-medium" /> candidate</>
                         )}
                       </span>
+                      {f.verification && (
+                        <span className="mt-1 flex">
+                          <VerificationBadge verification={f.verification} className="!px-1 !py-0 !text-[8px]" />
+                        </span>
+                      )}
                     </span>
                   </button>
                 ))}
               </div>
               <AnimatePresence>
-                {openFinding && <EvidenceDrawer finding={openFinding} onClose={() => setFindingId(null)} />}
+                {openFinding && (
+                  <EvidenceDrawer
+                    finding={openFinding}
+                    onClose={() => setFindingId(null)}
+                    sessionId={session?.id}
+                    onVerify={(verdict) => handleFindingVerify(openFinding, verdict)}
+                  />
+                )}
               </AnimatePresence>
             </aside>
           </>

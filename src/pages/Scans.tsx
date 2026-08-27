@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronRight, ChevronDown, Github } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState } from "@/components/ui";
+import { Pagination } from "@/components/Pagination";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadScansBundle, verifyScanResult } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
@@ -10,7 +11,7 @@ import { timeAgo, formatDateTime, cx, severityHex } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import type { VerificationStatus, ScanResult } from "@/lib/types";
 
-const PAGE_SIZES = [20, 50, 100];
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function Scans() {
   const { toast, requireDualControl } = useStore();
@@ -25,12 +26,18 @@ export default function Scans() {
   const [verFilter, setVerFilter] = useState<"all" | VerificationStatus>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [newOpen, setNewOpen] = useState(false);
   const [selected, setSelected] = useState<ScanResult | null>(null);
   const [note, setNote] = useState("");
   const [verifyBusy, setVerifyBusy] = useState<VerificationStatus | null>(null);
-  const active = scanJobs.find((j) => j.status === "running" || j.status === "queued");
+  /** Network/vuln job that holds the single active scan slot (GITHUB_ANALYSIS_SCAN_JOB_FE.md:
+   *  github_analysis is a SEPARATE family and must NOT block network scans). */
+  const isGithubAnalysis = (j: { job_type?: string; tools?: string[] }) =>
+    j.job_type === "github_analysis" || (j.tools ?? []).includes("github_analysis");
+  const runningFilter = (j: { status?: string }) => j.status === "running" || j.status === "queued";
+  const active = scanJobs.find((j) => runningFilter(j) && !isGithubAnalysis(j));
+  const githubActive = scanJobs.find((j) => runningFilter(j) && isGithubAnalysis(j));
 
   // Surface the running scan job in the global operations tray (Coolify-style).
   const { register, update } = useOperations();
@@ -54,12 +61,12 @@ export default function Scans() {
   useEffect(() => {
     if (active && !pollTimer.current) {
       pollTimer.current = setInterval(() => { void reload(); }, 5000);
-    } else if (!active && pollTimer.current) {
+    } else if (!active && !githubActive && pollTimer.current) {
       clearInterval(pollTimer.current);
       pollTimer.current = null;
     }
     return () => { if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; } };
-  }, [active, reload]);
+  }, [active, githubActive, reload]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -116,7 +123,7 @@ export default function Scans() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Scans"
-        description="On-demand Nmap + Nuclei jobs. One active job per organization --- the lock is enforced with a unique partial index, so 409 means someone else is scanning."
+        description="On-demand Nmap + Nuclei jobs and separate GitHub analysis jobs. The 409 lock is per job family: one active network/vuln scan plus one active GitHub analysis can run at the same time."
         actions={
           <button
             className="btn-primary"
@@ -172,6 +179,38 @@ export default function Scans() {
         </motion.div>
       )}
 
+      {/* Separate GitHub analysis family — does NOT hold the network scan slot. */}
+      {githubActive && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-5">
+          <Card className="border-phantix-500/30">
+            <div className="flex flex-wrap items-center gap-5">
+              <span className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-500/12 text-phantix-300">
+                <Github size={19} />
+                <span className="absolute inset-0 animate-ping rounded-xl bg-phantix-500/20" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2.5">
+                  <p className="font-semibold text-slate-100">GitHub analysis #{githubActive.id}</p>
+                  <StatusBadge status={githubActive.status} />
+                  <span className="chip border-phantix-500/30 bg-phantix-500/10 text-phantix-200">separate from network scans</span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Secret patterns + OSV/Exploit-DB on pinned versions · started {timeAgo(githubActive.started_at)}
+                </p>
+                <div className="mt-2.5 max-w-md"><ProgressBar value={githubActive.progress} color="rgb(var(--phantix-400))" /></div>
+              </div>
+              <div className="text-right">
+                <p className="font-display text-2xl font-bold text-white">{githubActive.progress}%</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-500">{githubActive.findings_count} findings</p>
+              </div>
+              <a href="/assets" className="btn-secondary !py-2">
+                <Github size={14} /> Back to assets
+              </a>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       <Tabs
         tabs={[
           { id: "jobs", label: "Job history", count: scanJobs.length },
@@ -197,9 +236,18 @@ export default function Scans() {
                 </tr>
               </thead>
               <tbody>
-                {scanJobs.map((j) => (
+                {scanJobs.map((j) => {
+                  const isGitHub = isGithubAnalysis(j);
+                  return (
                   <tr key={j.id} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
-                    <td className="td font-mono font-semibold text-slate-200">#{j.id}</td>
+                    <td className="td">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-semibold text-slate-200">#{j.id}</span>
+                        <span className={cx("chip text-[9px]", isGitHub ? "border-phantix-500/30 bg-phantix-500/10 text-phantix-300" : "border-phantix-700/40 bg-phantix-800/50 text-slate-400")}>
+                          {isGitHub ? <><Github size={9} /> GitHub analysis</> : "network/vuln"}
+                        </span>
+                      </div>
+                    </td>
                     <td className="td">
                       <div className="flex gap-1.5">
                         {(j.tools ?? []).map((t) => (
@@ -213,7 +261,8 @@ export default function Scans() {
                     <td className="td text-xs text-slate-400">{j.initiated_by}</td>
                     <td className="td text-xs text-slate-500">{j.finished_at ? formatDateTime(j.finished_at) : "---"}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </Card>
@@ -304,37 +353,13 @@ export default function Scans() {
 
           {/* Pagination */}
           {filtered.length > 0 && (
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-phantix-800/40 pt-4">
-              <p className="text-xs text-slate-500">
-                Showing <span className="font-mono text-slate-300">{(safePage - 1) * pageSize + 1}–{Math.min(safePage * pageSize, filtered.length)}</span> of{" "}
-                <span className="font-mono text-slate-300">{filtered.length}</span> results
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-slate-500">Per page</span>
-                  <select className="input !w-auto !py-1.5 text-xs" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
-                    {PAGE_SIZES.map((n) => <option key={n} value={n}>{n}</option>)}
-                  </select>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    className="btn-secondary !px-2.5 !py-1.5"
-                    disabled={safePage <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-                  <span className="px-2 font-mono text-xs text-slate-300">{safePage} / {totalPages}</span>
-                  <button
-                    className="btn-secondary !px-2.5 !py-1.5"
-                    disabled={safePage >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            </div>
+            <Pagination
+              totalItems={filtered.length}
+              page={safePage}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           )}
         </motion.div>
       )}

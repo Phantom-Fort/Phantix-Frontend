@@ -7,6 +7,9 @@
   AssetIntelligence,
   AssetTag,
   AuditEvent,
+  CloudConnector,
+  CloudEvent,
+  CloudProvider,
   ComplianceAssessment,
   ComplianceControlResult,
   ComplianceFramework,
@@ -15,10 +18,16 @@
   DualControlState,
   EngineInfo,
   EvidenceItem,
+  IntelDashboard,
+  IntelEventsResponse,
+  IntelLookup,
   IntelligenceDashboard,
   OrgUser,
   Organization,
   PendingAction,
+  PentestEligibleResponse,
+  PentestScopePattern,
+  PentestScopeRead,
   PrioritizedAsset,
   RelationshipGraph,
   Report,
@@ -600,4 +609,184 @@ export const socAdapters: SocAdapter[] = [
   { id: "splunk", displayName: "Splunk", vendor: "splunk", configured: false, enabled: true, detail: "Not configured — interface only; engine works without this adapter" },
   { id: "microsoft_defender", displayName: "Microsoft Defender", vendor: "microsoft", configured: false, enabled: true, detail: "Not configured — interface only" },
   { id: "soar_generic", displayName: "Generic SOAR", vendor: "soar", configured: false, enabled: false, detail: "Not configured" },
+];
+
+// ── Orchestration: Cloud Security connectors (cloud.md) ─────────────────────
+export const cloudProviders: CloudProvider[] = [
+  { id: "vercel", name: "Vercel", description: "Log drains + deployment telemetry", kind: "paas", webhook: { label: "Log drain / webhook", ingestUrlHint: "Vercel → Project → Integrations → Log Drains", signatureHeader: "x-vercel-signature" } },
+  { id: "aws", name: "AWS", description: "CloudTrail / EventBridge events", kind: "cloud", webhook: { label: "EventBridge target", ingestUrlHint: "AWS console → EventBridge → Rule target", signatureHeader: "X-Phantix-Signature" } },
+  { id: "azure", name: "Azure", description: "Azure Monitor / Sentinel log analytics", kind: "cloud", webhook: { label: "Log Analytics workspace", ingestUrlHint: "Azure → Log Analytics → Custom log", signatureHeader: "X-Phantix-Signature" } },
+  { id: "gcp", name: "Google Cloud", description: "Cloud logging sinks", kind: "cloud", webhook: { label: "Pub/Sub push subscription", ingestUrlHint: "GCP → Logging → Sink → Pub/Sub", signatureHeader: "X-Phantix-Signature" } },
+  { id: "hetzner", name: "Hetzner", description: "VPS / server events", kind: "vps", webhook: { label: "Webhook notification", ingestUrlHint: "Hetzner Cloud → Project → Webhooks", signatureHeader: "X-Phantix-Signature" } },
+  { id: "digitalocean", name: "DigitalOcean", description: "Droplet / alert webhooks", kind: "vps", webhook: { label: "Alert webhook", ingestUrlHint: "DO → Monitoring → Alerts → Notification channel", signatureHeader: "X-Phantix-Signature" } },
+  { id: "github", name: "GitHub", description: "Audit log + security alerts", kind: "code", webhook: { label: "Repository webhook", ingestUrlHint: "GitHub → Settings → Webhooks", signatureHeader: "X-Hub-Signature-256" } },
+  { id: "uptimekuma", name: "Uptime Kuma", description: "Availability notification webhooks", kind: "monitoring", webhook: { label: "Notification webhook URL", ingestUrlHint: "Uptime Kuma → Settings → Notifications", signatureHeader: "X-Phantix-Signature" } },
+];
+
+export const cloudConnectors: CloudConnector[] = [
+  {
+    id: 1, organization_id: 11, provider: "vercel", label: "Acme Vercel production", is_active: true, created_at: new Date().toISOString(),
+    webhook: { public_id: "vcl_9f4c...", secret_configured: true, ingest_url_hint: "https://api.phantix.site/api/v1/cloud-security/hooks/vcl_9f4c" },
+  },
+  {
+    id: 2, organization_id: 11, provider: "github", label: "Acme GitHub org audit", is_active: true, created_at: new Date().toISOString(),
+    webhook: { public_id: "gh_2b81...", secret_configured: true, ingest_url_hint: "https://api.phantix.site/api/v1/cloud-security/hooks/gh_2b81" },
+  },
+];
+
+export const cloudEvents: CloudEvent[] = [
+  { id: 90, connector_id: 2, provider: "vercel", eventKind: "telemetry", title: "Deploy failed", severity: "medium", summary: "Production deploy rolled back", assetHints: ["app.acme-financial.com"], iocs: [], mappedEngines: ["soc", "ti"], receivedAt: "2026-08-23T18:01:00Z" },
+  { id: 89, connector_id: 2, provider: "vercel", eventKind: "security", title: "Build step touched secrets", severity: "high", summary: "Possible secret exposure in build logs", assetHints: ["app.acme-financial.com"], iocs: [], mappedEngines: ["soc", "compliance"], receivedAt: "2026-08-23T17:40:00Z" },
+  { id: 88, connector_id: 3, provider: "github", eventKind: "audit_log", title: "New collaborator added", severity: "low", summary: "dev-ops added to acme/api with write scope", assetHints: ["github.com/acme/api"], iocs: [], mappedEngines: ["soc"], receivedAt: "2026-08-23T16:12:00Z" },
+  { id: 87, connector_id: 3, provider: "github", eventKind: "secret_scan", title: "Dependabot alert: high vuln", severity: "high", summary: "axios CVE in package lock", assetHints: ["github.com/acme/api"], iocs: [], mappedEngines: ["soc", "vapt"], receivedAt: "2026-08-22T22:04:00Z" },
+];
+
+export const intelDashboard: IntelDashboard = {
+  organizationId: 11,
+  connectorCount: 2,
+  eventCount24h: 18,
+  openDetections: 3,
+  matchedIocs: 4,
+  unmatchedIocs: 9,
+  byProvider: { vercel: 10, aws: 8 },
+  bySeverity: { high: 2, medium: 16 },
+  recentEvents: cloudEvents,
+  signals: [
+    { id: 5, ioc: "app.acme-financial.com", iocType: "domain", title: "TI signal — deploy error pattern", severity: "high", matchedAssetIds: [12], source: "vercel", evidence: { event_kind: "telemetry", provider: "vercel" }, firstSeenAt: "2026-08-20T00:00:00Z", lastSeenAt: "2026-08-23T18:01:00Z" },
+    { id: 4, ioc: "185.199.108.153", iocType: "ip", title: "VirusTotal reputation hit", severity: "medium", matchedAssetIds: [], source: "yaml_ti", evidence: { tool: "threat_intel_scan" }, occurrenceCount: 2, firstSeenAt: "2026-08-21T09:12:00Z", lastSeenAt: "2026-08-23T14:00:00Z" },
+    { id: 3, ioc: "admin.acme-financial.com", iocType: "domain", title: "Suspicious login spike", severity: "high", matchedAssetIds: [15], source: "vercel", evidence: { provider: "vercel" }, firstSeenAt: "2026-08-22T07:00:00Z", lastSeenAt: "2026-08-23T10:30:00Z" },
+  ],
+  note: "Threat intelligence here is org-scoped correlation of connector telemetry + scan reputation against inventory. It is not a global intel feed.",
+};
+
+export const intelLookup: IntelLookup = {
+  organization_id: 11,
+  signals: intelDashboard.signals!,
+  new_signals: [],
+  matched_count: 1,
+  unmatched_count: 8,
+  scan_reputation: [
+    { id: 9001, title: "VirusTotal IP — 185.199.108.153", severity: "high", tool: "yaml_ti", asset_value: "185.199.108.153", ioc: "185.199.108.153", created_at: "2026-08-21T09:12:00Z" },
+  ],
+  note: "Org-scoped correlation of connector IOCs and scan reputation against inventory. Not a global threat-intel feed.",
+};
+
+export const intelEvents: IntelEventsResponse = {
+  items: cloudEvents,
+  total: 18,
+  limit: 50,
+  offset: 0,
+};
+
+// ── Orchestration: External pentest scope + ROE (EXTERNAL_PENTEST_SCOPE_AND_ROE_FE.md) ─
+export const pentestPattern: PentestScopePattern = {
+  pattern_version: "roe_pattern_v1",
+  document_kind: "external_pentest",
+  documents: [
+    { id: "scope", title: "External pentest scope", filename_stem: "External_Pentest_Scope" },
+    { id: "roe", title: "Rules of engagement", filename_stem: "Rules_of_Engagement" },
+  ],
+  formats: ["pdf", "docx", "markdown"],
+  declared_sources: ["github", "import", "manual", "openapi", "postman"],
+  in_scope_asset_types: ["api", "domain", "ip_address", "subdomain", "web_app"],
+  related_code_asset_types: ["github_repo"],
+  sections: [
+    { id: "parties", title: "1. Parties", kind: "auto_parties" },
+    { id: "authorization", title: "2. Authorization", kind: "ack", ack_id: "authorization_ack" },
+    { id: "assets", title: "3. In-scope assets", kind: "assets" },
+    { id: "related_code", title: "4. Related code (context)", kind: "related_code" },
+    { id: "window", title: "5. Test window", kind: "window" },
+    { id: "prohibitions", title: "6. Prohibited activities", kind: "toggles" },
+    { id: "out_of_scope", title: "7. Out-of-scope", kind: "static" },
+    { id: "data_handling", title: "8. Data handling", kind: "ack", ack_id: "data_handling_ack" },
+    { id: "third_parties", title: "9. Third parties", kind: "ack", ack_id: "third_parties_ack" },
+    { id: "contacts", title: "10. Contacts", kind: "auto_contacts" },
+    { id: "emergency", title: "11. Emergency stop", kind: "emergency" },
+    { id: "sign", title: "12. Signatures", kind: "sign" },
+  ],
+  required_acks: [
+    { id: "authorization_ack", section: "authorization", label: "We authorize testing of the named in-scope assets only." },
+    { id: "out_of_scope_ack", section: "out_of_scope", label: "We will not test out-of-scope assets, including anything discovered after this document." },
+    { id: "data_handling_ack", section: "data_handling", label: "We will not download, modify, or exfiltrate customer or personal data." },
+    { id: "third_parties_ack", section: "third_parties", label: "We will not engage third parties without prior written approval." },
+  ],
+  prohibited: [
+    { id: "no_dos", label: "No denial-of-service, flood, or availability-impacting tests", default: true },
+    { id: "no_social_engineering", label: "No social engineering of employees or customers", default: true },
+    { id: "no_data_exfil", label: "No exfiltration or destruction of data", default: true },
+    { id: "no_pivoting", label: "No pivoting to out-of-scope infrastructure", default: true },
+  ],
+  permitted: ["External reconnaissance of named in-scope hosts and URLs only"],
+};
+
+export const pentestEligible: PentestEligibleResponse = {
+  pattern_version: "roe_pattern_v1",
+  in_scope: [
+    { id: 12, name: "app.acme-financial.com", value: "app.acme-financial.com", asset_type: "domain", source: "manual", environment: "prod", criticality: "high", is_verified: true },
+    { id: 15, name: "admin.acme-financial.com", value: "admin.acme-financial.com", asset_type: "domain", source: "import", environment: "prod", criticality: "critical", is_verified: true },
+    { id: 44, name: "185.199.108.153", value: "185.199.108.153", asset_type: "ip_address", source: "manual", environment: "prod", criticality: "medium", is_verified: true },
+    { id: 71, name: "api.acme-financial.com", value: "https://api.acme-financial.com", asset_type: "api", source: "openapi", environment: "prod", criticality: "high", is_verified: true },
+  ],
+  related_code: [
+    { id: 81, name: "acme/api", value: "https://github.com/acme/api", asset_type: "github_repo", source: "github", is_verified: true },
+  ],
+  excluded_count: 14,
+  excluded_reasons: { enumerated: 10, private_ip: 2, internal_type: 2 },
+};
+
+export const pentestScopes: PentestScopeRead[] = [
+  {
+    id: 3,
+    organization_id: 11,
+    title: "Q3 external pentest — acme.example",
+    status: "approved",
+    pattern_version: "roe_pattern_v1",
+    window: { starts_at: "2026-09-01T13:00:00Z", ends_at: "2026-09-12T21:00:00Z", timezone: "America/Toronto", business_hours_only: true },
+    prohibited: {
+      no_dos: { id: "no_dos", enabled: true, reason: null },
+      no_social_engineering: { id: "no_social_engineering", enabled: false, reason: "Agreed phishing simulation, HR ticket 4412" },
+    },
+    acks: { authorization_ack: true, out_of_scope_ack: true, data_handling_ack: true, third_parties_ack: true },
+    extras: { client_signatory: "Jane Doe, CISO", emergency_contact: "+14165550100" },
+    in_scope_assets: [
+      { id: 12, value: "app.acme-financial.com", asset_type: "domain", source: "manual", is_verified: true },
+      { id: 44, value: "185.199.108.153", asset_type: "ip_address", source: "manual", is_verified: true },
+    ],
+    related_code_assets: [{ id: 81, value: "https://github.com/acme/api", asset_type: "github_repo", source: "github", is_verified: true }],
+    out_of_scope_notes: [
+      "This organization's inventory also contains assets that are not authorized: enumerated=10, private_ip=2.",
+      "Subdomains, IPs, and applications discovered after this document is approved are out of scope until a new document names them.",
+    ],
+    created_by_name: "Jane Doe",
+    approved_by_name: "Alex Authorizer",
+    approved_at: "2026-08-23T20:30:00Z",
+    content_hash: "a1b2c3...",
+    is_draft_watermark: false,
+    created_at: "2026-08-23T20:00:00Z",
+    download: {
+      scope_pdf: "/pentest-scope/3/download?document=scope&format=pdf",
+      scope_docx: "/pentest-scope/3/download?document=scope&format=docx",
+      roe_pdf: "/pentest-scope/3/download?document=roe&format=pdf",
+      roe_docx: "/pentest-scope/3/download?document=roe&format=docx",
+    },
+  },
+  {
+    id: 2,
+    organization_id: 11,
+    title: "Aug 2026 external scope (draft)",
+    status: "draft",
+    pattern_version: "roe_pattern_v1",
+    in_scope_assets: [{ id: 71, value: "api.acme-financial.com", asset_type: "api", source: "openapi", is_verified: true }],
+    related_code_assets: [],
+    created_by_name: "Jane Doe",
+    approved_by_name: null,
+    is_draft_watermark: true,
+    created_at: "2026-08-22T10:00:00Z",
+    download: {
+      scope_pdf: "/pentest-scope/2/download?document=scope&format=pdf",
+      scope_docx: "/pentest-scope/2/download?document=scope&format=docx",
+      roe_pdf: "/pentest-scope/2/download?document=roe&format=pdf",
+      roe_docx: "/pentest-scope/2/download?document=roe&format=docx",
+    },
+  },
 ];

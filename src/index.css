@@ -45,6 +45,17 @@
 
     --color-white: 255 255 255;
     --color-black: 2 6 23;
+
+    /* Border-first surface tokens (Xalgorix-style). Cards read as flat
+       surfaces outlined by their 1px border instead of tinted/glassy fills. */
+    --surface: 5 11 29;
+    --surface-card: 13 27 61;
+    --surface-inset: 5 11 29;
+    --border-subtle: 30 51 115;
+    --border-strong: 51 85 181;
+    /* Full-color tokens used by inline-style primitives (e.g. TextShimmer). */
+    --foreground: #e2e8f0;
+    --muted-foreground: #94a3b8;
   }
 
   :root[data-theme="light"] {
@@ -93,6 +104,9 @@
     --surface-card: 255 255 255;
     --surface-inset: 239 246 255;
     --border-subtle: 207 220 240;
+    --border-strong: 148 172 210;
+    --foreground: #1e293b;
+    --muted-foreground: #64748b;
   }
 
   /* Gold buttons always use navy/blue label text (readable on gold in both themes). */
@@ -212,14 +226,13 @@
   :root[data-theme="light"] .glass {
     background-color: #ffffff;
     border-color: rgb(207 220 240);
-    box-shadow: 0 10px 28px -18px rgba(15, 23, 42, 0.28);
   }
   :root[data-theme="light"] .glass-bright {
     background-color: #ffffff;
     border-color: rgb(207 220 240);
   }
   :root[data-theme="light"] .card {
-    box-shadow: 0 10px 30px -16px rgba(15, 23, 42, 0.14);
+    background-color: #ffffff;
   }
   :root[data-theme="light"] .input {
     background-color: #ffffff;
@@ -265,22 +278,31 @@
 }
 
 @layer components {
+  /* Border-first surfaces: cards are highlighted by their 1px border, not by
+     tinted/glassy fills or glows. Solid surfaces keep the app flat and quiet
+     (mirrors the Xalgorix webui `border border-border bg-card` treatment). */
   .glass {
-    @apply bg-phantix-900/60 backdrop-blur-xl border border-phantix-700/40;
+    background-color: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--border-subtle) / 0.8);
   }
 
   .glass-bright {
-    @apply bg-phantix-800/50 backdrop-blur-xl border border-phantix-600/40;
+    background-color: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--border-subtle) / 0.9);
   }
 
   .card {
-    @apply glass rounded-2xl shadow-card;
+    background-color: rgb(var(--surface-card));
+    border: 1px solid rgb(var(--border-subtle) / 0.7);
+    border-radius: 1rem;
   }
 
   .input {
-    @apply w-full rounded-xl bg-phantix-950/70 border border-phantix-700/60 px-3.5 py-2.5 text-sm text-slate-200
+    @apply w-full rounded-xl px-3.5 py-2.5 text-sm text-slate-200
       placeholder:text-slate-500 outline-none transition-all
       focus:border-gold-400/60 focus:ring-2 focus:ring-gold-400/15;
+    background-color: rgb(var(--surface-inset));
+    border: 1px solid rgb(var(--border-subtle) / 0.8);
   }
 
   .label {
@@ -432,12 +454,15 @@
   /* ── Fluid type scale. Each rule declares a static fallback FIRST, then the
         fluid `clamp()`; browsers without `cqi` support drop the second
         declaration and keep the fallback, so text never breaks. ──────────── */
-  .wb-2xs { font-size: 9px;   font-size: clamp(8px, 5px + 0.62cqi, 9.5px); }
-  .wb-xs  { font-size: 10px;  font-size: clamp(9px, 6px + 0.72cqi, 11px); }
-  .wb-sm  { font-size: 11px;  font-size: clamp(10px, 7px + 0.86cqi, 12px); }
-  .wb-base{ font-size: 12.5px;font-size: clamp(11px, 8px + 1cqi, 13px); line-height: 1.5; }
-  .wb-md  { font-size: 13.5px;font-size: clamp(12px, 9px + 1.15cqi, 14px); line-height: 1.5; }
-  .wb-lg  { font-size: 15px;  font-size: clamp(13px, 10px + 1.4cqi, 16px); }
+  /* Xalgorix-aligned readability floors: console/stream text never drops
+     below ~9.5px for micro-labels and ~11.5px for content; line-heights
+     follow xalgorix's leading-relaxed stream style. */
+  .wb-2xs { font-size: 10px;  font-size: clamp(9.5px, 6px + 0.62cqi, 10.5px); }
+  .wb-xs  { font-size: 11px;  font-size: clamp(10.5px, 7px + 0.72cqi, 12px); }
+  .wb-sm  { font-size: 12px;  font-size: clamp(11.5px, 8px + 0.86cqi, 13px); }
+  .wb-base{ font-size: 13px;  font-size: clamp(12px, 8.5px + 1cqi, 14px); line-height: 1.55; }
+  .wb-md  { font-size: 14px;  font-size: clamp(13px, 9.5px + 1.15cqi, 15px); line-height: 1.6; }
+  .wb-lg  { font-size: 16px;  font-size: clamp(14px, 11px + 1.4cqi, 17px); }
 
   /* Fluid spacing helpers that tighten as the pane narrows. */
   .wb-pad   { padding: 10px; padding: clamp(6px, 4px + 0.9cqi, 12px); }

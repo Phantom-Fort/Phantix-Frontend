@@ -28,6 +28,9 @@ import {
   Activity,
   UserCheck,
   Bot,
+  Cloud,
+  Fingerprint,
+  FileSignature,
   FlaskConical as FlaskNav,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -63,6 +66,9 @@ const navSections: {
       { to: "/soc", label: "SOC Monitor", icon: <Activity size={17} /> },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
       { to: "/vapt", label: "VAPT Campaigns", icon: <Crosshair size={17} /> },
+      { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
+      { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
+      { to: "/pentest/external-scope", label: "Pentest scope", icon: <FileSignature size={17} /> },
     ],
   },
   {

@@ -532,6 +532,26 @@ export async function loadAgiFindings(sessionId: number): Promise<Array<Record<s
   }
 }
 
+/** Human verification layer: confirm or dismiss a finding (operator-gated). */
+export async function decideAgiFindingVerification(
+  sessionId: number,
+  findingId: string,
+  verdict: "confirmed" | "rejected",
+  note = "",
+): Promise<boolean> {
+  if (isDemoMode()) return true;
+  try {
+    await api.post<unknown>(
+      `/agi/sessions/${sessionId}/findings/${encodeURIComponent(findingId)}/verdict`,
+      { verdict, note },
+      { dualControl: true },
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function loadAgiTranscript(sessionId: number, afterSeq: number): Promise<AgiTranscriptChunk[]> {
   if (isDemoMode()) { await delay(40); return demoTxTail(afterSeq); }
   const res = await api.get<AgiTranscriptChunk[]>(`/agi/sessions/${sessionId}/transcript?after_seq=${afterSeq}`);

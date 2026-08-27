@@ -22,11 +22,15 @@ import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
 import AssetIntelligence from "@/pages/AssetIntelligence";
+import AssetGraph from "@/pages/AssetGraph";
 import SocDashboard from "@/pages/SocDashboard";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
 import Sandbox from "@/pages/Sandbox";
 import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
+import ThreatIntel from "@/pages/ThreatIntel";
+import Cloud from "@/pages/Cloud";
+import PentestScope from "@/pages/PentestScope";
 import PasswordResetRequest from "@/pages/auth/PasswordResetRequest";
 import PasswordResetComplete from "@/pages/auth/PasswordResetComplete";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
@@ -90,9 +94,13 @@ export default function App() {
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
             <Route path="/assets" element={<RequireAuth><Assets /></RequireAuth>} />
             <Route path="/assets/intelligence" element={<RequireAuth><AssetIntelligence /></RequireAuth>} />
+            <Route path="/assets/intelligence/graph" element={<RequireAuth><AssetGraph /></RequireAuth>} />
             <Route path="/soc" element={<RequireAuth><SocDashboard /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
+            <Route path="/threat-intel" element={<RequireAuth><ThreatIntel /></RequireAuth>} />
+            <Route path="/cloud" element={<RequireAuth><Cloud /></RequireAuth>} />
+            <Route path="/pentest/external-scope" element={<RequireAuth><PentestScope /></RequireAuth>} />
             <Route path="/risks" element={<RequireAuth><Risks /></RequireAuth>} />
             <Route path="/compliance" element={<RequireAuth><Compliance /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />

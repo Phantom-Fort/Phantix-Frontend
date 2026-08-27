@@ -60,6 +60,9 @@ export default function Assets() {
   const [importingGithub, setImportingGithub] = useState(false);
   const [githubStatus, setGithubStatus] = useState<{ github_login?: string; token_configured?: boolean } | null>(null);
   const [githubAppStatus, setGithubAppStatus] = useState<{ connected?: boolean; account_login?: string; status?: string; message?: string } | null>(null);
+  // Latest GitHub analysis scan job returned by POST /assets/import/github
+  // (GITHUB_ANALYSIS_SCAN_JOB_FE.md) — a separate job family from network scans.
+  const [githubAnalysisJob, setGithubAnalysisJob] = useState<{ id?: number; status?: string; skipped_start?: boolean } | null>(null);
   const [showApiModal, setShowApiModal] = useState(false);
   const [apiSpec, setApiSpec] = useState("");
   const [apiFormat, setApiFormat] = useState("openapi");
@@ -247,8 +250,23 @@ export default function Assets() {
     if (!(await requireDualControl("Importing repos requires a dual-control operate session."))) return;
     setImportingGithub(true);
     try {
-      await api.post("/assets/import/github", { discover_all: true });
-      toast("success", "Import started", "Repos being imported as assets");
+      // POST /assets/import/github queues a SEPARATE github_analysis scan job (returned
+      // as analysis_job). Import must not fail just because analysis could not start.
+      const res = await api.post<{
+        imported?: unknown[];
+        message?: string;
+        analysis_job?: { id?: number; job_type?: string; status?: string; skipped_start?: boolean };
+      }>("/assets/import/github", { discover_all: true });
+      const job = res?.analysis_job ?? null;
+      const importedCount = (res?.imported ?? []).length;
+      setGithubAnalysisJob(job ? { id: job.id, status: job.status, skipped_start: job.skipped_start } : null);
+      if (job && job.skipped_start) {
+        toast("info", "Repos imported; analysis already running", "Another GitHub analysis is active. Assets were saved; a new scan was not started.");
+      } else if (job && job.id) {
+        toast("success", "Import started", `Imported ${importedCount} repo(s) & queued GitHub analysis scan job #${job.id}. Track it under Scans.`);
+      } else {
+        toast("success", "Import started", "Repos imported as assets (no analysis job queued).");
+      }
       reload();
     } catch (e: any) {
       toast("error", "Import failed", e.message || "");
@@ -691,6 +709,13 @@ export default function Assets() {
               <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("Connecting GitHub requires a dual-control operate session.")) { setGithubMethod("pat"); setShowGithubModal(true); } })(); }}>
                 <Github size={14} /> Connect GitHub
               </button>
+            )}
+            {githubAnalysisJob?.id && githubAnalysisJob.status !== "completed" && (
+              <a href="/scans" className="mt-2 block rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-3 py-2 text-center text-[11px] text-slate-400 transition-colors hover:border-phantix-500/50 hover:text-slate-200">
+                {githubAnalysisJob.skipped_start
+                  ? "A GitHub analysis is already running (skipped a new start). View Scans."
+                  : `GitHub analysis job #${githubAnalysisJob.id} · ${githubAnalysisJob.status ?? "queued"}. Track in Scans.`}
+              </a>
             )}
             <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/integrations/github · GET /github/installation</p>
           </Card>

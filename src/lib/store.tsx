@@ -1,7 +1,7 @@
 ﻿import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, Info, XCircle, X } from "lucide-react";
-import { tokens, isDemoMode, isDemoFlagSet, enterDemoMode, exitDemoMode, API_BASE, delay, api, deviceId } from "./api";
+import { tokens, isDemoMode, isDemoFlagSet, enterDemoMode, exitDemoMode, API_BASE, delay, api, deviceId, clearCorrelationId } from "./api";
 import {
   emptyDualControl,
   emptyOrganization,
@@ -57,6 +57,8 @@ type Store = {
   lockOperate: () => void;
   /** Open dual-control sign-in overlay; resolves true when operate session is active. */
   requireDualControl: (reason?: string) => Promise<boolean>;
+  /** Unlock operate, then run the mutation (00-shared-auth-and-client.md §1 helper). */
+  withOperate: <T>(reason: string, fn: () => Promise<T>) => Promise<T | null>;
   dualControlPrompt: { open: boolean; reason: string };
   closeDualControlPrompt: (success: boolean) => void;
   requestDualControlOtp: (email: string) => Promise<{ destinationMasked: string; devOtp: string }>;
@@ -321,6 +323,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     tokens.dualControl = null;
     tokens.appSession = null;
     tokens.device = null;
+    clearCorrelationId();
     exitDemoMode();
     setSession(null);
     setOrg(emptyOrganization);
@@ -412,6 +415,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     [operate.unlocked, operate.expiresAt, dualControl.configured, session?.isInitiator, session?.isAuthorizer, session?.initiatorName, session?.authorizerName, toast],
   );
 
+  const withOperate = useCallback(
+    async <T,>(reason: string, fn: () => Promise<T>): Promise<T | null> => {
+      const ok = await requireDualControl(reason);
+      if (!ok) return null;
+      try {
+        return await fn();
+      } catch (err) {
+        throw err;
+      }
+    },
+    [requireDualControl],
+  );
+
   // Slide the operate expiry on real activity. Backend inactivity window is
   // what actually matters — this only keeps the FE in sync so it stops asking
   // for a fresh code on every action while the operate session is still valid.
@@ -426,15 +442,44 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("phantix:operate-activity", onActivity);
   }, []);
 
-  // Lock only when the backend reports the operate session is gone/expired.
+  // The backend reports the operate session is gone/expired (401/403 dual-control).
+  // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY and prompt
+  // the user to re-unlock — never sign them out of the app.
   useEffect(() => {
-    const onExpired = () => {
+    const onExpired = (e: Event) => {
+      const msg = (e as CustomEvent).detail;
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      toast("warning", "Operate session released", "Re-unlock dual-control to continue approvals (your login stays active).");
+      // Auto-open the unlock overlay so the user can continue without re-navigating.
+      void requireDualControl(msg || "Operate session ended. Unlock to continue — you stay signed in.");
     };
     window.addEventListener("phantix:operate-expired", onExpired);
     return () => window.removeEventListener("phantix:operate-expired", onExpired);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requireDualControl]);
+
+  // 403 dual-control (header missing, session still fine): open the unlock overlay.
+  useEffect(() => {
+    const onRequired = (e: Event) => {
+      const msg = (e as CustomEvent).detail;
+      void requireDualControl(msg || "Unlock operate mode for this action.");
+    };
+    window.addEventListener("phantix:operate-required", onRequired);
+    return () => window.removeEventListener("phantix:operate-required", onRequired);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requireDualControl]);
+
+  // 403 service_key_required: app access disabled on Platform (00-shared… §8).
+  useEffect(() => {
+    const onServiceKey = () => {
+      toast(
+        "warning",
+        "App access disabled",
+        "An admin must enable app access (service key) on Platform before you can use the app. Your sign-in stays active.",
+      );
+    };
+    window.addEventListener("phantix:service-key-required", onServiceKey);
+    return () => window.removeEventListener("phantix:service-key-required", onServiceKey);
   }, [toast]);
 
   const requestDualControlOtp = useCallback(
@@ -588,6 +633,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       unlockOperate: unlockOperateStable,
       lockOperate,
       requireDualControl,
+      withOperate,
       dualControlPrompt,
       closeDualControlPrompt,
       requestDualControlOtp,
@@ -600,7 +646,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       session, org, dualControl, operate, securityDbReady, toasts, toast, dismissToast,
-      login, verifyMfa, completeAppLogin, logout, unlockOperateStable, lockOperate, enterDemo, switchToRealOrg,
+      login, verifyMfa, completeAppLogin, logout, unlockOperateStable, lockOperate, withOperate, enterDemo, switchToRealOrg,
       requireDualControl, dualControlPrompt, closeDualControlPrompt,
       requestDualControlOtp, verifyDualControlOtp, confirmDualControlDevice, demoTick,
     ],

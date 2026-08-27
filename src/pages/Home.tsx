@@ -52,7 +52,7 @@ export default function Home() {
       {/* Nav */}
       <header className="relative z-10 border-b border-white/5">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
-          <img src="/logo-transparent.png" alt="Phantix" className="h-9 w-9 object-contain" />
+          <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
           <div className="leading-tight">
             <p className="font-display text-[15px] font-bold text-white">Phantix</p>
             <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>

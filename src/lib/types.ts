@@ -86,6 +86,7 @@ export interface IntelligenceDashboard {
   postureScore?: number;
   posture_score?: number;
   posture_trend?: { day: string; score: number }[];
+  postureTrend?: { day: string; score: number }[];
   totals?: {
     activeAssets?: number;
     verified?: number;
@@ -1161,4 +1162,226 @@ export interface AvailabilitySummary {
     medianSeconds: number | null;
     p95Seconds: number | null;
   };
+}
+
+// ── Orchestration: Threat Intelligence page (THREAT_INTEL_PAGE_FE.md) ───────
+// Page at /threat-intel = org-scoped IOC correlation against inventory.
+// Not a global intel feed. Endpoints under /cloud-security/*.
+
+export type TiIocType = "ip" | "domain" | "url" | "email" | "other" | "unknown";
+
+export interface CloudConnector {
+  id: number;
+  organization_id?: number;
+  provider: string;
+  display_name?: string | null;
+  label?: string | null;
+  is_active?: boolean;
+  active?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+  webhook?: {
+    public_id?: string;
+    secret_configured?: boolean;
+    ingest_url_hint?: string;
+  } | null;
+  extra_credentials?: Record<string, unknown>;
+  ingestUrl?: string | null;
+  ingestUrlHint?: string | null;
+  webhookSecret?: string | null;
+}
+
+export interface CloudProvider {
+  id: string;
+  name: string;
+  description?: string;
+  kind?: string;
+  webhook?: {
+    label?: string;
+    ingestUrlHint?: string;
+    signatureHeader?: string;
+  } | null;
+  fields?: Array<{ key: string; label?: string; placeholder?: string; required?: boolean }>;
+}
+
+export interface CloudEvent {
+  id: number;
+  organization_id?: number;
+  connector_id?: number;
+  provider?: string;
+  event_kind?: string;
+  eventKind?: string;
+  title?: string;
+  severity?: string;
+  summary?: string;
+  asset_hints?: string[];
+  assetHints?: string[];
+  iocs?: string[];
+  mapped_engines?: string[];
+  mappedEngines?: string[];
+  detections?: unknown[];
+  received_at?: string;
+  receivedAt?: string;
+  created_at?: string;
+}
+
+export interface TiSignal {
+  id: number;
+  ioc: string;
+  iocType: TiIocType | string;
+  title: string;
+  severity: Severity | string;
+  matchedAssetIds: number[];
+  source?: string;
+  evidence?: Record<string, unknown>;
+  occurrenceCount?: number;
+  firstSeenAt?: string | null;
+  lastSeenAt?: string | null;
+}
+
+export interface TiReputation {
+  id: number;
+  title: string;
+  severity: Severity | string;
+  tool?: string;
+  asset_value?: string;
+  ioc?: string;
+  description?: string;
+  created_at?: string;
+  createdAt?: string;
+}
+
+export interface IntelDashboard {
+  organizationId?: number;
+  connectorCount?: number;
+  eventCount24h?: number;
+  openDetections?: number;
+  matchedIocs?: number;
+  unmatchedIocs?: number;
+  byProvider?: Record<string, number>;
+  bySeverity?: Record<string, number>;
+  recentEvents?: CloudEvent[];
+  signals?: TiSignal[];
+  note?: string;
+}
+
+export interface IntelLookup {
+  organization_id?: number;
+  signals?: TiSignal[];
+  new_signals?: TiSignal[];
+  matched_count?: number;
+  unmatched_count?: number;
+  scan_reputation?: TiReputation[];
+  note?: string;
+}
+
+export interface IntelEventsResponse {
+  items?: CloudEvent[];
+  total?: number;
+  limit?: number;
+  offset?: number;
+}
+
+// ── Orchestration: External pentest scope + ROE (EXTERNAL_PENTEST_SCOPE_AND_ROE_FE.md) ─
+// Page at /pentest/external-scope. Document workshop — not a VAPT campaign / scan.
+
+export type PentestScopeStatus = "draft" | "approved";
+
+export interface PentestEligibleAsset {
+  id: number;
+  name?: string;
+  value: string;
+  asset_type: string;
+  source: string;
+  environment?: string | null;
+  criticality?: string | null;
+  is_verified: boolean;
+}
+
+export interface PentestEligibleResponse {
+  pattern_version?: string;
+  in_scope: PentestEligibleAsset[];
+  related_code: PentestEligibleAsset[];
+  excluded_count?: number;
+  excluded_reasons?: Record<string, number>;
+}
+
+export interface PentestScopeSection {
+  id: string;
+  title: string;
+  kind: string;
+  ack_id?: string;
+  options?: Array<{ id: string; label: string; enabled_default?: boolean }>;
+}
+
+export interface PentestScopePattern {
+  pattern_version: string;
+  document_kind: string;
+  documents: Array<{ id: string; title: string; filename_stem: string }>;
+  formats: string[];
+  declared_sources?: string[];
+  in_scope_asset_types?: string[];
+  related_code_asset_types?: string[];
+  sections: PentestScopeSection[];
+  required_acks?: Array<{ id: string; section: string; label: string }>;
+  prohibited?: Array<{ id: string; label: string; default?: boolean }>;
+  permitted?: string[];
+}
+
+export interface PentestScopeCreate {
+  title: string;
+  asset_ids: number[];
+  related_code_asset_ids?: number[];
+  window: {
+    starts_at: string;
+    ends_at: string;
+    timezone?: string;
+    business_hours_only?: boolean;
+  };
+  authorization_ack: boolean;
+  out_of_scope_ack: boolean;
+  data_handling_ack: boolean;
+  third_parties_ack: boolean;
+  prohibited?: Array<{ id: string; enabled: boolean; reason?: string }>;
+  extras?: {
+    client_signatory?: string;
+    emergency_contact?: string;
+    notes?: string;
+    permitted_clarification?: string;
+  };
+}
+
+export interface PentestScopeRead {
+  id: number;
+  organization_id?: number;
+  title: string;
+  status: PentestScopeStatus;
+  pattern_version?: string;
+  parties_snapshot?: Record<string, unknown>;
+  window?: { starts_at?: string; ends_at?: string; timezone?: string; business_hours_only?: boolean };
+  prohibited?: Record<string, { id: string; enabled: boolean; reason?: string | null }>;
+  acks?: Record<string, boolean>;
+  extras?: Record<string, string>;
+  in_scope_assets?: PentestEligibleAsset[];
+  related_code_assets?: PentestEligibleAsset[];
+  out_of_scope_notes?: string[];
+  created_by_name?: string | null;
+  approved_by_name?: string | null;
+  approved_at?: string | null;
+  content_hash?: string | null;
+  is_draft_watermark?: boolean;
+  created_at?: string;
+  download?: {
+    scope_pdf?: string;
+    scope_docx?: string;
+    roe_pdf?: string;
+    roe_docx?: string;
+    scope_markdown?: string;
+    roe_markdown?: string;
+  };
+}
+
+export interface PentestScopeList {
+  items: PentestScopeRead[];
+  total: number;
 }
