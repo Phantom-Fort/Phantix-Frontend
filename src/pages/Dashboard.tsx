@@ -38,6 +38,9 @@ export default function Dashboard() {
   const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
   const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
   const skipFirstPoll = useRef(true);
+  // Min gap between SSE-triggered full reloads — the stream can emit event
+  // bursts and each reload refetches the whole command-center payload.
+  const lastSseReloadRef = useRef(0);
 
   useSmartPoll(async () => {
     if (skipFirstPoll.current) {
@@ -121,7 +124,14 @@ export default function Dashboard() {
         });
       }
       if (type === "riskUpdated") {
-        void reload();
+        // Throttle: at most one full command-center reload per 20s regardless
+        // of how many riskUpdated events arrive (panel data still updates via
+        // the 60s useSmartPoll and event patching above).
+        const now = Date.now();
+        if (now - lastSseReloadRef.current >= 20_000) {
+          lastSseReloadRef.current = now;
+          void reload();
+        }
       }
     },
     [reload, setData],

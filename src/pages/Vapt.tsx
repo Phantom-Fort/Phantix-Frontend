@@ -126,6 +126,7 @@ export default function Vapt() {
   );
 
   const pollCampaigns = React.useCallback(async () => {
+    if (document.hidden) return; // pause while the tab is hidden
     try {
       const raw = await api.get<any>("/vapt/campaigns?limit=50");
       const campaigns = Array.isArray(raw) ? raw : (raw?.items ?? raw?.value ?? []);
@@ -141,7 +142,7 @@ export default function Vapt() {
 
   useEffect(() => {
     if (activeCampaigns.length > 0 && !pollTimer.current) {
-      pollTimer.current = setInterval(pollCampaigns, 5000);
+      pollTimer.current = setInterval(pollCampaigns, 10_000);
     } else if (activeCampaigns.length === 0 && pollTimer.current) {
       clearInterval(pollTimer.current);
       pollTimer.current = null;

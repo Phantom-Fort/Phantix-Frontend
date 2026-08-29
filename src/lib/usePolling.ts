@@ -20,23 +20,33 @@ export function useSmartPoll(
   opts: PollOptions = {},
 ) {
   const { intervalMs = 10000, hiddenIntervalMs = 60000, paused = false, guard } = opts;
-  const lastDataRef = useRef<string>("");
   const busyRef = useRef(false);
+
+  // Hold the latest callback/guard in refs. Callers typically pass inline arrow
+  // functions, which get a new identity on every render — depending on them
+  // directly would restart this effect and fire an immediate poll on every
+  // re-render (a runaway request loop when the poll itself triggers a
+  // re-render, e.g. reload() → setData → render → poll → reload()).
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
+  const guardRef = useRef(guard);
+  guardRef.current = guard;
 
   const poll = useCallback(async () => {
     if (busyRef.current) return;
     if (paused) return;
-    if (guard && !guard()) return;
+    if (guardRef.current && !guardRef.current()) return;
     busyRef.current = true;
     try {
-      await callback();
+      await callbackRef.current();
     } finally {
       busyRef.current = false;
     }
-  }, [callback, paused, guard]);
+  }, [paused]);
 
   useEffect(() => {
     if (paused) return;
+    // Immediate poll on mount / interval change only — never on re-render.
     poll();
 
     let interval: ReturnType<typeof setInterval>;

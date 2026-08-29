@@ -10,7 +10,7 @@ import {
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { useResource } from "@/lib/useResource";
 import {
-  loadIntelDashboard, loadIntelLookup, loadIntelEvents, startReputationScan,
+  loadIntelDashboard, loadIntelLookup, loadIntelEvents, startReputationScan, normalizeIntelSignals,
 } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx, titleCase } from "@/lib/utils";
@@ -41,11 +41,13 @@ export default function ThreatIntel() {
     async () => {
       const l = await loadIntelLookup();
       return {
-        signals: l.signals ?? [],
+        signals: normalizeIntelSignals(l.signals),
         scanReputation: l.scan_reputation ?? [],
         matched: l.matched_count ?? 0,
         unmatched: l.unmatched_count ?? 0,
-        newSignals: (l.new_signals ?? []).map((s) => s.ioc),
+        newSignals: (l.new_signals ?? [])
+          .map((s) => (typeof s === "string" ? s : s?.ioc))
+          .filter((v): v is string => Boolean(v)),
       };
     },
     { signals: [], scanReputation: [], matched: 0, unmatched: 0, newSignals: [] },
@@ -120,7 +122,7 @@ export default function ThreatIntel() {
     return Array.from(map.values()).filter((s) => s && s.id).slice(0, 50);
   }, [dash.data?.signals, intel.data.signals]);
 
-  const reputation = useMemo(() => intel.data.scanReputation, [intel.data.scanReputation]);
+  const reputation = useMemo(() => intel.data.scanReputation ?? [], [intel.data.scanReputation]);
 
   if (dash.loading && !dash.data.connectorCount && !signals.length && !events.data.length) {
     return (
@@ -231,7 +233,8 @@ export default function ThreatIntel() {
                     </thead>
                     <tbody>
                       {signals.map((s) => {
-                        const isNew = intel.data.newSignals.includes(s.ioc);
+                        const isNew = (intel.data.newSignals ?? []).includes(s.ioc);
+                        const matched = s.matchedAssetIds ?? (s as { matched_asset_ids?: number[] }).matched_asset_ids ?? [];
                         return (
                           <tr key={s.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors cursor-pointer", isNew && "bg-emerald-400/5")} onClick={() => setOpenIoc(s)}>
                             <td className="td">
@@ -245,8 +248,8 @@ export default function ThreatIntel() {
                             <td className="td"><SeverityBadge severity={sevOf(String(s.severity))} /></td>
                             <td className="td"><span className="chip text-[10px]">{s.source || "—"}</span></td>
                             <td className="td">
-                              {s.matchedAssetIds.length > 0 ? (
-                                <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{s.matchedAssetIds.length} asset(s)</span>
+                              {matched.length > 0 ? (
+                                <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{matched.length} asset(s)</span>
                               ) : (
                                 <span className="chip text-slate-400 bg-slate-500/10 border-slate-500/30">Unmatched</span>
                               )}
@@ -351,8 +354,8 @@ export default function ThreatIntel() {
               <IocBadge type={openIoc.iocType} />
               <SeverityBadge severity={sevOf(String(openIoc.severity))} />
               {openIoc.source && <span className="chip text-[10px]">{openIoc.source}</span>}
-              {openIoc.matchedAssetIds.length > 0
-                ? <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{openIoc.matchedAssetIds.length} matched asset(s)</span>
+              {(openIoc.matchedAssetIds ?? []).length > 0
+                ? <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{(openIoc.matchedAssetIds ?? []).length} matched asset(s)</span>
                 : <span className="chip text-slate-400 bg-slate-500/10 border-slate-500/30">No asset match</span>}
             </div>
             <p className="text-sm text-slate-300">{openIoc.title}</p>
@@ -370,9 +373,9 @@ export default function ThreatIntel() {
                 <pre className="rounded-lg bg-phantix-950/70 border border-phantix-700/40 p-3 text-[11px] font-mono text-slate-400 overflow-x-auto">{JSON.stringify(openIoc.evidence, null, 2)}</pre>
               </div>
             )}
-            {openIoc.matchedAssetIds.length > 0 && (
+            {(openIoc.matchedAssetIds ?? []).length > 0 && (
               <div className="flex flex-wrap gap-2 border-t border-phantix-700/40 pt-4">
-                {openIoc.matchedAssetIds.map((id) => (
+                {(openIoc.matchedAssetIds ?? []).map((id) => (
                   <a key={id} href={`/assets?asset=${id}`} className="btn-secondary text-xs"><Globe size={12} /> Open asset #{id}</a>
                 ))}
               </div>

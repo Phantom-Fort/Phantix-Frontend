@@ -131,6 +131,43 @@ function isLiveStatus(status: string): boolean {
   return status === "running" || status === "provisioning" || status === "paused";
 }
 
+/**
+ * Gateway-class failure during session start (408 client timeout, 502/503/504).
+ * Session start is synchronous on the backend (Docker provision ~120s) while the
+ * edge (Cloudflare) cuts origin responses around ~100s — so a 502/504 does NOT
+ * mean the start failed; the backend may have created the session anyway.
+ */
+export function isAgiGatewayError(e: unknown): boolean {
+  return e instanceof ApiError && [408, 502, 503, 504].includes(e.status);
+}
+
+/**
+ * After a gateway failure on start, poll the live-sessions list briefly and
+ * adopt the session if it actually started. Blindly retrying the POST would
+ * provision a duplicate container.
+ */
+async function recoverSessionAfterGatewayFailure(engagementId: number): Promise<AgiSession | null> {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await delay(10_000);
+    try {
+      const res = await api.get<AgiSession[] | { items?: AgiSession[] }>(
+        "/agi/sessions?status=running,paused,provisioning",
+      );
+      const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+      const live = list
+        .map(normalizeAgiSession)
+        .find((s) => s.engagement_id === engagementId && isLiveStatus(s.status)) ?? null;
+      if (live) return live;
+    } catch (e) {
+      // 404: the live-sessions list route doesn't exist — recovery is impossible
+      // on this backend; stop immediately instead of polling for a minute.
+      if (e instanceof ApiError && e.status === 404) return null;
+      /* other transient errors: keep polling until the window closes */
+    }
+  }
+  return null;
+}
+
 // ── Demo fixtures ─────────────────────────────────────────────────────────────
 let demoAgreed = false;
 let demoEngagements: AgiEngagement[] = [];
@@ -424,6 +461,9 @@ export async function loadAgiSession(sessionId: number): Promise<AgiSession | nu
   }
 }
 
+/** Set once the backend proves `GET /agi/sessions` (list) doesn't exist — avoids a 404 on every mount. */
+let agiSessionsListUnavailable = false;
+
 export async function loadActiveAgiSession(): Promise<AgiSession | null> {
   const persisted = readPersistedAgiSession();
   if (persisted) {
@@ -434,13 +474,15 @@ export async function loadActiveAgiSession(): Promise<AgiSession | null> {
   if (isDemoMode()) {
     return demoSession && isLiveStatus(demoSession.status) ? demoSession : null;
   }
+  if (agiSessionsListUnavailable) return null;
   try {
     const res = await api.get<AgiSession[] | { items?: AgiSession[] }>("/agi/sessions?status=running,paused,provisioning");
     const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
     const live = list.find((s) => isLiveStatus(s.status)) ?? null;
     if (live) persistAgiSession(live);
     return live;
-  } catch {
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) agiSessionsListUnavailable = true;
     return null;
   }
 }
@@ -473,11 +515,28 @@ export async function startAgiSession(
   if (opts.preapprove_lab_auth != null) body.preapprove_lab_auth = opts.preapprove_lab_auth;
   if (opts.credentials) body.credentials = opts.credentials;
   if (opts.credential_accounts?.length) body.credential_accounts = opts.credential_accounts;
-  const s = await api.post<AgiSession>(
-    `/agi/engagements/${engagementId}/sessions`,
-    body,
-    { dualControl: true, timeoutMs: AGI_SESSION_START_TIMEOUT_MS },
-  );
+  let s: AgiSession;
+  try {
+    s = await api.post<AgiSession>(
+      `/agi/engagements/${engagementId}/sessions`,
+      body,
+      { dualControl: true, timeoutMs: AGI_SESSION_START_TIMEOUT_MS },
+    );
+  } catch (e) {
+    if (isAgiGatewayError(e)) {
+      const recovered = await recoverSessionAfterGatewayFailure(engagementId);
+      if (recovered) {
+        persistAgiSession(recovered);
+        return recovered;
+      }
+      throw new ApiError(
+        (e as ApiError).status,
+        "Session start was cut off at the gateway while the workspace was provisioning. " +
+        "The backend may still be starting it — wait a minute before retrying (an immediate retry can create a duplicate session).",
+      );
+    }
+    throw e;
+  }
   const normalized = normalizeAgiSession(s);
   persistAgiSession(normalized);
   return normalized;

@@ -56,6 +56,7 @@ import type {
   SocStatus,
   SocTriagePacket,
   SupportTicket,
+  TiSignal,
   TrackerFinding,
   TrackerSummary,
   CommandCenter,
@@ -2125,7 +2126,7 @@ function str(v: unknown): string | undefined {
 }
 
 /** Normalize the intel / intel?ioc= snake_case payload into a TiSignal list. */
-export function normalizeIntelSignals(raw: unknown): IntelDashboard["signals"] {
+export function normalizeIntelSignals(raw: unknown): TiSignal[] {
   const list = Array.isArray(raw) ? raw : ((raw as Record<string, unknown>)?.["signals"] as unknown[]);
   if (!Array.isArray(list)) return [];
   return list.map((item) => {
@@ -2176,9 +2177,13 @@ export async function deleteCloudConnector(id: number): Promise<void> {
   return api.delete<void>(`/cloud-security/connectors/${id}`);
 }
 
-export function loadIntelDashboard(): Promise<IntelDashboard> {
+export async function loadIntelDashboard(): Promise<IntelDashboard> {
   if (isDemoMode()) { return delay(220).then(() => demo.intelDashboard); }
-  return api.get<IntelDashboard>("/cloud-security/dashboard");
+  const d = await api.get<IntelDashboard | null>("/cloud-security/dashboard");
+  if (!d) return {} as IntelDashboard;
+  // The dashboard endpoint returns raw snake_case signals — normalize them so
+  // camelCase consumers (e.g. ThreatIntel's matchedAssetIds reads) never crash.
+  return { ...d, signals: normalizeIntelSignals(d.signals) };
 }
 
 export async function loadIntelLookup(ioc?: string): Promise<IntelLookup> {

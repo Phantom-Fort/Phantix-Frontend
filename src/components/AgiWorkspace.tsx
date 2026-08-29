@@ -25,6 +25,7 @@ import {
   decideAgiAction,
   stopAgiSession,
   isAgiPolicyBlocked,
+  isAgiGatewayError,
   loadActiveAgiSession,
   loadAgiSession,
 } from "@/lib/agi";
@@ -263,6 +264,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     } catch (e) {
       const blocked = isAgiPolicyBlocked(e);
       if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); }
+      else if (isAgiGatewayError(e)) {
+        toast(
+          "error",
+          "Start failed at the gateway",
+          "The connection was cut off while the workspace was provisioning. The backend may still be starting the session — " +
+          "wait a minute and reload this page before retrying (retrying immediately can create a duplicate session). " +
+          "If it persists, the AGI runner is likely unreachable — contact support with the correlation ID.",
+        );
+      }
       else toast("error", "Start failed", e instanceof Error ? e.message : "");
     } finally {
       setStarting(false);

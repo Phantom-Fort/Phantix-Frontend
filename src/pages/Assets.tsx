@@ -145,6 +145,7 @@ export default function Assets() {
   );
 
   const pollDiscovery = useCallback(async () => {
+    if (document.hidden) return; // pause while the tab is hidden
     try {
       const raw = await api.get<any>("/assets/discovery/jobs?limit=30");
       const jobs = Array.isArray(raw) ? raw : (raw?.items ?? raw?.value ?? []);
@@ -158,7 +159,7 @@ export default function Assets() {
 
   useEffect(() => {
     if (activeJobs.length > 0 && !pollRef.current) {
-      pollRef.current = setInterval(pollDiscovery, 5000);
+      pollRef.current = setInterval(pollDiscovery, 10_000);
     } else if (activeJobs.length === 0 && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
