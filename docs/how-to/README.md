@@ -9,9 +9,3 @@ Task-focused docs with **process flows** for customer apps only.
 
 Overview manuals: [../USER_MANUALS/](../USER_MANUALS/).
 
-## Lab credentials (staging QA only)
-
-| App | Email | Password |
-|-----|-------|----------|
-| Platform | `admin@phantixvulnserver.online` | `Phan7omSec4321` (+ email OTP) |
-| Command Centre | `admin@phantixvulnserver.online` | `Pa$$w0rd!` (+ app OTP) or Platform login link |

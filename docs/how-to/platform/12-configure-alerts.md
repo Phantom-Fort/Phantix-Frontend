@@ -9,19 +9,15 @@
 
 ## Process flow
 
-```text
-Alerts settings
-    │
-    ├─► Enable alerts
-    ├─► SMTP
-    │     host, port, from, TLS
-    │     test email
-    ├─► Email recipients list
-    ├─► WhatsApp (if enabled)
-    └─► Telegram (if enabled)
-    │
-    ▼
- Save → send test → confirm delivery
+```mermaid
+flowchart TD
+  A[Alerts settings] --> B[Enable alerts]
+  A --> C[SMTP · host, port, from, TLS]
+  C --> D[Test email]
+  A --> E[Email recipients list]
+  A --> F[WhatsApp · if enabled]
+  A --> G[Telegram · if enabled]
+  B & D & E & F & G --> H[Save · send test · confirm delivery]
 ```
 
 ---

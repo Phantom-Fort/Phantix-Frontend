@@ -28,26 +28,16 @@ Platform must have setup complete + security DB bootstrapped first.
 
 ## Typical weekly operating flow
 
-```text
-Dashboard (posture / open queues)
-    → SOC triage
-    → Launch or review scans / VAPT
-    → Update risks & tracker
-    → Generate / download reports
-    → Support anything blocked
-```
-
 ```mermaid
-flowchart TD
-  D[Dashboard] --> S[SOC]
+flowchart LR
+  D[Dashboard · posture / open queues] --> S[SOC triage]
   D --> A[Assets / Discovery]
-  A --> SC[Scans]
-  SC --> V[VAPT]
   S --> R[Risks]
-  V --> R
-  R --> T[Tracker]
-  T --> REP[Reports]
-  REP --> SUP[Support]
+  A --> SC[Launch or review scans / VAPT]
+  SC --> R
+  R --> T[Update risks & tracker]
+  T --> REP[Generate / download reports]
+  REP --> SUP[Support anything blocked]
 ```
 
 Screenshots: `../../screenshots/app/`

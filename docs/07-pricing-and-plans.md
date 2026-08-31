@@ -8,12 +8,10 @@ Amounts in **NGN** are set in the Platform billing configuration and may include
 
 ## Three layers of access
 
-```text
-Free / trial  →  baseline tools (know your surface)
-      ↓
-Premium       →  continuous assurance suite (active subscription)
-      ↓
-Add-ons & engagements → heavier packs and human-led projects
+```mermaid
+flowchart TD
+  A[Free / trial] -->|baseline tools · know your surface| B[Premium]
+  B -->|continuous assurance suite · active subscription| C[Add-ons & engagements · heavier packs and human-led projects]
 ```
 
 ---

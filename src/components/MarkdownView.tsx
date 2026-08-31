@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { cx } from "@/lib/utils";
+import MermaidDiagram from "@/components/MermaidDiagram";
 
 // Minimal, safe markdown renderer (trusted static / short content).
 // Handles: ATX headings, fenced code (with language + copy), inline code,
@@ -17,6 +18,7 @@ type Block =
   | { kind: "h"; level: number; text: string }
   | { kind: "p"; text: string }
   | { kind: "code"; text: string; lang?: string }
+  | { kind: "mermaid"; text: string }
   | { kind: "list"; ordered: boolean; items: ListNode[] }
   | { kind: "table"; head: string[]; rows: string[][] }
   | { kind: "quote"; text: string }
@@ -130,7 +132,12 @@ function parseBlock(src: string): Block[] {
     const fence = trimmed.match(/^```(\w*)\s*$/);
     if (fence) {
       if (inCode) {
-        blocks.push({ kind: "code", text: codeBuf.join("\n"), lang: codeLang || undefined });
+        const codeText = codeBuf.join("\n");
+        blocks.push(
+          codeLang.toLowerCase() === "mermaid"
+            ? { kind: "mermaid", text: codeText }
+            : { kind: "code", text: codeText, lang: codeLang || undefined },
+        );
         codeBuf = [];
         inCode = false;
         codeLang = "";
@@ -185,7 +192,14 @@ function parseBlock(src: string): Block[] {
     flushList(); flushTable();
     blocks.push({ kind: "p", text: inline(trimmed) });
   }
-  if (inCode) blocks.push({ kind: "code", text: codeBuf.join("\n"), lang: codeLang || undefined });
+  if (inCode) {
+    const codeText = codeBuf.join("\n");
+    blocks.push(
+      codeLang.toLowerCase() === "mermaid"
+        ? { kind: "mermaid", text: codeText }
+        : { kind: "code", text: codeText, lang: codeLang || undefined },
+    );
+  }
   flushList(); flushQuote(); flushTable();
   return blocks;
 }
@@ -292,6 +306,7 @@ export default function MarkdownView({ source }: { source: string }) {
         }
         if (b.kind === "p") return <p key={idx} className={cls.p} dangerouslySetInnerHTML={{ __html: b.text }} />;
         if (b.kind === "code") return <CodeBlock key={idx} text={b.text} lang={b.lang} />;
+        if (b.kind === "mermaid") return <MermaidDiagram key={idx} code={b.text} />;
         if (b.kind === "list") return <ListView key={idx} nodes={b.items} ordered={b.ordered} />;
         if (b.kind === "table") {
           return (

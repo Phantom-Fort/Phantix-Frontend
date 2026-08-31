@@ -12,12 +12,6 @@ Customer-facing surface guides (with screenshots).
 - [Platform](../how-to/platform/) — add user, security DB, config DB, dual control, …
 - [Command Centre](../how-to/command-centre/) — scans, SOC, VAPT, tracker, reports, …
 
-## Lab credentials (staging / QA only)
-
-| Surface | Email | Password | MFA / notes |
-|---------|-------|----------|-------------|
-| **Platform** | `admin@phantixvulnserver.online` | `Phan7omSec4321` | Email OTP |
-| **Command Centre** | `admin@phantixvulnserver.online` | `Pa$$w0rd!` | App OTP or Platform login link |
 
 > Staging / lab only — not for production.
 

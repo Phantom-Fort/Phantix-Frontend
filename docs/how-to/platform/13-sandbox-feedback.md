@@ -7,23 +7,13 @@
 
 ## Process flow
 
-```text
-Staff enrolls org on staff portal
-         │
-         ▼
- Platform shows BETA sandbox nav item
-         │
-         ▼
- Read live updates from staff (after deploys)
-         │
-         ▼
- Mark read / ack
-         │
-         ▼
- Rate build (1–5, NPS, area, what broke)
-         │
-         ▼
- Staff reviews ratings on staff Sandbox board
+```mermaid
+flowchart TD
+  A[Staff enrolls org on staff portal] --> B[Platform shows BETA sandbox nav item]
+  B --> C[Read live updates from staff · after deploys]
+  C --> D[Mark read / ack]
+  D --> E[Rate build · 1–5, NPS, area, what broke]
+  E --> F[Staff reviews ratings on staff Sandbox board]
 ```
 
 ---

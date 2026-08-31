@@ -8,23 +8,13 @@
 
 ## Process flow
 
-```text
-Compliance
-    │
-    ▼
- Select framework (ISO, NDPR, …)
-    │
-    ▼
- Run assessment (operate)
-    │
-    ▼
- Score + controls pass/gap/unknown
-    │
-    ▼
- Attach evidence (connectors / upload)
-    │
-    ▼
- Re-run after fixes
+```mermaid
+flowchart TD
+  A[Compliance] --> B[Select framework · ISO, NDPR, …]
+  B --> C[Run assessment · operate]
+  C --> D[Score + controls pass / gap / unknown]
+  D --> E[Attach evidence · connectors / upload]
+  E --> F[Re-run after fixes]
 ```
 
 ---

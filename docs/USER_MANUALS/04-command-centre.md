@@ -10,8 +10,6 @@
 
 | Field | Value |
 |-------|--------|
-| Email | `admin@phantixvulnserver.online` |
-| Password | `Pa$$w0rd!` |
 | MFA | App login code emailed to the same mailbox |
 | Alternate | Platform **login link / invite** from People (no shared company password required for operators) |
 

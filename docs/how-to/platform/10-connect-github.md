@@ -9,18 +9,13 @@
 
 ## Process flow
 
-```text
-GitHub page
-    │
-    ├─► Option A: GitHub App
-    │      Connect → authorize org → callback
-    │      Discover installs → select repos → import
-    │
-    └─► Option B: Personal access token (if offered)
-           Paste PAT → validate → import
-    │
-    ▼
- Repos appear as assets (Command Centre → Assets)
+```mermaid
+flowchart TD
+  A[GitHub page] --> B{Option}
+  B -->|Option A: GitHub App| C[Connect · authorize org · callback]
+  C --> D[Discover installs · select repos · import]
+  B -->|Option B: PAT · if offered| E[Paste PAT · validate · import]
+  D & E --> F[Repos appear as assets · Command Centre Assets]
 ```
 
 ---

@@ -8,33 +8,14 @@
 
 ## Process flow
 
-```text
-Assets → Add asset
-    │
-    ▼
- Choose type (domain, subdomain, IP, URL, repo, …)
- Enter value + criticality + environment
-    │
-    ▼
- Save (operate if required)
-    │
-    ▼
- Asset listed (often unverified)
-    │
-    ▼
- Verify (DNS / HTTP / method offered)
-    │
-    ▼
- is_verified = true → safer for scans / campaigns
-```
-
 ```mermaid
 flowchart TD
-  A[Add asset] --> B[Save]
-  B --> C[Unverified]
-  C --> D[Start verification]
-  D --> E[Verified]
-  E --> F[Include in scan scope]
+  A[Add asset] --> B[Choose type: domain / subdomain / IP / URL / repo]
+  B --> C[Enter value + criticality + environment]
+  C --> D[Save · operate if required]
+  D --> E[Asset listed · often unverified]
+  E --> F[Verify: DNS / HTTP / method offered]
+  F --> G[is_verified = true · safer for scans / campaigns]
 ```
 
 ---

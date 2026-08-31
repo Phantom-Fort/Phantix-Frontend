@@ -9,21 +9,12 @@
 
 ## Process flow
 
-```text
-Initiator requests protected action
- (campaign start, treatment, …)
-        │
-        ▼
- Item appears in Authorizer inbox
-        │
-        ▼
- Authorizer opens /authorizations
-        │
-        ▼
- Review detail → Approve or Reject
-        │
-        ▼
- Initiator continues workflow
+```mermaid
+flowchart TD
+  A[Initiator requests protected action · campaign start, treatment, …] --> B[Item appears in Authorizer inbox]
+  B --> C[Authorizer opens /authorizations]
+  C --> D[Review detail · Approve or Reject]
+  D --> E[Initiator continues workflow]
 ```
 
 ---

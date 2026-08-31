@@ -21,21 +21,13 @@
 
 ## Process flow
 
-```text
-Identify target DB to inspect (staging/prod read replica recommended)
-         │
-         ▼
- Connections → Add connection
- Purpose: config_inspection
-         │
-         ▼
- Host / port / db / user (read-only preferred)
-         │
-         ▼
- Test → Save
-         │
-         ▼
- Use inspection features / evidence connectors that reference this connection
+```mermaid
+flowchart TD
+  A[Identify target DB to inspect · staging/prod read replica recommended] --> B[Add connection]
+  B --> C[Purpose: config_inspection]
+  C --> D[Host / port / db / user · read-only preferred]
+  D --> E[Test · Save]
+  E --> F[Use inspection features / evidence connectors that reference this connection]
 ```
 
 ---

@@ -8,32 +8,16 @@
 
 ## Process flow
 
-```text
-Risks list (sort by priority)
-    │
-    ▼
- Open risk (P1 first)
-    │
-    ├─► Assign owner / department
-    ├─► Propose treatment
-    ├─► Authorizer approves treatment (if required)
-    ├─► Mark in progress / accepted / closed
-    └─► Link asset / detections / tracker
-    │
-    ▼
- Priority queue on dashboard shrinks
-```
-
 ```mermaid
 flowchart TD
-  A[Prioritized list] --> B[Open P1]
-  B --> C[Assign owner]
-  C --> D[Propose treatment]
-  D --> E{Approval?}
-  E -->|Yes| F[Authorizer]
-  E -->|No| G[Execute treatment]
-  F --> G
-  G --> H[Close / accept]
+  A[Risks list · sort by priority] --> B[Open risk · P1 first]
+  B --> C{Action}
+  C -->|Owner| D[Assign owner / department]
+  C -->|Treatment| E[Propose treatment]
+  C -->|Approve| F[Authorizer approves treatment if required]
+  C -->|Status| G[In progress / accepted / closed]
+  C -->|Link| H[Link asset / detections / tracker]
+  D & E & F & G & H --> I[Priority queue on dashboard shrinks]
 ```
 
 ---

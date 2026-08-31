@@ -9,27 +9,12 @@
 
 ## Process flow
 
-```text
-Need ≥ 2 active org users
-         │
-         ▼
- Designate INITIATOR  (proposes / starts operate)
- Designate AUTHORIZER (second pair of eyes / can also operate per policy)
-         │
-         ▼
- Save dual-control configuration
-         │
-         ▼
- Later: Unlock operate → email OTP → X-Dual-Control-Session on mutations
-```
-
 ```mermaid
-flowchart LR
-  U1[User A] --> I[Initiator]
-  U2[User B] --> A[Authorizer]
-  I --> S[Operate session]
-  A --> S
-  S --> M[Protected mutations]
+flowchart TD
+  A[Need ≥ 2 active org users] --> B[Designate INITIATOR · proposes / starts operate]
+  A --> C[Designate AUTHORIZER · second pair of eyes]
+  B & C --> D[Save dual-control configuration]
+  D --> E[Later: Unlock operate · email OTP · X-Dual-Control-Session on mutations]
 ```
 
 ---

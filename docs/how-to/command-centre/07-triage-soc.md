@@ -8,35 +8,17 @@
 
 ## Process flow
 
-```text
-SOC dashboard
-    │
-    ▼
- Open detections queue (open_only)
-    │
-    ▼
- Select detection
-    │
-    ├─► Assign owner
-    ├─► Add triage notes / enrich
-    ├─► Escalate → case
-    ├─► Close / false positive
-    └─► Link asset / risk chips
-    │
-    ▼
- Queue counts update (SSE live if connected)
-```
-
 ```mermaid
 flowchart TD
-  Q[Open queue] --> D[Pick detection]
-  D --> T{Decision}
-  T -->|Investigate| A[Assign + notes]
-  T -->|Incident| C[Open case]
-  T -->|Noise| F[Close / FP]
-  A --> Q
-  C --> Q
-  F --> Q
+  A[SOC dashboard] --> B[Open detections queue · open_only]
+  B --> C[Select detection]
+  C --> D{Action}
+  D -->|Assign owner| E[Assign]
+  D -->|Notes / enrich| F[Add triage notes]
+  D -->|Escalate| G[Open case]
+  D -->|Close| H[Close / false positive]
+  D -->|Link| I[Link asset / risk chips]
+  E & F & G & H & I --> J[Queue counts update · SSE live if connected]
 ```
 
 ---

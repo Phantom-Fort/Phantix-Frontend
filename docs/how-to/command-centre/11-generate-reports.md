@@ -8,35 +8,15 @@
 
 ## Process flow
 
-```text
-Reports → Generate report
-    │
-    ▼
- Unlock operate
-    │
-    ▼
- Type: vapt_campaign | executive | compliance | …
- Campaign (if required)
- Formats: markdown, json, xlsx, pdf, docx, pptx, html
-    │
-    ▼
- Queue (run_inline false recommended for large)
-    │
-    ▼
- status generating → complete  (or SSE reportReady)
-    │
-    ▼
- Download each format
- Preview narratives / sections in detail modal
-```
-
 ```mermaid
 flowchart TD
-  A[Generate] --> B[Select type + formats]
-  B --> C[POST /reports]
-  C --> D[Poll or SSE]
-  D --> E[complete]
-  E --> F[Download pdf/pptx/html/…]
+  A[Generate report] --> B[Unlock operate]
+  B --> C[Type: vapt_campaign / executive / compliance / …]
+  C --> D[Campaign if required · formats: markdown, json, xlsx, pdf, docx, pptx, html]
+  D --> E[Queue · run_inline false recommended for large]
+  E --> F[Generating · complete · or SSE reportReady]
+  F --> G[Download each format]
+  F --> H[Preview narratives / sections in detail modal]
 ```
 
 ---

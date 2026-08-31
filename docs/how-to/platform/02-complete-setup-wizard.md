@@ -9,30 +9,16 @@
 
 ## Process flow
 
-```text
-GET /organizations/me/setup  →  which step is next?
-         │
-         ▼
- ┌───────┴────────┐
- │ 1. Privacy     │  ← required  (accept notice)
- │ 2. Profile     │  ← optional  (legal name, website…)
- │ 3. Email OTP   │  ← required  (verify contact email)
- │ 4. Company     │  ← optional  (DNS / file / CAC / manual)
- │    verification│
- │ 5. Complete    │  ← finish
- └────────────────┘
-         │
-         ▼
- setup_complete = true  →  /dashboard
-```
-
 ```mermaid
 flowchart LR
-  P[Privacy] --> Pr[Profile optional]
-  Pr --> E[Email OTP]
-  E --> V[Verification optional]
-  V --> C[Complete]
-  C --> D[Dashboard]
+  A[Get setup state · which step is next?] --> B{Step}
+  B -->|1. Privacy · required| C[Accept notice]
+  B -->|2. Profile · optional| D[Legal name, website…]
+  B -->|3. Email OTP · required| E[Verify contact email]
+  B -->|4. Company verification · optional| F[DNS / file / CAC / manual]
+  B -->|5. Complete| G[setup_complete = true]
+  C & D & E & F --> G
+  G --> H[/dashboard/]
 ```
 
 ---

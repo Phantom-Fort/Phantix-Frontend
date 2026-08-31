@@ -9,26 +9,19 @@
 
 ## Process flow
 
-```text
-New company?                    Existing company?
-     │                                │
-     ▼                                ▼
- /register                      /login
-     │                                │
- Enter company + password       Email + password
-     │                                │
- Sign in (not auto)             Continue
-     │                                │
-     └──────────┬─────────────────────┘
-                ▼
-         Email OTP (6 digits)
-                │
-                ▼
-         Verify & sign in
-                │
-                ▼
-    setup incomplete? → /setup
-    setup complete?   → /dashboard
+```mermaid
+flowchart TD
+  A{New company?} -->|Yes| B[/register/]
+  A -->|No| C[/login/]
+  B --> D[Company + password]
+  C --> E[Email + password]
+  D --> F[Sign in not auto]
+  E --> F
+  F --> G[Email OTP 6 digits]
+  G --> H[Verify & sign in]
+  H --> I{Setup done?}
+  I -->|No| J[/setup/]
+  I -->|Yes| K[/dashboard/]
 ```
 
 ---

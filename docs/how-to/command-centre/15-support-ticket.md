@@ -8,23 +8,13 @@
 
 ## Process flow
 
-```text
-Support → New ticket
-    │
-    ▼
- Subject, priority, category, body
-    │
-    ▼
- Submit
-    │
-    ▼
- Staff replies from staff portal
-    │
-    ▼
- You get email updates (if SMTP configured)
-    │
-    ▼
- Close when resolved
+```mermaid
+flowchart TD
+  A[New ticket] --> B[Subject, priority, category, body]
+  B --> C[Submit]
+  C --> D[Staff replies from staff portal]
+  D --> E[You get email updates · if SMTP configured]
+  E --> F[Close when resolved]
 ```
 
 ---

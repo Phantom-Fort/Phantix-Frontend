@@ -8,18 +8,15 @@
 
 ## Process flow
 
-```text
-Identity & Keys
-      │
-      ├─► Update company profile (name, industry, website, address)
-      │
-      ├─► Service keys
-      │      Create → copy pk_live_* once
-      │      Rotate / revoke as needed
-      │      Used by agents / machine access (e.g. heartbeat X-Org-Api-Key)
-      │
-      └─► Report branding
-             Upload logo → used on report covers
+```mermaid
+flowchart TD
+  A[Identity & Keys] --> B[Update company profile · name, industry, website, address]
+  A --> C[Service keys]
+  A --> D[Report branding]
+  C --> E[Create · copy pk_live_* once]
+  C --> F[Rotate / revoke as needed]
+  C --> G[Used by agents / machine access · e.g. heartbeat X-Org-Api-Key]
+  D --> H[Upload logo · used on report covers]
 ```
 
 ---

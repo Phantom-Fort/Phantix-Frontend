@@ -24,28 +24,16 @@
 
 ## End-to-end onboarding flow
 
-```text
-Register org
-    → Accept privacy + verify email (setup wizard)
-    → Complete company profile
-    → Add ≥2 people
-    → Assign initiator + authorizer
-    → Connect & bootstrap security DB
-    → (Optional) config DB, GitHub, billing, alerts
-    → Issue app login links
-    → Operators work in Command Centre
-```
-
 ```mermaid
 flowchart TD
-  A[Register / Sign in] --> B[Setup wizard]
-  B --> C[Add users]
-  C --> D[Assign dual control]
-  D --> E[Security DB bootstrap]
-  E --> F{Ready?}
-  F -->|Yes| G[Issue app login links]
-  G --> H[Command Centre]
-  F -->|No| E
+  A[Register org] --> B[Accept privacy + verify email · setup wizard]
+  B --> C[Complete company profile]
+  C --> D[Add ≥ 2 people]
+  D --> E[Assign initiator + authorizer]
+  E --> F[Connect & bootstrap security DB]
+  F --> G[Optional: config DB, GitHub, billing, alerts]
+  G --> H[Issue app login links]
+  H --> I[Operators work in Command Centre]
 ```
 
 Screenshots: `../../screenshots/platform/`

@@ -6,23 +6,13 @@
 
 ## Process flow
 
-```text
-Assets → Discovery / Discover
-    │
-    ▼
- Choose seed (domain, GitHub org, …)
-    │
-    ▼
- Start job (operate)
-    │
-    ▼
- Job queued → running → completed
-    │
-    ▼
- New assets appear in inventory
-    │
-    ▼
- Review + verify important hosts
+```mermaid
+flowchart TD
+  A[Discovery / Discover] --> B[Choose seed: domain / GitHub org / …]
+  B --> C[Start job · operate]
+  C --> D[Job queued · running · completed]
+  D --> E[New assets appear in inventory]
+  E --> F[Review + verify important hosts]
 ```
 
 ---

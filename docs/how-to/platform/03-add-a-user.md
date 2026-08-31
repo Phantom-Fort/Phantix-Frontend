@@ -9,36 +9,16 @@
 
 ## Process flow
 
-```text
-People & Control
-       │
-       ▼
-  [Add user / Create]
-       │
-       ▼
-  Fill: full name, email, title, role
-       │
-       ▼
-  Submit  ──(if dual-control configured)──► Unlock operate first
-       │
-       ▼
-  User appears in list (OTP-only by default)
-       │
-       ▼
-  Optional next:
-    • Assign initiator / authorizer
-    • Issue Command Centre login link
-```
-
 ```mermaid
 flowchart TD
-  A[Open People] --> B{Operate unlocked?}
-  B -->|No + DC required| C[Unlock operate]
-  C --> D[Create user form]
-  B -->|Yes / not required| D
-  D --> E[POST org-users]
-  E --> F[User active]
-  F --> G[Issue app login link]
+  A[People & Control] --> B[Add user / Create]
+  B --> C[Fill: full name, email, title, role]
+  C --> D{Submit}
+  D -->|Dual-control configured| E[Unlock operate first]
+  E --> F[User appears in list · OTP-only by default]
+  D -->|No dual-control| F
+  F --> G[Optional next: assign initiator / authorizer]
+  F --> H[Optional next: issue Command Centre login link]
 ```
 
 ---

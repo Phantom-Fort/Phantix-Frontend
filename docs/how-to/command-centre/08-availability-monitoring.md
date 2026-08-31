@@ -6,50 +6,25 @@
 
 ## Process flow — outbound checks
 
-```text
-Availability → Add check
-    │
-    ▼
- Type: http/https/tcp/tls/dns
- Target, interval, thresholds
-    │
-    ▼
- Save → Run now (optional)
-    │
-    ▼
- Status up/down/degraded
-    │
-    ▼
- Failures → open incident → notify
- Recovery → MTTR logged
+```mermaid
+flowchart TD
+  A[Add check] --> B[Type: http / https / tcp / tls / dns]
+  B --> C[Target, interval, thresholds]
+  C --> D[Save · Run now optional]
+  D --> E[Status up / down / degraded]
+  E --> F[Failures · open incident · notify]
+  E --> G[Recovery · MTTR logged]
 ```
 
 ## Process flow — private host agent
 
-```text
-Platform: mint org API key
-    │
-    ▼
- SOC → Availability → Download agent
- linux | macos | windows | python
-    │
-    ▼
- Install on host with X-Org-Api-Key
-    │
-    ▼
- Heartbeat → check_type=agent appears
-    │
-    ▼
- Missed beats → downtime incident
-```
-
 ```mermaid
-flowchart LR
-  A[Public URL] --> B[HTTP/TCP check]
-  C[Private host] --> D[Heartbeat agent]
-  B --> E[Incidents]
-  D --> E
-  E --> F[Alerts]
+flowchart TD
+  A[Platform: mint org API key] --> B[Download agent]
+  B --> C[linux · macos · windows · python]
+  C --> D[Install on host with X-Org-Api-Key]
+  D --> E[Heartbeat · check_type=agent appears]
+  E --> F[Missed beats · downtime incident]
 ```
 
 ---

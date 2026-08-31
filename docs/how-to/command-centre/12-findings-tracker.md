@@ -7,39 +7,16 @@
 
 ## Process flow
 
-```text
-Open tracker tab
-    │
-    ▼
- Board + summary chips (open / in_progress / fixed / …)
-    │
-    ▼
- Filter / search
-    │
-    ▼
- Change status (operate + dual-control when configured)
-    │
-    open → in_progress → fixed
-              ↘ accepted
-    regressed ← backend when fixed issue returns
-    │
-    ▼
- Optional: open drawer / deep link ?key=
-    │
-    ▼
- Cross-link asset / risk / SOC / report file
-```
-
 ```mermaid
-stateDiagram-v2
-  [*] --> open
-  open --> in_progress
-  in_progress --> fixed
-  in_progress --> accepted
-  fixed --> regressed: retest sees again
-  regressed --> in_progress
-  accepted --> [*]
-  fixed --> [*]
+flowchart TD
+  A[Open tracker tab] --> B[Board + summary chips: open / in_progress / fixed / …]
+  B --> C[Filter / search]
+  C --> D[Change status · operate + dual-control when configured]
+  D --> E[open · in_progress · fixed]
+  D --> F[open · in_progress · accepted]
+  D --> G[regressed · backend flags when fixed issue returns]
+  E & F & G --> H[Optional: open drawer / deep link ?key=]
+  H --> I[Cross-link asset / risk / SOC / report file]
 ```
 
 ---

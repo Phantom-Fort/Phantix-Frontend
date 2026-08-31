@@ -6,16 +6,6 @@
 
 ---
 
-## Lab credentials (QA / staging)
-
-| Field | Value |
-|-------|--------|
-| Email | `admin@phantixvulnserver.online` |
-| Password | `Phan7omSec4321` |
-| MFA | 6-digit code emailed to the same address (lab IMAP password for automation: `LabMail_Admin1!`) |
-
----
-
 ## 1. Sign in
 
 1. Open https://platform.phantix.site/login  

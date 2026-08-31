@@ -6,20 +6,12 @@
 
 ## Process flow
 
-```text
-Mutation blocked / Unlock operate clicked
-        │
-        ▼
- Dual-control overlay
-        │
-        ▼
- Initiator or authorizer email + OTP
-        │
-        ▼
- Operate unlocked (timer in header)
-        │
-        ▼
- Retry action — succeeds with X-Dual-Control-Session
+```mermaid
+flowchart TD
+  A[Mutation blocked / Unlock operate clicked] --> B[Dual-control overlay]
+  B --> C[Initiator or authorizer email + OTP]
+  C --> D[Operate unlocked · timer in header]
+  D --> E[Retry action succeeds with X-Dual-Control-Session]
 ```
 
 ---

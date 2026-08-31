@@ -7,36 +7,17 @@
 
 ## Process flow
 
-```text
-People & Control
-      │
-      ▼
- Select user  →  Generate login link / Issue invite
-      │
-      ▼
- (Operate unlock if required)
-      │
-      ▼
- Copy link or email it to the user
-      │
-      ▼
- User opens link on app.phantix.site
-      │
-      ├─ First time: set password
-      ├─ MFA / device confirm as prompted
-      └─ Lands on Command Centre dashboard
-```
-
 ```mermaid
 flowchart TD
-  A[Admin on Platform] --> B[Generate link for user]
-  B --> C[User opens link]
-  C --> D{First visit?}
-  D -->|Yes| E[Set password]
-  D -->|No| F[Continue]
-  E --> G[OTP / device]
-  F --> G
-  G --> H[app dashboard]
+  A[People & Control] --> B[Select user · generate login link / invite]
+  B --> C[Operate unlock if required]
+  C --> D[Copy link or email it to the user]
+  D --> E[User opens link on app.phantix.site]
+  E --> F{First time?}
+  F -->|Yes| G[Set password]
+  F -->|No| H[MFA / device confirm as prompted]
+  G --> H
+  H --> I[Lands on Command Centre dashboard]
 ```
 
 ---

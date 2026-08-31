@@ -7,40 +7,16 @@
 
 ## Process flow
 
-```text
-Click Unlock operate
-        │
-        ▼
- Choose initiator or authorizer email
-        │
-        ▼
- Request OTP → email code
-        │
-        ▼
- Enter code → verify
-        │
-        ▼
- (Optional) device confirm
-        │
-        ▼
- Operate unlocked (countdown timer)
-        │
-        ▼
- Perform mutations (create user, bootstrap, etc.)
-        │
-        ▼
- Idle timeout → lock again
-```
-
 ```mermaid
 flowchart TD
-  A[Unlock operate] --> B[Select controller email]
-  B --> C[OTP email]
-  C --> D[Verify]
-  D --> E[Operate active]
-  E --> F[Mutations succeed]
-  E --> G[Idle expire]
-  G --> A
+  A[Click Unlock operate] --> B[Choose initiator or authorizer email]
+  B --> C[Request OTP · email code]
+  C --> D[Enter code · verify]
+  D --> E[Optional device confirm]
+  E --> F[Operate unlocked · countdown timer]
+  F --> G[Perform mutations · create user, bootstrap, etc.]
+  F --> H[Idle timeout · lock again]
+  H --> A
 ```
 
 ---

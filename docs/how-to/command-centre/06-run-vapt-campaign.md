@@ -8,40 +8,17 @@
 
 ## Process flow
 
-```text
-VAPT → New campaign
-    │
-    ▼
- Name, type, procedure, asset scope
-    │
-    ▼
- Create (operate)
-    │
-    ▼
- Approval required? → Authorizer approves
-    │
-    ▼
- Start campaign
-    │
-    ▼
- Phases progress (recon → scan → correlate → …)
-    │
-    ▼
- Review correlated findings
-    │
-    ▼
- Generate client report package
-```
-
 ```mermaid
 flowchart TD
-  A[Create campaign] --> B{Needs approval?}
-  B -->|Yes| C[Authorizer inbox]
-  C --> D[Start]
-  B -->|No| D
-  D --> E[Execute phases]
-  E --> F[Findings]
-  F --> G[Report]
+  A[New campaign] --> B[Name, type, procedure, asset scope]
+  B --> C[Create · operate]
+  C --> D{Approval required?}
+  D -->|Yes| E[Authorizer approves]
+  E --> F[Start campaign]
+  D -->|No| F
+  F --> G[Phases progress · recon · scan · correlate]
+  G --> H[Review correlated findings]
+  H --> I[Generate client report package]
 ```
 
 ---

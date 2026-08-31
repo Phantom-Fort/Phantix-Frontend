@@ -8,16 +8,14 @@
 
 ## Process flow
 
-```text
-Agent page
-    │
-    ├─► Chat tab
-    │     Unlock operate
-    │     Ask question / run skill
-    │     Stream response (SSE)
-    │
-    └─► Skills library
-          Browse / promote / quarantine (governance)
+```mermaid
+flowchart TD
+  A[Agent page] --> B[Chat tab]
+  A --> C[Skills library]
+  B --> D[Unlock operate]
+  D --> E[Ask question / run skill]
+  E --> F[Stream response · SSE]
+  C --> G[Browse / promote / quarantine · governance]
 ```
 
 ---

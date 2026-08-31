@@ -10,39 +10,16 @@
 
 ## Process flow
 
-```text
-Prepare PostgreSQL (recommended)
- empty DB + user with create privileges
-         │
-         ▼
- Platform → Security Database → Add connection
-         │
-         ▼
- Purpose: security_data_storage
- Fill host, port, database, user, password, schema
-         │
-         ▼
- [Test connection]  ──fail──► fix network / creds / SSL
-         │ ok
-         ▼
- [Bootstrap]  → creates Phantix security schema + migrations
-         │
-         ▼
- Status: ready / bootstrapped
-         │
-         ▼
- Command Centre modules unblocked (no more 409 security DB)
-```
-
 ```mermaid
 flowchart TD
-  A[Create empty PostgreSQL DB] --> B[Add connection on Platform]
-  B --> C[Test]
-  C -->|Fail| D[Fix firewall / user / SSL]
-  D --> C
-  C -->|OK| E[Bootstrap schema]
-  E --> F[Ready]
-  F --> G[Use Command Centre]
+  A[Prepare PostgreSQL · empty DB + user with create privileges] --> B[Add connection on Platform]
+  B --> C[Purpose: security_data_storage · fill host, port, database, user, password, schema]
+  C --> D[Test connection]
+  D -->|Fail| E[Fix network / creds / SSL]
+  E --> D
+  D -->|OK| F[Bootstrap · creates Phantix security schema + migrations]
+  F --> G[Status: ready / bootstrapped]
+  G --> H[Command Centre modules unblocked · no more 409 security DB]
 ```
 
 ---

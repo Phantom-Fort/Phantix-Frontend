@@ -8,24 +8,14 @@
 
 ## Process flow
 
-```text
-Billing page
-    │
-    ├─► View plan + invoices
-    ├─► Subscribe monthly / yearly
-    │      → checkout (Paystack)
-    │      → return → active entitlement
-    ├─► Pay open invoice
-    └─► Redeem coupon / beta code
-```
-
 ```mermaid
-flowchart LR
-  A[Open Billing] --> B{Plan}
-  B -->|Free| C[Subscribe / coupon]
-  C --> D[Checkout]
-  D --> E[Premium active]
-  B -->|Premium| F[Manage invoices]
+flowchart TD
+  A[Billing page] --> B{Action}
+  B -->|View plan + invoices| C[Review]
+  B -->|Subscribe monthly / yearly| D[Checkout · Paystack]
+  D --> E[Return · active entitlement]
+  B -->|Pay open invoice| F[Pay via gateway]
+  B -->|Redeem coupon / beta code| G[Apply · Premium / tools unlock]
 ```
 
 ---

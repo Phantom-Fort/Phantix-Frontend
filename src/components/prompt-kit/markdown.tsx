@@ -5,6 +5,7 @@ import ReactMarkdown, { Components } from "react-markdown"
 import remarkBreaks from "remark-breaks"
 import remarkGfm from "remark-gfm"
 import { CodeBlock, CodeBlockCode } from "./code-block"
+import MermaidDiagram from "@/components/MermaidDiagram"
 
 export type MarkdownProps = {
   children: string
@@ -45,10 +46,15 @@ const INITIAL_COMPONENTS: Partial<Components> = {
     }
 
     const language = extractLanguage(className)
+    const code = String(children ?? "").replace(/\n$/, "")
+
+    if (language === "mermaid") {
+      return <MermaidDiagram code={code} />
+    }
 
     return (
       <CodeBlock className={className}>
-        <CodeBlockCode code={children as string} language={language} />
+        <CodeBlockCode code={code} language={language} />
       </CodeBlock>
     )
   },

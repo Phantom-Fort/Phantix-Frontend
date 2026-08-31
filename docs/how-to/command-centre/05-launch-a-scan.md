@@ -9,38 +9,15 @@
 
 ## Process flow
 
-```text
-Scans → Launch scan
-    │
-    ▼
- Unlock operate
-    │
-    ▼
- Select tools + target filter (tags / assets / types)
-    │
-    ▼
- Submit → job queued/running
-    │
-    ▼
- Progress % + findings_count
-    │
-    ▼
- Completed → open Results
-    │
-    ▼
- Verified findings feed risks / reports
- Unverified stay appendix / excluded per policy
-```
-
 ```mermaid
 flowchart TD
-  A[Launch scan] --> B[Operate unlock]
-  B --> C[Tools + scope]
-  C --> D{Slot free?}
-  D -->|No| E[Wait / cancel other job]
-  D -->|Yes| F[Running]
-  F --> G[Results]
-  G --> H[Risks / Reports]
+  A[Launch scan] --> B[Unlock operate]
+  B --> C[Select tools + target filter]
+  C --> D[Submit · job queued / running]
+  D --> E[Progress % + findings_count]
+  E --> F[Completed · open Results]
+  F --> G[Verified findings feed risks / reports]
+  F --> H[Unverified stay appendix / excluded per policy]
 ```
 
 ---

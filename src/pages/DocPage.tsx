@@ -1,10 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { marked, type Tokens } from "marked";
 import { ArrowLeft, ArrowRight, ListTree, BookOpen } from "lucide-react";
 import { docs, getDoc, extractToc, slugify, docCategories, resolveDocHref } from "@/lib/docs";
 import { cx } from "@/lib/utils";
+import { renderMermaid } from "@/lib/mermaid";
+import { isFlowchart, renderFlowSvg } from "@/lib/flowChart";
 
 // Configure marked once: heading ids for anchor scroll. Link handling is done in
 // rewriteDocHtml so internal doc links resolve to /docs/:id and SPA-navigate.
@@ -45,6 +47,7 @@ export default function DocPage() {
   const navigate = useNavigate();
   const doc = getDoc(docId ?? "");
   const [activeHeading, setActiveHeading] = useState<string>("");
+  const articleRef = useRef<HTMLElement>(null);
 
   const html = useMemo(
     () => (doc ? rewriteDocHtml(marked.parse(doc.content) as string, doc.id, docs) : ""),
@@ -63,6 +66,43 @@ export default function DocPage() {
     window.scrollTo({ top: 0 });
     setActiveHeading("");
   }, [docId]);
+
+  // Hydrate ```mermaid fences into rendered diagrams after the marked HTML is
+  // injected. Flowchart blocks render synchronously with the native renderer
+  // (no flash); other diagram types hydrate via the lazy mermaid fallback.
+  // Re-runs on doc change and on theme flips so diagrams always match the
+  // active palette. Failed diagrams keep their raw source as a fallback.
+  useEffect(() => {
+    const hydrate = async () => {
+      const article = articleRef.current;
+      if (!article) return;
+      const blocks = Array.from(article.querySelectorAll<HTMLElement>("pre > code.language-mermaid"));
+      if (!blocks.length) return;
+      for (const codeEl of blocks) {
+        const pre = codeEl.closest("pre");
+        if (!pre) continue;
+        const code = codeEl.textContent ?? "";
+        try {
+          const svg = isFlowchart(code) ? renderFlowSvg(code) : await renderMermaid(code);
+          if (svg) {
+            const host = document.createElement("div");
+            host.className = "mermaid-rendered";
+            host.innerHTML = svg;
+            pre.replaceWith(host);
+          }
+        } catch (err) {
+          console.error("Mermaid render failed:", err);
+        }
+      }
+    };
+    void hydrate();
+    const observer = new MutationObserver(() => {
+      // Theme attribute flip re-renders diagrams with the new palette.
+      if (articleRef.current) void hydrate();
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, [html, doc?.id]);
 
   useEffect(() => {
     const headings = Array.from(document.querySelectorAll(".prose-doc h2[id], .prose-doc h3[id]"));
@@ -116,6 +156,7 @@ export default function DocPage() {
         {/* Content */}
         <motion.article
           key={doc.id}
+          ref={articleRef}
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}

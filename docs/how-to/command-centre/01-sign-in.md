@@ -8,26 +8,22 @@
 
 ## Process flow
 
-```text
-                 ┌─────────────────────┐
-                 │ How do you sign in? │
-                 └──────────┬──────────┘
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
- Email + password     Invite / login link    /demo
-        │                   │                   │
-        ▼                   ▼                   ▼
- Continue              Open link            Demo tenant
-        │                   │
-        ▼                   ▼
- App OTP email         Set password?
-        │                   │
-        ▼                   ▼
- Device confirm        OTP / device
-        │                   │
-        └─────────┬─────────┘
-                  ▼
-            /dashboard
+```mermaid
+flowchart TD
+  A{How do you sign in?} --> B[Email + password]
+  A --> C[Invite / login link]
+  A --> D[/demo/]
+  B --> E[Continue]
+  C --> F[Open link]
+  D --> G[Demo tenant]
+  E --> H[App OTP email]
+  F --> I{Set password?}
+  I -->|Yes| J[Set password]
+  I -->|No| K[OTP / device]
+  H --> L[Device confirm]
+  J --> L
+  K --> L
+  L --> M[/dashboard/]
 ```
 
 ---
