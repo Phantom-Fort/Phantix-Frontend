@@ -322,7 +322,14 @@ export const api = {
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
     trackCorrelationId(res);
-    if (!res.ok) throw new ApiError(res.status, res.statusText, res.headers.get("X-Correlation-ID") || undefined);
+    if (!res.ok) {
+      let detail: unknown = res.statusText;
+      try {
+        const j = await res.clone().json();
+        detail = (j && typeof j === "object" && "detail" in j ? j.detail : j) ?? res.statusText;
+      } catch { /* non-JSON */ }
+      throw new ApiError(res.status, detail, res.headers.get("X-Correlation-ID") || undefined);
+    }
     return res.blob();
   },
 
@@ -336,7 +343,14 @@ export const api = {
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
     trackCorrelationId(res);
-    if (!res.ok) throw new ApiError(res.status, res.statusText, res.headers.get("X-Correlation-ID") || undefined);
+    if (!res.ok) {
+      let detail: unknown = res.statusText;
+      try {
+        const j = await res.clone().json();
+        detail = (j && typeof j === "object" && "detail" in j ? j.detail : j) ?? res.statusText;
+      } catch { /* non-JSON */ }
+      throw new ApiError(res.status, detail, res.headers.get("X-Correlation-ID") || undefined);
+    }
     return res.text();
   },
 

@@ -166,8 +166,39 @@ export default function AssetGraph() {
             subtitle="Hover to isolate neighbourhoods · click for details · double-click canvas to refit"
           />
           {loading ? (
-            <div className="flex h-[62vh] min-h-[420px] items-center justify-center gap-2 text-slate-400">
-              <Spinner className="h-5 w-5" /> Mapping your attack surface...
+            <div className="relative flex h-[62vh] min-h-[420px] items-center justify-center overflow-hidden">
+              {/* Graph-shaped optimistic skeleton: scattered node blobs + edge stubs */}
+              <div className="absolute inset-0 opacity-40" aria-hidden>
+                {[
+                  [14, 22, 34], [30, 12, 22], [52, 8, 44], [72, 16, 24], [86, 32, 30],
+                  [10, 58, 26], [28, 46, 38], [50, 40, 22], [68, 56, 34], [84, 68, 24],
+                  [20, 82, 30], [45, 74, 26], [62, 86, 36], [80, 46, 20],
+                ].map(([x, y, s], i) => (
+                  <span
+                    key={i}
+                    className="skeleton absolute rounded-full"
+                    style={{ left: `${x}%`, top: `${y}%`, width: s, height: s }}
+                  />
+                ))}
+                {[
+                  [24, 28, 45, 30], [42, 25, 57, 20], [64, 32, 76, 28], [8, 34, 20, 50],
+                  [30, 60, 46, 54], [58, 52, 72, 64], [16, 68, 32, 76], [50, 84, 64, 88],
+                ].map(([x1, y1, x2, y2], i) => (
+                  <span
+                    key={`e${i}`}
+                    className="skeleton absolute"
+                    style={{
+                      left: `${x1}%`, top: `${y1}%`, width: `${Math.max(2, Math.abs(x2 - x1))}%`,
+                      height: 3, transform: `rotate(${Math.atan2((y2 as number) - (y1 as number), (x2 as number) - (x1 as number))}rad)`,
+                      transformOrigin: "left center",
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="relative z-10 rounded-xl border border-phantix-700/40 bg-phantix-950/70 px-4 py-3 text-center">
+                <Spinner className="mx-auto h-5 w-5" />
+                <p className="mt-2 text-xs text-slate-400">Mapping your attack surface…</p>
+              </div>
             </div>
           ) : prunedModel.nodes.length === 0 ? (
             <EmptyState

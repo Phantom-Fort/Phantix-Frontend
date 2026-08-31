@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { marked, type Tokens } from "marked";
 import { ArrowLeft, ArrowRight, ListTree, BookOpen } from "lucide-react";
-import { docs, getDoc, extractToc, slugify, docCategories } from "@/lib/docs";
+import { docs, getDoc, extractToc, slugify, docCategories, resolveDocHref } from "@/lib/docs";
 import { cx } from "@/lib/utils";
 
-// Configure marked once: heading ids for anchor scroll + external links
+// Configure marked once: heading ids for anchor scroll. Link handling is done in
+// rewriteDocHtml so internal doc links resolve to /docs/:id and SPA-navigate.
 marked.use({
   gfm: true,
   breaks: false,
@@ -18,25 +19,44 @@ marked.use({
       if (depth >= 1 && depth <= 3) return `<h${depth} id="${id}">${text}</h${depth}>`;
       return `<h${depth}>${text}</h${depth}>`;
     },
-    link({ href, tokens }: Tokens.Link) {
-      const text = this.parser.parseInline(tokens);
-      const external = /^https?:\/\//.test(href);
-      return `<a href="${href}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${text}</a>`;
-    },
   },
 });
 
+/** Rewrite relative `.md` cross-references to `/docs/:id`, external links, and
+ *  swap bare-filename anchor text for the linked doc's title. */
+function rewriteDocHtml(html: string, currentId: string, docsList: typeof docs): string {
+  return html.replace(/<a href="([^"]+)"([^>]*)>([\s\S]*?)<\/a>/g, (match, href: string, rest: string, text: string) => {
+    const resolved = resolveDocHref(href, currentId);
+    let label = text;
+    if (/\.md$/i.test(href)) {
+      const base = href.split("/").pop() ?? "";
+      const targetId = resolved.replace(/^\/docs\//, "");
+      const target = docsList.find((d) => d.id === targetId);
+      if (target && (!label.trim() || label.trim() === base)) label = target.title;
+    }
+    const external = /^https?:\/\//i.test(resolved);
+    const attrs = external && !/target=/.test(rest) ? ' target="_blank" rel="noreferrer"' : "";
+    return `<a href="${resolved}"${attrs}${rest}>${label}</a>`;
+  });
+}
+
 export default function DocPage() {
   const { docId } = useParams<{ docId: string }>();
+  const navigate = useNavigate();
   const doc = getDoc(docId ?? "");
   const [activeHeading, setActiveHeading] = useState<string>("");
 
-  const html = useMemo(() => (doc ? (marked.parse(doc.content) as string) : ""), [doc]);
+  const html = useMemo(
+    () => (doc ? rewriteDocHtml(marked.parse(doc.content) as string, doc.id, docs) : ""),
+    [doc],
+  );
   const toc = useMemo(() => (doc ? extractToc(doc.content) : []), [doc]);
 
-  const idx = docs.findIndex((d) => d.id === docId);
-  const prev = idx > 0 ? docs[idx - 1] : null;
-  const next = idx < docs.length - 1 ? docs[idx + 1] : null;
+  // Previous / next stay inside the same category so the trail is coherent.
+  const categoryDocs = useMemo(() => (doc ? docs.filter((d) => d.category === doc.category) : []), [doc]);
+  const catIdx = categoryDocs.findIndex((d) => d.id === docId);
+  const prev = catIdx > 0 ? categoryDocs[catIdx - 1] : null;
+  const next = catIdx >= 0 && catIdx < categoryDocs.length - 1 ? categoryDocs[catIdx + 1] : null;
   const category = docCategories.find((c) => c.id === doc?.category);
 
   useEffect(() => {
@@ -58,6 +78,16 @@ export default function DocPage() {
     headings.forEach((h) => obs.observe(h));
     return () => obs.disconnect();
   }, [html]);
+
+  // Internal anchors inside the rendered markdown should SPA-navigate (no reload).
+  const handleArticleClick = (e: React.MouseEvent<HTMLElement>) => {
+    const a = (e.target as HTMLElement).closest("a");
+    if (!a) return;
+    const href = a.getAttribute("href") || "";
+    if (!href || /^https?:\/\//i.test(href) || href.startsWith("#") || e.defaultPrevented) return;
+    e.preventDefault();
+    navigate(href);
+  };
 
   if (!doc) {
     return (
@@ -90,6 +120,7 @@ export default function DocPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
           className="min-w-0"
+          onClick={handleArticleClick}
         >
           <div className="mb-2 flex items-center gap-2">
             {doc.badge && <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{doc.badge}</span>}

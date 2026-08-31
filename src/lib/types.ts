@@ -455,6 +455,33 @@ export interface VaptStep {
     errors?: string[];
     tools?: string[];
     completed_at?: string;
+    /** Web research pipeline (AUGUST_2026…§C): follow-on steps, correlation, ROE. */
+    pipeline?: string;
+    research_plan?: { matches?: unknown[]; jobs?: unknown[] };
+    multi_tool_correlation?: {
+      groups?: Array<{
+        title?: string;
+        issue_family?: string;
+        confirmed_by_tools: string[];
+        missed_by_tools: string[];
+        consensus: boolean;
+      }>;
+      stats?: {
+        consensus_groups: number;
+        singleton_groups: number;
+        tools_run: string[];
+      };
+    };
+    follow_on?: {
+      enqueued?: Array<{ step_index: number; technique_id: string; step_name: string; tool?: string }>;
+      awaiting_poc_ack?: Array<{ technique_id: string; tool?: string }>;
+    };
+    roe?: {
+      allow_poc: boolean;
+      acknowledge_bruteforce: boolean;
+      credentials_provided: boolean;
+      credentials_alt_provided: boolean;
+    };
   };
   error_message?: string;
 }
@@ -1056,6 +1083,8 @@ export interface AgiSession {
   meta?: Record<string, unknown> | null;
   job?: Record<string, unknown> | null;
   loop?: AgiLoopBrief | null;
+  /** Open ASK_OPERATOR clarification (cleared on answer). */
+  clarification?: Record<string, unknown> | null;
 }
 
 /** One terminal history line (AgiTranscriptChunk). */

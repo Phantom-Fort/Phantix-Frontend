@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Loader2, ShieldCheck, Info, Globe, Building2, Server, ChevronDown } from "lucide-react";
+import { X, Loader2, ShieldCheck, Info, Globe, Building2, Server, ChevronDown, WifiOff, RefreshCw } from "lucide-react";
 import { cx, severityMeta, verificationMeta, statusColor, titleCase, impactLevelColor, categoryLabels, blastRadiusLabels, impactLevelRank } from "@/lib/utils";
 import type { Severity, VerificationStatus } from "@/lib/types";
 
@@ -119,11 +119,11 @@ export function CardHeader({
 }) {
   return (
     <div className="mb-4 flex items-start justify-between gap-4">
-      <div>
-        <h3 className="font-display text-[15px] font-semibold text-slate-100">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
+      <div className="min-w-0 flex-1">
+        <h3 className="font-display text-[15px] font-semibold leading-snug text-slate-100">{title}</h3>
+        {subtitle && <p className="mt-1 text-xs leading-5 text-slate-400 break-words">{subtitle}</p>}
       </div>
-      {action}
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }
@@ -145,11 +145,11 @@ export function PageHeader({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="mb-6 flex flex-wrap items-end justify-between gap-4"
     >
-      <div>
+      <div className="min-w-0 flex-1">
         <h1 className="font-display text-[26px] font-bold tracking-tight text-white">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-slate-400">{description}</p>}
+        {description && <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2.5">{actions}</div>}
+      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div>}
     </motion.div>
   );
 }
@@ -343,6 +343,176 @@ export function SkeletonTable({ rows = 3, cols = 4 }: { rows?: number; cols?: nu
           {Array.from({ length: cols }).map((_, j) => <div key={j} className="skeleton h-8 rounded" style={{ opacity: 1 - i * 0.12 - j * 0.04 }} />)}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Optimistic UI / page-layout skeletons ─────────────────────────────────────
+// Each skeleton mirrors the real page layout so the loading state feels like
+// the page has already rendered (progressive / optimistic). Replace the old
+// centered-spinner "Loading X…" screens with the matching variant.
+
+export function SkeletonBlock({ className }: { className?: string }) {
+  return <div className={cx("skeleton", className)} />;
+}
+
+/** Page title / subtitle / actions area. */
+export function PageHeaderSkeleton({ actions = false }: { actions?: boolean }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <div className="skeleton mb-2 h-5 w-48 rounded" />
+        <div className="skeleton h-8 w-72 max-w-full rounded" />
+        <div className="mt-3 skeleton h-3 w-96 max-w-full rounded" />
+      </div>
+      {actions && <div className="flex gap-2"><div className="skeleton h-9 w-28 rounded-xl" /><div className="skeleton h-9 w-32 rounded-xl" /></div>}
+    </div>
+  );
+}
+
+/** KPI stat card. */
+export function StatCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cx("card animate-pulse border-phantix-700/40 bg-phantix-900/50 p-4", className)}>
+      <div className="skeleton h-3 w-16 rounded" />
+      <div className="mt-3 skeleton h-7 w-20 rounded" />
+      <div className="mt-2 skeleton h-2.5 w-24 rounded" />
+    </div>
+  );
+}
+
+/** A row with icon + two text lines + trailing badge (list/card pages). */
+export function CardListSkeleton({ rows = 5, className }: { rows?: number; className?: string }) {
+  return (
+    <div className={cx("space-y-3", className)}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="card animate-pulse border-phantix-700/40 bg-phantix-900/50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="skeleton h-10 w-10 shrink-0 rounded-xl" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <div className="skeleton h-4 w-2/3 rounded" />
+              <div className="skeleton h-3 w-1/3 rounded" />
+            </div>
+            <div className="skeleton h-6 w-16 shrink-0 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Card with a header line + table-ish rows (list/report/tracker pages). */
+export function TableCardSkeleton({ rows = 5, cols = 4, title = true }: { rows?: number; cols?: number; title?: boolean }) {
+  return (
+    <div className="card animate-pulse overflow-hidden border-phantix-700/40 bg-phantix-900/50">
+      {title && (
+        <div className="flex items-center justify-between border-b border-phantix-700/40 px-4 py-3">
+          <div className="skeleton h-4 w-40 rounded" />
+          <div className="skeleton h-6 w-16 rounded-full" />
+        </div>
+      )}
+      <div className="space-y-0 divide-y divide-phantix-800/40 px-4">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="grid items-center gap-4 py-3.5" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+            {Array.from({ length: cols }).map((__, j) => (
+              <div key={j} className="skeleton h-3.5 rounded" style={{ width: j === 0 ? "82%" : "100%", opacity: 1 - i * 0.07 - j * 0.05 }} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Two-column split (list + detail) used by VAPT / SOC / assets detail. */
+export function SplitPaneSkeleton({ rows = 4 }: { rows?: number }) {
+  return (
+    <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div className="xl:col-span-1">
+        <CardListSkeleton rows={rows} />
+      </div>
+      <div className="xl:col-span-2">
+        <SkeletonCard className="h-96" />
+      </div>
+    </div>
+  );
+}
+
+/** KPI grid used on dashboards. */
+export function StatGridSkeleton({ count = 5, className }: { count?: number; className?: string }) {
+  return (
+    <div className={cx("grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5", className)}>
+      {Array.from({ length: count }).map((_, i) => <StatCardSkeleton key={i} />)}
+    </div>
+  );
+}
+
+/** Full page optimistic loading shell — pick the layout that matches the page. */
+export function PageSkeleton({
+  variant = "cards",
+  rows = 5,
+  cols = 4,
+  actions = false,
+  className,
+}: {
+  variant?: "cards" | "table" | "list" | "split" | "dashboard";
+  rows?: number;
+  cols?: number;
+  actions?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cx("mx-auto max-w-[1400px]", className)}>
+      <PageHeaderSkeleton actions={actions} />
+      {variant === "dashboard" && (
+        <>
+          <StatGridSkeleton />
+          <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="xl:col-span-2"><SkeletonCard className="h-80" /></div>
+            <SkeletonCard className="h-80" />
+          </div>
+        </>
+      )}
+      {variant === "split" && <SplitPaneSkeleton rows={rows} />}
+      {variant === "table" && <TableCardSkeleton rows={rows} cols={cols} />}
+      {variant === "list" && <CardListSkeleton rows={rows} />}
+      {variant === "cards" && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: Math.min(rows, 6) }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Server not responding / load failure state ───────────────────────────────
+export function ErrorState({
+  title,
+  body,
+  onRetry,
+  icon,
+  className,
+}: {
+  title?: string;
+  body?: string;
+  onRetry?: () => void;
+  icon?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("flex min-h-[45vh] flex-col items-center justify-center px-6 text-center", className)}>
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-severity-critical/30 bg-severity-critical/10 text-severity-critical">
+        {icon ?? <WifiOff size={22} />}
+      </div>
+      <h3 className="font-display text-base font-semibold text-slate-200">{title ?? "Server not responding"}</h3>
+      <p className="mt-1.5 max-w-md text-sm leading-6 text-slate-400">
+        {body ?? "We could not reach the Phantix API. Check your connection and retry — your session stays signed in."}
+      </p>
+      {onRetry && (
+        <button onClick={onRetry} className="btn-primary mt-5 !py-2 text-xs">
+          <RefreshCw size={13} className="mr-1.5 inline" /> Retry
+        </button>
+      )}
     </div>
   );
 }

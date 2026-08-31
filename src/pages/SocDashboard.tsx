@@ -3,10 +3,11 @@ import { motion } from "framer-motion";
 import {
   Activity, Gauge, Shield, Wifi, Monitor, Clock, AlertTriangle, Crosshair,
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
-  ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio,
+  ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio, HeartPulse,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard } from "@/components/ui";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import SocAvailability from "@/components/SocAvailability";
 import TrendChart from "@/components/TrendChart";
 import { useResource } from "@/lib/useResource";
@@ -345,11 +346,23 @@ export default function SocDashboard() {
     [liveEvents],
   );
 
+  const lastHeartbeatAt = useMemo(() => {
+    for (let i = liveEvents.length - 1; i >= 0; i--) {
+      if (liveEvents[i].event === "heartbeat") return liveEvents[i].ts;
+    }
+    return null;
+  }, [liveEvents]);
+
   if (socData.loading && !socData.data.panels.length && !status.data) {
+    return <PageSkeleton variant="dashboard" actions />;
+  }
+
+  if (socData.error && !socData.data.panels.length && !status.data) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading SOC Operations Center...
-      </div>
+      <ErrorState
+        onRetry={socData.reload}
+        body="We could not load the SOC Operations Center. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -360,6 +373,7 @@ export default function SocDashboard() {
         description="Detection triage, cases, rules, and live monitoring"
         actions={
           <div className="flex items-center gap-2">
+            <DocLink docId="howto-app-07" label="SOC how-to" />
             <span
               className={cx(
                 "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
@@ -500,6 +514,32 @@ export default function SocDashboard() {
                 </div>
                 <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{livePreview.length}</span>
               </div>
+              {/* Heartbeat status strip */}
+              <div className="flex items-center gap-2.5 border-b border-phantix-700/30 bg-phantix-950/40 px-3 py-2.5">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+                  <HeartPulse size={14} />
+                  {liveConnected && <span className="ecg-ping absolute inset-0 rounded-lg border border-emerald-400/40" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-slate-100">{liveConnected ? "Server responsive" : "Waiting for heartbeat"}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {lastHeartbeatAt
+                      ? <>Heartbeat {timeAgo(lastHeartbeatAt)} · stream healthy</>
+                      : liveConnected ? "Awaiting the first heartbeat ping…" : "Reconnecting to the event stream…"}
+                  </p>
+                </div>
+                <svg width="64" height="24" viewBox="0 0 64 24" className="shrink-0 overflow-hidden" aria-hidden>
+                  <polyline
+                    points="0,12 8,12 11,12 13,6 15,18 17,10 19,12 32,12 36,12 39,7 41,17 43,11 45,12 64,12"
+                    fill="none"
+                    stroke="#34D399"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    className={cx("ecg-line", !liveConnected && "stopped")}
+                  />
+                </svg>
+              </div>
               <div className="h-64 max-h-64 overflow-y-auto overscroll-contain px-3 py-2 space-y-1">
                 {livePreview.length > 0 ? livePreview.map((evt, i) => {
                   const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Record<string, unknown>;
@@ -557,7 +597,7 @@ export default function SocDashboard() {
 
           <Card className="!p-0 overflow-hidden">
             {queue.loading && !(queue.data ?? []).length ? (
-              <div className="p-4"><Spinner className="h-5 w-5" /></div>
+              <div className="p-4"><TableSkeleton rows={5} /></div>
             ) : filtered.length === 0 ? (
               <EmptyState icon={<Crosshair size={24} />} title="No detections" body="Nothing in the queue matching current filters" />
             ) : (

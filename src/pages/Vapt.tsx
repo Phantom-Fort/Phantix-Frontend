@@ -1,8 +1,9 @@
 ﻿import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import { loadVaptBundle } from "@/lib/data";
 import { api, isDemoMode } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
@@ -11,9 +12,75 @@ import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime }
 import { useStore } from "@/lib/store";
 import type { VaptCampaign, VaptFinding } from "@/lib/types";
 
+/** Multi-tool correlation chips from a web step's output_summary.multi_tool_correlation. */
+function CorrelationChips({ correlation }: { correlation: any }) {
+  const stats = correlation?.stats;
+  const groups: any[] = Array.isArray(correlation?.groups) ? correlation.groups : [];
+  if (!stats && groups.length === 0) return null;
+  const consensus = stats?.consensus_groups ?? groups.filter((g) => g.consensus).length;
+  const singletons = stats?.singleton_groups ?? groups.filter((g) => !g.consensus).length;
+  const tools: string[] = Array.isArray(stats?.tools_run) ? stats.tools_run : [];
+  return (
+    <div className="mt-1.5 space-y-1">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Findings confirmed by more than one tool">
+          {consensus} consensus
+        </span>
+        <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-400" title="Findings seen by a single tool only">
+          {singletons} single-tool
+        </span>
+        {tools.length > 0 && <span className="text-[10px] text-slate-600">tools: {tools.join(", ")}</span>}
+      </div>
+      {groups.length > 0 && (
+        <details className="text-[10px] text-slate-500">
+          <summary className="cursor-pointer hover:text-slate-300">Confirmed by tool</summary>
+          <div className="mt-1 space-y-1">
+            {groups.map((g, i) => (
+              <div key={i} className="rounded-lg border border-phantix-700/30 bg-phantix-900/40 px-2 py-1.5">
+                <p className="flex flex-wrap items-center gap-1.5 text-slate-300">
+                  {g.title || g.issue_family || "Group"}
+                  {g.consensus
+                    ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">consensus</span>
+                    : <span className="chip text-[9px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">single-tool</span>}
+                </p>
+                {(Array.isArray(g.confirmed_by_tools) && g.confirmed_by_tools.length > 0) && (
+                  <p className="mt-0.5 text-[10px] text-emerald-300/90">confirmed: {g.confirmed_by_tools.join(", ")}</p>
+                )}
+                {(Array.isArray(g.missed_by_tools) && g.missed_by_tools.length > 0) && (
+                  <p className="mt-0.5 text-[10px] text-severity-medium/90">missed by: {g.missed_by_tools.join(", ")}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
+/** ROE summary from a web step's output_summary.roe --- booleans only, never secrets. */
+function RoeChips({ roe }: { roe: any }) {
+  if (!roe || typeof roe !== "object") return null;
+  const chips: Array<[string, boolean]> = [
+    ["allow_poc", !!roe.allow_poc],
+    ["bruteforce ack", !!roe.acknowledge_bruteforce],
+    ["creds", !!roe.credentials_provided],
+    ["alt session", !!roe.credentials_alt_provided],
+  ];
+  return (
+    <div className="mt-1 flex flex-wrap gap-1.5">
+      {chips.map(([label, on]) => (
+        <span key={label} className={cx("chip text-[9px]", on ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-700/40 bg-phantix-900/50 text-slate-600")}>
+          {label}: {on ? "on" : "off"}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function Vapt() {
   const { toast, requireDualControl, dualControl } = useStore();
-  const { data, loading, reload } = useResource(loadVaptBundle, {
+  const { data, loading, error, reload } = useResource(loadVaptBundle, {
     campaigns: [],
     findings: [],
     approvals: [],
@@ -30,7 +97,44 @@ export default function Vapt() {
   const [findingSelected, setFindingSelected] = useState<VaptFinding | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
+  const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard" as "standard" | "poc", bruteforceAcked: false });
+  const [bfConfirmOpen, setBfConfirmOpen] = useState(false);
+  const [bfConfirmText, setBfConfirmText] = useState("");
+  const [creds, setCreds] = useState({ username: "", password: "", token: "" });
+  const [altCreds, setAltCreds] = useState({ username: "", password: "", token: "" });
+
+  const resetCreateForm = () => {
+    setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard", bruteforceAcked: false });
+    setCreds({ username: "", password: "", token: "" });
+    setAltCreds({ username: "", password: "", token: "" });
+    setBfConfirmText("");
+  };
+
+  /** Web research ROE config (VAPT_RESEARCH_ROE_TOGGLES_FE.md §1) passed on the
+   *  campaign/step config: allow_poc + bruteforce ack are opt-in, credentials
+   *  are never echoed back (only credentials_provided from output_summary.roe). */
+  const buildWebResearchConfig = (): Record<string, unknown> | null => {
+    const isWeb = ["web_scan", "api_scan", "full_vapt"].includes(createForm.campaign_type) || ["web_scan", "web_app_scan_only", "api_scan", "full_vapt"].includes(createForm.procedure_key);
+    if (!isWeb) return null;
+    const clean = (c: typeof creds): Record<string, string> => {
+      const out: Record<string, string> = {};
+      if (c.username?.trim()) out.username = c.username.trim();
+      if (c.password?.trim()) out.password = c.password;
+      if (c.token?.trim()) out.token = c.token.trim();
+      return out;
+    };
+    const cfg: Record<string, unknown> = {
+      tools: ["web"],
+      allow_poc: createForm.researchDepth === "poc",
+      acknowledge_bruteforce: createForm.bruteforceAcked,
+      run_follow_on: true,
+    };
+    const primary = clean(creds);
+    if (Object.keys(primary).length) cfg.credentials = primary;
+    const alt = clean(altCreds);
+    if (Object.keys(alt).length) cfg.credentials_alt = alt;
+    return cfg;
+  };
 
   const activeSelected = selected && vaptCampaigns.some((c) => c.id === selected.id) ? selected : vaptCampaigns[0] ?? null;
   const campaignFindings = activeSelected ? vaptFindings.filter((f) => f.campaign_id === activeSelected.id) : [];
@@ -76,17 +180,24 @@ export default function Vapt() {
 
   const handleCreate = async () => {
     if (!createForm.name) { toast("error", "Enter a campaign name"); return; }
+    if (createForm.bruteforceAcked && !bfConfirmText.trim()) {
+      toast("warning", "Bruteforce authorization", "Type BRUTEFORCE to confirm the capped login bruteforce.");
+      setBfConfirmOpen(true);
+      return;
+    }
     if (!(await requireDualControl("Campaign creation needs a dual-control operate session."))) return;
     try {
+      const webConfig = buildWebResearchConfig();
       const res = await api.post("/vapt/campaigns", {
         campaign_name: createForm.name,
         campaign_type: createForm.campaign_type,
         procedure_key: createForm.procedure_key,
         run_inline: false,
+        ...(webConfig ? { config: webConfig } : {}),
       });
       toast("success", "Campaign created", "draft → start when ready");
       setCreateOpen(false);
-      setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan" });
+      resetCreateForm();
       reload();
     } catch (e: any) {
       if (e.status === 409) {
@@ -179,10 +290,15 @@ export default function Vapt() {
   }, [vaptCampaigns, register, update]);
 
   if (loading) {
+    return <PageSkeleton variant="split" rows={4} actions />;
+  }
+
+  if (error && vaptCampaigns.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading campaigns...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load VAPT campaigns. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -194,6 +310,7 @@ export default function Vapt() {
         description="Create VAPT campaigns manually or generate an intelligent assessment plan. Review the draft, then submit for authorizer approval or start directly."
         actions={
           <>
+            <DocLink docId="howto-app-06" label="VAPT how-to" />
             <button
               className="btn-secondary"
               onClick={handlePlan}
@@ -390,6 +507,45 @@ export default function Vapt() {
                       })}
                     </div>
 
+                    {/* Follow-on research steps + PoC-ack banner (research pipeline) */}
+                    {(() => {
+                      const stepsList = ((activeSelected as any).procedure_snapshot?.steps || []) as any[];
+                      const followOnSteps = stepsList.flatMap((s: any) =>
+                        (s.output_summary?.follow_on?.enqueued || []).map((e: any) => ({ ...e, fromStep: s.step_name })),
+                      );
+                      const awaitingAck = stepsList.flatMap((s: any) =>
+                        (s.output_summary?.follow_on?.awaiting_poc_ack || []).map((e: any) => e),
+                      );
+                      if (followOnSteps.length === 0 && awaitingAck.length === 0) return null;
+                      return (
+                        <div className="mt-1 space-y-2">
+                          {followOnSteps.length > 0 && (
+                            <div className="rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-2.5">
+                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Auto-enqueued follow-on research</p>
+                              {followOnSteps.map((e, i) => (
+                                <div key={i} className="flex items-center gap-2 py-1 text-xs">
+                                  <GitBranch size={12} className="shrink-0 text-gold-400" />
+                                  <span className="text-slate-300">Auto: {e.step_name}</span>
+                                  {e.tool && <span className="font-mono text-[10px] text-slate-500">{e.tool}</span>}
+                                  {e.fromStep && <span className="text-[10px] text-slate-600">after {e.fromStep}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {awaitingAck.length > 0 && (
+                            <div className="flex items-start gap-2 rounded-xl border border-severity-medium/30 bg-severity-medium/8 px-3 py-2.5 text-xs text-severity-medium">
+                              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                              <p className="leading-5">
+                                {awaitingAck.length} technique{awaitingAck.length > 1 ? "s" : ""} need PoC acknowledgment
+                                {awaitingAck.length === 1 && awaitingAck[0]?.tool ? ` (${awaitingAck[0].tool})` : ""} —
+                                re-run with <strong>Extended PoC</strong> to allow controlled proofs.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
                     {/* Plan metadata footer */}
                     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
                       {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
@@ -458,6 +614,8 @@ export default function Vapt() {
                                   )}
                                   {tools.length > 0 && <span className="block text-[10px] text-slate-600">tools: {tools.join(", ")}</span>}
                                 </p>
+                                {summary.multi_tool_correlation && <CorrelationChips correlation={summary.multi_tool_correlation} />}
+                                {summary.roe && <RoeChips roe={summary.roe} />}
                                 {budgetPct !== null && (
                                   <div className="mt-1 flex items-center gap-2">
                                     <div className="h-1 flex-1 rounded-full bg-phantix-800">
@@ -743,11 +901,93 @@ export default function Vapt() {
               </select>
             </div>
           </div>
+
+          {/* Research depth + ROE gates (VAPT_RESEARCH_ROE_TOGGLES_FE.md §2) */}
+          {["web_scan", "api_scan", "full_vapt"].includes(createForm.campaign_type) && (
+            <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3.5 space-y-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Research depth</p>
+                <div className="space-y-1.5">
+                  <label className={cx("flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2", createForm.researchDepth === "standard" ? "border-gold-400/40 bg-gold-400/8" : "border-phantix-700/40 bg-phantix-900/50")}>
+                    <input type="radio" name="researchDepth" className="mt-0.5 accent-gold-400" checked={createForm.researchDepth === "standard"} onChange={() => setCreateForm((f) => ({ ...f, researchDepth: "standard" }))} />
+                    <span className="text-xs leading-5">
+                      <strong className="text-slate-200">Standard</strong> <span className="text-slate-500">(safe corroboration) --- default</span>
+                    </span>
+                  </label>
+                  <label className={cx("flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2", createForm.researchDepth === "poc" ? "border-gold-400/40 bg-gold-400/8" : "border-phantix-700/40 bg-phantix-900/50")}>
+                    <input type="radio" name="researchDepth" className="mt-0.5 accent-gold-400" checked={createForm.researchDepth === "poc"} onChange={() => setCreateForm((f) => ({ ...f, researchDepth: "poc" }))} />
+                    <span className="text-xs leading-5">
+                      <strong className="text-slate-200">Extended PoC</strong> <span className="text-slate-500">(allow_poc=true)</span>
+                    </span>
+                  </label>
+                  {createForm.researchDepth === "poc" && (
+                    <p className="text-[10px] leading-4 text-severity-medium/90 px-1">
+                      Controlled proofs (upload polyglot, SSRF OOB) may interact with the live app. Ensure ROE / dual-control is unlocked.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.bruteforceAcked} onChange={(e) => setCreateForm((f) => ({ ...f, bruteforceAcked: e.target.checked }))} />
+                Authorize login bruteforce <span className="text-slate-500">(acknowledge_bruteforce=true)</span>
+              </label>
+              <details className="text-[11px]">
+                <summary className="cursor-pointer text-slate-400 hover:text-slate-200">Credentials panel (optional)</summary>
+                <div className="mt-2 space-y-3">
+                  <div>
+                    <p className="text-[10px] text-slate-500 mb-1">Primary session --- priv-esc + JWT + BOLA bearer</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input className="input !py-1.5 text-xs" placeholder="username" value={creds.username} onChange={(e) => setCreds((c) => ({ ...c, username: e.target.value }))} />
+                      <input className="input !py-1.5 text-xs" type="password" placeholder="password" value={creds.password} onChange={(e) => setCreds((c) => ({ ...c, password: e.target.value }))} />
+                      <input className="input !py-1.5 text-xs" placeholder="token / bearer / jwt" value={creds.token} onChange={(e) => setCreds((c) => ({ ...c, token: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-slate-500 mb-1">Alternate session --- dual-session BOLA comparison</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input className="input !py-1.5 text-xs" placeholder="username" value={altCreds.username} onChange={(e) => setAltCreds((c) => ({ ...c, username: e.target.value }))} />
+                      <input className="input !py-1.5 text-xs" type="password" placeholder="password" value={altCreds.password} onChange={(e) => setAltCreds((c) => ({ ...c, password: e.target.value }))} />
+                      <input className="input !py-1.5 text-xs" placeholder="token / bearer / jwt" value={altCreds.token} onChange={(e) => setAltCreds((c) => ({ ...c, token: e.target.value }))} />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-600">Secrets are never echoed back by the API --- findings show only credentials_provided.</p>
+                </div>
+              </details>
+            </div>
+          )}
+
           <p className="text-xs text-slate-500 p-2 rounded-lg bg-phantix-800/40">
-            Campaign starts as a <strong>draft</strong> --- you can review and start it from the campaign detail view. Full VAPT requires dual-control approval.
+            Campaign starts as a <strong>draft</strong> --- you can review and start it from the campaign detail view. Full VAPT requires dual-control approval. Brute-force uses a tiny built-in wordlist and stops on first hit.
           </p>
           <button className="btn-primary w-full" type="submit">Create campaign</button>
         </form>
+      </Modal>
+
+      {/* Bruteforce typed confirmation modal */}
+      <Modal open={bfConfirmOpen} onClose={() => setBfConfirmOpen(false)} title="Authorize login bruteforce">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-xl border border-severity-medium/30 bg-severity-medium/8 px-3.5 py-3">
+            <AlertTriangle size={17} className="mt-0.5 shrink-0 text-severity-medium" />
+            <p className="text-xs leading-5 text-slate-300">
+              You are authorizing a <strong>capped</strong> login bruteforce using a tiny built-in wordlist that
+              stops on the first hit. It is not credential stuffing. Requires an active dual-control operate session.
+            </p>
+          </div>
+          <div>
+            <label className="label">Type <span className="font-mono text-gold-300">BRUTEFORCE</span> to confirm</label>
+            <input className="input font-mono" value={bfConfirmText} onChange={(e) => setBfConfirmText(e.target.value)} placeholder="BRUTEFORCE" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-ghost" onClick={() => { setBfConfirmOpen(false); setCreateForm((f) => ({ ...f, bruteforceAcked: false })); }}>Cancel</button>
+            <button
+              className="btn-primary"
+              disabled={bfConfirmText.trim().toUpperCase() !== "BRUTEFORCE"}
+              onClick={() => { setBfConfirmOpen(false); toast("success", "Bruteforce authorized", "Cap applied --- tiny wordlist, stops on first hit."); }}
+            >
+              Confirm authorization
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

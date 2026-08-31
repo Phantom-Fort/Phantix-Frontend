@@ -225,7 +225,7 @@ export default function SocAvailability() {
   const checksAgg = summary?.checks ?? {};
   const upCount = checksAgg.up ?? 0;
   const enabledCount = checksAgg.enabled ?? 0;
-  const inputCls = "w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-sm text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40";
+  const inputCls = "input";
 
   if (secBlocked) {
     return (

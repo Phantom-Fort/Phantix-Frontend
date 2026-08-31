@@ -5,9 +5,10 @@ import {
   Plug, Activity, Radar, ShieldAlert, CheckCircle2, XCircle, Pause, Play,
 } from "lucide-react";
 import {
-  PageHeader, Card, CardHeader, SeverityBadge, EmptyState, Modal, Spinner, StatCard, Tabs,
+  PageHeader, Card, CardHeader, SeverityBadge, EmptyState, Modal, Spinner, StatCard, Tabs, PageSkeleton, ErrorState,
 } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import {
   loadCloudProviders, loadCloudConnectors, createCloudConnector, patchCloudConnector,
@@ -113,10 +114,15 @@ export default function Cloud() {
   const connectedCount = connectors.data.filter((c) => c.is_active ?? c.active ?? true).length;
 
   if (providers.loading && !providers.data.length && !connectors.data.length) {
+    return <PageSkeleton variant="cards" rows={4} actions />;
+  }
+
+  if (providers.error && !providers.data.length && !connectors.data.length) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading Cloud Security...
-      </div>
+      <ErrorState
+        onRetry={providers.reload}
+        body="We could not load cloud security connectors. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -129,6 +135,7 @@ export default function Cloud() {
         description="Cloud, VPS, and PaaS connectors, log drains, and org-scoped threat intel."
         actions={
           <div className="flex items-center gap-2">
+            <DocLink docId="hc-alert-channels" label="Integrations how-to" />
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={() => { connectors.reload(); intel.reload(); providers.reload(); }} title="Refresh"><RefreshCw size={14} /></button>
             <a href="/threat-intel" className="btn-secondary text-sm px-3 py-1.5"><Radar size={14} /> Open Threat Intel</a>
             <button type="button" className="btn-primary text-sm px-3 py-1.5" onClick={() => { setAddOpen(true); setSelectedProvider(null); setCreatedResult(null); }}><Plus size={14} /> Add connector</button>

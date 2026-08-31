@@ -48,13 +48,6 @@ New company?                    Existing company?
 3. Enter the **login / verification code** from email → **Verify & sign in**  
 4. If code missing: **Resend code**, wait ~30s, check spam  
 
-### Lab QA account
-
-| Email | Password |
-|-------|----------|
-| `admin@phantixvulnserver.online` | `Phan7omSec4321` |
-
-OTP is delivered to the same mailbox.
 
 ---
 

@@ -1,7 +1,8 @@
 ﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, TableSkeleton, EmptyState } from "@/components/ui";
+import { PageHeader, Card, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api";
@@ -39,7 +40,7 @@ export default function AuthorizerInbox() {
   const [filter, setFilter] = useState<string>("all");
   const [acting, setActing] = useState<number | null>(null);
 
-  const { data: inbox, loading, reload } = useResource(
+  const { data: inbox, loading, error, reload } = useResource(
     () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
     emptyInbox,
   );
@@ -81,11 +82,15 @@ export default function AuthorizerInbox() {
   };
 
   if (loading) {
+    return <PageSkeleton variant="table" rows={5} cols={4} actions />;
+  }
+
+  if (error && items.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-phantix-500 border-t-gold-400" />
-        Loading authorizations...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load the authorizer inbox. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -95,11 +100,14 @@ export default function AuthorizerInbox() {
         title="Authorizations"
         description={inbox?.authorizer?.email ? `Approving as ${inbox.authorizer.fullName || inbox.authorizer.email}` : "Review and decide on pending approvals"}
         actions={
-          inbox?.total ? (
-            <span className="chip text-sm font-mono text-gold-400 bg-gold-400/10 border-gold-400/30">
-              {inbox.total} pending
-            </span>
-          ) : null
+          <span className="flex items-center gap-2">
+            <DocLink docId="howto-app-14" label="Approvals how-to" />
+            {inbox?.total ? (
+              <span className="chip text-sm font-mono text-gold-400 bg-gold-400/10 border-gold-400/30">
+                {inbox.total} pending
+              </span>
+            ) : null}
+          </span>
         }
       />
 

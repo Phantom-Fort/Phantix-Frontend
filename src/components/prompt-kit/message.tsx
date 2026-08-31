@@ -58,12 +58,12 @@ const MessageContent = ({
   ...props
 }: MessageContentProps) => {
   const classNames = cn(
-    "rounded-lg p-2 text-foreground bg-secondary prose break-words whitespace-normal",
+    "rounded-lg p-2 text-foreground bg-secondary break-words whitespace-normal",
     className
   )
 
   return markdown ? (
-    <Markdown className={classNames} {...props}>
+    <Markdown className={cn("rounded-lg p-2 text-foreground bg-secondary prose-doc max-w-none", className)} {...props}>
       {children as string}
     </Markdown>
   ) : (

@@ -32,12 +32,7 @@
 
 ---
 
-## A. Email + password (lab)
-
-| Field | Lab value |
-|-------|-----------|
-| Email | `admin@phantixvulnserver.online` |
-| Password | `Pa$$w0rd!` |
+## A. Email + password
 
 1. Enter email + password → **Continue**.
 2. Enter **application login code** from email.

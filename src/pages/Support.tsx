@@ -1,7 +1,8 @@
 ﻿import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { LifeBuoy, Plus, MessageSquare } from "lucide-react";
-import { PageHeader, Card, StatusBadge, Modal, EmptyState, Spinner } from "@/components/ui";
+import { PageHeader, Card, StatusBadge, Modal, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { loadSupportTickets } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo } from "@/lib/utils";
@@ -9,14 +10,19 @@ import { useStore } from "@/lib/store";
 
 export default function Support() {
   const { toast } = useStore();
-  const { data: supportTickets, loading } = useResource(loadSupportTickets, []);
+  const { data: supportTickets, loading, error, reload } = useResource(loadSupportTickets, []);
   const [open, setOpen] = useState(false);
 
   if (loading) {
+    return <PageSkeleton variant="list" rows={5} actions />;
+  }
+
+  if (error && supportTickets.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading support...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load support tickets. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -25,7 +31,7 @@ export default function Support() {
       <PageHeader
         title="Support"
         description="Tickets route to the Phantix support desk. Staff reply from their console; you get email updates via alert SMTP."
-        actions={<button className="btn-primary" onClick={() => setOpen(true)}><Plus size={15} /> New ticket</button>}
+        actions={<span className="flex items-center gap-2"><DocLink docId="howto-app-15" label="Support how-to" /><button className="btn-primary" onClick={() => setOpen(true)}><Plus size={15} /> New ticket</button></span>}
       />
 
       {supportTickets.length === 0 ? (

@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
@@ -36,7 +37,7 @@ function assetTierBadge(a: Asset | null | undefined): { label: string; cls: stri
 
 export default function Assets() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading, reload } = useResource(loadAssetsBundle, {
+  const { data, loading, error, reload } = useResource(loadAssetsBundle, {
     assets: [],
     assetTags: [],
     discoveryJobs: [],
@@ -295,10 +296,15 @@ export default function Assets() {
     void loadGithubStatus();
   }, []);
   if (loading) {
+    return <PageSkeleton variant="split" rows={6} actions />;
+  }
+
+  if (error && data.assets.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading assets...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load your asset inventory. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -310,6 +316,7 @@ export default function Assets() {
         description="Every row lives only in your dedicated security database -- schema phantix, version 1.4.2. Discovery is gated: HTTP 404s and dead hosts never enter inventory."
         actions={
           <div className="flex items-center gap-2">
+            <DocLink docId="howto-app-03" label="Add assets" />
             <button
               className="btn-ghost text-sm px-3 py-1.5"
               onClick={() => reload()}

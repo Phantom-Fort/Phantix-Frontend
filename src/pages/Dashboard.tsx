@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Boxes, ShieldAlert, Radar, Crosshair, ArrowRight, BellRing,
-  ShieldCheck, Zap, Activity, KanbanSquare, FileText, FlaskConical,
+  ShieldCheck, Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
 } from "lucide-react";
-import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, SkeletonCard } from "@/components/ui";
+import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import TrendChart from "@/components/TrendChart";
 import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@/lib/data";
@@ -34,9 +34,10 @@ function str(v: unknown, fallback = "—"): string {
 
 export default function Dashboard() {
   const { org: storeOrg, operate, requireDualControl } = useStore();
-  const { data, loading, reload, setData } = useResource(loadCommandCenter, emptyDash, "command-center");
+  const { data, loading, error, reload, setData } = useResource(loadCommandCenter, emptyDash, "command-center");
   const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
   const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
+  const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
   const skipFirstPoll = useRef(true);
   // Min gap between SSE-triggered full reloads — the stream can emit event
   // bursts and each reload refetches the whole command-center payload.
@@ -52,7 +53,11 @@ export default function Dashboard() {
 
   const onSse = useCallback(
     (evt: { event: string; data: unknown; ts: string }) => {
-      if (evt.event === "heartbeat" || evt.event === "connected") return;
+      if (evt.event === "heartbeat") {
+        setLastHeartbeatAt(evt.ts);
+        return;
+      }
+      if (evt.event === "connected") return;
       const payload =
         evt.data && typeof evt.data === "object" ? (evt.data as Record<string, unknown>) : {};
       const inner =
@@ -146,24 +151,15 @@ export default function Dashboard() {
   });
 
   if (loading) {
+    return <PageSkeleton variant="dashboard" />;
+  }
+
+  if (error && !data.cc) {
     return (
-      <div className="mx-auto max-w-[1400px]">
-        <div className="mb-6">
-          <div className="skeleton mb-2 h-5 w-48 rounded" />
-          <div className="skeleton h-8 w-72 rounded" />
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
-        <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
-          <div className="xl:col-span-2">
-            <SkeletonCard className="h-80" />
-          </div>
-          <SkeletonCard className="h-80" />
-        </div>
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load the command centre overview. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -556,18 +552,57 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}>
-          <Card className="h-full">
-            <CardHeader
-              title="Live event rail"
-              subtitle="SSE command-center stream"
-              action={<BellRing size={15} className="text-slate-500" />}
-            />
+          <Card className="h-full overflow-hidden !p-0">
+            <div className="px-5 pt-5">
+              <CardHeader
+                title="Live event rail"
+                subtitle="SSE command-center stream"
+                action={
+                  <span className={cx(
+                    "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                    connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+                  )}>
+                    <span className="relative flex h-2 w-2">
+                      {connected && <span className="ecg-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />}
+                      <span className={cx("relative inline-flex h-2 w-2 rounded-full", connected ? "bg-emerald-400" : "bg-severity-medium")} />
+                    </span>
+                    {connected ? "Live · heartbeat OK" : "Reconnecting…"}
+                  </span>
+                }
+              />
+            </div>
+            {/* Heartbeat status strip */}
+            <div className="flex items-center gap-3 border-y border-phantix-700/30 bg-phantix-950/40 px-5 py-3">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+                <HeartPulse size={16} />
+                {connected && <span className="ecg-ping absolute inset-0 rounded-xl border border-emerald-400/40" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-slate-100">{connected ? "Server responsive" : "Waiting for heartbeat"}</p>
+                <p className="text-xs text-slate-500">
+                  {lastHeartbeatAt
+                    ? <>Last heartbeat ping <span className="font-mono text-emerald-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
+                    : connected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the command-centre stream…"}
+                </p>
+              </div>
+              <svg width="90" height="30" viewBox="0 0 90 30" className="shrink-0 overflow-hidden" aria-hidden>
+                <polyline
+                  points="0,15 10,15 15,15 18,7 21,23 24,13 27,15 44,15 49,15 54,9 57,21 60,13 63,15 90,15"
+                  fill="none"
+                  stroke="#34D399"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  className={cx("ecg-line", !connected && "stopped")}
+                />
+              </svg>
+            </div>
             {liveEvents.length === 0 ? (
-              <p className="py-6 text-center text-sm text-slate-500">
+              <p className="px-5 py-6 text-center text-sm text-slate-500">
                 {connected ? "Waiting for events…" : "Stream disconnected — reconnecting."}
               </p>
             ) : (
-              <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+              <div className="max-h-72 space-y-2 overflow-y-auto px-5 py-4">
                 {liveEvents.map((e, i) => (
                   <div key={`${e.ts}-${i}`} className="flex items-start gap-2 text-xs">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
@@ -580,7 +615,7 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap gap-2 border-t border-phantix-700/30 px-5 py-3 text-xs">
               <Link to={href("intelligence", "/assets/intelligence")} className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
                 Intelligence <ArrowRight size={12} />
               </Link>

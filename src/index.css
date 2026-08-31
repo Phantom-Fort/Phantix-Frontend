@@ -550,3 +550,27 @@
     transition: none !important;
   }
 }
+
+/* ── Live activity: heartbeat ECG pulse ─────────────────────────────────────── */
+.ecg-line {
+  stroke-dasharray: 340;
+  stroke-dashoffset: 340;
+  animation: ecg-trace 2.6s linear infinite;
+}
+@keyframes ecg-trace {
+  0% { stroke-dashoffset: 340; }
+  55% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -340; }
+}
+.ecg-line.stopped {
+  animation: none;
+  stroke-dashoffset: 340;
+  opacity: 0.4;
+}
+.ecg-ping {
+  animation: ecg-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes ecg-ping {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.4); opacity: 0; }
+}

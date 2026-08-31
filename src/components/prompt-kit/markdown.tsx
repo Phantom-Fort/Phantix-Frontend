@@ -32,15 +32,15 @@ const INITIAL_COMPONENTS: Partial<Components> = {
 
     if (isInline) {
       return (
-        <span
+        <code
           className={cn(
-            "bg-primary-foreground rounded-sm px-1 font-mono text-sm",
+            "rounded-sm border border-border bg-muted px-1 font-mono text-[0.85em] text-foreground",
             className
           )}
           {...props}
         >
           {children}
-        </span>
+        </code>
       )
     }
 

@@ -5,9 +5,10 @@ import {
   Crosshair, Fingerprint, Link2, ExternalLink, FileSearch, AlertTriangle, Plus,
 } from "lucide-react";
 import {
-  PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Tabs, Spinner, StatCard, Modal,
+  PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Tabs, Spinner, StatCard, Modal, PageSkeleton, ErrorState,
 } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import {
   loadIntelDashboard, loadIntelLookup, loadIntelEvents, startReputationScan, normalizeIntelSignals,
@@ -125,10 +126,15 @@ export default function ThreatIntel() {
   const reputation = useMemo(() => intel.data.scanReputation ?? [], [intel.data.scanReputation]);
 
   if (dash.loading && !dash.data.connectorCount && !signals.length && !events.data.length) {
+    return <PageSkeleton variant="cards" rows={6} actions />;
+  }
+
+  if (dash.error && !dash.data.connectorCount && !signals.length) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading threat intelligence...
-      </div>
+      <ErrorState
+        onRetry={dash.reload}
+        body="We could not load threat intelligence. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -141,6 +147,7 @@ export default function ThreatIntel() {
         description="Matches connector IOCs and scan reputation against this org’s assets."
         actions={
           <div className="flex items-center gap-2">
+            <DocLink docId="howto-app-07" label="SOC / TI how-to" />
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={() => { dash.reload(); intel.reload(); events.reload(); }} title="Refresh">
               <RefreshCw size={14} />
             </button>

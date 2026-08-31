@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { marked } from "marked";
 import { FlaskConical, Star, Megaphone, CheckCircle2, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
-import { PageHeader, Card, CardHeader, Modal, Spinner, EmptyState, StatusBadge } from "@/components/ui";
+import { PageHeader, Card, CardHeader, Modal, Spinner, EmptyState, StatusBadge, PageSkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { PLATFORM_URL } from "@/lib/links";
 import { timeAgo, cx, titleCase } from "@/lib/utils";
@@ -111,12 +111,8 @@ export default function Sandbox() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading sandbox…
-      </div>
-    );
+if (loading) {
+    return <PageSkeleton variant="cards" rows={4} actions />;
   }
 
   if (!me?.enrolled) {

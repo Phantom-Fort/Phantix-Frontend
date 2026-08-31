@@ -1,15 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
-  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown,
+  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
-import { ApprovalNotice } from "@/components/AgiStream";
+import { ApprovalNotice, ClarificationAsk, IssuesStrip, ToolGroupCard } from "@/components/AgiStream";
 import { PromptKitStream } from "@/components/agent/PromptKitStream";
 import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
+import { groupStreamRows, openClarificationFrom } from "@/lib/agiStreamGroup";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
@@ -28,6 +29,8 @@ import {
   isAgiGatewayError,
   loadActiveAgiSession,
   loadAgiSession,
+  loadAgiFindings,
+  answerAgiClarification,
 } from "@/lib/agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -304,6 +307,24 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
+  // Leave the console back to the engagement picker so a fresh session can be
+  // started (previously you were stuck in the stopped-session view).
+  const exitToPicker = useCallback(() => {
+    setSession(null);
+    setRunning(false);
+    setPaused(false);
+    setTranscript([]);
+    setActions([]);
+    afterSeqRef.current = 0;
+    pendingOpsRef.current = [];
+    setInstruction("");
+    setWorkingOn(null);
+    setConnError(null);
+    setThinking(false);
+    setOverrideDrafts({});
+    reportSubmitted.current = false;
+  }, []);
+
   const dispatchChat = async (msg: string) => {
     if (!session || !running || paused) return;
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
@@ -359,6 +380,65 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     setInstruction("");
     chatSend.requestSend(msg, dispatchChat);
   };
+
+  // ── Clarification asks (ASK_OPERATOR) ────────────────────────────────────
+  // Mirrors the backend contract: an open ask lives on session.clarification
+  // (status "open") or the latest transcript chunk meta.kind
+  // "clarification_needed". Answering POSTs { clarification_id, answer } to
+  // /agi/sessions/{id}/clarify; the backend clears the ask and resumes the loop
+  // (clarification_answered → loop_status / working_on again).
+  const [answeredClarificationId, setAnsweredClarificationId] = useState<string | null>(null);
+  const [answering, setAnswering] = useState(false);
+  const openClarification = useMemo(
+    () => openClarificationFrom(session, transcript, answeredClarificationId),
+    [session, transcript, answeredClarificationId],
+  );
+
+  const handleAnswer = useCallback(async (clarificationId: string, answer: string) => {
+    if (!session) return;
+    setAnswering(true);
+    setThinking(false);
+    try {
+      await answerAgiClarification(session.id, { clarification_id: clarificationId, answer });
+      setAnsweredClarificationId(clarificationId);
+      toast("success", "Clarification answered", "The agent is resuming the assessment.");
+      // Force a session refresh so the cleared ask + resumed loop reflect quickly.
+      loadAgiSession(session.id).then((s) => { if (s) setSession(s); }).catch(() => {});
+    } catch (e) {
+      toast("error", "Answer failed", e instanceof Error ? e.message : "");
+    } finally {
+      setAnswering(false);
+    }
+  }, [session, toast]);
+
+  // ── Drawer issues strip ───────────────────────────────────────────────────
+  // Surface backend findings in the compact drawer so issues are visible
+  // without opening the full console, and link out to the findings tracker.
+  const [drawerFindings, setDrawerFindings] = useState<Array<Record<string, unknown>>>([]);
+  useEffect(() => {
+    if (!session || !running) return;
+    let cancelled = false;
+    const load = () =>
+      loadAgiFindings(session.id).then((fs) => {
+        if (!cancelled) setDrawerFindings(Array.isArray(fs) ? fs : []);
+      }).catch(() => {});
+    load();
+    const t = window.setInterval(load, 12000);
+    return () => { cancelled = true; window.clearInterval(t); };
+  }, [session, running]);
+
+  const drawerIssueRows = useMemo(
+    () =>
+      drawerFindings.map((f) => ({
+        title: String(f.title ?? "Finding"),
+        severity: String(f.severity ?? "info"),
+        status: String(f.status ?? ""),
+        cve: f.cve ? String(f.cve) : undefined,
+        target: f.target ? String(f.target) : undefined,
+      })),
+    [drawerFindings],
+  );
+  const drawerRows = useMemo(() => groupStreamRows(transcript), [transcript]);
 
   const decide = async (action: AgiAction, approve: boolean, overrideCmd?: string) => {
     if (!(await requireDualControl("Approving a state-changing step requires a dual-control operate session."))) return;
@@ -498,6 +578,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           {running && (
             <button onClick={() => void stop()} disabled={stopping} className="ml-auto btn-secondary !px-3 !py-1.5 !text-xs" title="Stop session">
               <Square size={12} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
+            </button>
+          )}
+          {!running && (
+            <button onClick={exitToPicker} className="ml-auto btn-primary !px-3 !py-1.5 !text-xs" title="Start a new session">
+              <Plus size={12} className="mr-1 inline" /> New session
             </button>
           )}
         </div>
@@ -685,6 +770,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               onTogglePause={() => setPaused((v) => !v)}
               stopping={stopping}
               onStop={() => void stop()}
+              onExit={exitToPicker}
               session={session}
               engagement={selected}
               transcript={transcript}
@@ -698,6 +784,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               onInstruction={setInstruction}
               onSend={send}
               sendHint={chatSend.hint}
+              clarification={openClarification}
+              onAnswer={handleAnswer}
               policyBanner={null}
               overrideDrafts={overrideDrafts}
               onOverrideDraft={(id, cmd) => setOverrideDrafts((prev) => ({ ...prev, [id]: cmd }))}
@@ -715,6 +803,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     <Square size={11} className="mr-1 inline" /> {stopping ? "Stopping..." : "Stop"}
                   </button>
                 )}
+                {!running && (
+                  <button onClick={exitToPicker} className="ml-auto btn-primary !px-2.5 !py-1 wb-xs shrink-0" title="Start a new session">
+                    <Plus size={11} className="mr-1 inline" /> New session
+                  </button>
+                )}
+                <button onClick={exitToPicker} className="btn-ghost !px-2 !py-1 wb-xs shrink-0" title="Back to session selection">
+                  <CornerUpLeft size={11} className="mr-1 inline" /> Sessions
+                </button>
               </div>
 
               <div className="relative min-h-0 flex-1">
@@ -725,6 +821,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       <p className="wb-xs leading-relaxed text-red-300">{connError}</p>
                     </div>
                   )}
+                  {!running && (session.status === "stopped" || session.status === "torn_down" || session.status === "failed") && (
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-phantix-700/40 bg-phantix-900/60 px-3 py-2.5">
+                      <p className="wb-xs flex-1 text-slate-400">
+                        Session ended{session.status === "failed" ? " — check the engine logs" : ""}. Ready to run a fresh assessment?
+                      </p>
+                      <button onClick={exitToPicker} className="btn-primary !px-2.5 !py-1 wb-xs shrink-0"><Plus size={11} className="mr-1 inline" /> New session</button>
+                    </div>
+                  )}
+                  <IssuesStrip findings={drawerIssueRows} href="/reports?tab=tracker" />
                   {transcript.length === 0 && !connError && (
                     <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
                       <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-phantix-700/40 bg-phantix-900/60 text-gold-400">
@@ -734,10 +839,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       <p className="wb-xs max-w-[240px] leading-relaxed text-slate-600">Live turns, tool calls, and engine events will stream here.</p>
                     </div>
                   )}
-                  {transcript.map((t, i) => (
-                    <PromptKitStream key={i} t={t} last={i === transcript.length - 1 && running && t.role !== "operator"} />
-                  ))}
-                  {thinking && (
+                  {drawerRows.map((row, i) =>
+                    row.kind === "toolGroup" ? (
+                      <ToolGroupCard key={i} tool={row.tool} runs={row.runs} dense />
+                    ) : (
+                      <PromptKitStream key={i} t={row.t} last={i === drawerRows.length - 1 && running && row.t.role !== "operator"} />
+                    ),
+                  )}
+                  {thinking && !openClarification && (
                     <ThinkingBar text={(workingOn || "").trim() || "Working on the scoped assessment"} />
                   )}
                   {!connError && actions.length > 0 && (
@@ -747,7 +856,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       authorizationsHref="/authorizations"
                     />
                   )}
-                  {running && transcript.length > 0 && !thinking && !connError && actions.length === 0 && (
+                  {running && transcript.length > 0 && !thinking && !connError && actions.length === 0 && !openClarification && (
                     <p className="wb-xs text-center text-slate-600">— awaiting engine output —</p>
                   )}
                   <div ref={endRef} />
@@ -787,6 +896,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
               {/* Composer */}
               <div className="border-t border-phantix-700/40 p-3">
+                {openClarification && (
+                  <div className="mb-2">
+                    <ClarificationAsk clarification={openClarification} onAnswer={handleAnswer} busy={answering} dense />
+                  </div>
+                )}
                 {running && !instruction.trim() && (
                   <div className="mb-2 flex flex-wrap items-center gap-1.5">
                     {["Summarize findings so far", "Next planned step?", "Stay read-only"].map((s) => (

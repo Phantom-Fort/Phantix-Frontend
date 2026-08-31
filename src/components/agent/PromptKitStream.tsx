@@ -1,4 +1,5 @@
 import { Bot, Radar, User } from "lucide-react";
+import { memo } from "react";
 import { Message, MessageContent } from "@/components/prompt-kit/message";
 import { Tool, type ToolPart } from "@/components/prompt-kit/tool";
 import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
@@ -11,6 +12,7 @@ import type { AgiTranscriptChunk } from "@/lib/types";
 // prompt-kit chat primitives (Message, MessageContent + Markdown, Tool,
 // ThinkingBar) so the AGI workspace renders with the same high-quality streaming
 // components the rest of the chat UI uses, instead of bespoke bubbles.
+// Memoized so appending a new chunk does not re-render every prior bubble.
 
 const PERSONA_LABEL: Record<string, string> = {
   orchestrator: "Orchestrator",
@@ -45,7 +47,7 @@ function Avatar({ children, tone = "muted" }: { children: React.ReactNode; tone?
   );
 }
 
-export function PromptKitStream({ t, last = false }: { t: AgiTranscriptChunk; last?: boolean }) {
+export const PromptKitStream = memo(function PromptKitStream({ t, last = false }: { t: AgiTranscriptChunk; last?: boolean }) {
   if (t.role === "tool") {
     return <Tool toolPart={toToolPart(t)} defaultOpen={false} />;
   }
@@ -93,6 +95,8 @@ export function PromptKitStream({ t, last = false }: { t: AgiTranscriptChunk; la
       </div>
     </Message>
   );
-}
+});
+
+PromptKitStream.displayName = "PromptKitStream";
 
 export default PromptKitStream;

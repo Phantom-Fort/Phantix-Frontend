@@ -4,10 +4,11 @@ import { Link } from "react-router-dom";
 import {
   Shield, AlertTriangle, Search, Activity, RefreshCw, ArrowRight, Globe, Server, Sparkles,
   Wifi, WifiOff, Radio, Network, ChevronDown, Crosshair, ShieldAlert, Tags as TagsIcon,
-  Clock, CheckCircle2, CircleDot, GitBranch, ListChecks,
+  Clock, CheckCircle2, CircleDot, GitBranch, ListChecks, HeartPulse, PlusCircle, Info,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
 import AssetForceGraph from "@/components/AssetForceGraph";
+import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { loadAssetsBundle, loadIntelligenceDashboard, loadRelationshipGraph, refreshIntelligence } from "@/lib/data";
 import { generateComprehensiveExplanation, type ComprehensiveExplanation } from "@/lib/aiExplain";
@@ -56,7 +57,7 @@ export default function AssetIntelligenceDashboard() {
     if (explanation) deepDiveRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [explanation]);
 
-  const { data: intelData, loading, reload, setData } = useResource(
+  const { data: intelData, loading, error, reload, setData } = useResource(
     () => loadIntelligenceDashboard().then((d) => d ?? emptyIntel),
     emptyIntel,
   );
@@ -107,6 +108,34 @@ export default function AssetIntelligenceDashboard() {
   });
 
   const score = intelData.postureScore ?? intelData.posture_score ?? 68;
+
+  // ── Live activity helpers ─────────────────────────────────────────────────
+  const lastHeartbeatAt = useMemo(() => {
+    for (let i = liveEvents.length - 1; i >= 0; i--) {
+      if (liveEvents[i].event === "heartbeat") return liveEvents[i].ts;
+    }
+    return null;
+  }, [liveEvents]);
+
+  const isRiskEvent = (evt: string) => evt === "riskScoreChanged";
+
+  const eventMetaFor = (evt: string): { label: string; icon: any; cls: string } => {
+    switch (evt) {
+      case "heartbeat":
+        return { label: "Server heartbeat", icon: HeartPulse, cls: "border-emerald-400/25 bg-emerald-400/10 text-emerald-400" };
+      case "riskScoreChanged":
+        return { label: "Risk score changed", icon: AlertTriangle, cls: "border-severity-high/25 bg-severity-high/10 text-severity-high" };
+      case "assetDiscovered":
+        return { label: "Asset discovered", icon: PlusCircle, cls: "border-blue-400/25 bg-blue-400/10 text-blue-300" };
+      case "newFindingOnAsset":
+        return { label: "New finding", icon: ShieldAlert, cls: "border-severity-critical/25 bg-severity-critical/10 text-severity-critical" };
+      case "assetUpdated":
+      case "intelligenceUpdated":
+        return { label: "Intelligence updated", icon: RefreshCw, cls: "border-gold-400/25 bg-gold-400/10 text-gold-300" };
+      default:
+        return { label: `${evt} event`, icon: Info, cls: "border-phantix-700/40 bg-phantix-800/60 text-slate-300" };
+    }
+  };
 
   const handleRefreshIntel = async () => {
     if (!(await requireDualControl("Refreshing asset intelligence requires a dual-control operate session."))) return;
@@ -166,11 +195,15 @@ export default function AssetIntelligenceDashboard() {
   };
 
   if (loading && !intelData.total_assets) {
+    return <PageSkeleton variant="dashboard" actions />;
+  }
+
+  if (error && !intelData.total_assets) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-phantix-500 border-t-gold-400" />
-        Loading intelligence data...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load asset intelligence. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -181,6 +214,7 @@ export default function AssetIntelligenceDashboard() {
         description="Security posture overview powered by automated enrichment, relationship mapping, and plain-language summaries"
         actions={
           <div className="flex items-center gap-2">
+            <DocLink docId="howto-app-04" label="Discovery how-to" />
             <span className={cx("flex items-center gap-1.5 text-xs font-mono mr-1", liveConnected ? "text-emerald-400" : "text-slate-500")}>
               {liveConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
               {liveConnected ? "Live" : "Offline"}
@@ -198,7 +232,10 @@ export default function AssetIntelligenceDashboard() {
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         <Card className="lg:col-span-1 flex flex-col items-center justify-center py-6">
-          <ProgressRing value={score} size={100} stroke={7} />
+          <ProgressRing value={score} size={100} stroke={7}>
+            <span className="font-display text-2xl font-bold text-white">{score}</span>
+            <span className="text-[9px] font-medium uppercase tracking-wider text-slate-500">score</span>
+          </ProgressRing>
           <p className="text-xs text-slate-400 mt-3">Posture Score</p>
           <p className="text-[10px] text-slate-500 mt-0.5">higher = healthier</p>
         </Card>
@@ -308,51 +345,103 @@ export default function AssetIntelligenceDashboard() {
         </Card>
       </div>
 
-      {/* Live event feed */}
-      <Card className="mb-6">
-        <CardHeader
-          title={<><Radio size={16} className="inline text-gold-400 mr-1" /> Live Event Feed</>}
-          subtitle={liveConnected ? "Streaming from your security database via SSE" : "Reconnecting to event stream..."}
-          action={
-            liveEvents.length > 0 ? (
-              <span className="text-xs text-slate-500">{liveEvents.length} recent events</span>
-            ) : undefined
-          }
-        />
+      {/* Live activity: heartbeat + engine events */}
+      <Card className="mb-6 overflow-hidden !p-0">
+        <div className="px-5 pt-5">
+          <CardHeader
+            title={<><Activity size={16} className="inline text-emerald-400 mr-1" /> Live Activity</>}
+            subtitle="Heartbeat + engine events streamed from your security database via SSE"
+            action={
+              <span className={cx(
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium",
+                liveConnected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+              )}>
+                <span className="relative flex h-2 w-2">
+                  {liveConnected && <span className="ecg-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />}
+                  <span className={cx("relative inline-flex h-2 w-2 rounded-full", liveConnected ? "bg-emerald-400" : "bg-severity-medium")} />
+                </span>
+                {liveConnected ? "Live · heartbeat OK" : "Reconnecting…"}
+              </span>
+            }
+          />
+        </div>
+
+        {/* Heartbeat status strip */}
+        <div className="flex items-center gap-3 border-y border-phantix-700/30 bg-phantix-950/40 px-5 py-3">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+            <HeartPulse size={17} />
+            {liveConnected && <span className="ecg-ping absolute inset-0 rounded-xl border border-emerald-400/40" />}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-100">
+              {liveConnected ? "Server responsive" : "Waiting for heartbeat"}
+            </p>
+            <p className="text-xs text-slate-500">
+              {lastHeartbeatAt
+                ? <>Last heartbeat ping <span className="font-mono text-emerald-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
+                : liveConnected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the event stream…"}
+            </p>
+          </div>
+          {/* Animated ECG trace */}
+          <svg width="120" height="34" viewBox="0 0 120 34" className="shrink-0 overflow-hidden" aria-hidden>
+            <polyline
+              points="0,17 14,17 20,17 24,8 28,26 32,14 36,17 58,17 64,17 70,10 74,24 78,15 82,17 120,17"
+              fill="none"
+              stroke="#34D399"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              className={cx("ecg-line", !liveConnected && "stopped")}
+            />
+          </svg>
+        </div>
+
         {liveEvents.length > 0 ? (
-          <div className="space-y-1.5 max-h-64 overflow-y-auto px-5 pb-5">
-            {liveEvents.slice(-12).reverse().map((evt, i) => {
+          <div className="max-h-64 space-y-1.5 overflow-y-auto px-5 py-4">
+            {liveEvents.slice(-14).reverse().map((evt, i) => {
               const payload = (evt.data && typeof evt.data === "object" ? evt.data : {}) as Partial<RealtimeEvent["payload"]>;
-              const label =
-                evt.event === "riskScoreChanged"
-                  ? `Risk changed on ${String(payload.value ?? `#${payload.assetId}`)}`
-                  : evt.event === "assetDiscovered"
-                    ? `New asset ${String(payload.value ?? `#${payload.assetId}`)}`
-                    : evt.event === "newFindingOnAsset"
-                      ? `New finding on ${String(payload.value ?? `#${payload.assetId}`)}`
-                      : evt.event === "assetUpdated" || evt.event === "intelligenceUpdated"
-                        ? `Intel updated for ${String(payload.value ?? `#${payload.assetId}`)}`
-                        : evt.event === "heartbeat"
-                          ? "Heartbeat"
-                          : `${evt.event} event`;
-              const isRisk = evt.event === "riskScoreChanged";
+              const meta = eventMetaFor(evt.event);
+              const isHeartbeat = evt.event === "heartbeat";
+              const valueLabel = payload.value ? String(payload.value) : payload.assetId ? `#${payload.assetId}` : "";
               return (
-                <div key={`${evt.ts}-${i}`} className="flex items-center gap-2 text-xs">
-                  <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", isRisk ? "bg-severity-high animate-pulse-soft" : evt.event === "heartbeat" ? "bg-slate-700" : "bg-emerald-400")} />
-                  <span className="text-slate-400 font-mono w-14 shrink-0">{timeAgo(evt.ts)}</span>
-                  <span className="text-slate-300 truncate">{label}</span>
-                  {isRisk && (payload.previousRiskLevel || payload.riskLevel) && (
-                    <span className="ml-auto text-[10px] text-slate-500">
+                <div
+                  key={`${evt.ts}-${i}`}
+                  className={cx(
+                    "group flex items-center gap-3 rounded-lg border px-2.5 py-2 transition-colors",
+                    isHeartbeat ? "border-emerald-400/15 bg-emerald-400/[0.04]" : "border-phantix-700/30 bg-phantix-900/40 hover:bg-phantix-800/40",
+                  )}
+                >
+                  <span className={cx("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border", meta.cls)}>
+                    {isHeartbeat
+                      ? <HeartPulse size={12} className={liveConnected ? "text-emerald-400" : "text-slate-500"} />
+                      : <meta.icon size={12} />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={cx("truncate text-xs font-medium", isHeartbeat ? "text-emerald-300" : "text-slate-200")}>
+                      {meta.label}
+                      {valueLabel && !isHeartbeat && <span className="font-mono text-slate-500"> · {valueLabel}</span>}
+                    </p>
+                    {isHeartbeat && (
+                      <p className="text-[10px] text-emerald-400/70">Security database reachable — event stream healthy</p>
+                    )}
+                  </div>
+                  {isRiskEvent(evt.event) && (payload.previousRiskLevel || payload.riskLevel) && (
+                    <span className="ml-auto shrink-0 text-[10px] text-slate-500">
                       {String(payload.previousRiskLevel ?? "?")} <span className="mx-0.5">→</span> {String(payload.riskLevel ?? "?")}
                     </span>
                   )}
+                  <span className="shrink-0 text-[10px] font-mono text-slate-500">{timeAgo(evt.ts)}</span>
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="px-5 pb-5 text-xs text-slate-500">
-            {liveConnected ? "Connected --- waiting for events..." : "Offline --- live updates will resume on reconnect."}
+          <div className="flex items-center gap-2 px-5 py-5 text-xs text-slate-500">
+            {liveConnected ? (
+              <><span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-emerald-400" /> Connected — waiting for the first heartbeat ping…</>
+            ) : (
+              <><span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-severity-medium" /> Offline — live updates will resume on reconnect.</>
+            )}
           </div>
         )}
       </Card>
@@ -383,13 +472,14 @@ export default function AssetIntelligenceDashboard() {
       </motion.div>
 
       {/* AI Explain CTA — pick any asset from inventory */}
+      <div className="flex flex-col gap-6">
       <Card>
         <CardHeader
           title={<><Sparkles size={16} className="inline text-gold-400 mr-1" /> Explain with AI</>}
           subtitle="Pick any asset — Phantix gathers its intelligence, findings, risks, SOC signals and relationships into one comprehensive deep-dive. Never invents CVEs or scores."
         />
         <div className="space-y-3">
-          <div className="relative" data-asset-picker>
+          <div data-asset-picker>
             <button
               type="button"
               onClick={() => { setPickerOpen((o) => !o); setExplainQuery(""); }}
@@ -403,15 +493,15 @@ export default function AssetIntelligenceDashboard() {
                   <span className="shrink-0 text-xs text-slate-500">{explainTarget.asset_type.replace(/_/g, " ")}{explainTarget.is_verified ? " · verified" : ""}</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-2 text-sm text-slate-500">
-                  <Search size={13} /> Select an asset to explain…
+                <span className="flex min-w-0 items-center gap-2 text-sm text-slate-500">
+                  <Search size={13} className="shrink-0" /> <span className="truncate">Select an asset to explain…</span>
                 </span>
               )}
               <ChevronDown size={14} className={cx("shrink-0 text-slate-500 transition-transform", pickerOpen && "rotate-180")} />
             </button>
 
             {pickerOpen && (
-              <div className="absolute z-40 mt-1.5 w-full overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900/95 shadow-card backdrop-blur-xl">
+              <div className="mt-1.5 w-full overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card">
                 <div className="border-b border-phantix-800/60 p-2">
                   <input
                     autoFocus
@@ -480,8 +570,6 @@ export default function AssetIntelligenceDashboard() {
           ref={deepDiveRef}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          layout="position"
-          className="relative isolate mb-6"
         >
           <Card>
             <CardHeader
@@ -643,23 +731,24 @@ export default function AssetIntelligenceDashboard() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Link to="/assets" className="card p-4 flex items-center gap-3 hover:border-phantix-500/60 transition-colors">
-          <Server size={20} className="text-phantix-400" />
-          <div><p className="text-sm font-medium text-white">Asset Inventory</p><p className="text-xs text-slate-400">Manage all assets</p></div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Link to="/assets" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
+          <Server size={20} className="shrink-0 text-phantix-400" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Asset Inventory</p><p className="truncate text-xs text-slate-400">Manage all assets</p></div>
         </Link>
-        <Link to="/soc" className="card p-4 flex items-center gap-3 hover:border-phantix-500/60 transition-colors">
-          <Activity size={20} className="text-phantix-400" />
-          <div><p className="text-sm font-medium text-white">SOC Monitor</p><p className="text-xs text-slate-400">Live monitoring</p></div>
+        <Link to="/soc" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
+          <Activity size={20} className="shrink-0 text-phantix-400" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">SOC Monitor</p><p className="truncate text-xs text-slate-400">Live monitoring</p></div>
         </Link>
-        <Link to="/scans" className="card p-4 flex items-center gap-3 hover:border-phantix-500/60 transition-colors">
-          <Search size={20} className="text-phantix-400" />
-          <div><p className="text-sm font-medium text-white">Scans</p><p className="text-xs text-slate-400">Run scans</p></div>
+        <Link to="/scans" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
+          <Search size={20} className="shrink-0 text-phantix-400" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Scans</p><p className="truncate text-xs text-slate-400">Run scans</p></div>
         </Link>
-        <Link to="/risks" className="card p-4 flex items-center gap-3 hover:border-phantix-500/60 transition-colors">
-          <AlertTriangle size={20} className="text-phantix-400" />
-          <div><p className="text-sm font-medium text-white">Risk Register</p><p className="text-xs text-slate-400">Risk management</p></div>
+        <Link to="/risks" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
+          <AlertTriangle size={20} className="shrink-0 text-phantix-400" />
+          <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Risk Register</p><p className="truncate text-xs text-slate-400">Risk management</p></div>
         </Link>
+      </div>
       </div>
     </div>
   );

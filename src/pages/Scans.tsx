@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronRight, ChevronDown, Github } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
 import { Pagination } from "@/components/Pagination";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import DocLink from "@/components/DocLink";
 import { loadScansBundle, verifyScanResult } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
@@ -15,7 +16,7 @@ const DEFAULT_PAGE_SIZE = 20;
 
 export default function Scans() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading, reload } = useResource(loadScansBundle, {
+  const { data, loading, error, reload } = useResource(loadScansBundle, {
     scanJobs: [],
     scanResults: [],
     securityDbBlocked: false,
@@ -108,10 +109,15 @@ export default function Scans() {
   };
 
   if (loading) {
+    return <PageSkeleton variant="table" rows={6} cols={5} actions />;
+  }
+
+  if (error && data.scanJobs.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading scans...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load scan jobs. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -125,6 +131,8 @@ export default function Scans() {
         title="Scans"
         description="On-demand Nmap + Nuclei jobs and separate GitHub analysis jobs. The 409 lock is per job family: one active network/vuln scan plus one active GitHub analysis can run at the same time."
         actions={
+          <>
+          <DocLink docId="howto-app-05" label="Launch a scan" />
           <button
             className="btn-primary"
             onClick={() =>
@@ -137,6 +145,7 @@ export default function Scans() {
           >
             <Plus size={15} /> New scan job
           </button>
+          </>
         }
       />
 

@@ -1,7 +1,8 @@
 ﻿import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadRisksBundle } from "@/lib/data";
 import { api } from "@/lib/api";
@@ -12,7 +13,7 @@ import type { Risk } from "@/lib/types";
 
 export default function Risks() {
   const { toast, requireDualControl, dualControl } = useStore();
-  const { data, loading, setData } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
+  const { data, loading, error, setData, reload } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
   const risks = data.risks;
   const securityDbBlocked = data.securityDbBlocked;
   const loadError = data.error;
@@ -103,10 +104,15 @@ export default function Risks() {
   };
 
   if (loading) {
+    return <PageSkeleton variant="table" rows={6} cols={5} actions />;
+  }
+
+  if (error && data.risks.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading risks...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load the risk register. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -117,7 +123,9 @@ export default function Risks() {
         title="Risk register"
         description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned --- Phantix never owns them."
         actions={
-          <button className="btn-secondary" onClick={async () => {
+          <>
+            <DocLink docId="howto-app-09" label="Risks how-to" />
+            <button className="btn-secondary" onClick={async () => {
             try {
               const blob = await api.download("/risks/export?format=json");
               const url = URL.createObjectURL(blob);
@@ -130,6 +138,7 @@ export default function Risks() {
           }}>
             <Download size={15} /> Export for expert review
           </button>
+          </>
         }
       />
 

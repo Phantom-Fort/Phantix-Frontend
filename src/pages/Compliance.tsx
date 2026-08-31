@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { loadComplianceBundle, runComplianceAssessment, collectComplianceEvidence, addComplianceEvidence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
@@ -11,7 +12,7 @@ const statusIcon = { pass: CheckCircle2, gap: XCircle, unknown: HelpCircle };
 
 export default function Compliance() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading, reload } = useResource(loadComplianceBundle, {
+  const { data, loading, error, reload } = useResource(loadComplianceBundle, {
     frameworks: [],
     assessments: [],
     controlResults: [],
@@ -104,10 +105,15 @@ export default function Compliance() {
   };
 
   if (loading) {
+    return <PageSkeleton variant="cards" rows={6} actions />;
+  }
+
+  if (error && data.frameworks.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading compliance...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load compliance frameworks. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -119,6 +125,8 @@ export default function Compliance() {
         title="Compliance"
         description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit --- gaps show human review status."
         actions={
+          <>
+          <DocLink docId="howto-app-10" label="Compliance how-to" />
           <button
             className="btn-primary"
             onClick={() =>
@@ -131,6 +139,7 @@ export default function Compliance() {
           >
             <Play size={15} /> Run assessment
           </button>
+          </>
         }
       />
 

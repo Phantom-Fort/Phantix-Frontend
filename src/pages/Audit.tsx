@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, Filter, X, Loader2 } from "lucide-react";
-import { PageHeader, Card, Spinner } from "@/components/ui";
+import { PageHeader, Card, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import { loadAuditBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { describeEndpoint } from "@/lib/auditExplain";
@@ -69,7 +69,7 @@ export default function Audit() {
       setExporting(false);
     }
   };
-  const { data, loading } = useResource(loadAuditBundle, { events: [] }, "audit");
+  const { data, loading, error, reload } = useResource(loadAuditBundle, { events: [] }, "audit");
   const auditEvents = data.events as AuditEvent[];
   const [engineFilter, setEngineFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
@@ -97,10 +97,15 @@ export default function Audit() {
   }, [auditEvents, engineFilter, actionFilter]);
 
   if (loading) {
+    return <PageSkeleton variant="table" rows={8} cols={5} actions />;
+  }
+
+  if (error && data.events.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading audit trail...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load the audit trail. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -121,7 +126,7 @@ export default function Audit() {
           <div className="mb-4 flex flex-wrap items-center gap-2">
             <Filter size={14} className="text-slate-500" />
             <select
-              className="rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2.5 py-1.5 text-xs text-slate-300 outline-none focus:border-gold-400/50"
+              className="input !w-auto !py-1.5 text-xs"
               value={engineFilter}
               onChange={(e) => setEngineFilter(e.target.value)}
             >
@@ -131,7 +136,7 @@ export default function Audit() {
               ))}
             </select>
             <select
-              className="rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2.5 py-1.5 text-xs text-slate-300 outline-none focus:border-gold-400/50"
+              className="input !w-auto !py-1.5 text-xs"
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
             >

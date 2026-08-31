@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowDown, Ban, BrainCircuit, CheckCircle2, ChevronDown, Clock, Crosshair, FileCode2,
+  ArrowDown, Ban, BrainCircuit, CheckCircle2, ChevronDown, Clock, CornerUpLeft, Crosshair, FileCode2,
   Globe2, Loader2, Lock, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
-  Pause, Play, Radar, Send, ShieldAlert, ShieldCheck, Sparkles, Square,
+  Pause, Play, Plus, Radar, Send, ShieldAlert, ShieldCheck, Sparkles, Square,
   Terminal, XCircle,
 } from "lucide-react";
-import { ApprovalNotice, CopyBtn, StreamEmpty, StreamMessage, TypingIndicator } from "@/components/AgiStream";
+import { ApprovalNotice, ClarificationAsk, CopyBtn, StreamEmpty, StreamMessage, ToolGroupCard, TypingIndicator } from "@/components/AgiStream";
 import { Menu, MenuItem, SeverityBadge } from "@/components/ui";
 import { VerificationBadge, verificationBadge } from "@/components/VerificationBadge";
+import { groupStreamRows } from "@/lib/agiStreamGroup";
+import type { AgiClarification } from "@/lib/agiStreamGroup";
 import {
   Steps,
   StepsItem,
@@ -269,6 +271,8 @@ export type AgiConsoleProps = {
   onTogglePause: () => void;
   stopping: boolean;
   onStop: () => void;
+  /** Leave the console and return to the engagement/session picker. */
+  onExit?: () => void;
   session: AgiSession;
   engagement: AgiEngagement | null;
   transcript: AgiTranscriptChunk[];
@@ -282,6 +286,10 @@ export type AgiConsoleProps = {
   onInstruction: (v: string) => void;
   onSend: () => void;
   sendHint?: SendHint;
+  /** Open ASK_OPERATOR clarification awaiting an operator answer. */
+  clarification?: AgiClarification | null;
+  /** Sends { clarification_id, answer } to /agi/sessions/{id}/clarify. */
+  onAnswer?: (clarificationId: string, answer: string) => void;
   policyBanner: string | null;
   overrideDrafts: Record<number, string>;
   onOverrideDraft: (id: number, cmd: string) => void;
@@ -293,6 +301,7 @@ export default function AgiConsole({
   onTogglePause,
   stopping,
   onStop,
+  onExit,
   session,
   engagement,
   transcript,
@@ -306,6 +315,8 @@ export default function AgiConsole({
   onInstruction,
   onSend,
   sendHint = "idle",
+  clarification,
+  onAnswer,
   policyBanner,
   overrideDrafts,
   onOverrideDraft,
@@ -397,6 +408,17 @@ export default function AgiConsole({
     [transcript, persona],
   );
   const tools = filtered.filter((t) => t.role === "tool");
+  // Consecutive same-tool chunks collapse into a single "tool × N" card.
+  const groupedFiltered = useMemo(() => groupStreamRows(filtered), [filtered]);
+  const groupedTools = useMemo(() => groupStreamRows(tools), [tools]);
+  const laneRows = useMemo(
+    () => ({
+      orchestrator: groupStreamRows(transcript.filter((t) => personaForChunk(t) === "orchestrator")),
+      recon: groupStreamRows(transcript.filter((t) => personaForChunk(t) === "recon")),
+      exploit: groupStreamRows(transcript.filter((t) => personaForChunk(t) === "exploit")),
+    }),
+    [transcript],
+  );
 
   const personaCounts = useMemo(() => {
     const c: Record<AgentPersona | "all", number> = { all: transcript.length, orchestrator: 0, recon: 0, exploit: 0 };
@@ -455,6 +477,11 @@ export default function AgiConsole({
             {paused ? "paused" : running ? "live" : session.status}
           </span>
           <span className="chip !px-2 !py-0.5 wb-2xs font-mono text-slate-500">#{session.id}</span>
+          {onExit && (
+            <button onClick={onExit} className="btn-ghost !px-2 !py-1 wb-xs" title="Back to session selection">
+              <CornerUpLeft size={12} className="mr-1 inline" /> Sessions
+            </button>
+          )}
           {running && (
             <button onClick={onTogglePause} className="btn-secondary !px-2.5 !py-1 wb-xs" title={paused ? "Resume agent loop" : "Pause agent loop"}>
               {paused ? <Play size={12} className="mr-1 inline" /> : <Pause size={12} className="mr-1 inline" />}
@@ -464,6 +491,11 @@ export default function AgiConsole({
           {running && (
             <button onClick={onStop} disabled={stopping} className="btn-secondary !px-2.5 !py-1 wb-xs">
               {stopping ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : <Square size={12} className="mr-1 inline" />} {stopping ? "Stopping…" : "Stop"}
+            </button>
+          )}
+          {!running && onExit && (
+            <button onClick={onExit} className="btn-primary !px-2.5 !py-1 wb-xs" title="Start a new session">
+              <Plus size={12} className="mr-1 inline" /> New session
             </button>
           )}
         </div>
@@ -622,8 +654,12 @@ export default function AgiConsole({
                       {PERSONAS.find((p) => p.id === lane)?.label}
                       <span className="wb-2xs ml-auto rounded-full bg-phantix-800/80 px-1 tabular-nums text-slate-400">{personaCounts[lane]}</span>
                     </p>
-                    {transcript.filter((t) => personaForChunk(t) === lane).map((t, i) => (
-                      <StreamMessage key={`${lane}-${i}`} t={t} dense />
+                    {laneRows[lane].map((row, i) => (
+                      row.kind === "toolGroup" ? (
+                        <ToolGroupCard key={`${lane}-${i}`} tool={row.tool} runs={row.runs} dense />
+                      ) : (
+                        <StreamMessage key={`${lane}-${i}`} t={row.t} dense />
+                      )
                     ))}
                   </div>
                 ))}
@@ -642,9 +678,13 @@ export default function AgiConsole({
                     hint="Live turns, tool calls, and engine events stream here as the agent works through the scoped assessment."
                   />
                 )}
-                {filtered.map((t, i) => (
-                  <StreamMessage key={`st-${i}`} t={t} last={i === lastIdx && running && !paused && t.role !== "operator"} />
-                ))}
+                {groupedFiltered.map((row, i) =>
+                  row.kind === "toolGroup" ? (
+                    <ToolGroupCard key={`st-${i}`} tool={row.tool} runs={row.runs} />
+                  ) : (
+                    <StreamMessage key={`st-${i}`} t={row.t} last={i === lastIdx && running && !paused && row.t.role !== "operator"} />
+                  ),
+                )}
                 {!connError && actions.length > 0 && (
                   <ApprovalNotice
                     count={actions.length}
@@ -652,7 +692,7 @@ export default function AgiConsole({
                     authorizationsHref="/authorizations"
                   />
                 )}
-                {thinking && !paused && <TypingIndicator label={(workingOn || "").trim() || undefined} />}
+                {thinking && !paused && !clarification && <TypingIndicator label={(workingOn || "").trim() || undefined} />}
                 {paused && <p className="wb-xs text-severity-medium">Loop paused — agent will not advance.</p>}
                 <div ref={thoughtsStick.endRef} />
               </div>
@@ -667,9 +707,13 @@ export default function AgiConsole({
                   </p>
                   <div ref={toolsStick.scrollerRef} onScroll={toolsStick.onScroll} className="wb-scroll max-h-44 space-y-1.5 overflow-y-auto wb-pad">
                     {tools.length === 0 && <p className="wb-xs py-3 text-center text-slate-600">No tool output yet.</p>}
-                    {tools.map((t, i) => (
-                      <StreamMessage key={`tl-${i}`} t={t} dense />
-                    ))}
+                    {groupedTools.map((row, i) =>
+                      row.kind === "toolGroup" ? (
+                        <ToolGroupCard key={`tl-${i}`} tool={row.tool} runs={row.runs} dense />
+                      ) : (
+                        <StreamMessage key={`tl-${i}`} t={row.t} dense />
+                      ),
+                    )}
                     <div ref={toolsStick.endRef} />
                   </div>
                 </div>
@@ -733,6 +777,14 @@ export default function AgiConsole({
           </div>
 
           <div className="shrink-0 border-t border-phantix-700/40 p-3">
+            {clarification && onAnswer && (
+              <div className="mx-auto mb-2 max-w-3xl">
+                <ClarificationAsk
+                  clarification={clarification}
+                  onAnswer={onAnswer}
+                />
+              </div>
+            )}
             {running && !paused && !instruction.trim() && (
               <div className="mx-auto mb-2 flex max-w-3xl flex-wrap items-center gap-1.5">
                 <Sparkles size={11} className="text-gold-400/70" />

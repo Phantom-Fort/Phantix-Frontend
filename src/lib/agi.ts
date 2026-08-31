@@ -78,6 +78,7 @@ export function normalizeAgiSession(raw: unknown): AgiSession {
     meta: Object.keys(meta).length ? meta : {},
     job: asObj(o.job),
     loop: normalizeAgiLoop(o.loop),
+    clarification: o.clarification != null && typeof o.clarification === "object" ? (o.clarification as Record<string, unknown>) : null,
   };
 }
 
@@ -575,6 +576,21 @@ export async function agiChat(sessionId: number, message: string): Promise<AgiCh
   }
   const raw = await api.post<unknown>(`/agi/sessions/${sessionId}/chat`, { message }, { dualControl: true });
   return normalizeAgiChat(raw);
+}
+
+/** Answer a mid-turn ASK_OPERATOR clarification and resume the loop. */
+export async function answerAgiClarification(
+  sessionId: number,
+  body: { answer: string; clarification_id?: string },
+): Promise<Record<string, unknown>> {
+  if (isDemoMode()) {
+    await delay(350);
+    return { ok: true, session_id: sessionId, clarification_id: body.clarification_id ?? "", status: "answered", resumed: true };
+  }
+  return api.post<Record<string, unknown>>(`/agi/sessions/${sessionId}/clarify`, {
+    answer: body.answer,
+    clarification_id: body.clarification_id || undefined,
+  }, { dualControl: true });
 }
 
 export async function loadAgiFindings(sessionId: number): Promise<Array<Record<string, unknown>>> {

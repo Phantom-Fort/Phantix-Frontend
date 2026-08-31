@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { memo, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Bot, Check, ChevronRight, Copy, Crosshair, Loader2, Radar, ShieldAlert, ShieldCheck, Terminal, User,
+  ArrowRight, Bot, Check, ChevronDown, ChevronRight, Copy, Crosshair, HelpCircle, Loader2, Radar, Send, ShieldAlert, ShieldCheck, Terminal, User,
 } from "lucide-react";
-import MarkdownView from "@/components/MarkdownView";
+import { Markdown } from "@/components/prompt-kit/markdown";
 import { Tool } from "@/components/prompt-kit/tool";
+import { linkify } from "@/lib/linkify";
 import { personaForChunk, type AgentPersona } from "@/lib/agiGraph";
 import type { AgiTranscriptChunk, Severity } from "@/lib/types";
 import { cx } from "@/lib/utils";
@@ -111,6 +112,185 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
   );
 }
 
+// Split a tool chunk's content into an optional command line + the output body.
+export function splitToolContent(content: string): { command: string; body: string } {
+  const lines = (content ?? "").split("\n");
+  if (lines.length === 1) return { command: lines[0].trim(), body: "" };
+  const first = lines[0].trim();
+  const looksLikeCmd = first.length > 0 && first.length <= 200 && CMD_RE.test(first) && !first.startsWith("{");
+  return { command: looksLikeCmd ? first : "", body: looksLikeCmd ? lines.slice(1).join("\n") : lines.join("\n") };
+}
+
+// ── Grouped tool calls ───────────────────────────────────────────────────────
+// Consecutive runs of the same tool collapse into one expandable card
+// ("http_get × 10") so a busy pipeline doesn't spam the timeline with a card
+// per invocation. Output is linkified so URLs are clickable.
+export function ToolGroupCard({
+  tool,
+  runs,
+  dense = false,
+}: {
+  tool: string;
+  runs: AgiTranscriptChunk[];
+  dense?: boolean;
+}) {
+  const [open, setOpen] = useState(runs.length <= 1);
+  const count = runs.length;
+  const totalText = useMemo(() => runs.map((r) => r.content).join("\n"), [runs]);
+  return (
+    <div className="group relative min-w-0 overflow-hidden rounded-xl border border-phantix-700/40 bg-phantix-950/70">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className={cx(
+          "flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-phantix-900/60",
+          dense && "px-2 py-1.5",
+        )}
+      >
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-phantix-800/80 text-gold-400">
+          <Terminal size={11} />
+        </span>
+        <span className={cx("truncate font-mono font-semibold text-slate-200", dense ? "text-[11px]" : "text-xs")}>{tool}</span>
+        <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[10px] text-gold-300">× {count}</span>
+        <span className={cx("ml-auto shrink-0 text-slate-500 transition-transform", open && "rotate-180")}>
+          <ChevronDown size={12} />
+        </span>
+      </button>
+      {open && (
+        <div className={cx("wb-scroll space-y-1.5 overflow-y-auto border-t border-phantix-700/30", dense ? "max-h-40 px-2 py-1.5" : "max-h-72 px-3 py-2")}>
+          {runs.map((r, i) => {
+            const { command, body } = splitToolContent(r.content);
+            const output = body || command;
+            return (
+              <div key={i} className="rounded-lg bg-phantix-900/50 px-2.5 py-1.5">
+                {command && <p className={cx("font-mono text-slate-500", dense ? "text-[10px]" : "text-[11px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>}
+                {output && (
+                  <p className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-300", dense ? "text-[10px]" : "text-[11px]")}>
+                    {linkify(output)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <CopyBtn text={totalText} className="absolute right-2 top-2 z-10 !opacity-0 group-hover:!opacity-100" />
+    </div>
+  );
+}
+
+// ── Agent clarification ask (ASK_OPERATOR) ───────────────────────────────────
+// Renders while the backend has an open clarification (session.clarification
+// status "open" / meta.kind "clarification_needed"). Optional option chips
+// submit directly; free text goes through the input. The answer is POSTed to
+// /agi/sessions/{id}/clarify as { clarification_id, answer }, which resumes the
+// loop (clarification_answered → loop_status / working_on again).
+export function ClarificationAsk({
+  clarification,
+  onAnswer,
+  busy = false,
+  dense = false,
+}: {
+  clarification: { clarification_id: string; question: string; options?: string[]; allow_free_text?: boolean };
+  onAnswer: (clarificationId: string, answer: string) => void;
+  busy?: boolean;
+  dense?: boolean;
+}) {
+  const [text, setText] = useState("");
+  const submit = (answer: string) => {
+    const a = answer.trim();
+    if (!a || busy) return;
+    onAnswer(clarification.clarification_id, a);
+    setText("");
+  };
+  const options = clarification.options ?? [];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={cx("rounded-xl border border-gold-400/30 bg-gold-400/5 p-3", dense ? "max-w-full" : "max-w-[94%]")}
+    >
+      <p className="flex items-center gap-1.5 text-xs font-semibold text-gold-200">
+        <HelpCircle size={13} /> Agent needs a clarification
+      </p>
+      <p className="mt-1.5 text-sm leading-6 text-slate-200">{linkify(clarification.question)}</p>
+      {options.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {options.map((o) => (
+            <button
+              key={o}
+              type="button"
+              disabled={busy}
+              onClick={() => submit(o)}
+              className="rounded-full border border-gold-400/40 bg-gold-400/10 px-2.5 py-1 text-xs font-medium text-gold-200 transition-colors hover:bg-gold-400/20 disabled:opacity-50"
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+      {clarification.allow_free_text !== false && (
+        <div className="mt-2 flex items-center gap-2">
+          <input
+            className="input flex-1 !py-1.5 text-xs"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && text.trim() && !busy) submit(text); }}
+            placeholder="Type your answer…"
+            disabled={busy}
+          />
+          <button className="btn-primary !px-3 !py-1.5 wb-xs" disabled={!text.trim() || busy} onClick={() => submit(text)}>
+            {busy ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Reply
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ── Inline issues strip ──────────────────────────────────────────────────────
+// Lists verified/candidate findings compactly with a link out to the findings
+// tracker. Used by the drawer so issues are visible without the full console.
+export function IssuesStrip({
+  findings,
+  href,
+}: {
+  findings: Array<{ title: string; severity?: string; status?: string; cve?: string; target?: string }>;
+  href: string;
+}) {
+  if (!findings || findings.length === 0) return null;
+  return (
+    <div className="rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          Issues found ({findings.length})
+        </p>
+        <a href={href} className="text-[10px] font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200">
+          Open tracker →
+        </a>
+      </div>
+      <div className="mt-1.5 space-y-1">
+        {findings.slice(0, 8).map((f, i) => {
+          const sev = (f.severity ?? "info").toLowerCase() as Severity;
+          return (
+            <a
+              key={i}
+              href={href}
+              className="flex items-center gap-2 rounded-lg bg-phantix-950/50 px-2 py-1 text-xs transition-colors hover:bg-phantix-800/50"
+            >
+              <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", SEV_DOT[sev] ?? "bg-slate-500")} />
+              <span className="min-w-0 flex-1 truncate text-slate-300">{f.title}</span>
+              {f.cve && <span className="shrink-0 font-mono text-[9px] text-gold-400">{f.cve}</span>}
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Engine / system events ────────────────────────────────────────────────────
 
 const FINDING_RE = /^(.*?)\[(critical|high|medium|low|info)\]\s*:?\s*(.*)$/i;
@@ -162,7 +342,7 @@ export type StreamMessageProps = {
   dense?: boolean;
 };
 
-export function StreamMessage({ t, last = false, dense = false }: StreamMessageProps) {
+export const StreamMessage = memo(function StreamMessage({ t, last = false, dense = false }: StreamMessageProps) {
   const time = streamTime(t.created_at);
 
   if (t.role === "tool") {
@@ -240,13 +420,15 @@ export function StreamMessage({ t, last = false, dense = false }: StreamMessageP
           <CopyBtn text={t.content} className="!p-0.5" />
         </p>
         <div className="wb-base rounded-xl rounded-tl-sm border border-phantix-700/40 bg-phantix-800/55 px-3 py-2 text-slate-200 shadow-sm">
-          <MarkdownView source={t.content} />
+          <Markdown className="prose-doc max-w-none">{t.content}</Markdown>
           {last && <StreamCaret />}
         </div>
       </div>
     </motion.div>
   );
-}
+});
+
+StreamMessage.displayName = "StreamMessage";
 
 // ── Working / typing indicator ────────────────────────────────────────────────
 

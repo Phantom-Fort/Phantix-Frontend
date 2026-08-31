@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Plus, ShieldCheck, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState } from "@/components/ui";
+import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { loadReportsBundle, patchTrackerFinding, retestTrackerFinding } from "@/lib/data";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -13,6 +14,33 @@ import { marked } from "marked";
 import type { TrackerFinding, TrackerSummary } from "@/lib/types";
 
 marked.setOptions({ breaks: true, gfm: true });
+
+/** Verification gate (GET /reports/verification-gate) --- counts before generate. */
+type VerificationGate = {
+  organization_id: number;
+  campaign_id?: number | null;
+  report_type: string;
+  require_verified: boolean;
+  candidates_after_dedupe: number;
+  reportable: number;
+  auto_verified: number;
+  manually_verified: number;
+  unverified_pending: number;
+  rejected: number;
+  excluded_from_report: number;
+  by_status?: Record<string, number>;
+  severity_counts?: Record<string, number>;
+  needs_acknowledgement: boolean;
+  message?: string;
+  hint?: string;
+  acknowledged?: boolean | null;
+};
+
+function gateQuery(campaignId: string, reportType: string): string {
+  const p = new URLSearchParams({ report_type: reportType });
+  if (campaignId) p.set("campaign_id", campaignId);
+  return `/reports/verification-gate?${p.toString()}`;
+}
 
 function downloadExt(format: string): string {
   if (format === "markdown") return "md";
@@ -54,7 +82,7 @@ function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
 async function handleDownload(
   reportId: number,
   format: string,
-  onError?: (msg: string) => void,
+  onError?: (msg: string, artifactMissing: boolean) => void,
 ) {
   const ext = downloadExt(format);
   try {
@@ -70,8 +98,18 @@ async function handleDownload(
     a.remove();
     URL.revokeObjectURL(url);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Could not download this report format";
-    if (onError) onError(msg);
+    // Backend re-renders from stored sections when possible; when the artifact
+    // is gone entirely it answers 404 { detail: { code: "report_artifact_missing",
+    // available_formats, hint } } --- offer regenerate instead of a dead button.
+    const artifactMissing =
+      err instanceof ApiError && err.status === 404 &&
+      err.detail && typeof err.detail === "object" &&
+      (err.detail as { code?: string }).code === "report_artifact_missing";
+    const msg =
+      artifactMissing && err.detail && typeof err.detail === "object"
+        ? ((err.detail as { hint?: string }).hint || err.message)
+        : err instanceof Error ? err.message : "Could not download this report format";
+    if (onError) onError(msg, !!artifactMissing);
     else console.error("Report download failed:", msg);
   }
 }
@@ -180,7 +218,7 @@ export default function Reports() {
   const [params] = useSearchParams();
   const fromAgi = params.get("from") === "agi";
   const agiSession = params.get("session");
-  const { data, loading, reload, setData } = useResource(
+  const { data, loading, error, reload, setData } = useResource(
     loadReportsBundle,
     { reports: [], trackerFindings: [], trackerSummary: null as TrackerSummary | null, trackerNote: null as string | null },
     "reports",
@@ -194,6 +232,57 @@ export default function Reports() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const fetchedCampaigns = useRef(false);
   const highlightKey = params.get("key") || "";
+
+  // Verification gate (AUGUST_2026_REPORTING…_FE.md §A): preview verified vs
+  // pending counts before generate; 409 verification_pending must be acked.
+  const [gate, setGate] = useState<VerificationGate | null>(null);
+  const [gateLoading, setGateLoading] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
+  const [ackOpen, setAckOpen] = useState(false);
+  const [ackGate, setAckGate] = useState<VerificationGate | null>(null);
+  const ackRef = useRef(false);
+
+  const loadGate = useCallback(async (campaignId: string, reportType: string) => {
+    if (!campaignId || fromAgi) return;
+    if (isDemoMode()) {
+      // Demo tenants have no backend session for the gate endpoint.
+      setGate({
+        organization_id: 0,
+        report_type: reportType,
+        require_verified: true,
+        candidates_after_dedupe: 5,
+        reportable: 4,
+        auto_verified: 4,
+        manually_verified: 0,
+        unverified_pending: 0,
+        rejected: 1,
+        excluded_from_report: 1,
+        needs_acknowledgement: false,
+      });
+      return;
+    }
+    setGateLoading(true);
+    setGateError(null);
+    try {
+      const g = await api.get<VerificationGate>(gateQuery(campaignId, reportType));
+      setGate(g);
+    } catch (err) {
+      setGateError(err instanceof Error ? err.message : "Verification gate unavailable");
+    } finally {
+      setGateLoading(false);
+    }
+  }, [fromAgi]);
+
+  useEffect(() => {
+    if (!genOpen) return;
+    if (!fromAgi && !genForm.campaign_id) {
+      setGate(null);
+      setGateError(null);
+      return;
+    }
+    ackRef.current = false;
+    void loadGate(genForm.campaign_id, genForm.report_type);
+  }, [genOpen, genForm.campaign_id, genForm.report_type, fromAgi, loadGate]);
 
   // Unit retest state
   const [retestTarget, setRetestTarget] = useState<TrackerFinding | null>(null);
@@ -271,6 +360,45 @@ export default function Reports() {
     }
   }, [genOpen]);
 
+  const doGenerate = useCallback(async (acknowledgeUnverified: boolean) => {
+    if (isDemoMode() && fromAgi) {
+      const queued = {
+        id: Number(params.get("report")) || Date.now() % 100000,
+        report_type: genForm.report_type as "vapt_campaign",
+        title: `Autonomous pentest · session #${agiSession ?? "—"}`,
+        status: "generating" as const,
+        formats_requested: genForm.formats,
+        campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : null,
+        version: 1,
+        stats: { after_dedupe: 4, after_verification: 4, excluded_from_report: 0, impact_analyzed: 4 },
+        created_at: new Date().toISOString(),
+        size_bytes: 0,
+      };
+      setData((prev) => ({ ...prev, reports: [queued, ...prev.reports] }));
+      setGenOpen(false);
+      toast("success", "Report queued", "phantix_agi findings are in the report engine.");
+      window.setTimeout(() => {
+        setData((prev) => ({
+          ...prev,
+          reports: prev.reports.map((r) => r.id === queued.id ? { ...r, status: "complete" as const, size_bytes: 1_280_000 } : r),
+        }));
+      }, 1600);
+      return;
+    }
+    await api.post("/reports", {
+      report_type: genForm.report_type,
+      campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : undefined,
+      formats: genForm.formats,
+      run_inline: genForm.run_inline,
+      // Required when gate.needs_acknowledgement === true (409 otherwise).
+      acknowledge_unverified: acknowledgeUnverified,
+      ...(fromAgi ? { source: "phantix_agi", session_id: agiSession ? Number(agiSession) : undefined } : {}),
+    });
+    setGenOpen(false);
+    toast("success", "Report queued", fromAgi ? "Autonomous agent findings submitted to the report engine." : "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
+    setTimeout(() => reload(), 800);
+  }, [genForm, toast, reload, fromAgi, agiSession, params, setData]);
+
   const handleGenerate = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fromAgi && !genForm.campaign_id) {
@@ -280,46 +408,61 @@ export default function Reports() {
     if (!(await requireDualControl("Generating a report requires a dual-control operate session."))) return;
     setGenSubmitting(true);
     try {
-      if (isDemoMode() && fromAgi) {
-        const queued = {
-          id: Number(params.get("report")) || Date.now() % 100000,
-          report_type: genForm.report_type as "vapt_campaign",
-          title: `Autonomous pentest · session #${agiSession ?? "—"}`,
-          status: "generating" as const,
-          formats_requested: genForm.formats,
-          campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : null,
-          version: 1,
-          stats: { after_dedupe: 4, after_verification: 4, excluded_from_report: 0, impact_analyzed: 4 },
-          created_at: new Date().toISOString(),
-          size_bytes: 0,
-        };
-        setData((prev) => ({ ...prev, reports: [queued, ...prev.reports] }));
-        setGenOpen(false);
-        toast("success", "Report queued", "phantix_agi findings are in the report engine.");
-        window.setTimeout(() => {
-          setData((prev) => ({
-            ...prev,
-            reports: prev.reports.map((r) => r.id === queued.id ? { ...r, status: "complete" as const, size_bytes: 1_280_000 } : r),
-          }));
-        }, 1600);
+      // Gate before generate: auto/manual-verified always enter the client
+      // report; pending rows need the operator to acknowledge the exclusion.
+      if (!fromAgi && !isDemoMode()) {
+        const g = await api.get<VerificationGate>(gateQuery(genForm.campaign_id, genForm.report_type));
+        setGate(g);
+        if (g.needs_acknowledgement && !ackRef.current) {
+          setAckGate(g);
+          setAckOpen(true);
+          return;
+        }
+      }
+      await doGenerate(ackRef.current || false);
+    } catch (err: any) {
+      // POST /reports 409 { detail: { code: "verification_pending", gate, hint } }
+      if (err?.status === 409 && err?.detail?.code === "verification_pending") {
+        const g = err.detail.gate as VerificationGate;
+        if (g) { setGate(g); setAckGate(g); }
+        setAckOpen(true);
         return;
       }
-      await api.post("/reports", {
-        report_type: genForm.report_type,
-        campaign_id: genForm.campaign_id ? Number(genForm.campaign_id) : undefined,
-        formats: genForm.formats,
-        run_inline: genForm.run_inline,
-        ...(fromAgi ? { source: "phantix_agi", session_id: agiSession ? Number(agiSession) : undefined } : {}),
-      });
-      setGenOpen(false);
-      toast("success", "Report queued", fromAgi ? "Autonomous agent findings submitted to the report engine." : "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
-      setTimeout(() => reload(), 800);
-    } catch (err: any) {
       toast("error", "Failed", err.message ?? "Report generation failed");
     } finally {
       setGenSubmitting(false);
     }
-  }, [genForm, toast, reload, fromAgi, agiSession, params, setData, requireDualControl]);
+  }, [genForm, toast, reload, fromAgi, agiSession, params, setData, requireDualControl, doGenerate]);
+
+  const confirmVerifiedOnly = useCallback(async () => {
+    if (!ackGate) return;
+    ackRef.current = true;
+    setAckOpen(false);
+    setGenSubmitting(true);
+    try {
+      await doGenerate(true);
+    } catch (err: any) {
+      if (err?.status === 409 && err?.detail?.code === "verification_pending") {
+        setAckGate(err.detail.gate as VerificationGate);
+        setAckOpen(true);
+        return;
+      }
+      toast("error", "Failed", err.message ?? "Report generation failed");
+    } finally {
+      setGenSubmitting(false);
+    }
+  }, [ackGate, doGenerate, toast]);
+
+  // Download failures: a missing artifact (report_artifact_missing) means the
+  // backend can't re-render --- offer regenerate rather than a dead button.
+  const onDownloadError = useCallback((m: string, artifactMissing: boolean) => {
+    if (artifactMissing) {
+      toast("error", "Report artifact missing", m);
+      setGenOpen(true);
+    } else {
+      toast("error", "Download failed", m);
+    }
+  }, [toast]);
 
   const openDetail = useCallback(async (report: any) => {
     setDetail(report);
@@ -354,10 +497,15 @@ export default function Reports() {
   };
 
   if (loading) {
+    return <PageSkeleton variant="list" rows={5} actions />;
+  }
+
+  if (error && reports.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading reports...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load the report library. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -367,9 +515,12 @@ export default function Reports() {
         title="Reports"
         description="Library of generated artifacts (md/json/xlsx/pdf/docx/pptx/html). The tracker tab is a living remediation board — not a report file."
         actions={
+          <>
+          <DocLink docId="howto-app-11" label="Reports how-to" />
           <button className="btn-primary" onClick={() => setGenOpen(true)}>
             <Plus size={15} /> Generate report
           </button>
+          </>
         }
       />
 
@@ -452,7 +603,7 @@ export default function Reports() {
                         <button
                           key={f}
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f, (m) => toast("error", "Download failed", m)); }}
+                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f, onDownloadError); }}
                           className={cx(
                             "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
                             f === "pdf" || f === "docx" || f === "pptx" || f === "html"
@@ -590,7 +741,7 @@ export default function Reports() {
                                   }
                                 }
                               }}
-                              className="rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 text-xs text-slate-300 outline-none focus:border-gold-400/50"
+                              className="input !w-auto !py-1 text-xs"
                             >
                               {trackerStatuses.map((s) => (
                                 <option key={s} value={s}>{titleCase(s)}</option>
@@ -663,6 +814,53 @@ export default function Reports() {
               ))}
             </select>
           </div>
+
+          {/* Verification gate preview --- counts before generate */}
+          {!fromAgi && (
+            <div className={cx(
+              "rounded-xl border p-3.5 text-xs",
+              gate?.needs_acknowledgement
+                ? "border-severity-medium/40 bg-severity-medium/8"
+                : "border-phantix-700/50 bg-phantix-950/50",
+            )}>
+              <p className="flex items-center gap-1.5 font-semibold text-slate-300">
+                {gate?.needs_acknowledgement
+                  ? <><ShieldAlert size={13} className="text-severity-medium" /> Verification pending</>
+                  : <><ShieldCheck size={13} className="text-emerald-400" /> Verification gate</>}
+                {gateLoading && <Spinner className="h-3 w-3" />}
+              </p>
+              {gateError && <p className="mt-1.5 text-[11px] text-severity-critical">{gateError}</p>}
+              {!gateLoading && gate && !gateError && (
+                <>
+                  <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                    {([
+                      [gate.reportable, "will enter report", "text-emerald-400"],
+                      [gate.auto_verified, "auto-verified", "text-emerald-300"],
+                      [gate.manually_verified, "manual", "text-phantix-300"],
+                      [gate.unverified_pending, "unverified", "text-severity-medium"],
+                      [gate.rejected, "rejected", "text-slate-500"],
+                      [gate.excluded_from_report, "excluded", "text-severity-critical"],
+                    ] as [number, string, string][]).map(([v, l, c]) => (
+                      <div key={String(l)} className="rounded-lg bg-phantix-900/60 px-2.5 py-1.5">
+                        <p className={cx("font-display text-base font-bold tabular-nums", c)}>{v}</p>
+                        <p className="text-[9px] uppercase tracking-wider text-slate-500">{l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {gate.needs_acknowledgement && (
+                    <p className="mt-2 rounded-lg border border-severity-medium/30 bg-severity-medium/10 px-2.5 py-2 text-[11px] leading-5 text-severity-medium">
+                      {gate.unverified_pending} finding(s) still need verification and will be excluded (or appendix-only).
+                      {" "}{gate.reportable} auto/manual-verified will be included.{" "}
+                      <strong>Generate verified-only</strong> sends acknowledge_unverified=true.
+                    </p>
+                  )}
+                  {gate.message && !gate.needs_acknowledgement && (
+                    <p className="mt-1.5 text-[11px] text-slate-500">{gate.message}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <div>
             <label className="label">Formats</label>
             <div className="grid grid-cols-3 gap-2">
@@ -703,6 +901,48 @@ export default function Reports() {
             {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating...</> : <><Download size={15} /> Generate</>}
           </button>
         </form>
+      </Modal>
+
+      {/* Unverified findings ack modal */}
+      <Modal open={ackOpen} onClose={() => setAckOpen(false)} title="Unverified findings remain">
+        {ackGate && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl border border-severity-medium/30 bg-severity-medium/8 px-3.5 py-3">
+              <ShieldAlert size={17} className="mt-0.5 shrink-0 text-severity-medium" />
+              <p className="text-xs leading-5 text-slate-300">
+                <strong className="text-severity-medium">{ackGate.unverified_pending} finding(s)</strong> still need
+                verification and will be <strong>excluded</strong> (or appendix-only) from this report.{" "}
+                <strong className="text-emerald-300">{ackGate.reportable} auto/manual-verified finding(s)</strong>{" "}
+                will be included. Auto-verified findings are always included.
+              </p>
+            </div>
+            {ackGate.message && <p className="text-[11px] leading-5 text-slate-500">{ackGate.message}</p>}
+            <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-400">
+              <span className="chip border-phantix-600/50 bg-phantix-800/60">reportable: <strong className="text-emerald-300">{ackGate.reportable}</strong></span>
+              <span className="chip border-phantix-600/50 bg-phantix-800/60">auto-verified: <strong className="text-emerald-300">{ackGate.auto_verified}</strong></span>
+              <span className="chip border-phantix-600/50 bg-phantix-800/60">manual: <strong className="text-slate-200">{ackGate.manually_verified}</strong></span>
+              <span className="chip border-severity-medium/40 bg-severity-medium/10 text-severity-medium">unverified: <strong>{ackGate.unverified_pending}</strong></span>
+              <span className="chip border-phantix-600/50 bg-phantix-800/60">rejected: <strong className="text-slate-400">{ackGate.rejected}</strong></span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button className="btn-ghost" onClick={() => setAckOpen(false)}>Cancel</button>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setAckOpen(false);
+                  setGenOpen(false);
+                  setTab("tracker");
+                }}
+              >
+                <KanbanSquare size={14} /> Verify findings
+              </button>
+              <button className="btn-primary" disabled={genSubmitting} onClick={() => void confirmVerifiedOnly()}>
+                {genSubmitting ? <><RefreshCw size={14} className="animate-spin" /> Generating...</> : <><Download size={14} /> Generate verified-only</>}
+              </button>
+            </div>
+            {ackGate.hint && <p className="text-[10px] text-slate-500">{ackGate.hint}</p>}
+          </div>
+        )}
       </Modal>
 
       {/* Report detail modal */}
@@ -758,6 +998,26 @@ export default function Reports() {
               </div>
             )}
 
+            {/* Verification gate chips from GET /reports/{id}.verification_gate */}
+            {(detail as any).verification_gate && (
+              <div className="flex flex-wrap gap-1.5 text-[11px]">
+                <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
+                  reportable: <strong className="text-emerald-300">{(detail as any).verification_gate.reportable}</strong>
+                </span>
+                <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
+                  auto-verified: <strong className="text-emerald-300">{(detail as any).verification_gate.auto_verified}</strong>
+                </span>
+                <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
+                  unverified pending: <strong className="text-severity-medium">{(detail as any).verification_gate.unverified_pending}</strong>
+                </span>
+                {((detail as any).verification_gate.acknowledged === true || (detail as any).verification_gate.needs_acknowledgement === false) && (
+                  <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+                    acknowledged: <strong>{(detail as any).verification_gate.acknowledged === true ? "yes" : "not required"}</strong>
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Output files — skip *_error keys; show failures as chips */}
             {(detail as any).output_files && (() => {
               const { downloads, errors } = parseOutputFiles((detail as any).output_files);
@@ -768,7 +1028,7 @@ export default function Reports() {
                     {downloads.map(({ format: fmt }) => (
                       <button
                         key={fmt}
-                        onClick={() => handleDownload(detail.id, fmt, (m) => toast("error", "Download failed", m))}
+                        onClick={() => handleDownload(detail.id, fmt, onDownloadError)}
                         className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
                       >
                         <Download size={10} className="mr-1 inline" /> {fmt === "pptx" ? "Board deck (.pptx)" : fmt}

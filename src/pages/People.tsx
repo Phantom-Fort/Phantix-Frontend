@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, ShieldCheck, Link2, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import { loadPeopleBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { emptyDualControl } from "@/lib/data";
@@ -10,17 +10,22 @@ import { useStore } from "@/lib/store";
 
 export default function People() {
   const { toast, requireDualControl, dualControl: storeDc } = useStore();
-  const { data, loading } = useResource(loadPeopleBundle, { users: [], dualControl: emptyDualControl }, "people");
+  const { data, loading, error, reload } = useResource(loadPeopleBundle, { users: [], dualControl: emptyDualControl }, "people");
   const orgUsers = data.users;
   const dualControl = data.dualControl.configured ? data.dualControl : storeDc;
   const [inviteOpen, setInviteOpen] = useState(false);
   const [linkFor, setLinkFor] = useState<string | null>(null);
 
   if (loading) {
+    return <PageSkeleton variant="table" rows={6} cols={4} actions />;
+  }
+
+  if (error && data.users.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading people...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load your team. Check your connection and retry â€” your session stays signed in."
+      />
     );
   }
 
@@ -67,7 +72,7 @@ export default function People() {
                     <p className="font-semibold text-slate-100">{s.user?.full_name}</p>
                     <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{s.slot}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{s.user?.title} · {s.user?.email}</p>
+                  <p className="text-xs text-slate-500">{s.user?.title} ï¿½ {s.user?.email}</p>
                   <p className="mt-1 text-[11px] text-slate-600">{s.desc}</p>
                 </div>
               </div>
@@ -108,7 +113,7 @@ export default function People() {
                       </span>
                       <div>
                         <p className="font-medium text-slate-200">{u.full_name}</p>
-                        <p className="text-xs text-slate-500">{u.email} · {u.title}</p>
+                        <p className="text-xs text-slate-500">{u.email} ï¿½ {u.title}</p>
                       </div>
                     </div>
                   </td>

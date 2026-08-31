@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { loadAlertsBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
@@ -19,16 +20,21 @@ const emptySettings: AlertSettings = {
 
 export default function Alerts() {
   const { toast, requireDualControl } = useStore();
-  const { data, loading } = useResource(loadAlertsBundle, { events: [], settings: emptySettings }, "alerts");
+  const { data, loading, error, reload } = useResource(loadAlertsBundle, { events: [], settings: emptySettings }, "alerts");
   const alertEvents = data.events;
   const s = data.settings;
   const [tab, setTab] = useState("events");
 
   if (loading) {
+    return <PageSkeleton variant="list" rows={6} actions />;
+  }
+
+  if (error && data.events.length === 0) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-slate-400">
-        <Spinner className="h-5 w-5" /> Loading alerts...
-      </div>
+      <ErrorState
+        onRetry={reload}
+        body="We could not load alert events. Check your connection and retry — your session stays signed in."
+      />
     );
   }
 
@@ -38,6 +44,8 @@ export default function Alerts() {
         title="Alerts"
         description="Severity-routed client notifications. Critical ? email + WhatsApp + Telegram; everything else ? email only. Routing is enforced server-side, not just configured."
         actions={
+          <>
+          <DocLink docId="hc-alert-channels" label="Alerts how-to" />
           <button
             className="btn-primary"
             onClick={() =>
@@ -49,6 +57,7 @@ export default function Alerts() {
           >
             <FlaskConical size={15} /> Send test alert
           </button>
+          </>
         }
       />
 

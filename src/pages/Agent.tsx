@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
+import DocLink from "@/components/DocLink";
 import { Markdown } from "@/components/prompt-kit/markdown";
 import {
   ChatContainerRoot,
@@ -232,6 +233,7 @@ export default function Agent() {
         description="Chief Security Agent routes to specialists (SOC, GRC, VAPT, Threat Intel, Asset). AI orchestrates; engines execute — AI never discovers a vulnerability without a finding ID."
         actions={
           <span className="flex items-center gap-2">
+            <DocLink docId="howto-app-13" label="Agent how-to" />
             <span className="chip border-phantix-600/50 bg-phantix-800/60 font-mono text-slate-300"><Cpu size={11} className="mr-1 inline" /> {status?.agent?.model ?? MODEL_BADGE}</span>
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Sparkles size={11} className="mr-1 inline" /> {streamEnabled ? "Live stream" : "Enabled"}</span>
           </span>
