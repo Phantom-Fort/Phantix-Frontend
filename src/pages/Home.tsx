@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -31,7 +31,7 @@ export default function Home() {
   // Load real pricing from API
   useEffect(() => { loadPricing().then(setPricingTiers); }, []);
 
-  // Landing-page deep link: app.phantix.site/?demo=1 → straight into the demo
+  // Landing-page deep link: app.phantixlabs.com/?demo=1 → straight into the demo
   useEffect(() => {
     if (params.get("demo") === "1") { enterDemo(); navigate("/dashboard", { replace: true }); }
   }, [params, enterDemo, navigate]);
@@ -78,7 +78,7 @@ export default function Home() {
       {/* Hero */}
       <section className="relative z-10 mx-auto max-w-6xl px-6 pb-16 pt-20 text-center">
         <motion.div {...fadeUp(0)} className="mx-auto inline-flex items-center gap-2 rounded-full border border-gold-400/25 bg-gold-400/8 px-4 py-1.5 text-xs font-medium text-gold-300">
-          <ShieldCheck size={13} /> app.phantix.site --- the operator console
+          <ShieldCheck size={13} /> app.phantixlabs.com --- the operator console
         </motion.div>
 
         <motion.h1 {...fadeUp(0.08)} className="mx-auto mt-6 max-w-3xl font-display text-[42px] font-bold leading-[1.06] tracking-tight text-white sm:text-[56px]">
@@ -214,9 +214,9 @@ export default function Home() {
       <section className="relative z-10 border-t border-phantix-700/30 py-14">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 px-6 md:grid-cols-3">
           {[
-            { host: "phantix.site", name: "Landing", desc: "Product story and company", url: LANDING_URL, icon: <Sparkles size={16} /> },
-            { host: "platform.phantix.site", name: "Platform", desc: "Onboarding, keys, people, billing", url: PLATFORM_URL, icon: <Building2 size={16} /> },
-            { host: "app.phantix.site", name: "Command Centre", desc: "The operator console --- you are here", url: null, icon: <ShieldCheck size={16} /> },
+            { host: "phantixlabs.com", name: "Landing", desc: "Product story and company", url: LANDING_URL, icon: <Sparkles size={16} /> },
+            { host: "platform.phantixlabs.com", name: "Platform", desc: "Onboarding, keys, people, billing", url: PLATFORM_URL, icon: <Building2 size={16} /> },
+            { host: "app.phantixlabs.com", name: "Command Centre", desc: "The operator console --- you are here", url: null, icon: <ShieldCheck size={16} /> },
           ].map((s) => (
             <div key={s.host} className={cx("card flex items-center gap-4 p-5", !s.url && "border-gold-400/30")}>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">{s.icon}</span>
@@ -241,8 +241,8 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-6">
             <Link to="/docs" className="flex items-center gap-1.5 hover:text-slate-300"><BookOpen size={12} /> Documentation</Link>
-            <a href={LANDING_URL} className="hover:text-slate-300">phantix.site</a>
-            <a href={PLATFORM_URL} className="hover:text-slate-300">platform.phantix.site</a>
+            <a href={LANDING_URL} className="hover:text-slate-300">phantixlabs.com</a>
+            <a href={PLATFORM_URL} className="hover:text-slate-300">platform.phantixlabs.com</a>
           </div>
         </div>
       </footer>

@@ -4,16 +4,16 @@ Customer-facing surface guides (with screenshots).
 
 | Manual | URL | Audience |
 |--------|-----|----------|
-| [02 — Platform](02-platform.md) | https://platform.phantix.site | Organization administrators |
-| [04 — Command Centre](04-command-centre.md) | https://app.phantix.site | Security operators |
+| [02 â€” Platform](02-platform.md) | https://platform.phantixlabs.com | Organization administrators |
+| [04 â€” Command Centre](04-command-centre.md) | https://app.phantixlabs.com | Security operators |
 
 ## Task-level how-tos (process flows)
 
-- [Platform](../how-to/platform/) — add user, security DB, config DB, dual control, …
-- [Command Centre](../how-to/command-centre/) — scans, SOC, VAPT, tracker, reports, …
+- [Platform](../how-to/platform/) â€” add user, security DB, config DB, dual control, â€¦
+- [Command Centre](../how-to/command-centre/) â€” scans, SOC, VAPT, tracker, reports, â€¦
 
 
-> Staging / lab only — not for production.
+> Staging / lab only â€” not for production.
 
 ## Screenshots
 

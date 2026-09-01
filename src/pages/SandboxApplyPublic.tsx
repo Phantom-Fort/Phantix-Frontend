@@ -21,7 +21,7 @@ function isSignedIn(): boolean {
   return Boolean(tokens.appSession || tokens.orgUser || tokens.platform);
 }
 
-/** Sandbox application — must be a registered organization (authenticated). */
+/** Sandbox application â€” must be a registered organization (authenticated). */
 export default function SandboxApplyPublic() {
   const [status, setStatus] = useState<Status>(defaults);
   const [checking, setChecking] = useState(true);
@@ -117,7 +117,7 @@ export default function SandboxApplyPublic() {
 
       <main className="relative z-10 mx-auto max-w-lg px-6 pb-16 pt-4">
         <a href={LANDING_URL} className="mb-5 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-gold-300">
-          <ArrowLeft size={12} /> Back to phantix.site
+          <ArrowLeft size={12} /> Back to phantixlabs.com
         </a>
 
         <motion.div
@@ -209,7 +209,7 @@ export default function SandboxApplyPublic() {
                   minLength={10}
                   value={useCase}
                   onChange={(e) => setUseCase(e.target.value)}
-                  placeholder="SOC, assets, reports…"
+                  placeholder="SOC, assets, reportsâ€¦"
                 />
               </div>
               <div>

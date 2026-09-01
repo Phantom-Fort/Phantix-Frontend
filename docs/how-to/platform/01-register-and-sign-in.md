@@ -1,6 +1,6 @@
 # Platform: Register and sign in
 
-**Where:** https://platform.phantix.site  
+**Where:** https://platform.phantixlabs.com  
 **You need:** Work email you control  
 
 ![Login](../../screenshots/platform/login.png)
@@ -36,9 +36,9 @@ flowchart TD
 
 ## Sign in (returning)
 
-1. Open https://platform.phantix.site/login  
-2. **Company email** + **password** → **Continue**  
-3. Enter the **login / verification code** from email → **Verify & sign in**  
+1. Open https://platform.phantixlabs.com/login  
+2. **Company email** + **password** â†’ **Continue**  
+3. Enter the **login / verification code** from email â†’ **Verify & sign in**  
 4. If code missing: **Resend code**, wait ~30s, check spam  
 
 

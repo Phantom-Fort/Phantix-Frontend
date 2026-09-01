@@ -11,6 +11,8 @@ import { ApprovalNotice, ClarificationAsk, IssuesStrip, ToolGroupCard } from "@/
 import { PromptKitStream } from "@/components/agent/PromptKitStream";
 import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
 import { groupStreamRows, openClarificationFrom } from "@/lib/agiStreamGroup";
+import { activityFor } from "@/lib/agiGraph";
+import { AgentActivityLine, QueuedPromptStrip, type QueuedPrompt } from "@/components/AgiStream";
 import { loadAssetsBundle } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
@@ -120,6 +122,19 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [transcript, setTranscript] = useState<AgiTranscriptChunk[]>([]);
   const afterSeqRef = useRef(0);
   const pendingOpsRef = useRef<string[]>([]);
+  // Guards against duplicate transcript rows: overlapping polls are serialized,
+  // and locally-appended rows (sync replies, loop briefs) are remembered so the
+  // poll skips the backend's persisted twin exactly once.
+  const pollBusyRef = useRef(false);
+  const localKeysRef = useRef<Map<string, number>>(new Map());
+  // Streaming signal: fresh engine output within the window means the agent is
+  // actively producing (turn briefs, tool rows, replies) — the activity line
+  // shows cognitive verbs then; only true silence falls back to "Waiting for
+  // response".
+  const lastOutputAtRef = useRef(0);
+  const [streaming, setStreaming] = useState(false);
+  // Prompts sent mid-turn stay pinned above the composer until the agent acts.
+  const [pendingPrompts, setPendingPrompts] = useState<QueuedPrompt[]>([]);
   const [actions, setActions] = useState<AgiAction[]>([]);
   const [actionBusy, setActionBusy] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
@@ -131,6 +146,14 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [overrideDrafts, setOverrideDrafts] = useState<Record<number, string>>({});
   const stick = useStickToBottom([transcript, actions, running, thinking]);
   const chatSend = useChatSend();
+
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      const next = thinking || Date.now() - lastOutputAtRef.current < 30_000;
+      setStreaming((prev) => (prev === next ? prev : next));
+    }, 2000);
+    return () => window.clearInterval(t);
+  }, [thinking]);
 
   const boot = useCallback(async () => {
     setBooting(true);
@@ -259,6 +282,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       setPaused(false);
       setTranscript([]);
       afterSeqRef.current = 0;
+      pendingOpsRef.current = [];
+      setPendingPrompts([]);
       setActions([]);
       setOverrideDrafts({});
       setInstruction("");
@@ -322,6 +347,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     setConnError(null);
     setThinking(false);
     setOverrideDrafts({});
+    setPendingPrompts([]);
     reportSubmitted.current = false;
   }, []);
 
@@ -330,6 +356,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
     setConnError(null);
     pendingOpsRef.current.push(msg);
+    const promptId = `pp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setPendingPrompts((prev) => [...prev, { id: promptId, content: msg, delivered: false }]);
     setTranscript((prev) => [...prev, { seq: -1, role: "operator", content: msg, meta: null, created_at: new Date().toISOString() }]);
     setThinking(true);
     try {
@@ -337,12 +365,20 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       if (res.loop?.working_on) setWorkingOn(res.loop.working_on);
       if (res.queued) setThinking(false);
       if (res.reply && !res.queued) {
+        // The agent answered synchronously — it has processed the prompt, so the
+        // pinned pill can go (message + reply now live in the transcript).
+        setPendingPrompts((prev) => prev.filter((p) => p.id !== promptId));
+        // Remember this locally-appended reply so the transcript poll skips the
+        // backend's persisted twin instead of duplicating it.
+        localKeysRef.current.set(`assistant|${res.reply}`, Date.now());
         setTranscript((prev) => {
           const last = prev[prev.length - 1];
           if (last?.role === "assistant" && last.content === res.reply) return prev;
           return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: res.reply || "", meta: { kind: res.reply_kind || "assistant" }, created_at: new Date().toISOString() }];
         });
+        lastOutputAtRef.current = Date.now();
       } else if (res.reply && res.queued) {
+        setPendingPrompts((prev) => prev.map((p) => (p.id === promptId ? { ...p, delivered: true } : p)));
         setTranscript((prev) => [...prev, { seq: afterSeqRef.current + 1, role: "system", content: res.reply || "Queued for the next turn.", meta: { kind: "queued" }, created_at: new Date().toISOString() }]);
       }
       if (typeof res.transcript_seq === "number" && res.transcript_seq > afterSeqRef.current) {
@@ -350,6 +386,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       }
     } catch (e: any) {
       setThinking(false);
+      setPendingPrompts((prev) => prev.filter((p) => p.id !== promptId));
       const blocked = isAgiPolicyBlocked(e);
       if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return; }
       const name = String(e?.name ?? "");
@@ -470,31 +507,66 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   useEffect(() => {
     if (!running || !session || paused) return;
     const t = window.setInterval(async () => {
+      // Serialize polls: an overlapping fetch would read the same after_seq and
+      // append the whole batch twice (the "sent once, appears twice" bug).
+      if (pollBusyRef.current) return;
+      pollBusyRef.current = true;
       try {
         const chunks = await loadAgiTranscript(session.id, afterSeqRef.current);
         if (chunks.length > 0) {
           const safe = sanitizeAgiChunks(chunks);
+          const pend = pendingOpsRef.current;
+          // How many pending ops the backend has persisted (FIFO content match).
+          let taken = 0;
+          for (const c of safe) {
+            if (c.role === "operator" && taken < pend.length && pend[taken] === c.content) taken += 1;
+          }
+          // Did the agent produce an answer in this batch (excluding the local
+          // twin we already painted)?
+          const responded = safe.some((c) => c.role === "assistant" && !localKeysRef.current.has(`assistant|${c.content}`));
+
           setTranscript((prev) => {
-            const pend = pendingOpsRef.current;
-            let taken = 0;
+            const seenSeqs = new Set(prev.filter((p) => p.seq > 0).map((p) => p.seq));
+            let skip = 0;
             const out: AgiTranscriptChunk[] = [];
             for (const c of safe) {
-              if (c.role === "operator" && taken < pend.length && pend[taken] === c.content) {
-                taken += 1;
-                continue;
-              }
+              // Optimistic operator rows are replaced by their persisted twin.
+              if (c.role === "operator" && skip < taken) { skip += 1; continue; }
+              // Skip rows already appended (same seq) — protects against any
+              // after_seq re-delivery or double-append race.
+              if (c.seq > 0 && seenSeqs.has(c.seq)) continue;
+              // Skip the persisted twin of a locally-appended row exactly once
+              // (sync replies, loop briefs). The key is consumed on match so
+              // genuine repeats later in the session still render.
+              const key = `${c.role}|${c.content}`;
+              if (localKeysRef.current.has(key)) { localKeysRef.current.delete(key); continue; }
               out.push(c);
             }
-            if (taken > 0) pendingOpsRef.current = pend.slice(taken);
             if (out.length === 0) return prev;
             return [...prev, ...out];
           });
+
+          if (taken > 0) {
+            pendingOpsRef.current = pend.slice(taken);
+            setPendingPrompts((pp) => {
+              let need = taken;
+              return pp.map((p) => {
+                if (need > 0 && !p.delivered) { need -= 1; return { ...p, delivered: true }; }
+                return p;
+              });
+            });
+          }
+          // The agent answered a delivered prompt — unpin it.
+          if (responded) setPendingPrompts((pp) => pp.filter((p) => !p.delivered));
           afterSeqRef.current = Math.max(afterSeqRef.current, ...chunks.map((c) => c.seq));
+          // Fresh engine output → the agent is streaming.
+          lastOutputAtRef.current = Date.now();
           // New engine output means the agent has replied — drop the thinking cue.
           setThinking(false);
           setConnError(null);
         }
       } catch { /* transient — keep polling */ }
+      finally { pollBusyRef.current = false; }
     }, demoActive ? 350 : POLL_MS);
     return () => window.clearInterval(t);
   }, [running, session, paused, demoActive]);
@@ -521,10 +593,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
         if (s.loop?.content && s.loop.event === "loop_progress") {
           setTranscript((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant" && last.content === s.loop?.content) return prev;
+            // Each brief embeds a unique turn counter, so an exact match anywhere
+            // in the transcript means it is already painted (by this poll or by
+            // the transcript poll) — never re-append it.
+            if (prev.some((p) => p.role === "assistant" && p.content === s.loop?.content)) return prev;
+            // Remember the locally-painted brief so the transcript poll skips
+            // its persisted twin (key consumed on first match).
+            localKeysRef.current.set(`assistant|${s.loop?.content ?? ""}`, Date.now());
             return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: s.loop?.content || "", meta: { kind: "turn_brief", event: "loop_progress" }, created_at: new Date().toISOString() }];
           });
+          lastOutputAtRef.current = Date.now();
           setThinking(false);
         }
         if (s.status === "stopped" || s.status === "torn_down" || s.status === "failed") {
@@ -789,6 +867,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               policyBanner={null}
               overrideDrafts={overrideDrafts}
               onOverrideDraft={(id, cmd) => setOverrideDrafts((prev) => ({ ...prev, [id]: cmd }))}
+              pendingPrompts={pendingPrompts}
+              streaming={streaming}
             />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
@@ -847,7 +927,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     ),
                   )}
                   {thinking && !openClarification && (
-                    <ThinkingBar text={(workingOn || "").trim() || "Working on the scoped assessment"} />
+                    <ThinkingBar text={activityFor((workingOn || "").trim()) || "Thinking"} />
                   )}
                   {!connError && actions.length > 0 && (
                     <ApprovalNotice
@@ -896,6 +976,27 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
               {/* Composer */}
               <div className="border-t border-phantix-700/40 p-3">
+                {pendingPrompts.length > 0 && (
+                  <div className="mb-2">
+                    <QueuedPromptStrip prompts={pendingPrompts} dense />
+                  </div>
+                )}
+                <div className="mb-2">
+                  <AgentActivityLine
+                    dense
+                    activity={{
+                      running,
+                      paused,
+                      thinking,
+                      streaming,
+                      workingOn,
+                      approvals: actions.length,
+                      clarification: Boolean(openClarification),
+                      connError,
+                      sessionStatus: session.status,
+                    }}
+                  />
+                </div>
                 {openClarification && (
                   <div className="mb-2">
                     <ClarificationAsk clarification={openClarification} onAnswer={handleAnswer} busy={answering} dense />

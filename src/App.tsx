@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
 import { OperationsProvider } from "@/lib/operations";
@@ -56,7 +56,7 @@ function PlatformSettingsRedirect() {
   );
 }
 
-// app.phantix.site/demo --- landing-page entry into the guided demo tenant
+// app.phantixlabs.com/demo --- landing-page entry into the guided demo tenant
 function DemoEntry() {
   const { enterDemo } = useStore();
   const navigate = useNavigate();
@@ -87,7 +87,7 @@ export default function App() {
           <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
-          {/* Public sandbox application — no auth (entry from phantix.site) */}
+          {/* Public sandbox application — no auth (entry from phantixlabs.com) */}
           <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
 
           <Route element={<Layout />}>

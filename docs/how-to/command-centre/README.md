@@ -1,6 +1,6 @@
 # Command Centre how-tos
 
-**App:** https://app.phantix.site  
+**App:** https://app.phantixlabs.com  
 **Who:** Security operators  
 **Does:** Assets, SOC, scans, VAPT, risks, compliance, reports, agent.
 
@@ -30,7 +30,7 @@ Platform must have setup complete + security DB bootstrapped first.
 
 ```mermaid
 flowchart LR
-  D[Dashboard · posture / open queues] --> S[SOC triage]
+  D[Dashboard Â· posture / open queues] --> S[SOC triage]
   D --> A[Assets / Discovery]
   S --> R[Risks]
   A --> SC[Launch or review scans / VAPT]

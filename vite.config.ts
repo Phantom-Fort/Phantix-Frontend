@@ -4,7 +4,7 @@ import path from "path";
 
 /**
  * Command Centre dev server.
- * Proxy target is server-only (process.env — NOT VITE_*, never in browser bundle).
+ * Proxy target is server-only (process.env Ã¢â‚¬â€ NOT VITE_*, never in browser bundle).
  *
  *   API_PROXY_TARGET   default https://staging.phantix.site
  *   DEV_PORT           default 5173

@@ -1,26 +1,26 @@
 # How to use the Phantix Platform
 
-**URL:** https://platform.phantix.site  
+**URL:** https://platform.phantixlabs.com  
 **Audience:** Organization administrators  
-**Purpose:** Manage the company tenant (identity, people, security DB, billing). Day-to-day security work happens in the **Command Centre** (`app.phantix.site`).
+**Purpose:** Manage the company tenant (identity, people, security DB, billing). Day-to-day security work happens in the **Command Centre** (`app.phantixlabs.com`).
 
 ---
 
 ## 1. Sign in
 
-1. Open https://platform.phantix.site/login  
-2. Enter **company email** and **password** → **Continue**  
+1. Open https://platform.phantixlabs.com/login  
+2. Enter **company email** and **password** â†’ **Continue**  
 
 ![Platform login](../screenshots/platform/login.png)
 
-3. Enter the **email OTP** → **Verify & sign in**  
+3. Enter the **email OTP** â†’ **Verify & sign in**  
 4. You land on the tenant **Dashboard**
 
 ![Platform dashboard](../screenshots/platform/dashboard.png)
 
 ### First-time registration
 
-1. https://platform.phantix.site/register  
+1. https://platform.phantixlabs.com/register  
 2. Create company + verify email  
 3. Complete **Setup** (privacy, identity, dual-control people, security DB)
 
@@ -40,7 +40,7 @@ Confirm:
 
 ## 3. Identity & service keys
 
-**Nav → Identity & Keys**
+**Nav â†’ Identity & Keys**
 
 ![Identity](../screenshots/platform/identity.png)
 
@@ -52,7 +52,7 @@ Confirm:
 
 ## 4. People & dual control
 
-**Nav → People & Control**
+**Nav â†’ People & Control**
 
 ![Users](../screenshots/platform/users.png)
 
@@ -65,7 +65,7 @@ Confirm:
 
 ## 5. Security database (Connections)
 
-**Nav → Security Database**
+**Nav â†’ Security Database**
 
 ![Connections](../screenshots/platform/connections.png)
 
@@ -78,7 +78,7 @@ Confirm:
 
 ## 6. Companies (groups)
 
-**Nav → Companies**
+**Nav â†’ Companies**
 
 ![Companies](../screenshots/platform/companies.png)
 
@@ -88,7 +88,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 7. GitHub
 
-**Nav → GitHub**
+**Nav â†’ GitHub**
 
 ![GitHub](../screenshots/platform/github.png)
 
@@ -99,7 +99,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 8. Tool catalog & billing
 
-**Nav → Tool Catalog** · **Billing**
+**Nav â†’ Tool Catalog** Â· **Billing**
 
 ![Tools](../screenshots/platform/tools.png)
 
@@ -113,7 +113,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 9. AI & Autonomous Agent settings
 
-**Nav → AI settings** · **Autonomous Agent**
+**Nav â†’ AI settings** Â· **Autonomous Agent**
 
 ![AI](../screenshots/platform/ai-settings.png)
 
@@ -142,7 +142,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 11. Open Command Centre
 
-From the dashboard **Ready for operations** (or bookmark https://app.phantix.site):
+From the dashboard **Ready for operations** (or bookmark https://app.phantixlabs.com):
 
 1. Use an **invite / login link** from People, or  
 2. Sign in with app credentials (see [Command Centre manual](04-command-centre.md))  

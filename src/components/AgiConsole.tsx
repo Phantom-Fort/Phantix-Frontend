@@ -6,7 +6,7 @@ import {
   Pause, Play, Plus, Radar, Send, ShieldAlert, ShieldCheck, Sparkles, Square,
   Terminal, XCircle,
 } from "lucide-react";
-import { ApprovalNotice, ClarificationAsk, CopyBtn, StreamEmpty, StreamMessage, ToolGroupCard, TypingIndicator } from "@/components/AgiStream";
+import { AgentActivityLine, ApprovalNotice, ClarificationAsk, CopyBtn, QueuedPromptStrip, StreamEmpty, StreamMessage, ToolGroupCard, TypingIndicator, type QueuedPrompt } from "@/components/AgiStream";
 import { Menu, MenuItem, SeverityBadge } from "@/components/ui";
 import { VerificationBadge, verificationBadge } from "@/components/VerificationBadge";
 import { groupStreamRows } from "@/lib/agiStreamGroup";
@@ -293,6 +293,10 @@ export type AgiConsoleProps = {
   policyBanner: string | null;
   overrideDrafts: Record<number, string>;
   onOverrideDraft: (id: number, cmd: string) => void;
+  /** Prompts sent mid-turn that the agent has not acted on yet — pinned above the composer. */
+  pendingPrompts?: QueuedPrompt[];
+  /** Fresh engine output within the window — the agent is actively streaming. */
+  streaming?: boolean;
 };
 
 export default function AgiConsole({
@@ -320,6 +324,8 @@ export default function AgiConsole({
   policyBanner,
   overrideDrafts,
   onOverrideDraft,
+  pendingPrompts = [],
+  streaming = false,
 }: AgiConsoleProps) {
   const [persona, setPersona] = useState<AgentPersona | "all">("all");
   const [lanes, setLanes] = useState(false);
@@ -400,6 +406,9 @@ export default function AgiConsole({
 
   const counts = useMemo(() => severityCounts(findings), [findings]);
   const selected = nodes.find((n) => n.id === selectedId) ?? nodes.find((n) => n.status === "active" || n.status === "blocked") ?? nodes[0];
+  // The live attack-tree node drives the granular activity label shown in the
+  // thinking indicator (e.g. "recon_dns" → "Enumerating subdomains & DNS").
+  const livePhaseId = nodes.find((n) => n.status === "active" || n.status === "blocked")?.phaseId ?? null;
   const openFinding = findings.find((f) => f.id === findingId) ?? null;
   const allowlist = engagement?.scope_definition.target_allowlist ?? [];
   const forbidden = engagement?.scope_definition.forbidden_actions ?? [];
@@ -546,7 +555,10 @@ export default function AgiConsole({
                     const pct = stat && stat.total > 0 ? Math.round((stat.done / stat.total) * 100) : 0;
                     return (
                       <div key={phase.id} className="min-w-0">
-                        <p className={cx("wb-2xs truncate text-center font-semibold uppercase tracking-wider", stat?.live ? "text-gold-300" : "text-slate-500")} title={phase.label}>{phase.label}</p>
+                        <p className={cx("wb-2xs truncate text-center font-semibold uppercase tracking-wider", stat?.live ? "text-gold-300" : "text-slate-500")} title={phase.label}>
+                          <span className="at-long">{phase.label}</span>
+                          <span className="at-short">{phase.short}</span>
+                        </p>
                         <div className="mt-0.5 h-0.5 overflow-hidden rounded-full bg-phantix-700/40" title={`${stat?.done ?? 0}/${stat?.total ?? 0} nodes complete`}>
                           <div
                             className={cx("h-full rounded-full transition-all duration-500", stat?.live ? "bg-gold-400" : "bg-emerald-400/80")}
@@ -568,8 +580,11 @@ export default function AgiConsole({
                             title={n.tool ? `${n.label} · ${n.tool}` : n.label}
                             className={cx("flex min-h-[46px] flex-1 flex-col items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-center transition-all duration-200", NODE_RING[n.status], selected?.id === n.id && "ring-1 ring-gold-400/40")}
                           >
-                            <span className={cx("h-1.5 w-1.5 rounded-full", NODE_DOT[n.status])} />
-                            <span className="wb-2xs line-clamp-2 leading-tight text-slate-200">{n.label}</span>
+                            <span className={cx("h-1.5 w-1.5 rounded-full", NODE_DOT[n.status])} title={`${n.label} · ${n.status}`} />
+                            <span className="wb-2xs line-clamp-2 leading-tight text-slate-200">
+                              <span className="at-long">{n.label}</span>
+                              <span className="at-short">{n.short}</span>
+                            </span>
                             {n.tool && <span className="wb-2xs max-w-full truncate font-mono text-slate-500">{n.tool}</span>}
                           </button>
                         ) : (
@@ -692,7 +707,7 @@ export default function AgiConsole({
                     authorizationsHref="/authorizations"
                   />
                 )}
-                {thinking && !paused && !clarification && <TypingIndicator label={(workingOn || "").trim() || undefined} />}
+                {thinking && !paused && !clarification && <TypingIndicator workingOn={(workingOn || "").trim() || undefined} phaseId={livePhaseId} />}
                 {paused && <p className="wb-xs text-severity-medium">Loop paused — agent will not advance.</p>}
                 <div ref={thoughtsStick.endRef} />
               </div>
@@ -777,6 +792,27 @@ export default function AgiConsole({
           </div>
 
           <div className="shrink-0 border-t border-phantix-700/40 p-3">
+            {pendingPrompts.length > 0 && (
+              <div className="mb-2">
+                <QueuedPromptStrip prompts={pendingPrompts} />
+              </div>
+            )}
+            <div className="mb-2">
+              <AgentActivityLine
+                activity={{
+                  running,
+                  paused,
+                  thinking,
+                  streaming,
+                  workingOn,
+                  phaseId: livePhaseId,
+                  approvals: actions.length,
+                  clarification: Boolean(clarification),
+                  connError,
+                  sessionStatus: session.status,
+                }}
+              />
+            </div>
             {clarification && onAnswer && (
               <div className="mx-auto mb-2 max-w-3xl">
                 <ClarificationAsk

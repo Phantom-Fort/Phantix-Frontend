@@ -63,7 +63,7 @@ const MessageContent = ({
   )
 
   return markdown ? (
-    <Markdown className={cn("rounded-lg p-2 text-foreground bg-secondary prose-doc max-w-none", className)} {...props}>
+    <Markdown className={cn("rounded-lg p-2 text-foreground bg-secondary max-w-none", className)} {...props}>
       {children as string}
     </Markdown>
   ) : (

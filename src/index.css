@@ -326,12 +326,12 @@
   }
 
   .btn-ghost {
-    @apply btn text-slate-300 hover:bg-phantix-800/70 hover:text-white;
+    @apply btn text-slate-300 hover:bg-phantix-800/70 hover:text-white active:scale-[0.98];
   }
 
   .btn-danger {
     @apply btn bg-severity-critical/15 text-severity-critical border border-severity-critical/30
-      hover:bg-severity-critical/25;
+      hover:bg-severity-critical/25 active:scale-[0.98];
   }
 
   .chip {
@@ -542,6 +542,25 @@
   }
 }
 
+/* ── Attack-tree adaptive labels ──────────────────────────────────────────────
+   Long node/phase labels collapse to their compact form as the attack-tree pane
+   narrows. The pane is a CSS size container (`.wb-pane`), so `@container pane`
+   resolves against the actual pane width — resize the pane or shrink the window
+   and the tree re-labels itself (e.g. "reconnaissance" → "recon",
+   "authentication" → "auth", "authorization" → "authz"). */
+.at-long { display: inline; }
+.at-short { display: none; }
+@container pane (max-width: 520px) {
+  .at-long { display: none; }
+  .at-short { display: inline; }
+}
+@media (max-width: 420px) {
+  /* Very small viewports force the tree pane narrow even before the user drags
+     the handle; collapse labels there too as a fallback. */
+  .at-long { display: none; }
+  .at-short { display: inline; }
+}
+
 /* Respect users who prefer less motion across all workbench transitions. */
 @media (prefers-reduced-motion: reduce) {
   .wb-collapse,
@@ -595,4 +614,19 @@
 :root[data-theme="light"] .mermaid-rendered {
   border-color: rgb(148 172 210);
   background: rgb(239 246 255);
+}
+
+/* ── Reduced motion (accessibility as craft) ──────────────────────────────────
+   Decorative motion — shimmer, pulse, bounce, streaming entrances — collapses
+   to its end state for users who ask the OS for calmer interfaces. Functional
+   state (colors, opacity) still communicates. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,7 +1,7 @@
 # Platform: Issue a Command Centre login link
 
-**Where:** **People & Control** → user row / login links  
-**Result:** Operator opens `app.phantix.site` via secure link (invite or returning login).
+**Where:** **People & Control** â†’ user row / login links  
+**Result:** Operator opens `app.phantixlabs.com` via secure link (invite or returning login).
 
 ---
 
@@ -9,10 +9,10 @@
 
 ```mermaid
 flowchart TD
-  A[People & Control] --> B[Select user · generate login link / invite]
+  A[People & Control] --> B[Select user Â· generate login link / invite]
   B --> C[Operate unlock if required]
   C --> D[Copy link or email it to the user]
-  D --> E[User opens link on app.phantix.site]
+  D --> E[User opens link on app.phantixlabs.com]
   E --> F{First time?}
   F -->|Yes| G[Set password]
   F -->|No| H[MFA / device confirm as prompted]
@@ -24,7 +24,7 @@ flowchart TD
 
 ## Steps
 
-1. Platform → **People & Control**.
+1. Platform â†’ **People & Control**.
 2. Find the operator.
 3. Choose **Issue login link** / **Generate application sign-in link** (wording may vary).
 4. Unlock operate if the UI requires it.

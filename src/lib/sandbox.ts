@@ -1,5 +1,5 @@
 /**
- * Org sandbox tester client (Command Centre / app.phantix.site).
+ * Org sandbox tester client (Command Centre / app.phantixlabs.com).
  * Auth: app dual tokens. Staff management lives in staff-portal only.
  */
 import { api, ApiError, delay, isDemoMode } from "./api";
@@ -119,7 +119,7 @@ const demoMe: SandboxMe = {
   latestUpdate: {
     id: 9,
     title: "SOC agent downloads are live",
-    body_md: "Linux / macOS / Windows packages are on Command Centre → SOC → Availability.",
+    body_md: "Linux / macOS / Windows packages are on Command Centre â†’ SOC â†’ Availability.",
     severity: "fix",
     version_label: "2026-08-19",
     published_at: new Date().toISOString(),

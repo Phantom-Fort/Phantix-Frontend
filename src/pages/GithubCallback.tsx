@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import { BrandLogo } from "@/components/BrandLogo";
 
 /**
- * GitHub App setup/callback landing page (app.phantix.site/integrations/github/callback).
+ * GitHub App setup/callback landing page (app.phantixlabs.com/integrations/github/callback).
  * GitHub redirects here after the user installs the App. We forward the params to
  * the backend callback, then point the user to the Platform's GitHub page.
  */
@@ -58,7 +58,7 @@ export default function GithubCallback() {
           {state === "loading" && (
             <div className="py-4">
               <Loader2 size={28} className="mx-auto animate-spin text-gold-400" />
-              <p className="mt-4 text-sm text-slate-400">Recording your GitHub connection…</p>
+              <p className="mt-4 text-sm text-slate-400">Recording your GitHub connectionâ€¦</p>
             </div>
           )}
 
@@ -72,7 +72,7 @@ export default function GithubCallback() {
                 The Phantix GitHub App is now installed. Manage repositories and analysis on the Platform.
               </p>
               <a
-                href="https://platform.phantix.site/github"
+                href="https://platform.phantixlabs.com/github"
                 target="_blank"
                 rel="noreferrer"
                 className="btn-primary mt-6 inline-flex w-full items-center justify-center !py-3"

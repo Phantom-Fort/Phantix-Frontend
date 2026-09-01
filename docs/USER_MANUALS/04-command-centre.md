@@ -1,8 +1,8 @@
 # How to use the Phantix Command Centre
 
-**URL:** https://app.phantix.site  
+**URL:** https://app.phantixlabs.com  
 **Audience:** Security operators (after Platform setup)  
-**Purpose:** Day-to-day security work — assets, SOC, scans, VAPT, risks, reports, agent.
+**Purpose:** Day-to-day security work â€” assets, SOC, scans, VAPT, risks, reports, agent.
 
 ---
 
@@ -19,29 +19,29 @@ Lab org example: **Phantix Vulnerable Organization** (slug from invite links in 
 
 ## 1. Sign in
 
-### Option A — Email + password + OTP
+### Option A â€” Email + password + OTP
 
-1. Open https://app.phantix.site/login  
+1. Open https://app.phantixlabs.com/login  
 
 ![App login](../screenshots/app/login.png)
 
-2. Enter **work email** and **password** → **Continue**  
+2. Enter **work email** and **password** â†’ **Continue**  
 3. Enter **application login code** from email  
 4. Complete **device confirmation** if prompted (new browser/device)  
 
 ![After MFA](../screenshots/app/after_mfa_step1.png)
 
-### Option B — Invite / login link (preferred for operators)
+### Option B â€” Invite / login link (preferred for operators)
 
-1. Admin generates a link on **Platform → People**  
-2. Open the link → set password (first time) or continue  
+1. Admin generates a link on **Platform â†’ People**  
+2. Open the link â†’ set password (first time) or continue  
 3. Complete OTP / device steps  
 
 ![Invite challenge](../screenshots/app/invite_challenge.png)
 
-### Option C — Live demo (no real org)
+### Option C â€” Live demo (no real org)
 
-1. From landing: **Live demo**, or open https://app.phantix.site/demo  
+1. From landing: **Live demo**, or open https://app.phantixlabs.com/demo  
 2. Explores a simulated tenant (read-mostly guided demo)  
 
 ---
@@ -56,7 +56,7 @@ Typical panels:
 
 - Posture / open findings / open risks / SOC queue / tracker  
 - Critical assets, top risks, SOC detections  
-- Tracker critical items → Reports tracker  
+- Tracker critical items â†’ Reports tracker  
 - Recent reports library  
 - Live event rail (SSE) when connected  
 
@@ -66,12 +66,12 @@ Typical panels:
 
 ## 3. Assets
 
-**Nav → Assets**
+**Nav â†’ Assets**
 
 ![Assets](../screenshots/app/assets.png)
 
 1. Browse inventory (type, criticality, verification)  
-2. **Add asset** (domain, host, URL, …) — dual-control may be required  
+2. **Add asset** (domain, host, URL, â€¦) â€” dual-control may be required  
 
 ![Add asset](../screenshots/app/assets_add_modal.png)
 
@@ -80,7 +80,7 @@ Typical panels:
 
 ### Asset intelligence
 
-**Nav → Intelligence**
+**Nav â†’ Intelligence**
 
 ![Intelligence](../screenshots/app/intelligence.png)
 
@@ -91,12 +91,12 @@ Typical panels:
 
 ## 4. SOC Monitor
 
-**Nav → SOC Monitor**
+**Nav â†’ SOC Monitor**
 
 ![SOC](../screenshots/app/soc.png)
 
 1. Review **detection queue** (severity, status)  
-2. Open a detection → triage / assign / escalate  
+2. Open a detection â†’ triage / assign / escalate  
 3. Manage **cases** and notes  
 4. **Availability** tab: HTTP/TCP checks, incidents, heartbeat **agent downloads** (Linux / macOS / Windows / Python)  
 5. Agent auth uses **org API key** (`X-Org-Api-Key`), never a user JWT  
@@ -105,12 +105,12 @@ Typical panels:
 
 ## 5. Scans
 
-**Nav → Scans**
+**Nav â†’ Scans**
 
 ![Scans](../screenshots/app/scans.png)
 
 1. Unlock operate if needed  
-2. **Launch scan** (tools + target filter) — one active job per org  
+2. **Launch scan** (tools + target filter) â€” one active job per org  
 3. Watch progress; cancel only with operate rights  
 4. Open **results** for verified vs unverified findings  
 
@@ -118,7 +118,7 @@ Typical panels:
 
 ## 6. VAPT campaigns
 
-**Nav → VAPT Campaigns**
+**Nav â†’ VAPT Campaigns**
 
 ![VAPT](../screenshots/app/vapt.png)
 
@@ -131,19 +131,19 @@ Typical panels:
 
 ## 7. Risks
 
-**Nav → Risks**
+**Nav â†’ Risks**
 
 ![Risks](../screenshots/app/risks.png)
 
-1. Sort by priority band (P1–P5)  
-2. Open risk → propose treatment / assign owner (dual-control)  
+1. Sort by priority band (P1â€“P5)  
+2. Open risk â†’ propose treatment / assign owner (dual-control)  
 3. Export when needed  
 
 ---
 
 ## 8. Compliance
 
-**Nav → Compliance**
+**Nav â†’ Compliance**
 
 ![Compliance](../screenshots/app/compliance.png)
 
@@ -155,7 +155,7 @@ Typical panels:
 
 ## 9. Reports & findings tracker
 
-**Nav → Reports**
+**Nav â†’ Reports**
 
 ![Reports](../screenshots/app/reports.png)
 
@@ -170,15 +170,15 @@ Typical panels:
 Living remediation board (not a PDF):
 
 1. Filter by status / severity  
-2. Change status: `open` → `in_progress` → `fixed` / `accepted`  
+2. Change status: `open` â†’ `in_progress` â†’ `fixed` / `accepted`  
 3. `regressed` is set by the backend when a fixed issue returns  
-4. Deep links: `/reports?tab=tracker&key=…`  
+4. Deep links: `/reports?tab=tracker&key=â€¦`  
 
 ---
 
 ## 10. Phantix Agent
 
-**Nav → Phantix Agent**
+**Nav â†’ Phantix Agent**
 
 ![Agent](../screenshots/app/agent.png)
 
@@ -222,18 +222,18 @@ If enrolled:
 3. **Rate this build** (score, NPS, area, what broke)  
 4. Cross-link to Platform sandbox for org-admin feedback  
 
-Staff push notes from **Staff portal → Sandbox**.
+Staff push notes from **Staff portal â†’ Sandbox**.
 
 ---
 
 ## 13. Suggested daily path
 
-1. **Dashboard** — posture + open SOC/risks  
-2. **SOC** — triage new detections  
-3. **Scans / VAPT** — run or review jobs  
-4. **Risks** — advance P1 treatments  
-5. **Reports / tracker** — update remediation status  
-6. **Support** — anything blocked  
+1. **Dashboard** â€” posture + open SOC/risks  
+2. **SOC** â€” triage new detections  
+3. **Scans / VAPT** â€” run or review jobs  
+4. **Risks** â€” advance P1 treatments  
+5. **Reports / tracker** â€” update remediation status  
+6. **Support** â€” anything blocked  
 
 ---
 
@@ -244,6 +244,6 @@ Staff push notes from **Staff portal → Sandbox**.
 | Stuck on login / device | Complete device email link; clear old device bind on Platform if needed |
 | 409 security DB | Bootstrap security DB on Platform Connections |
 | Mutations fail 403 | Unlock dual-control operate session |
-| 402 | Billing entitlement — upgrade on Platform |
+| 402 | Billing entitlement â€” upgrade on Platform |
 | Empty tracker | Generate reports / wait for AGI-seeded findings; check `/reports/tracker` |
-| Network shows only `/api/v1` | Expected — API is same-origin proxied |
+| Network shows only `/api/v1` | Expected â€” API is same-origin proxied |

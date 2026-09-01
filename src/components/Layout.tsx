@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -46,7 +46,7 @@ import { AGI_ENABLED } from "@/lib/agi";
 import { loadSandboxMe } from "@/lib/sandbox";
 
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
-// Tenant settings (identity, DB, billing, AI) live on platform.phantix.site.
+// Tenant settings (identity, DB, billing, AI) live on platform.phantixlabs.com.
 
 const navSections: {
   label: string;

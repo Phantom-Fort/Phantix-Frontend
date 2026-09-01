@@ -24,7 +24,7 @@ export default function People() {
     return (
       <ErrorState
         onRetry={reload}
-        body="We could not load your team. Check your connection and retry — your session stays signed in."
+        body="We could not load your team. Check your connection and retry â€” your session stays signed in."
       />
     );
   }
@@ -72,7 +72,7 @@ export default function People() {
                     <p className="font-semibold text-slate-100">{s.user?.full_name}</p>
                     <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{s.slot}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{s.user?.title} � {s.user?.email}</p>
+                  <p className="text-xs text-slate-500">{s.user?.title} ï¿½ {s.user?.email}</p>
                   <p className="mt-1 text-[11px] text-slate-600">{s.desc}</p>
                 </div>
               </div>
@@ -113,7 +113,7 @@ export default function People() {
                       </span>
                       <div>
                         <p className="font-medium text-slate-200">{u.full_name}</p>
-                        <p className="text-xs text-slate-500">{u.email} � {u.title}</p>
+                        <p className="text-xs text-slate-500">{u.email} ï¿½ {u.title}</p>
                       </div>
                     </div>
                   </td>
@@ -161,7 +161,7 @@ export default function People() {
         <div className="space-y-4">
           <p className="text-sm leading-6 text-slate-300">
             Issue a one-time sign-in URL for <strong>{linkFor}</strong> to the operator app
-            (app.phantix.site). The link is shown <strong className="text-gold-300">once</strong> --- rotating the
+            (app.phantixlabs.com). The link is shown <strong className="text-gold-300">once</strong> --- rotating the
             service key does not invalidate it.
           </p>
           <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/70 p-3.5 font-mono text-xs leading-6 text-gold-300/90 break-all">

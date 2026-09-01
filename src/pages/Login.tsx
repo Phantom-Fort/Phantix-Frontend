@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -115,7 +115,7 @@ function LoginBrand({ subtitle, note, children }: { subtitle: string; note?: str
       </motion.div>
       <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
       <p className="mt-1.5 text-sm text-slate-400">
-        {subtitle} · <span className="font-mono text-xs">app.phantix.site</span>
+        {subtitle} · <span className="font-mono text-xs">app.phantixlabs.com</span>
       </p>
       {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
       {children}
@@ -931,7 +931,7 @@ function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
     try {
       const url = new URL(trimmed);
       if (!url.hostname.includes("phantix") && !url.hostname.includes("localhost")) {
-        setError("This doesn't look like a Phantix login link. Expected domain: app.phantix.site");
+        setError("This doesn't look like a Phantix login link. Expected domain: app.phantixlabs.com");
         return;
       }
       if (!url.pathname.startsWith("/login")) {
@@ -961,7 +961,7 @@ function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
         className="input resize-none font-mono text-xs"
         rows={2}
         maxLength={MAX_LINK_LENGTH}
-        placeholder="https://app.phantix.site/login?org=acme&u=42&t=..."
+        placeholder="https://app.phantixlabs.com/login?org=acme&u=42&t=..."
         value={link}
         onChange={(e) => { setLink(e.target.value); setError(""); }}
         onPaste={() => {
