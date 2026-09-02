@@ -64,7 +64,7 @@ export function ImpactPanel({ impact }: { impact: any }) {
   const blastLabel = blastRadiusLabels[impact.blast_radius] ?? impact.blast_radius;
   const cia = impact.cia;
   return (
-    <div className="space-y-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4 text-xs">
+    <div className="space-y-3 rounded-md border border-phantix-700 bg-phantix-950/50 p-4 text-xs">
       <div className="flex flex-wrap items-center gap-2">
         <ImpactBadge level={impact.impact_level} score={impact.impact_score} />
         {blastLabel && <span className="chip text-slate-300"><Globe size={11} className="mr-1 inline" />{blastLabel}</span>}
@@ -99,7 +99,7 @@ export function Card({
     <div
       className={cx(
         "card p-5",
-        hover && "transition-all duration-300 hover:border-phantix-500/60 hover:shadow-glow-blue hover:-translate-y-0.5",
+        hover && "transition-colors duration-200 hover:border-phantix-600",
         className,
       )}
     >
@@ -191,11 +191,12 @@ export function StatCard({
   accent?: "gold" | "blue" | "red" | "green";
   delay?: number;
 }) {
+  // Flat cards: the accent is carried by the icon color only (no gradient washes).
   const accents = {
-    gold: "from-gold-400/20 to-transparent text-gold-400",
-    blue: "from-phantix-500/25 to-transparent text-phantix-300",
-    red: "from-severity-critical/20 to-transparent text-severity-critical",
-    green: "from-emerald-400/20 to-transparent text-emerald-400",
+    gold: "text-gold-400",
+    blue: "text-slate-400",
+    red: "text-severity-critical",
+    green: "text-emerald-400",
   };
   return (
     <motion.div
@@ -204,13 +205,12 @@ export function StatCard({
       transition={{ duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] }}
       className="card relative overflow-hidden p-5"
     >
-      <div className={cx("absolute inset-x-0 top-0 h-24 bg-gradient-to-b", accents[accent])} />
       <div className="relative">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
-          <span className="text-slate-500">{icon}</span>
+          <span className={accents[accent]}>{icon}</span>
         </div>
-        <p className="mt-2 font-display text-[28px] font-bold leading-none text-white">{value}</p>
+        <p className="mt-2 font-mono text-[28px] font-semibold leading-none tracking-tight text-white">{value}</p>
         {hint && <div className="mt-2 text-xs text-slate-400">{hint}</div>}
       </div>
     </motion.div>
@@ -223,7 +223,7 @@ export function ProgressRing({
   size = 120,
   stroke = 10,
   color = "rgb(var(--gold-400))",
-  track = "rgb(var(--phantix-700) / 0.45)",
+  track = "#27272A",
   children,
 }: {
   value: number; // 0-100
@@ -254,7 +254,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
-          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)", filter: `drop-shadow(0 0 8px ${color}55)` }}
+          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(0.22,1,0.36,1)" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
@@ -296,14 +296,14 @@ export function Modal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 28 }}
-            className={cx("glass-bright w-full rounded-2xl shadow-card", wide ? "max-w-3xl" : "max-w-lg")}
+            className={cx("glass-bright w-full rounded-lg shadow-card", wide ? "max-w-3xl" : "max-w-lg")}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-phantix-700/40 px-6 py-4">
               <h3 className="font-display text-base font-semibold text-white">{title}</h3>
               <button
                 onClick={onClose}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-phantix-700/50 hover:text-white"
+                className="rounded-md p-1.5 text-slate-400 hover:bg-phantix-700/50 hover:text-white"
               >
                 <X size={16} />
               </button>
@@ -365,7 +365,7 @@ export function PageHeaderSkeleton({ actions = false }: { actions?: boolean }) {
         <div className="skeleton h-8 w-72 max-w-full rounded" />
         <div className="mt-3 skeleton h-3 w-96 max-w-full rounded" />
       </div>
-      {actions && <div className="flex gap-2"><div className="skeleton h-9 w-28 rounded-xl" /><div className="skeleton h-9 w-32 rounded-xl" /></div>}
+      {actions && <div className="flex gap-2"><div className="skeleton h-9 w-28 rounded-md" /><div className="skeleton h-9 w-32 rounded-md" /></div>}
     </div>
   );
 }
@@ -388,12 +388,12 @@ export function CardListSkeleton({ rows = 5, className }: { rows?: number; class
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="card animate-pulse border-phantix-700/40 bg-phantix-900/50 p-4">
           <div className="flex items-center gap-3">
-            <div className="skeleton h-10 w-10 shrink-0 rounded-xl" />
+            <div className="skeleton h-10 w-10 shrink-0 rounded-md" />
             <div className="min-w-0 flex-1 space-y-2">
               <div className="skeleton h-4 w-2/3 rounded" />
               <div className="skeleton h-3 w-1/3 rounded" />
             </div>
-            <div className="skeleton h-6 w-16 shrink-0 rounded-full" />
+            <div className="skeleton h-6 w-16 shrink-0 rounded-md" />
           </div>
         </div>
       ))}
@@ -408,7 +408,7 @@ export function TableCardSkeleton({ rows = 5, cols = 4, title = true }: { rows?:
       {title && (
         <div className="flex items-center justify-between border-b border-phantix-700/40 px-4 py-3">
           <div className="skeleton h-4 w-40 rounded" />
-          <div className="skeleton h-6 w-16 rounded-full" />
+          <div className="skeleton h-6 w-16 rounded-md" />
         </div>
       )}
       <div className="space-y-0 divide-y divide-phantix-800/40 px-4">
@@ -501,7 +501,7 @@ export function ErrorState({
 }) {
   return (
     <div className={cx("flex min-h-[45vh] flex-col items-center justify-center px-6 text-center", className)}>
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-severity-critical/30 bg-severity-critical/10 text-severity-critical">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-md border border-severity-critical/30 bg-severity-critical/10 text-severity-critical">
         {icon ?? <WifiOff size={22} />}
       </div>
       <h3 className="font-display text-base font-semibold text-slate-200">{title ?? "Server not responding"}</h3>
@@ -531,7 +531,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-phantix-800/70 text-phantix-300">
+      <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-md border border-phantix-700 bg-phantix-900 text-phantix-300">
         {icon}
       </div>
       <h3 className="font-display text-base font-semibold text-slate-200">{title}</h3>
@@ -552,20 +552,20 @@ export function Tabs({
   onChange: (id: string) => void;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl bg-phantix-900/60 border border-phantix-700/40 p-1 w-fit">
+    <div className="mb-5 flex flex-wrap items-center gap-1 rounded-md bg-phantix-900 border border-phantix-700 p-1 w-fit">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
           className={cx(
-            "relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
-            active === t.id ? "text-phantix-950" : "text-slate-400 hover:text-slate-100",
+            "relative rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
+            active === t.id ? "text-slate-100" : "text-slate-400 hover:text-slate-100",
           )}
         >
           {active === t.id && (
             <motion.span
               layoutId="tab-pill"
-              className="absolute inset-0 rounded-lg bg-gradient-to-b from-gold-400 to-gold-600"
+              className="absolute inset-0 rounded-md border border-gold-400/40 bg-phantix-800"
               transition={{ type: "spring", stiffness: 400, damping: 32 }}
             />
           )}
@@ -574,8 +574,8 @@ export function Tabs({
             {t.count !== undefined && (
               <span
                 className={cx(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                  active === t.id ? "bg-phantix-950/20 text-phantix-950" : "bg-phantix-700/60 text-slate-300",
+                  "rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-bold",
+                  active === t.id ? "bg-phantix-950/60 text-gold-300" : "bg-phantix-700/60 text-slate-300",
                 )}
               >
                 {t.count}
@@ -591,13 +591,13 @@ export function Tabs({
 // ── Progress bar ──────────────────────────────────────────────────────────────
 export function ProgressBar({ value, color = "rgb(var(--gold-400))" }: { value: number; color?: string }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-phantix-700/50">
+    <div className="h-1.5 w-full overflow-hidden rounded-sm bg-phantix-800">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-        className="h-full rounded-full"
-        style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+        className="h-full"
+        style={{ background: color }}
       />
     </div>
   );
@@ -719,7 +719,7 @@ export function Menu({
             transition={{ duration: 0.14, ease: "easeOut" }}
             role="menu"
             className={cx(
-              "absolute z-[60] mt-1.5 min-w-[180px] overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900/95 p-1 shadow-card backdrop-blur-xl",
+              "absolute z-[60] mt-1.5 min-w-[180px] overflow-hidden rounded-md border border-phantix-700 bg-phantix-900 p-1 shadow-card",
               align === "right" ? "right-0" : "left-0",
               menuClassName,
             )}
@@ -754,7 +754,7 @@ export function MenuItem({
       onClick={onClick}
       disabled={disabled}
       className={cx(
-        "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors",
+        "flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors",
         danger
           ? "text-severity-critical hover:bg-severity-critical/10"
           : active

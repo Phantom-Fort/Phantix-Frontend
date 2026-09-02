@@ -221,7 +221,7 @@ export default function Dashboard() {
                 <Link
                   key={s.key || s.host}
                   to={`/assets?q=${encodeURIComponent(s.host)}`}
-                  className="chip border-phantix-600/50 bg-phantix-800/50 text-[10px] text-slate-300 hover:border-gold-400/40 hover:text-gold-300"
+                  className="chip font-mono border-phantix-700 bg-phantix-900 text-[10px] text-slate-400 hover:border-gold-400/50 hover:text-gold-300"
                 >
                   {s.name || s.host}
                 </Link>
@@ -348,11 +348,11 @@ export default function Dashboard() {
                     <Link
                       key={id || i}
                       to={`/assets?id=${id}`}
-                      className="flex items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-4 py-3 transition-colors hover:border-phantix-500/50 hover:bg-phantix-800/40"
+                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-4 py-3 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <Boxes size={15} className="shrink-0 text-gold-400" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-200">{str(a.value ?? a.name)}</p>
+                        <p className="truncate font-mono text-sm font-medium text-slate-200">{str(a.value ?? a.name)}</p>
                         <p className="text-xs text-slate-500">
                           {str(a.assetType ?? a.asset_type, "asset")}
                           {a.openFindingsCount != null || a.open_findings != null
@@ -376,7 +376,7 @@ export default function Dashboard() {
             <CardHeader title="Posture score" subtitle="Composite org posture" />
             <div className="flex flex-col items-center py-4">
               <ProgressRing value={postureScore} size={140} color={postureScore >= 70 ? "#34D399" : "#E8B54D"}>
-                <span className="font-display text-3xl font-bold text-white">{postureScore}</span>
+                <span className="font-mono text-3xl font-semibold tracking-tight text-white">{postureScore}</span>
                 <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">score</span>
               </ProgressRing>
               <p className="mt-4 text-center text-xs text-slate-500">
@@ -408,7 +408,7 @@ export default function Dashboard() {
                     <Link
                       key={id || i}
                       to={`/risks?id=${id}`}
-                      className="block rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-3.5 py-2.5 hover:border-phantix-500/50"
+                      className="block rounded-md border border-phantix-700 bg-phantix-950 px-3.5 py-2.5 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <div className="flex items-start gap-2">
                         <SeverityBadge severity={str(r.riskLevel ?? r.level, "info") as any} />
@@ -446,7 +446,7 @@ export default function Dashboard() {
                     <Link
                       key={id || i}
                       to={`/soc?id=${id}`}
-                      className="block rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-3.5 py-2.5 hover:border-phantix-500/50"
+                      className="block rounded-md border border-phantix-700 bg-phantix-950 px-3.5 py-2.5 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <div className="flex items-start gap-2">
                         <SeverityBadge severity={str(d.severity, "info") as any} />
@@ -487,7 +487,7 @@ export default function Dashboard() {
                     <Link
                       key={key}
                       to={`/reports?tab=tracker&key=${encodeURIComponent(key)}`}
-                      className="block rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-3.5 py-2.5 hover:border-phantix-500/50"
+                      className="block rounded-md border border-phantix-700 bg-phantix-950 px-3.5 py-2.5 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <div className="flex items-start gap-2">
                         <SeverityBadge severity={str(t.severity, "critical") as any} />
@@ -530,7 +530,7 @@ export default function Dashboard() {
                     <Link
                       key={id || i}
                       to={`/reports?id=${id}`}
-                      className="flex items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-4 py-3 hover:border-phantix-500/50"
+                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-4 py-3 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <FileText size={15} className="shrink-0 text-gold-400" />
                       <div className="min-w-0 flex-1">
@@ -559,7 +559,7 @@ export default function Dashboard() {
                 subtitle="SSE command-center stream"
                 action={
                   <span className={cx(
-                    "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[10px] font-medium",
+                    "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-medium",
                     connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
                   )}>
                     <span className="relative flex h-2 w-2">
@@ -572,10 +572,10 @@ export default function Dashboard() {
               />
             </div>
             {/* Heartbeat status strip */}
-            <div className="flex items-center gap-3 border-y border-phantix-700/30 bg-phantix-950/40 px-5 py-3">
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+            <div className="flex items-center gap-3 border-y border-phantix-700 bg-phantix-950/60 px-5 py-3">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
                 <HeartPulse size={16} />
-                {connected && <span className="ecg-ping absolute inset-0 rounded-xl border border-emerald-400/40" />}
+                {connected && <span className="ecg-ping absolute inset-0 rounded-md border border-emerald-400/40" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-100">{connected ? "Server responsive" : "Waiting for heartbeat"}</p>
@@ -615,7 +615,7 @@ export default function Dashboard() {
                 ))}
               </div>
             )}
-            <div className="flex flex-wrap gap-2 border-t border-phantix-700/30 px-5 py-3 text-xs">
+            <div className="flex flex-wrap gap-2 border-t border-phantix-700 px-5 py-3 text-xs">
               <Link to={href("intelligence", "/assets/intelligence")} className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
                 Intelligence <ArrowRight size={12} />
               </Link>
@@ -632,7 +632,7 @@ export default function Dashboard() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-gold-400/20 bg-gold-400/5 px-5 py-3.5"
+          className="mt-6 flex flex-wrap items-center gap-3 rounded-md border border-gold-400/30 bg-phantix-950 px-5 py-3.5"
         >
           <Zap size={16} className="shrink-0 text-gold-400" />
           <p className="min-w-0 flex-1 text-xs leading-5 text-slate-400">

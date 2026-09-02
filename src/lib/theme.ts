@@ -24,7 +24,7 @@ const THEME_KEY = "phantix_theme";
 // Kept in sync with the `--surface` token in index.css so the mobile browser
 // chrome matches the app surface.
 const THEME_COLOR: Record<Theme, string> = {
-  dark: "#0D1B3D",
+  dark: "#000000",
   light: "#F4F6FA",
 };
 
@@ -190,11 +190,11 @@ export function chartColors(theme: Theme = currentTheme) {
     emerald: "#34D399",
     sky: "#38BDF8",
     orange: "#FB923C",
-    muted: "#64748B",
-    tooltipBg: "#0D1B3D",
-    tooltipBorder: "#1E3350",
-    tooltipColor: "#E2E8F0",
-    grid: "#1E3350",
-    surface: "#0D1B3D",
+    muted: "#71717A",
+    tooltipBg: "#0A0A0A",
+    tooltipBorder: "#27272A",
+    tooltipColor: "#E4E4E7",
+    grid: "#27272A",
+    surface: "#0A0A0A",
   };
 }

@@ -71,18 +71,17 @@ export default {
         black: "rgb(var(--color-black) / <alpha-value>)",
       },
       fontFamily: {
-        display: ["'Space Grotesk'", "'Geist Variable'", "system-ui", "sans-serif"],
+        display: ["'Geist Variable'", "Inter", "system-ui", "sans-serif"],
         sans: ["'Geist Variable'", "Inter", "system-ui", "sans-serif"],
         mono: ["'Geist Mono Variable'", "'JetBrains Mono'", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        glow: "0 0 40px -10px rgba(232, 181, 77, 0.35)",
-        "glow-blue": "0 0 40px -10px rgba(51, 85, 181, 0.5)",
-        card: "0 8px 30px -12px rgba(2, 6, 23, 0.6)",
-      },
-      backgroundImage: {
-        "radial-fade":
-          "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(51,85,181,0.25), transparent)",
+        // Flat dev-tool look: no soft glows. Keys kept so existing usages
+        // resolve to crisp 1px accent rings instead of blurred halos.
+        glow: "0 0 0 1px rgba(232, 181, 77, 0.25)",
+        "glow-blue": "0 0 0 1px rgba(63, 63, 70, 0.9)",
+        card: "0 1px 2px 0 rgba(0, 0, 0, 0.5)",
+        goldSm: "0 0 24px -6px rgba(232, 181, 77, 0.12)",
       },
       backgroundSize: {
       },

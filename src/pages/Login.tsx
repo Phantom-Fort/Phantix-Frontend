@@ -98,7 +98,7 @@ function LoginChrome({ children }: { children: React.ReactNode }) {
       <div className="relative z-10 w-full lg:grid lg:min-h-screen lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
         <AuthShowcase />
 
-        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10 bg-phantix-850 lg:border-l lg:border-phantix-700">
           <div className="absolute right-6 top-6 z-20"><ThemeToggle /></div>
           {children}
         </div>
@@ -111,10 +111,10 @@ function LoginBrand({ subtitle, note, children }: { subtitle: string; note?: str
   return (
     <div className="mb-8 text-center">
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="mx-auto">
-        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(51,85,181,0.6)]" />
+        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_24px_rgba(232,181,77,0.35)]" />
       </motion.div>
-      <h1 className="mt-5 font-display text-2xl font-bold text-white">Command Centre</h1>
-      <p className="mt-1.5 text-sm text-slate-400">
+      <h1 className="mt-5 font-display text-2xl font-bold text-slate-100">Command Centre</h1>
+      <p className="mt-1.5 text-sm text-slate-500">
         {subtitle} · <span className="font-mono text-xs">app.phantixlabs.com</span>
       </p>
       {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
@@ -305,7 +305,7 @@ function ReturningLogin({
           <AnimatePresence mode="wait">
             {blocked && stage === "service_key_blocked" && (
               <motion.div key="skb" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
-                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-4 text-center">
+                <div className="rounded-md border border-severity-medium/30 bg-severity-medium/10 p-4 text-center">
                   <AlertOctagon size={22} className="mx-auto text-severity-medium" />
                   <p className="mt-2 text-sm font-medium text-slate-200">Company access is not enabled</p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">{blocked}</p>
@@ -342,7 +342,7 @@ function ReturningLogin({
 
             {!blocked && stage === "mfa" && (
               <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
-                <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
+                <div className="rounded-md border border-phantix-700 bg-phantix-900 p-3.5 text-center">
                   <ShieldCheck size={22} className="mx-auto text-gold-400" />
                   <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
                   <p className="mt-1 text-xs text-slate-500">
@@ -361,7 +361,7 @@ function ReturningLogin({
 
             {!blocked && stage === "device" && (
               <motion.div key="device" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
-                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
+                <div className="rounded-md border border-severity-medium/30 bg-severity-medium/10 p-3.5 text-center">
                   <Smartphone size={22} className="mx-auto text-severity-medium" />
                   <p className="mt-2 text-sm font-medium text-slate-200">Confirm this new device</p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -680,7 +680,7 @@ function AppLoginFlow({
           <LoginBrand subtitle="Application sign-in" note="Demo mode --- explore features instantly" />
           <button
             onClick={() => { enterDemo(); navigate("/dashboard"); }}
-            className="mt-2 inline-flex items-center gap-2 rounded-xl bg-gold-400 px-6 py-3 font-semibold text-phantix-950 hover:bg-gold-300"
+            className="mt-2 inline-flex items-center gap-2 rounded-md border border-gold-400/40 bg-phantix-800 px-6 py-3 font-semibold text-gold-300 hover:bg-phantix-850"
           >
             <PlayCircle size={16} /> Explore the demo tenant
           </button>
@@ -697,7 +697,7 @@ function AppLoginFlow({
           <LoginBrand subtitle="Application sign-in" />
           <p className="text-sm text-slate-400">Validating login link...</p>
           {error && (
-            <div className="mx-auto mt-4 max-w-md rounded-xl border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">{error}</div>
+            <div className="mx-auto mt-4 max-w-md rounded-md border border-severity-critical/30 bg-severity-critical/10 px-4 py-3 text-sm text-severity-critical">{error}</div>
           )}
         </motion.div>
       </LoginChrome>
@@ -721,7 +721,7 @@ function AppLoginFlow({
             {/* Service key blocked */}
             {blocked && stage === "service_key_blocked" && (
               <motion.div key="skb" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
-                <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-4 text-center">
+                <div className="rounded-md border border-severity-medium/30 bg-severity-medium/10 p-4 text-center">
                   <AlertOctagon size={22} className="mx-auto text-severity-medium" />
                   <p className="mt-2 text-sm font-medium text-slate-200">Company access is not enabled</p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">{blocked}</p>
@@ -776,7 +776,7 @@ function AppLoginFlow({
               <motion.div key="mfa" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 14 }} className="space-y-4">
                 {stage === "device" ? (
                   <>
-                    <div className="rounded-xl border border-severity-medium/40 bg-severity-medium/10 p-3.5 text-center">
+                    <div className="rounded-md border border-severity-medium/30 bg-severity-medium/10 p-3.5 text-center">
                       <Smartphone size={22} className="mx-auto text-severity-medium" />
                       <p className="mt-2 text-sm font-medium text-slate-200">Confirm this new device</p>
                       <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -806,7 +806,7 @@ function AppLoginFlow({
                   </>
                 ) : (
                   <>
-                    <div className="rounded-xl border border-phantix-600/40 bg-phantix-800/40 p-3.5 text-center">
+                    <div className="rounded-md border border-phantix-700 bg-phantix-900 p-3.5 text-center">
                       <ShieldCheck size={22} className="mx-auto text-gold-400" />
                       <p className="mt-2 text-sm font-medium text-slate-200">Verify your identity</p>
                       <p className="mt-1 text-xs text-slate-500">
@@ -867,7 +867,7 @@ function NewsletterField() {
         Security insights in your inbox
       </p>
       {subscribed ? (
-        <p className="mt-2 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-400">
+        <p className="mt-2 rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-400">
           You're on the list. Watch your inbox for a welcome note.
         </p>
       ) : (

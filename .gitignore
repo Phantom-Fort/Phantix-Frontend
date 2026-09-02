@@ -15,3 +15,6 @@ QA/
 AAAnimations/
 docs/screenshots/staff
 /webui
+graphify-out/
+# graphify knowledge-graph artifacts (recon/analysis, not app code)
+graphify-out/
