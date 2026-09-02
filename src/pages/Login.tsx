@@ -98,7 +98,7 @@ function LoginChrome({ children }: { children: React.ReactNode }) {
       <div className="relative z-10 w-full lg:grid lg:min-h-screen lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)]">
         <AuthShowcase />
 
-        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10">
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-10 bg-phantix-850 lg:border-l lg:border-phantix-700">
           <div className="absolute right-6 top-6 z-20"><ThemeToggle /></div>
           {children}
         </div>
