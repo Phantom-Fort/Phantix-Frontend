@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Search,
   LogOut,
+  Menu,
+  X,
   Lock,
   Unlock,
   Database,
@@ -203,10 +205,15 @@ export default function Layout() {
   const { session, org, operate, lockOperate, logout, dualControl, demoActive, hasLiveApi, switchToRealOrg, requireDualControl, securityDbReady, toast } = useStore();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const sections = useNavSections();
   const searchIndex = useMemo(() => sections.flatMap((s) => s.items), [sections]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -272,7 +279,7 @@ export default function Layout() {
     <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950 lg:flex">
         <NavLink to="/" className="flex items-center gap-3 px-5 pb-5 pt-5">
           <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
           <div>
@@ -392,12 +399,19 @@ export default function Layout() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────── */}
-      <div className="ml-[248px] flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen flex-1 flex-col lg:ml-[248px]">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-6 py-3">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-4 py-3 sm:px-6">
+          <button
+            onClick={() => setMobileNavOpen((v) => !v)}
+            className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white lg:hidden"
+          >
+            {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
           <button
             onClick={() => setPaletteOpen(true)}
-            className="flex w-72 items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-600 hover:text-slate-300"
+            className="hidden w-72 items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-600 hover:text-slate-300 sm:flex"
           >
             <Search size={15} />
             <span>Search surfaces...</span>
@@ -405,14 +419,20 @@ export default function Layout() {
               <Command size={9} />K
             </span>
           </button>
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white sm:hidden"
+          >
+            <Search size={16} />
+          </button>
 
-          <div className="ml-auto flex items-center gap-2.5">
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
             <ThemeToggle />
             <NotificationBell />
-            <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+            <span className="chip hidden border-emerald-400/30 bg-emerald-400/10 text-emerald-300 md:inline-flex">
               <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>
-            <span className="chip font-mono border-phantix-700 bg-phantix-900 text-slate-300">
+            <span className="chip hidden font-mono border-phantix-700 bg-phantix-900 text-slate-300 md:inline-flex">
               <KeyRound size={12} className="text-gold-400" /> {org.slug}
             </span>
 
@@ -421,12 +441,12 @@ export default function Layout() {
                 onClick={() => setUserMenu((v) => !v)}
                 className="flex items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 py-1.5 pl-1.5 pr-2.5 transition-colors hover:border-phantix-600"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-gold-400/40 bg-phantix-850 font-display text-xs font-bold text-gold-300">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gold-400/40 bg-phantix-850 font-display text-xs font-bold text-gold-300">
                   {(session?.userName ?? "A").slice(0, 1)}
                 </span>
-                <span className="text-left">
-                  <span className="block text-xs font-semibold leading-tight text-slate-200">{session?.userName ?? "Guest"}</span>
-                  <span className="block text-[10px] leading-tight text-slate-500">{org.name}</span>
+                <span className="hidden text-left sm:block">
+                  <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight text-slate-200">{session?.userName ?? "Guest"}</span>
+                  <span className="block max-w-[120px] truncate text-[10px] leading-tight text-slate-500">{org.name}</span>
                 </span>
                 <ChevronDown size={14} className="text-slate-500" />
               </button>
@@ -490,6 +510,61 @@ export default function Layout() {
           </div>
         </header>
 
+        {/* Mobile nav drawer */}
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b border-phantix-700/60 bg-phantix-950 shadow-card lg:hidden"
+            >
+              <nav className="space-y-5 px-3 py-4">
+                {sections.map((section) => (
+                  <div key={section.label}>
+                    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                      {section.label}
+                    </p>
+                    <div className="space-y-0.5">
+                      {section.items.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          end={item.to === "/"}
+                          className={({ isActive }) => cx("nav-item", isActive && "active")}
+                        >
+                          {item.icon}
+                          {item.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {session?.isAuthorizer && (
+                  <div>
+                    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-400">
+                      Authorizer
+                    </p>
+                    <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
+                      <UserCheck size={17} />
+                      Approvals
+                    </NavLink>
+                  </div>
+                )}
+                <div>
+                  <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                    Tenant admin
+                  </p>
+                  <a href={PLATFORM_IDENTITY_URL} className="nav-item" target="_blank" rel="noreferrer">
+                    <ExternalLink size={17} />
+                    Platform settings
+                  </a>
+                </div>
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Demo banner */}
         {demoActive && (
           <div className="relative z-20 flex flex-wrap items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-6 py-2.5">
@@ -532,7 +607,7 @@ export default function Layout() {
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} index={searchIndex} />
 
       {/* Autonomous Pentest Agent — right-side drawer with full-screen option */}
-      {AGI_ENABLED && <AgiDrawer />}
+      {AGI_ENABLED && session?.authenticated && <AgiDrawer />}
 
       {/* Phantix Agent — floating chatbot assistant */}
       <AgentAssistant />
