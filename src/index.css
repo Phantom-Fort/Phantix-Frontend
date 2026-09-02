@@ -61,25 +61,27 @@
   }
 
   :root[data-theme="light"] {
-    /* Clean light theme: white surfaces, ink text, blue structure, gold actions. */
+    /* ── Light theme — neutral "Vercel / Cloudflare" palette ── */
     color-scheme: light;
 
-    --phantix-950: 255 255 255;
-    --phantix-900: 255 255 255;
-    --phantix-850: 248 251 255;
-    --phantix-800: 239 246 255;
-    --phantix-700: 207 220 240;
-    --phantix-600: 148 172 210;
-    --phantix-500: 37 99 235;
-    --phantix-400: 29 78 216;
-    --phantix-300: 30 64 175;
-    --phantix-200: 30 58 130;
-    --phantix-100: 15 50 110;
+    /* Neutral zinc scale (inverted: low indices = dark, high = light).
+       Gold remains the single brand accent. */
+    --phantix-950: 255 255 255;  /* canvas: white */
+    --phantix-900: 255 255 255;  /* flat card fill */
+    --phantix-850: 250 250 250;  /* near-white bg */
+    --phantix-800: 242 242 242;  /* hover / inset */
+    --phantix-700: 228 228 231;  /* zinc-200 → crisp 1px borders */
+    --phantix-600: 212 212 216;  /* zinc-300 */
+    --phantix-500: 161 161 170;  /* zinc-400 */
+    --phantix-400: 113 113 122;  /* zinc-500 */
+    --phantix-300: 82 82 91;     /* zinc-600 */
+    --phantix-200: 63 63 70;     /* zinc-700 */
+    --phantix-100: 39 39 42;     /* zinc-800 */
 
     --gold-300: 154 103 22;
-    --gold-400: 183 126 34;
-    --gold-500: 161 106 22;
-    --gold-600: 127 78 12;
+    --gold-400: 154 103 22;
+    --gold-500: 127 78 12;
+    --gold-600: 102 60 8;
 
     --severity-critical: 220 38 60;
     --severity-high: 234 116 30;
@@ -87,46 +89,45 @@
     --severity-low: 2 132 199;
     --severity-info: 100 116 139;
 
-    --slate-50: 8 15 30;
-    --slate-100: 15 23 42;
-    --slate-200: 30 41 59;
-    --slate-300: 51 65 85;
-    --slate-400: 71 85 105;
-    --slate-500: 100 116 139;
-    --slate-600: 148 163 184;
-    --slate-700: 203 213 225;
-    --slate-800: 226 232 240;
-    --slate-900: 241 245 249;
-    --slate-950: 248 250 252;
+    /* Text scale: low=dark (high contrast on white), high=light (muted). */
+    --slate-50: 9 9 11;        /* zinc-950 — highest contrast */
+    --slate-100: 24 24 27;     /* zinc-900 */
+    --slate-200: 39 39 42;     /* zinc-800 */
+    --slate-300: 63 63 70;     /* zinc-700 */
+    --slate-400: 82 82 91;     /* zinc-600 */
+    --slate-500: 113 113 122;  /* zinc-500 */
+    --slate-600: 161 161 170;  /* zinc-400 */
+    --slate-700: 212 212 216;  /* zinc-300 */
+    --slate-800: 228 228 231;  /* zinc-200 */
+    --slate-900: 244 244 245;  /* zinc-100 */
+    --slate-950: 250 250 250;  /* zinc-50 */
 
-    --color-white: 15 23 42;
-    --color-black: 2 6 23;
+    --color-white: 9 9 11;     /* "white" text → near-black on light bg */
+    --color-black: 0 0 0;
 
     --surface: 255 255 255;
     --surface-card: 255 255 255;
-    --surface-inset: 239 246 255;
-    --border-subtle: 207 220 240;
-    --border-strong: 148 172 210;
-    --foreground: #1e293b;
-    --muted-foreground: #64748b;
+    --surface-inset: 250 250 250;
+    --border-subtle: 228 228 231;  /* zinc-200 */
+    --border-strong: 212 212 216;  /* zinc-300 */
+    --foreground: #18181b;
+    --muted-foreground: #71717a;
   }
 
-  /* Primary CTA is a flat dark element with a gold outline + gold label.
-     Light theme pins a darker gold for contrast on pale surfaces. */
+  /* Primary CTA: white surface with gold outline + gold label (both themes). */
   :root[data-theme="light"] .btn-primary {
     background-color: #ffffff;
-    border-color: rgb(183 126 34 / 0.5);
+    border-color: rgb(154 103 22 / 0.45);
     color: rgb(154 103 22);
   }
 
-  /* Gold remains an accent, never a text-background treatment. */
+  /* Gold stays as text accent, never a background fill. */
   :root[data-theme="light"] .text-gold-300,
   :root[data-theme="light"] .text-gold-400,
   :root[data-theme="light"] .text-gold-500,
   :root[data-theme="light"] .text-gold-600 {
     color: rgb(154 103 22);
   }
-  /* Icons / chips already have their own bg — don't double-pad lucide wrappers */
   :root[data-theme="light"] svg.text-gold-300,
   :root[data-theme="light"] svg.text-gold-400,
   :root[data-theme="light"] svg.text-gold-500,
@@ -138,15 +139,12 @@
     padding: 0;
   }
 
-  /*
-   * Final CTA / brand panels are always navy. Pin literal light colors so inverted
-   * light-theme slate/white tokens never make body copy unreadable on the panel.
-   */
+  /* Brand / CTA panels — always a dark neutral background (not navy). */
   .final-cta,
   .brand-panel {
-    background: linear-gradient(180deg, rgb(30 51 115) 0%, rgb(13 27 61) 100%) !important;
-    border-color: rgb(232 181 77 / 0.35) !important;
-    color: #e2e8f0 !important;
+    background: linear-gradient(180deg, rgb(24 24 27) 0%, rgb(10 10 10) 100%) !important;
+    border-color: rgb(232 181 77 / 0.3) !important;
+    color: #e4e4e7 !important;
   }
   .final-cta h2,
   .final-cta .text-white,
@@ -168,13 +166,13 @@
   .brand-panel .text-slate-500,
   .brand-panel .text-slate-600,
   .brand-panel strong {
-    color: #cbd5e1 !important;
+    color: #d4d4d8 !important;
     background: transparent !important;
     padding: 0 !important;
   }
   .final-cta strong,
   .brand-panel strong {
-    color: #e2e8f0 !important;
+    color: #e4e4e7 !important;
     font-weight: 600;
   }
   .final-cta .text-gold-300,
@@ -187,18 +185,18 @@
   }
   .final-cta .btn-secondary,
   .brand-panel .btn-secondary {
-    background-color: rgb(255 255 255 / 0.12) !important;
-    border-color: rgb(255 255 255 / 0.4) !important;
+    background-color: rgb(255 255 255 / 0.1) !important;
+    border-color: rgb(255 255 255 / 0.35) !important;
     color: #ffffff !important;
   }
   .final-cta .btn-primary,
   .brand-panel .btn-primary {
-    background-color: rgb(0 0 0 / 0.35) !important;
+    background-color: rgb(0 0 0 / 0.3) !important;
     border-color: rgb(232 181 77 / 0.55) !important;
     color: #f3cd7e !important;
   }
   :root[data-theme="light"] footer {
-    background: linear-gradient(180deg, rgb(30 51 115 / 0.08) 0%, rgb(13 27 61 / 0.12) 100%);
+    background: linear-gradient(180deg, rgb(24 24 27 / 0.06) 0%, rgb(10 10 10 / 0.1) 100%);
   }
 
   html {
@@ -229,37 +227,37 @@
   /* Light-mode surface polish — cards/glass need solid white + visible borders. */
   :root[data-theme="light"] .glass {
     background-color: #ffffff;
-    border-color: rgb(207 220 240);
+    border-color: rgb(228 228 231);
   }
   :root[data-theme="light"] .glass-bright {
     background-color: #ffffff;
-    border-color: rgb(207 220 240);
+    border-color: rgb(228 228 231);
   }
   :root[data-theme="light"] .card {
     background-color: #ffffff;
   }
   :root[data-theme="light"] .input {
     background-color: #ffffff;
-    border-color: rgb(148 172 210);
-    color: rgb(8 15 30);
+    border-color: rgb(212 212 216);
+    color: rgb(9 9 11);
   }
   :root[data-theme="light"] .btn-secondary {
-    background-color: rgb(239 246 255);
-    border-color: rgb(148 172 210);
-    color: rgb(15 23 42);
+    background-color: rgb(250 250 250);
+    border-color: rgb(228 228 231);
+    color: rgb(24 24 27);
   }
   :root[data-theme="light"] .btn-ghost:hover {
-    background-color: rgb(239 246 255);
+    background-color: rgb(242 242 242);
   }
   :root[data-theme="light"] .nav-item:hover {
-    background-color: rgb(239 246 255);
-    color: rgb(8 15 30);
+    background-color: rgb(242 242 242);
+    color: rgb(9 9 11);
   }
   :root[data-theme="light"] .skeleton {
-    background-color: rgb(239 246 255);
+    background-color: rgb(242 242 242);
   }
   :root[data-theme="light"] .shadow-glow {
-    box-shadow: 0 0 36px -12px rgba(196, 148, 40, 0.35);
+    box-shadow: 0 0 0 1px rgba(183, 126, 34, 0.3);
   }
 
   ::selection {
@@ -366,7 +364,7 @@
       transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
   }
   .nav-item.active {
-    @apply text-zinc-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-[14px];
+    @apply text-slate-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-[14px];
   }
 
   .prose-doc h1 {
@@ -618,8 +616,8 @@
   height: auto;
 }
 :root[data-theme="light"] .mermaid-rendered {
-  border-color: rgb(148 172 210);
-  background: rgb(239 246 255);
+  border-color: rgb(228 228 231);
+  background: rgb(250 250 250);
 }
 
 /* ── Reduced motion (accessibility as craft) ──────────────────────────────────

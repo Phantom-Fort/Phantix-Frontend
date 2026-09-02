@@ -194,7 +194,7 @@ export function StatCard({
   // Flat cards: the accent is carried by the icon color only (no gradient washes).
   const accents = {
     gold: "text-gold-400",
-    blue: "text-zinc-400",
+    blue: "text-slate-400",
     red: "text-severity-critical",
     green: "text-emerald-400",
   };
@@ -559,7 +559,7 @@ export function Tabs({
           onClick={() => onChange(t.id)}
           className={cx(
             "relative rounded-md px-3.5 py-2 text-sm font-medium transition-colors",
-            active === t.id ? "text-gold-300" : "text-slate-400 hover:text-slate-100",
+            active === t.id ? "text-slate-100" : "text-slate-400 hover:text-slate-100",
           )}
         >
           {active === t.id && (

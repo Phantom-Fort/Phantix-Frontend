@@ -24,9 +24,9 @@ import LottiePlayer from "@/components/LottiePlayer";
 import { cx } from "@/lib/utils";
 
 const GOLD = "#e8b54d";
-const BLUE = "#5a7bd6";
-const BLUE_LIGHT = "#90a8e8";
-const WHITE = "#e2e8f0";
+const BLUE = "#71717a";
+const BLUE_LIGHT = "#a1a1aa";
+const WHITE = "#e4e4e7";
 
 interface Insight {
   id: string;
@@ -44,21 +44,21 @@ function GlobeScene() {
   return (
     <div className="relative h-80 w-80 select-none">
       <div data-anim="orbit" className="absolute -inset-8 rounded-full border border-white/10">
-        <div className="absolute -inset-3 rounded-full border border-dashed border-[rgba(144,168,232,0.25)]" />
+        <div className="absolute -inset-3 rounded-full border border-dashed border-[rgba(161,161,170,0.25)]" />
         <div
           data-anim="magnifier"
-          className="absolute -top-3.5 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-[rgba(232,181,77,0.6)] bg-[#0d1b3d] shadow-[0_0_22px_rgba(232,181,77,0.35)]"
+          className="absolute -top-3.5 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-[rgba(232,181,77,0.6)] bg-[#0a0a0a] shadow-[0_0_22px_rgba(232,181,77,0.35)]"
         >
           <Search size={17} style={{ color: GOLD }} />
         </div>
       </div>
 
-      <div className="absolute inset-0 overflow-hidden rounded-full bg-[radial-gradient(circle_at_35%_30%,#16306b_0%,#0d1b3d_55%,#050b1d_100%)] shadow-[0_0_70px_-12px_rgba(51,85,181,0.8)]">
+      <div className="absolute inset-0 overflow-hidden rounded-full bg-[radial-gradient(circle_at_35%_30%,#18181b_0%,#0a0a0a_55%,#000000_100%)] shadow-[0_0_50px_-12px_rgba(232,181,77,0.15)]">
         <div
           className="absolute inset-0 opacity-60"
           style={{
             background:
-              "repeating-linear-gradient(90deg, transparent 0 34px, rgba(90,123,214,0.25) 34px 35px), repeating-linear-gradient(0deg, transparent 0 34px, rgba(90,123,214,0.25) 34px 35px)",
+              "repeating-linear-gradient(90deg, transparent 0 34px, rgba(113,113,122,0.25) 34px 35px), repeating-linear-gradient(0deg, transparent 0 34px, rgba(113,113,122,0.25) 34px 35px)",
             maskImage: "radial-gradient(circle at 50% 50%, black 54%, transparent 74%)",
             WebkitMaskImage: "radial-gradient(circle at 50% 50%, black 54%, transparent 74%)",
           }}
@@ -75,8 +75,8 @@ function GlobeScene() {
 function SonarScene() {
   return (
     <div className="relative flex h-80 w-full max-w-xl select-none items-center justify-center">
-      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(144,168,232,0.28)]" />
-      <div data-anim="ring" className="absolute h-52 w-52 rounded-full border border-[rgba(144,168,232,0.4)]" />
+      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(161,161,170,0.28)]" />
+      <div data-anim="ring" className="absolute h-52 w-52 rounded-full border border-[rgba(161,161,170,0.4)]" />
       <div data-anim="ring" className="absolute h-36 w-36 rounded-full border border-[rgba(232,181,77,0.45)]" />
       <div
         data-anim="radar"
@@ -95,7 +95,7 @@ function SonarScene() {
 
       <div className="absolute inset-x-0 bottom-0 grid grid-cols-3 gap-3">
         {["API", "WEB", "DB"].map((label) => (
-          <div key={label} className="rounded-xl border border-white/10 bg-black/40 px-3 py-2.5">
+          <div key={label} className="rounded-md border border-white/10 bg-black/40 px-3 py-2.5">
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">{label}</span>
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
@@ -134,8 +134,8 @@ function IncidentScene() {
             <div
               data-anim="node"
               className={cx(
-                "flex h-12 w-12 items-center justify-center rounded-xl border",
-                i === 0 ? "border-[rgba(232,181,77,0.6)] bg-[rgba(232,181,77,0.12)]" : "border-white/15 bg-black/40"
+                "flex h-12 w-12 items-center justify-center rounded-md border",
+                i === 0 ? "border-[rgba(232,181,77,0.6)] bg-[rgba(232,181,77,0.1)]" : "border-white/15 bg-black/40"
               )}
             >
               <span style={{ color: i === 0 ? GOLD : BLUE_LIGHT }}>{s.icon}</span>
@@ -153,9 +153,9 @@ function IncidentScene() {
         />
       </div>
 
-      <div className="mt-6 rounded-xl border border-white/10 bg-black/40 p-4">
+      <div className="mt-6 rounded-md border border-white/10 bg-black/40 p-4">
         <div className="flex items-center gap-2 text-xs">
-          <span className="chip !py-0.5 !text-[10px] border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.12)]" style={{ color: GOLD }}>
+          <span className="chip !py-0.5 !text-[10px] border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.1)]" style={{ color: GOLD }}>
             ACTIVE
           </span>
           <span className="font-mono text-slate-300">INC-2026-08-0411</span>
@@ -167,7 +167,7 @@ function IncidentScene() {
         </p>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {["8.4K", "23", "4", "0"].map((v, i) => (
-            <div key={i} className="rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-center">
+            <div key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-center">
               <p className="font-mono text-sm" style={{ color: GOLD }}>{v}</p>
               <p className="text-[9px] uppercase tracking-wider text-slate-500">phase {i + 1}</p>
             </div>
@@ -190,14 +190,14 @@ function AlertsScene() {
         <div data-anim="pulse" className="absolute -inset-2 rounded-full border border-[rgba(232,181,77,0.5)]" />
         <div data-anim="pulse" className="absolute -inset-4 rounded-full border border-[rgba(232,181,77,0.35)]" />
         <div data-anim="pulse" className="absolute -inset-6 rounded-full border border-[rgba(232,181,77,0.2)]" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl border border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.12)] shadow-[0_0_30px_rgba(232,181,77,0.35)]">
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-lg border border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.1)] shadow-[0_0_30px_rgba(232,181,77,0.35)]">
           <BellRing size={26} style={{ color: GOLD }} />
         </div>
       </div>
 
       {CHANNELS.map((c) => (
         <div key={c.label} className={cx("absolute flex flex-col items-center gap-1.5", c.pos)}>
-          <div data-anim="chan" className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/15 bg-black/50" style={{ color: BLUE_LIGHT }}>
+          <div data-anim="chan" className="flex h-11 w-11 items-center justify-center rounded-md border border-white/15 bg-black/50" style={{ color: BLUE_LIGHT }}>
             {c.icon}
           </div>
           <span className="text-[10px] font-medium text-slate-300">{c.label}</span>
@@ -210,7 +210,7 @@ function AlertsScene() {
 function AgentScene() {
   return (
     <div className="w-full max-w-xl select-none">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/60 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]">
+      <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black/60 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]">
         <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-2.5">
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
@@ -238,7 +238,7 @@ function AgentScene() {
 
       <div className="mt-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div data-anim="orb" className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-black/50" style={{ color: GOLD }}>
+          <div data-anim="orb" className="flex h-9 w-9 items-center justify-center rounded-md border border-white/15 bg-black/50" style={{ color: GOLD }}>
             <Cpu size={16} />
           </div>
           <div>
@@ -265,14 +265,14 @@ function PipelineScene() {
   ];
   return (
     <div className="relative flex h-80 w-full max-w-xl select-none items-center justify-center">
-      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(90,123,214,0.3)]" />
+      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(113,113,122,0.3)]" />
       <div data-anim="ring" className="absolute h-60 w-60 rounded-full border border-dashed border-[rgba(232,181,77,0.35)]" />
       <div
         data-anim="radar"
         className="absolute h-72 w-72 rounded-full"
-        style={{ background: "conic-gradient(from 0deg at 50% 50%, rgba(90,123,214,0.28), transparent 75deg)" }}
+        style={{ background: "conic-gradient(from 0deg at 50% 50%, rgba(113,113,122,0.28), transparent 75deg)" }}
       />
-      <div className="relative flex h-36 w-36 items-center justify-center rounded-full bg-[#0d1b3d]/70 shadow-[0_0_45px_-10px_rgba(90,123,214,0.6)] ring-1 ring-[rgba(90,123,214,0.35)]">
+      <div className="relative flex h-36 w-36 items-center justify-center rounded-full bg-[#0a0a0a]/70 shadow-[0_0_45px_-10px_rgba(232,181,77,0.15)] ring-1 ring-[rgba(113,113,122,0.35)]">
         <BrandLogo
           lightSrc="/logo-white.png"
           darkSrc="/logo-white.png"
@@ -282,7 +282,7 @@ function PipelineScene() {
       {STEPS.map((s) => (
         <div key={s.label} data-anim="node" className={cx("absolute flex items-center gap-2", s.pos)}>
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(232,181,77,0.5)] bg-[#0d1b3d] shadow-[0_0_18px_rgba(232,181,77,0.28)]"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(232,181,77,0.5)] bg-[#0a0a0a] shadow-[0_0_18px_rgba(232,181,77,0.28)]"
             style={{ color: GOLD }}
           >
             {s.icon}
@@ -297,7 +297,7 @@ function PipelineScene() {
 function AgentBotScene() {
   return (
     <div className="relative flex h-80 w-full max-w-xl select-none items-center justify-center">
-      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(90,123,214,0.3)]" />
+      <div data-anim="ring" className="absolute h-72 w-72 rounded-full border border-[rgba(113,113,122,0.3)]" />
       <div data-anim="pulse" className="absolute h-60 w-60 rounded-full border border-[rgba(232,181,77,0.2)]" />
       <div data-anim="pulse" className="absolute h-48 w-48 rounded-full border border-[rgba(232,181,77,0.4)]" />
       <LottiePlayer src="/animations/agent.json" className="relative h-56 w-72" loop speed={1.1} />
@@ -461,7 +461,7 @@ function playScene(el: HTMLElement, scope: HTMLElement, id: string): AnimHandle[
           direction: "alternate",
           ease: "inOutSine",
         }),
-        animate(track, { backgroundColor: ["#e8b54d", "#5a7bd6"], duration: 7200, loop: true, direction: "alternate", ease: "inOutSine" })
+        animate(track, { backgroundColor: ["#e8b54d", "#71717a"], duration: 7200, loop: true, direction: "alternate", ease: "inOutSine" })
       );
     }
   }
@@ -522,11 +522,11 @@ export default function AuthShowcase() {
       ref={wrapRef}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      className="relative hidden overflow-hidden bg-[linear-gradient(160deg,#16306b_0%,#0d1b3d_48%,#050b1d_100%)] text-slate-200 lg:flex lg:min-h-screen lg:flex-col"
+      className="relative hidden overflow-hidden bg-[linear-gradient(160deg,#18181b_0%,#0a0a0a_48%,#000000_100%)] text-slate-200 lg:flex lg:min-h-screen lg:flex-col"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-grid-faint bg-grid opacity-30 [mask-image:radial-gradient(ellipse_90%_80%_at_20%_10%,black,transparent)]" />
-        <div className="absolute -left-32 top-1/4 h-[420px] w-[420px] rounded-full bg-[#3355b5]/30 blur-[130px]" />
+        <div className="absolute -left-32 top-1/4 h-[420px] w-[420px] rounded-full bg-[#3f3f46]/30 blur-[130px]" />
         <div className="absolute -bottom-24 right-0 h-[340px] w-[340px] rounded-full bg-[#e8b54d]/10 blur-[120px]" />
       </div>
 
