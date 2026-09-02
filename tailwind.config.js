@@ -81,6 +81,7 @@ export default {
         glow: "0 0 0 1px rgba(232, 181, 77, 0.25)",
         "glow-blue": "0 0 0 1px rgba(63, 63, 70, 0.9)",
         card: "0 1px 2px 0 rgba(0, 0, 0, 0.5)",
+        goldSm: "0 0 24px -6px rgba(232, 181, 77, 0.12)",
       },
       backgroundSize: {
       },
