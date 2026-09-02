@@ -272,7 +272,7 @@ export default function Layout() {
     <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/60 bg-black">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950">
         <NavLink to="/" className="flex items-center gap-3 px-5 pb-5 pt-5">
           <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
           <div>
@@ -394,7 +394,7 @@ export default function Layout() {
       {/* ── Main ────────────────────────────────────────────── */}
       <div className="ml-[248px] flex min-h-screen flex-1 flex-col">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-black px-6 py-3">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-6 py-3">
           <button
             onClick={() => setPaletteOpen(true)}
             className="flex w-72 items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-600 hover:text-slate-300"
