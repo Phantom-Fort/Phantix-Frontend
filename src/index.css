@@ -5,20 +5,21 @@
 @layer base {
   :root,
   :root[data-theme="dark"] {
-    /* ── Dark theme (default) ── */
+    /* ── Dark theme (default) — neutral "Vercel / Cloudflare" dev palette ── */
     color-scheme: dark;
 
-    --phantix-950: 5 11 29;
-    --phantix-900: 13 27 61;
-    --phantix-850: 16 33 74;
-    --phantix-800: 22 38 92;
-    --phantix-700: 30 51 115;
-    --phantix-600: 39 66 143;
-    --phantix-500: 51 85 181;
-    --phantix-400: 90 123 214;
-    --phantix-300: 143 166 230;
-    --phantix-200: 194 207 243;
-    --phantix-100: 227 234 251;
+    /* Neutral zinc scale (was navy). Gold remains the single brand accent. */
+    --phantix-950: 0 0 0;        /* canvas: true black  #000000 */
+    --phantix-900: 10 10 10;     /* flat card fill      #0A0A0A */
+    --phantix-850: 16 16 16;
+    --phantix-800: 24 24 27;     /* zinc-900 */
+    --phantix-700: 39 39 42;     /* zinc-800 → 1px crisp borders */
+    --phantix-600: 63 63 70;     /* zinc-700 */
+    --phantix-500: 82 82 91;     /* zinc-600 */
+    --phantix-400: 113 113 122;  /* zinc-500 */
+    --phantix-300: 161 161 170;  /* zinc-400 */
+    --phantix-200: 212 212 216;  /* zinc-300 */
+    --phantix-100: 228 228 231;  /* zinc-200 */
 
     --gold-300: 243 205 126;
     --gold-400: 232 181 77;
@@ -31,31 +32,32 @@
     --severity-low: 56 189 248;
     --severity-info: 148 163 184;
 
-    --slate-50: 248 250 252;
-    --slate-100: 241 245 249;
-    --slate-200: 226 232 240;
-    --slate-300: 203 213 225;
-    --slate-400: 148 163 184;
-    --slate-500: 100 116 139;
-    --slate-600: 71 85 105;
-    --slate-700: 51 65 85;
-    --slate-800: 30 41 59;
-    --slate-900: 15 23 42;
-    --slate-950: 2 6 23;
+    /* Text scale remapped slate → zinc so body copy is neutral, not blue-gray. */
+    --slate-50: 250 250 250;
+    --slate-100: 244 244 245;
+    --slate-200: 228 228 231;
+    --slate-300: 212 212 216;
+    --slate-400: 161 161 170;
+    --slate-500: 113 113 122;
+    --slate-600: 82 82 91;
+    --slate-700: 63 63 70;
+    --slate-800: 39 39 42;
+    --slate-900: 24 24 27;
+    --slate-950: 9 9 11;
 
     --color-white: 255 255 255;
-    --color-black: 2 6 23;
+    --color-black: 0 0 0;
 
-    /* Border-first surface tokens (Xalgorix-style). Cards read as flat
-       surfaces outlined by their 1px border instead of tinted/glassy fills. */
-    --surface: 5 11 29;
-    --surface-card: 13 27 61;
-    --surface-inset: 5 11 29;
-    --border-subtle: 30 51 115;
-    --border-strong: 51 85 181;
+    /* Border-first surface tokens. Cards read as flat surfaces outlined by
+       their crisp 1px border instead of tinted/glassy fills. */
+    --surface: 0 0 0;
+    --surface-card: 10 10 10;
+    --surface-inset: 9 9 11;
+    --border-subtle: 39 39 42;
+    --border-strong: 63 63 70;
     /* Full-color tokens used by inline-style primitives (e.g. TextShimmer). */
-    --foreground: #e2e8f0;
-    --muted-foreground: #94a3b8;
+    --foreground: #e4e4e7;
+    --muted-foreground: #a1a1aa;
   }
 
   :root[data-theme="light"] {
@@ -109,10 +111,12 @@
     --muted-foreground: #64748b;
   }
 
-  /* Gold buttons always use navy/blue label text (readable on gold in both themes). */
-  :root[data-theme="light"] .btn-primary,
-  :root .btn-primary {
-    color: #050b1d;
+  /* Primary CTA is a flat dark element with a gold outline + gold label.
+     Light theme pins a darker gold for contrast on pale surfaces. */
+  :root[data-theme="light"] .btn-primary {
+    background-color: #ffffff;
+    border-color: rgb(183 126 34 / 0.5);
+    color: rgb(154 103 22);
   }
 
   /* Gold remains an accent, never a text-background treatment. */
@@ -189,7 +193,9 @@
   }
   .final-cta .btn-primary,
   .brand-panel .btn-primary {
-    color: #050b1d !important;
+    background-color: rgb(0 0 0 / 0.35) !important;
+    border-color: rgb(232 181 77 / 0.55) !important;
+    color: #f3cd7e !important;
   }
   :root[data-theme="light"] footer {
     background: linear-gradient(180deg, rgb(30 51 115 / 0.08) 0%, rgb(13 27 61 / 0.12) 100%);
@@ -210,10 +216,8 @@
     line-height: 1.6;
     letter-spacing: 0.01em;
     text-rendering: optimizeLegibility;
-    background-image:
-      radial-gradient(ellipse 90% 55% at 50% -10%, rgba(51, 85, 181, 0.22), transparent),
-      radial-gradient(ellipse 50% 40% at 90% 110%, rgba(232, 181, 77, 0.06), transparent);
-    background-attachment: fixed;
+    /* Flat true-black workspace — no radial navy/gold glow. */
+    background-image: none;
     transition: color 0.3s ease;
   }
 
@@ -293,16 +297,16 @@
 
   .card {
     background-color: rgb(var(--surface-card));
-    border: 1px solid rgb(var(--border-subtle) / 0.7);
-    border-radius: 1rem;
+    border: 1px solid rgb(var(--border-subtle));
+    border-radius: 0.375rem;
   }
 
   .input {
-    @apply w-full rounded-xl px-3.5 py-2.5 text-sm text-slate-200
+    @apply w-full rounded-md px-3.5 py-2.5 text-sm text-slate-200
       placeholder:text-slate-500 outline-none transition-all
-      focus:border-gold-400/60 focus:ring-2 focus:ring-gold-400/15;
+      focus:border-gold-400/60 focus:ring-1 focus:ring-gold-400/20;
     background-color: rgb(var(--surface-inset));
-    border: 1px solid rgb(var(--border-subtle) / 0.8);
+    border: 1px solid rgb(var(--border-subtle));
   }
 
   .label {
@@ -310,19 +314,21 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold
       transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-400/40
       disabled:opacity-50 disabled:pointer-events-none select-none;
   }
 
+  /* Flat dark CTA with a crisp 1px gold outline — gold is a text/outline
+     accent, never a saturated fill. */
   .btn-primary {
-    @apply btn bg-gradient-to-b from-gold-400 to-gold-600 text-phantix-950 shadow-glow
-      hover:brightness-110 active:scale-[0.98];
+    @apply btn bg-phantix-800 text-gold-300 border border-gold-400/40
+      hover:bg-phantix-850 hover:border-gold-400/60 active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply btn bg-phantix-700/50 text-slate-200 border border-phantix-600/50
-      hover:bg-phantix-700/80 hover:border-phantix-500/60 active:scale-[0.98];
+    @apply btn bg-phantix-900 text-slate-200 border border-phantix-700
+      hover:bg-phantix-850 hover:border-phantix-600 active:scale-[0.98];
   }
 
   .btn-ghost {
@@ -335,7 +341,7 @@
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border;
+    @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium border;
   }
 
   .th {
@@ -347,7 +353,7 @@
   }
 
   .skeleton {
-    @apply rounded-lg bg-phantix-800/60 relative overflow-hidden;
+    @apply rounded-md bg-phantix-800/60 relative overflow-hidden;
   }
   .skeleton::after {
     content: "";
@@ -356,11 +362,11 @@
   }
 
   .nav-item {
-    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-400
+    @apply flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400
       transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
   }
   .nav-item.active {
-    @apply text-gold-300 bg-gradient-to-r from-gold-400/15 to-transparent border-l-2 border-gold-400 -ml-0.5 pl-[14px];
+    @apply text-zinc-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-[14px];
   }
 
   .prose-doc h1 {
@@ -401,13 +407,13 @@
     @apply font-mono text-[12.5px] bg-phantix-800/80 text-gold-300 rounded-md px-1.5 py-0.5 border border-phantix-700/50;
   }
   .prose-doc pre {
-    @apply my-4 rounded-xl bg-phantix-950/90 border border-phantix-700/50 p-4 overflow-x-auto text-[12.5px] leading-6;
+    @apply my-4 rounded-md bg-phantix-950/90 border border-phantix-700/50 p-4 overflow-x-auto text-[12.5px] leading-6;
   }
   .prose-doc pre code {
     @apply bg-transparent border-0 p-0 text-slate-300;
   }
   .prose-doc table {
-    @apply w-full my-4 text-[13px] border-collapse overflow-hidden rounded-xl;
+    @apply w-full my-4 text-[13px] border-collapse overflow-hidden rounded-md;
   }
   .prose-doc thead th {
     @apply bg-phantix-800/80 text-slate-200 font-semibold text-left px-3 py-2.5 border border-phantix-700/50;
@@ -425,7 +431,7 @@
     @apply border-phantix-700/50 my-8;
   }
   .prose-doc img {
-    @apply rounded-xl my-4;
+    @apply rounded-md my-4;
   }
 }
 

@@ -21,7 +21,7 @@
             document.documentElement.classList.remove("dark");
           }
           var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute("content", dark ? "#0D1B3D" : "#F4F6FA");
+          if (meta) meta.setAttribute("content", dark ? "#000000" : "#F4F6FA");
         } catch (e) { /* ignore */ }
       })();
     </script>
@@ -30,7 +30,7 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0D1B3D" />
+    <meta name="theme-color" content="#000000" />
 
     <!-- Primary SEO -->
     <title>Phantix Command Centre — AI-Powered Attack Surface, VAPT &amp; Risk | Phantix Labs</title>
@@ -73,8 +73,10 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Geist Sans / Geist Mono are self-hosted via @fontsource (main.tsx).
+         Inter + JetBrains Mono remain as network fallbacks only. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
   </head>

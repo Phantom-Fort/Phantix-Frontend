@@ -157,7 +157,7 @@ function CommandPalette({ open, onClose, index }: { open: boolean; onClose: () =
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="glass-bright w-full max-w-xl overflow-hidden rounded-2xl shadow-card"
+            className="glass-bright w-full max-w-xl overflow-hidden rounded-lg shadow-card"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3 border-b border-phantix-700/40 px-4 py-3.5">
@@ -169,7 +169,7 @@ function CommandPalette({ open, onClose, index }: { open: boolean; onClose: () =
                 placeholder="Jump to a surface..."
                 className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
               />
-              <kbd className="rounded-md border border-phantix-600/60 bg-phantix-800/80 px-1.5 py-0.5 text-[10px] font-semibold text-slate-400">
+              <kbd className="rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-400">
                 ESC
               </kbd>
             </div>
@@ -181,11 +181,11 @@ function CommandPalette({ open, onClose, index }: { open: boolean; onClose: () =
                     navigate(item.to);
                     onClose();
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-300 hover:bg-phantix-700/50 hover:text-white"
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm text-slate-300 hover:bg-phantix-800 hover:text-white"
                 >
                   <span className="text-gold-400">{item.icon}</span>
                   {item.label}
-                  <span className="ml-auto text-xs text-slate-600">{item.to}</span>
+                  <span className="ml-auto font-mono text-xs text-slate-600">{item.to}</span>
                 </button>
               ))}
               {q && results.length === 0 && (
@@ -272,7 +272,7 @@ export default function Layout() {
     <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/40 bg-phantix-950/85 backdrop-blur-xl">
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-[248px] flex-col border-r border-phantix-700/60 bg-black">
         <NavLink to="/" className="flex items-center gap-3 px-5 pb-5 pt-5">
           <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
           <div>
@@ -330,8 +330,8 @@ export default function Layout() {
         </nav>
 
         {/* Dual-control widget */}
-        <div className="border-t border-phantix-700/40 p-3">
-          <div className="rounded-xl bg-phantix-900/70 border border-phantix-700/40 p-3">
+        <div className="border-t border-phantix-700/60 p-3">
+          <div className="rounded-md bg-phantix-900 border border-phantix-700 p-3">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Dual control</p>
               {operate.unlocked ? (
@@ -347,7 +347,7 @@ export default function Layout() {
                   <span className="text-[11px] capitalize text-slate-500">{operate.actingRole}</span>
                   {operate.expiresAt && <OperateCountdown expiresAt={operate.expiresAt} />}
                 </div>
-                <button onClick={lockOperate} className="mt-1 w-full rounded-lg bg-phantix-700/50 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-phantix-700/80">
+                <button onClick={lockOperate} className="mt-1 w-full rounded-md border border-phantix-700 bg-phantix-850 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-phantix-800">
                   Lock session
                 </button>
               </div>
@@ -394,14 +394,14 @@ export default function Layout() {
       {/* ── Main ────────────────────────────────────────────── */}
       <div className="ml-[248px] flex min-h-screen flex-1 flex-col">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/80 px-6 py-3 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-black px-6 py-3">
           <button
             onClick={() => setPaletteOpen(true)}
-            className="flex w-72 items-center gap-2.5 rounded-xl border border-phantix-700/50 bg-phantix-900/60 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-500/50 hover:text-slate-300"
+            className="flex w-72 items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 px-3.5 py-2 text-sm text-slate-500 transition-colors hover:border-phantix-600 hover:text-slate-300"
           >
             <Search size={15} />
             <span>Search surfaces...</span>
-            <span className="ml-auto flex items-center gap-0.5 rounded-md border border-phantix-600/50 bg-phantix-800/70 px-1.5 py-0.5 text-[10px] font-semibold">
+            <span className="ml-auto flex items-center gap-0.5 rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] font-semibold">
               <Command size={9} />K
             </span>
           </button>
@@ -412,16 +412,16 @@ export default function Layout() {
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
               <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>
-            <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
+            <span className="chip font-mono border-phantix-700 bg-phantix-900 text-slate-300">
               <KeyRound size={12} className="text-gold-400" /> {org.slug}
             </span>
 
             <div className="relative">
               <button
                 onClick={() => setUserMenu((v) => !v)}
-                className="flex items-center gap-2.5 rounded-xl border border-phantix-700/50 bg-phantix-900/60 py-1.5 pl-1.5 pr-2.5 hover:border-phantix-500/50"
+                className="flex items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 py-1.5 pl-1.5 pr-2.5 transition-colors hover:border-phantix-600"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 font-display text-xs font-bold text-phantix-950">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md border border-gold-400/40 bg-phantix-850 font-display text-xs font-bold text-gold-300">
                   {(session?.userName ?? "A").slice(0, 1)}
                 </span>
                 <span className="text-left">
@@ -436,7 +436,7 @@ export default function Layout() {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 6 }}
-                    className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card"
+                    className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-md border border-phantix-700 bg-phantix-900 shadow-card"
                   >
                     <div className="border-b border-phantix-700/40 px-4 py-3">
                       <p className="text-sm font-semibold text-slate-100">{session?.userName ?? "Guest"}</p>
@@ -450,26 +450,26 @@ export default function Layout() {
                             switchToRealOrg();
                             navigate("/login");
                           }}
-                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gold-300 hover:bg-gold-400/10"
+                          className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-gold-300 hover:bg-gold-400/10"
                         >
                           <Building2 size={15} /> Switch to real organization
                         </button>
                       )}
                       <a
                         href={PLATFORM_IDENTITY_URL}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-phantix-700/50"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
                       >
                         <ExternalLink size={15} /> Platform settings
                       </a>
                       <button
                         onClick={() => navigate("/docs")}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-phantix-700/50"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
                       >
                         <BookOpen size={15} /> Documentation
                       </button>
                       <button
                         onClick={() => navigate("/support")}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-phantix-700/50"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
                       >
                         <LifeBuoy size={15} /> Support
                       </button>
@@ -478,7 +478,7 @@ export default function Layout() {
                           logout();
                           navigate("/login");
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-severity-critical hover:bg-severity-critical/10"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-severity-critical hover:bg-severity-critical/10"
                       >
                         <LogOut size={15} /> Sign out
                       </button>
@@ -492,8 +492,8 @@ export default function Layout() {
 
         {/* Demo banner */}
         {demoActive && (
-          <div className="relative z-20 flex flex-wrap items-center gap-3 border-b border-gold-400/25 bg-gradient-to-r from-gold-400/12 via-gold-400/6 to-transparent px-6 py-2.5">
-            <span className="chip border-gold-400/40 bg-gold-400/15 text-gold-300">
+          <div className="relative z-20 flex flex-wrap items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-6 py-2.5">
+            <span className="chip border-gold-400/40 bg-transparent text-gold-300">
               <FlaskConical size={11} /> Demo tenant
             </span>
             <p className="text-xs text-slate-400">
@@ -505,7 +505,7 @@ export default function Layout() {
                   switchToRealOrg();
                   navigate("/login");
                 }}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-3 py-1.5 text-xs font-semibold text-gold-300 transition-colors hover:bg-gold-400/20"
+                className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-gold-400/40 bg-transparent px-3 py-1.5 text-xs font-semibold text-gold-300 transition-colors hover:bg-gold-400/10"
               >
                 <Building2 size={12} /> Switch to real organization
               </button>
@@ -521,7 +521,7 @@ export default function Layout() {
           </div>
         </main>
 
-        <footer className="border-t border-phantix-700/30 px-8 py-4 text-[11px] text-slate-600 flex items-center justify-between">
+        <footer className="border-t border-phantix-700/60 px-8 py-4 text-[11px] text-slate-600 flex items-center justify-between">
           <span>Phantix Security Solutions · Privacy-first by architecture --- security data never leaves your database</span>
           <span className="flex items-center gap-1.5">
             <Sparkles size={11} className="text-gold-500" /> API v1 · {org.plan} plan

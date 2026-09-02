@@ -14,14 +14,16 @@ interface Props {
   height?: number;
 }
 
-/** Compact dark-themed area time-series used across dashboards. */
+const MONO = "'Geist Mono Variable', 'JetBrains Mono', ui-monospace, monospace";
+
+/** Compact dark-themed line time-series used across dashboards.
+ *  Flat dev-tool styling: thin high-contrast plots, no area-fill glow. */
 export default function TrendChart({ points, color = "#E8B54D", secondaryColor = "#F43F5E", height = 180 }: Props) {
   const data = points.map((p) => ({
     label: p.label,
     value: p.value,
     ...(p.secondary != null ? { secondary: p.secondary } : {}),
   }));
-  const id = `trend-fill-${color.replace("#", "")}`;
   const hasSecondary = data.some((d) => d.secondary != null);
 
   if (!data.length) {
@@ -35,49 +37,44 @@ export default function TrendChart({ points, color = "#E8B54D", secondaryColor =
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -14 }}>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid stroke="rgba(148,163,184,0.08)" vertical={false} />
+        <CartesianGrid stroke="rgba(113,113,122,0.12)" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fill: "#64748B", fontSize: 10 }}
-          axisLine={{ stroke: "rgba(148,163,184,0.15)" }}
+          tick={{ fill: "#71717A", fontSize: 10, fontFamily: MONO }}
+          axisLine={{ stroke: "#3F3F46" }}
           tickLine={false}
           interval="preserveStartEnd"
           minTickGap={28}
         />
         <YAxis
-          tick={{ fill: "#64748B", fontSize: 10 }}
+          tick={{ fill: "#71717A", fontSize: 10, fontFamily: MONO }}
           axisLine={false}
           tickLine={false}
           width={42}
           domain={["auto", "auto"]}
         />
         <Tooltip
-          cursor={{ stroke: "rgba(232,181,77,0.35)", strokeWidth: 1 }}
+          cursor={{ stroke: "rgba(232,181,77,0.4)", strokeWidth: 1 }}
           contentStyle={{
-            background: "rgba(10,14,22,0.95)",
-            border: "1px solid rgba(124,140,248,0.25)",
-            borderRadius: 10,
+            background: "#0A0A0A",
+            border: "1px solid #27272A",
+            borderRadius: 6,
             fontSize: 12,
             padding: "6px 10px",
+            fontFamily: MONO,
           }}
-          labelStyle={{ color: "#94A3B8", fontSize: 11, marginBottom: 2 }}
-          itemStyle={{ color: "#F1F5F9" }}
+          labelStyle={{ color: "#A1A1AA", fontSize: 11, marginBottom: 2 }}
+          itemStyle={{ color: "#E4E4E7" }}
         />
         <Area
           type="monotone"
           dataKey="value"
           name="value"
           stroke={color}
-          strokeWidth={2}
-          fill={`url(#${id})`}
+          strokeWidth={1.5}
+          fill="none"
           dot={false}
-          activeDot={{ r: 3.5, fill: color, stroke: "#0B1220" }}
+          activeDot={{ r: 3, fill: color, stroke: "#000000" }}
         />
         {hasSecondary && (
           <Area
@@ -85,11 +82,11 @@ export default function TrendChart({ points, color = "#E8B54D", secondaryColor =
             dataKey="secondary"
             name="critical+high"
             stroke={secondaryColor}
-            strokeWidth={1.6}
+            strokeWidth={1.25}
             strokeDasharray="4 3"
             fill="none"
             dot={false}
-            activeDot={{ r: 3, fill: secondaryColor, stroke: "#0B1220" }}
+            activeDot={{ r: 2.5, fill: secondaryColor, stroke: "#000000" }}
           />
         )}
       </AreaChart>
