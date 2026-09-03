@@ -48,7 +48,7 @@ export default function DeviceConfirm() {
       </div>
 
       <div className="relative w-full max-w-[440px] text-center">
-        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(51,85,181,0.6)]" />
+        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(232,181,77,0.5)]" />
         <div className="card mt-8 p-8">
           {state === "loading" && (
             <div className="py-4">

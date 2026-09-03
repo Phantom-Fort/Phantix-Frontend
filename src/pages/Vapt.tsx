@@ -457,15 +457,15 @@ export default function Vapt() {
 
                     {/* Progress for active campaigns */}
                     {activeSelected.status === "active" && (
-                      <div className="mb-3 p-3 rounded-lg bg-blue-400/5 border border-blue-400/20">
+                      <div className="mb-3 p-3 rounded-lg bg-severity-low/5 border border-severity-low/20">
                         <div className="flex items-center gap-2 text-xs mb-2">
-                          <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse-soft" />
-                          <span className="text-blue-400 font-medium">Phase: {(activeSelected as any).current_phase || `Step ${((activeSelected as any).current_step_index || 0) + 1}`}</span>
+                          <span className="h-2 w-2 rounded-full bg-severity-low animate-pulse-soft" />
+                          <span className="text-severity-low font-medium">Phase: {(activeSelected as any).current_phase || `Step ${((activeSelected as any).current_step_index || 0) + 1}`}</span>
                           <span className="text-slate-500">
                             Step {((activeSelected as any).current_step_index || 0) + 1} of {((activeSelected as any).procedure_snapshot?.steps?.length ?? 0)}
                           </span>
                         </div>
-                        <ProgressBar value={(((activeSelected as any).current_step_index || 0) + 1) / (((activeSelected as any).procedure_snapshot?.steps?.length || 1)) * 100} color="#38BDF8" />
+                        <ProgressBar value={(((activeSelected as any).current_step_index || 0) + 1) / (((activeSelected as any).procedure_snapshot?.steps?.length || 1)) * 100} color="rgb(var(--severity-low))" />
                       </div>
                     )}
 
@@ -476,15 +476,15 @@ export default function Vapt() {
                         const isCurrent = activeSelected.status === "active" && i === stepIdx;
                         const isCompleted = activeSelected.status === "completed" || (activeSelected.status === "active" && i < stepIdx);
                         const isFailed = activeSelected.status === "failed" && i === stepIdx;
-                        const icon = stepType === "scan" ? <Radar size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />
-                          : stepType === "web_scan" ? <Globe size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />
+                        const icon = stepType === "scan" ? <Radar size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-severity-low" : "text-slate-500"} />
+                          : stepType === "web_scan" ? <Globe size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-severity-low" : "text-slate-500"} />
                           : stepType === "correlate" ? <GitBranch size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-gold-400" : "text-slate-500"} />
                           : stepType === "analyze" ? <Sparkles size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-purple-400" : "text-slate-500"} />
-                          : <Activity size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-blue-400" : "text-slate-500"} />;
+                          : <Activity size={12} className={isCompleted ? "text-emerald-400" : isCurrent ? "text-severity-low" : "text-slate-500"} />;
                         return (
-                          <div key={i} className={cx("flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0", isCurrent && "bg-blue-400/5 -mx-2 px-2 rounded")}>
+                          <div key={i} className={cx("flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0", isCurrent && "bg-severity-low/5 -mx-2 px-2 rounded")}>
                             <div className="flex flex-col items-center shrink-0">
-                              <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-blue-400/20 text-blue-400" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
+                              <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-severity-low/20 text-severity-low" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
                                 {isCompleted ? <CheckCircle2 size={12} /> : isFailed ? <XCircle size={12} /> : isCurrent ? <Loader2 size={12} className="animate-spin" /> : i + 1}
                               </div>
                               {i < (((activeSelected as any).procedure_snapshot?.steps?.length ?? 0) - 1) && (
@@ -492,12 +492,12 @@ export default function Vapt() {
                               )}
                             </div>
                             <div className="min-w-0 pb-1">
-                              <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-blue-300" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
+                              <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-severity-low" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
                                 {icon} {step.step_name}
                                 {step.config?.max_duration_minutes && (
                                   <span className="text-[9px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
                                 )}
-                                {isCurrent && <span className="text-[10px] text-blue-400 font-normal">running</span>}
+                                {isCurrent && <span className="text-[10px] text-severity-low font-normal">running</span>}
                                 {isCompleted && <span className="text-[10px] text-emerald-400 font-normal">complete</span>}
                               </p>
                               <p className={cx("text-[11px] leading-relaxed", isCurrent ? "text-slate-400" : "text-slate-500")}>{step.step_description}</p>

@@ -172,11 +172,11 @@ export default function AgentAssistant() {
       {/* Floating launcher (bottom-right) */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-8 right-8 z-[75] flex h-40 w-40 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105"
+        className="fixed bottom-4 right-4 z-[75] flex h-20 w-20 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105 sm:bottom-8 sm:right-8 sm:h-40 sm:w-40"
         title="Phantix Agent assistant"
         aria-label="Toggle Phantix Agent assistant"
       >
-        <LottiePlayer animationData={chatbotData} className="h-40 w-40" loop />
+        <LottiePlayer animationData={chatbotData} className="h-20 w-20 sm:h-40 sm:w-40" loop />
       </button>
 
       <AnimatePresence>

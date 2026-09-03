@@ -29,7 +29,7 @@ function assetTierBadge(a: Asset | null | undefined): { label: string; cls: stri
   const raw = md.tier ?? md.priority ?? "";
   const t = String(raw).toLowerCase();
   if (t === "high") return { label: "High tier", cls: "border-gold-400/30 bg-gold-400/10 text-gold-300" };
-  if (t === "medium") return { label: "Medium tier", cls: "border-blue-400/30 bg-blue-400/10 text-blue-300" };
+  if (t === "medium") return { label: "Medium tier", cls: "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" };
   if (t === "low") return { label: "Low tier", cls: "border-slate-500/30 bg-slate-500/10 text-slate-400" };
   if (t === "true" || t === "1") return { label: "Priority", cls: "border-gold-400/30 bg-gold-400/10 text-gold-300" };
   return null;
@@ -517,7 +517,7 @@ export default function Assets() {
                           <td className="td">
                             {a.discoveryStatus ? (
                               <span className="flex items-center gap-1.5">
-                                <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-blue-400 animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
+                                <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-severity-low animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
                                 <StatusBadge status={a.discoveryStatus} />
                               </span>
                             ) : (
@@ -571,7 +571,7 @@ export default function Assets() {
             <Card key={j.id}>
               {/* Header */}
               <div className="flex flex-wrap items-center gap-3 mb-3">
-                <span className={cx("flex h-9 w-9 items-center justify-center rounded-xl", j.status === "running" ? "bg-blue-400/20 text-blue-400" : j.status === "completed" ? "bg-emerald-400/20 text-emerald-400" : j.status === "failed" ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-gold-400")}>
+                <span className={cx("flex h-9 w-9 items-center justify-center rounded-xl", j.status === "running" ? "bg-severity-low/20 text-severity-low" : j.status === "completed" ? "bg-emerald-400/20 text-emerald-400" : j.status === "failed" ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-gold-400")}>
                   <Radar size={16} className={j.status === "running" ? "animate-pulse-soft" : ""} />
                 </span>
                 <div className="min-w-0 flex-1">
