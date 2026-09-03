@@ -142,7 +142,7 @@ export default function AuthorizerInbox() {
         <div className="space-y-3">
           {filtered.map((item) => {
             const busy = acting === (item.pendingId || item.requestId || item.treatmentId || null);
-            const channelIcon = item.channel === "dual_control" ? <Shield size={16} className="text-blue-400" />
+            const channelIcon = item.channel === "dual_control" ? <Shield size={16} className="text-gold-400" />
               : item.channel === "vapt" ? <Crosshair size={16} className="text-severity-medium" />
               : <AlertTriangle size={16} className="text-severity-high" />;
             const channelLabel = item.channel === "dual_control" ? "Dual Control"
