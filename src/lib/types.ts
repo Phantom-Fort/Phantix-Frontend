@@ -1414,3 +1414,318 @@ export interface PentestScopeList {
   items: PentestScopeRead[];
   total: number;
 }
+
+// ── SOC War Room ──────────────────────────────────────────────────────────────
+export interface SocWarRoomCase {
+  id: number;
+  organization_id?: number;
+  title: string;
+  severity: Severity | string;
+  status: "open" | "investigating" | "contained" | "closed" | string;
+  playbook_id: number | null;
+  detection_ids?: number[];
+  sla_deadline?: string | null;
+  opened_at?: string | null;
+  closed_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SocWarRoomChecklistItem {
+  step_id: number;
+  phase: string;
+  title: string;
+  status: "pending" | "completed" | "skipped" | string;
+  completed_by?: string | null;
+  notes?: string | null;
+  order: number;
+}
+
+export interface SocWarRoomChecklist {
+  case_id: number;
+  playbook_id: number | null;
+  current_phase: string;
+  progress: number;
+  steps: SocWarRoomChecklistItem[];
+}
+
+export interface SocWarRoomEvidence {
+  case_id: number;
+  timeline: Array<{
+    id: number;
+    event_type: string;
+    title: string;
+    detail?: string;
+    source?: string;
+    created_at: string;
+  }>;
+}
+
+export interface SocWarRoomKillChain {
+  case_id: number;
+  tactics: string[];
+  techniques: Array<{
+    technique_id: string;
+    name: string;
+    tactic: string;
+    status: "detected" | "confirmed" | "mitigated";
+  }>;
+}
+
+export interface SocWarRoomSla {
+  case_id: number;
+  targets: Array<{
+    metric: string;
+    target: number;
+    actual: number;
+    breached: boolean;
+  }>;
+}
+
+export interface SocWarRoomResponse {
+  cases: SocWarRoomCase[];
+  playbook_catalog?: SocPlaybook[];
+}
+
+// ── SOC Playbooks & MITRE ─────────────────────────────────────────────────────
+export interface SocPlaybook {
+  id: number;
+  title: string;
+  description?: string;
+  category: string;
+  mitre_id?: string;
+  severity?: string;
+  phases: SocPlaybookPhase[];
+  enabled: boolean;
+  org_only: boolean;
+  version: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SocPlaybookPhase {
+  id: number;
+  name: string;
+  steps: SocPlaybookStep[];
+  order: number;
+}
+
+export interface SocPlaybookStep {
+  id: number;
+  title: string;
+  description?: string;
+  order: number;
+}
+
+export interface SocRunbook {
+  id: number;
+  title: string;
+  description?: string;
+  steps: SocRunbookStep[];
+  version: number;
+  created_at?: string;
+}
+
+export interface SocRunbookStep {
+  id: number;
+  title: string;
+  description?: string;
+  order: number;
+}
+
+export interface MitreTechnique {
+  id: string;
+  tactic: string;
+  technique: string;
+  mitigations: string[];
+  playbook_count: number;
+}
+
+export interface MitreMatrix {
+  tactics: Array<{
+    id: string;
+    name: string;
+    techniques: number;
+    coverage: number;
+  }>;
+  total_techniques: number;
+  covered_techniques: number;
+  coverage_pct: number;
+}
+
+export interface MitreStats {
+  total_techniques: number;
+  covered: number;
+  not_covered: number;
+  by_tactic: Record<string, { total: number; covered: number }>;
+}
+
+// ── SOC Advisor ───────────────────────────────────────────────────────────────
+export interface SocAdvisorDashboard {
+  score: number;
+  trend: Array<{ date: string; score: number }>;
+  benchmarks: Array<{ name: string; score: number; industry_avg: number }>;
+  readiness: Record<string, { score: number; total_controls: number; passed: number }>;
+  open_recommendations: number;
+}
+
+export interface SocAdvisorRecommendation {
+  id: number;
+  title: string;
+  description?: string;
+  priority: "critical" | "high" | "medium" | "low";
+  status: "open" | "in_progress" | "resolved" | "accepted" | "rejected";
+  assignee?: string | null;
+  notes?: string | null;
+  created_at?: string;
+}
+
+export interface SocAdvisorReport {
+  id: number;
+  report_type: string;
+  title: string;
+  status: "draft" | "published" | string;
+  score?: number;
+  executive_summary?: string;
+  recommendations?: SocAdvisorRecommendation[];
+  created_at?: string;
+  published_at?: string | null;
+}
+
+// ── SOC Log Pipeline ──────────────────────────────────────────────────────────
+export interface SocLogEntry {
+  id: number;
+  host: string;
+  facility: string;
+  level: string;
+  message: string;
+  timestamp: string;
+  hash?: string;
+}
+
+export interface SocLogSearchResponse {
+  items: SocLogEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface SocLogPipelineStats {
+  total_24h: number;
+  error_pct: number;
+  by_level: Record<string, number>;
+  by_facility: Record<string, number>;
+  by_host: Record<string, number>;
+}
+
+// ── SOC Agent Fleet ───────────────────────────────────────────────────────────
+export interface SocAgentFleet {
+  active: number;
+  stale: number;
+  offline: number;
+  agents: SocAgent[];
+}
+
+export interface SocAgent {
+  agent_id: string;
+  hostname: string;
+  version: string;
+  status: "active" | "stale" | "offline";
+  last_heartbeat: string | null;
+  registered_at?: string;
+}
+
+// ── SOC Dashboard v2 panels ──────────────────────────────────────────────────
+export interface SocMitreMatrixPanel {
+  techniques: number;
+  covered: number;
+  coverage_pct: number;
+  detections_mapped: number;
+  cases: number;
+}
+
+export interface SocSlaDashboard {
+  period_days: number;
+  compliance_pct: number;
+  metrics: Array<{ name: string; target: number; actual: number; breaching: boolean }>;
+}
+
+export interface SocCasesSummary {
+  total_open: number;
+  by_severity: Record<string, number>;
+  by_playbook: Record<string, number>;
+  oldest_case_hours: number;
+}
+
+export interface SocWarRoomStats {
+  open_cases: number;
+  cases_by_severity: Record<string, number>;
+  average_progress: number;
+  breached_sla_count: number;
+}
+
+// ── Integrations Hub ──────────────────────────────────────────────────────────
+export interface IntegrationConnector {
+  connector_id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  auth_modes: string[];
+  category: string;
+  wave: number;
+  status: "active" | "beta" | "coming_soon";
+  config_schema?: Record<string, unknown>;
+}
+
+export interface IntegrationInstallation {
+  installation_id: number;
+  connector_id: string;
+  label: string;
+  status: "pending_auth" | "active" | "error" | "disconnected";
+  auth_mode: string;
+  config?: Record<string, unknown>;
+  has_secrets: boolean;
+  created_at?: string;
+  last_test_at?: string;
+  last_test_ok?: boolean;
+}
+
+export interface IntegrationCatalogResponse {
+  connectors: IntegrationConnector[];
+}
+
+export interface IntegrationInstallationResponse {
+  installations: IntegrationInstallation[];
+}
+
+// ── SOC Cloud Integrations ────────────────────────────────────────────────────
+export interface SocCloudProviderCatalog {
+  providers: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    integration_types: string[];
+    setup_templates?: Record<string, unknown>;
+  }>;
+}
+
+export interface SocCloudConnection {
+  id: number;
+  provider: string;
+  integration_type: string;
+  display_name: string;
+  status: "connected" | "error" | "pending";
+  config_summary?: Record<string, unknown>;
+  last_sync_at?: string | null;
+  created_at?: string;
+}
+
+// ── SOC Dashboard v2 composite ────────────────────────────────────────────────
+export interface SocDashboardV2 {
+  mitre_matrix?: SocMitreMatrixPanel;
+  sla?: SocSlaDashboard;
+  agents?: SocAgentFleet;
+  log_pipeline?: SocLogPipelineStats;
+  cases_summary?: SocCasesSummary;
+  war_room_stats?: SocWarRoomStats;
+}

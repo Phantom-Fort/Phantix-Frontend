@@ -24,6 +24,13 @@ import DocPage from "@/pages/DocPage";
 import AssetIntelligence from "@/pages/AssetIntelligence";
 import AssetGraph from "@/pages/AssetGraph";
 import SocDashboard from "@/pages/SocDashboard";
+import SocWarRoom from "@/pages/SocWarRoom";
+import SocPlaybooks from "@/pages/SocPlaybooks";
+import SocAdvisor from "@/pages/SocAdvisor";
+import SocLogPipeline from "@/pages/SocLogPipeline";
+import SocAgentManager from "@/pages/SocAgentManager";
+import SocCloudIntegration from "@/pages/SocCloudIntegration";
+import IntegrationsHub from "@/pages/IntegrationsHub";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
 import Sandbox from "@/pages/Sandbox";
@@ -96,6 +103,13 @@ export default function App() {
             <Route path="/assets/intelligence" element={<RequireAuth><AssetIntelligence /></RequireAuth>} />
             <Route path="/assets/intelligence/graph" element={<RequireAuth><AssetGraph /></RequireAuth>} />
             <Route path="/soc" element={<RequireAuth><SocDashboard /></RequireAuth>} />
+            <Route path="/soc/war-room" element={<RequireAuth><SocWarRoom /></RequireAuth>} />
+            <Route path="/soc/playbooks" element={<RequireAuth><SocPlaybooks /></RequireAuth>} />
+            <Route path="/soc/advisor" element={<RequireAuth><SocAdvisor /></RequireAuth>} />
+            <Route path="/soc/logs" element={<RequireAuth><SocLogPipeline /></RequireAuth>} />
+            <Route path="/soc/agents" element={<RequireAuth><SocAgentManager /></RequireAuth>} />
+            <Route path="/soc/cloud" element={<RequireAuth><SocCloudIntegration /></RequireAuth>} />
+            <Route path="/integrations" element={<RequireAuth><IntegrationsHub /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/threat-intel" element={<RequireAuth><ThreatIntel /></RequireAuth>} />

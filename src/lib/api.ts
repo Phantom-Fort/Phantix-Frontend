@@ -1,4 +1,4 @@
-﻿// ── Phantix API client ────────────────────────────────────────────────────────
+// ── Phantix API client ────────────────────────────────────────────────────────
 // Token model: app_session + device, platform, dual-control, staff (never mixed).
 // API base from src/lib/config.ts (no Vite env). Demo only via /demo flag.
 import { API_BASE as CONFIG_API_BASE } from "./config";

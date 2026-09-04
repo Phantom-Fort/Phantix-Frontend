@@ -24,7 +24,7 @@ export default function People() {
     return (
       <ErrorState
         onRetry={reload}
-        body="We could not load your team. Check your connection and retry â€” your session stays signed in."
+        body="We could not load your team. Check your connection and retry — your session stays signed in."
       />
     );
   }

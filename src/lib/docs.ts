@@ -1,4 +1,4 @@
-﻿// ── Documentation catalog (public) ────────────────────────────────────────────
+// ── Documentation catalog (public) ────────────────────────────────────────────
 // Renders the client-facing help centre + public guides shipped in this repo
 // under docs/ (marketing) and docs/user-docs/ (help centre). Engineering
 // internals are intentionally not exposed here.

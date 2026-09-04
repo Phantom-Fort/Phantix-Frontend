@@ -19,6 +19,7 @@ import {
   Unlock,
   Database,
   ChevronDown,
+  ChevronRight,
   Command,
   KeyRound,
   Sparkles,
@@ -34,6 +35,13 @@ import {
   Fingerprint,
   FileSignature,
   FlaskConical as FlaskNav,
+  Swords,
+  Puzzle,
+  ScrollText,
+  Logs,
+  Puzzle as AgentIcon,
+  Cable,
+  Puzzle as HubIcon,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
@@ -50,9 +58,19 @@ import { loadSandboxMe } from "@/lib/sandbox";
 // Dual-control unlock uses DualControlOverlay (App root) via requireDualControl() --- no Modal here.
 // Tenant settings (identity, DB, billing, AI) live on platform.phantixlabs.com.
 
+const socSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
+  { to: "/soc", label: "SOC Dashboard", icon: <Activity size={17} /> },
+  { to: "/soc/war-room", label: "War Room", icon: <Swords size={17} /> },
+  { to: "/soc/playbooks", label: "Playbooks & MITRE", icon: <ScrollText size={17} /> },
+  { to: "/soc/advisor", label: "Advisor", icon: <Shield size={17} /> },
+  { to: "/soc/logs", label: "Log Pipeline", icon: <Logs size={17} /> },
+  { to: "/soc/agents", label: "Agents", icon: <AgentIcon size={17} /> },
+  { to: "/soc/cloud", label: "Cloud Integrations", icon: <Cloud size={17} /> },
+];
+
 const navSections: {
   label: string;
-  items: { to: string; label: string; icon: React.ReactNode; badge?: string }[];
+  items: ({ to: string; label: string; icon: React.ReactNode; badge?: string } | { type: "dropdown"; label: string; icon: React.ReactNode; items: { to: string; label: string; icon: React.ReactNode }[] })[];
 }[] = [
   {
     label: "Overview",
@@ -65,12 +83,18 @@ const navSections: {
     items: [
       { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
       { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
-      { to: "/soc", label: "SOC Monitor", icon: <Activity size={17} /> },
+      { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, items: socSubItems },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
       { to: "/vapt", label: "VAPT Campaigns", icon: <Crosshair size={17} /> },
       { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
       { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
       { to: "/pentest/external-scope", label: "Pentest scope", icon: <FileSignature size={17} /> },
+    ],
+  },
+  {
+    label: "Integrations",
+    items: [
+      { to: "/integrations", label: "Integrations Hub", icon: <HubIcon size={17} /> },
     ],
   },
   {
@@ -94,6 +118,61 @@ const navSections: {
     ],
   },
 ];
+
+function SocDropdownComponent() {
+  const location = useLocation();
+  const socActive = location.pathname.startsWith("/soc");
+  const [open, setOpen] = useState(socActive);
+
+  useEffect(() => {
+    setOpen(location.pathname.startsWith("/soc"));
+  }, [location.pathname]);
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cx("nav-item w-full justify-between", socActive && "active")}
+      >
+        <span className="flex items-center gap-3">
+          <Activity size={17} />
+          SOC Monitor
+        </span>
+        <ChevronDown
+          size={14}
+          className={cx("text-slate-500 transition-transform duration-200", open && "rotate-180")}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="ml-7 mt-0.5 space-y-0.5 border-l border-phantix-700/50 pl-2.5">
+              {socSubItems.map((sub) => (
+                <NavLink
+                  key={sub.to}
+                  to={sub.to}
+                  end={sub.to === "/soc"}
+                  className={({ isActive }) => cx("nav-item !py-2", isActive && "active")}
+                >
+                  {sub.icon}
+                  {sub.label}
+                </NavLink>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+type NavItem = { to: string; label: string; icon: React.ReactNode; badge?: string };
 
 function useNavSections() {
   const [sandboxEnrolled, setSandboxEnrolled] = useState(false);
@@ -209,7 +288,19 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const sections = useNavSections();
-  const searchIndex = useMemo(() => sections.flatMap((s) => s.items), [sections]);
+  const searchIndex = useMemo(() => {
+    const flat: { to: string; label: string; icon: React.ReactNode }[] = [];
+    for (const s of sections) {
+      for (const item of s.items) {
+        if ("type" in item && item.type === "dropdown") {
+          for (const sub of socSubItems) flat.push(sub);
+        } else {
+          flat.push(item as NavItem);
+        }
+      }
+    }
+    return flat;
+  }, [sections]);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -280,38 +371,44 @@ export default function Layout() {
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950 lg:flex">
-        <NavLink to="/" className="flex items-center gap-3 px-5 pb-5 pt-5">
-          <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
+        <NavLink to="/" className="flex items-center gap-3 px-4 pb-3 pt-4">
+          <img src="/logo-white.png" alt="Phantix" className="h-8 w-8 object-contain" />
           <div>
             <p className="font-display text-[15px] font-bold leading-tight text-white">Phantix</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </NavLink>
 
-        <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
+        <nav className="flex-1 space-y-2.5 overflow-y-auto px-2.5 pb-3">
           {sections.map((section) => (
             <div key={section.label}>
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
                 {section.label}
               </p>
-              <div className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === "/"}
-                    className={({ isActive }) => cx("nav-item", isActive && "active")}
-                  >
-                    {item.icon}
-                    {item.label}
-                  </NavLink>
-                ))}
-              </div>
+<div className="space-y-0.5">
+                    {section.items.map((item) => {
+                      if ("type" in item && item.type === "dropdown") {
+                        return <SocDropdownComponent key={item.label} />;
+                      }
+                      const navItem = item as NavItem;
+                      return (
+                        <NavLink
+                          key={navItem.to}
+                          to={navItem.to}
+                          end={navItem.to === "/"}
+                          className={({ isActive }) => cx("nav-item", isActive && "active")}
+                        >
+                          {navItem.icon}
+                          {navItem.label}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
             </div>
           ))}
           {session?.isAuthorizer && (
             <div>
-              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-400">
+              <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-gold-400">
                 Authorizer
               </p>
               <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
@@ -321,7 +418,7 @@ export default function Layout() {
             </div>
           )}
           <div>
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+            <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
               Tenant admin
             </p>
             <a
@@ -337,8 +434,8 @@ export default function Layout() {
         </nav>
 
         {/* Dual-control widget */}
-        <div className="border-t border-phantix-700/60 p-3">
-          <div className="rounded-md bg-phantix-900 border border-phantix-700 p-3">
+        <div className="border-t border-phantix-700/60 p-2.5">
+          <div className="rounded-md bg-phantix-900 border border-phantix-700 p-2.5">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Dual control</p>
               {operate.unlocked ? (
@@ -348,7 +445,7 @@ export default function Layout() {
               )}
             </div>
             {operate.unlocked ? (
-              <div className="mt-2 space-y-1.5">
+              <div className="mt-1.5 space-y-1">
                 <p className="text-xs font-medium text-emerald-300">Operating as {operate.actingUser}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] capitalize text-slate-500">{operate.actingRole}</span>
@@ -359,7 +456,7 @@ export default function Layout() {
                 </button>
               </div>
             ) : (
-              <div className="mt-2">
+              <div className="mt-1.5">
                 {dualControl.configured ? (
                   <>
                     <p className="text-[11px] leading-4 text-slate-500">
@@ -372,7 +469,7 @@ export default function Layout() {
                     {(session?.isInitiator || session?.isAuthorizer) && (
                       <button
                         onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
-                        className="btn-primary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
+                        className="btn-primary mt-1.5 w-full !px-3 !py-1.5 !text-[11px]"
                       >
                         <Unlock size={12} /> Unlock operate
                       </button>
@@ -384,7 +481,7 @@ export default function Layout() {
                     <p className="mt-1 text-[10px] leading-4 text-slate-600">Reports & views work without it. Mutations require setup on the Platform.</p>
                     <a
                       href={PLATFORM_IDENTITY_URL}
-                      className="btn-secondary mt-2 w-full !px-3 !py-1.5 !text-[11px]"
+                      className="btn-secondary mt-1.5 w-full !px-3 !py-1.5 !text-[11px]"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -519,30 +616,36 @@ export default function Layout() {
               exit={{ opacity: 0, height: 0 }}
               className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b border-phantix-700/60 bg-phantix-950 shadow-card lg:hidden"
             >
-              <nav className="space-y-5 px-3 py-4">
+              <nav className="space-y-3 px-2.5 py-3">
                 {sections.map((section) => (
                   <div key={section.label}>
-                    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                    <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
                       {section.label}
                     </p>
                     <div className="space-y-0.5">
-                      {section.items.map((item) => (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          end={item.to === "/"}
-                          className={({ isActive }) => cx("nav-item", isActive && "active")}
-                        >
-                          {item.icon}
-                          {item.label}
-                        </NavLink>
-                      ))}
+                      {section.items.map((item) => {
+                        if ("type" in item && item.type === "dropdown") {
+                          return <SocDropdownComponent key={item.label} />;
+                        }
+                        const navItem = item as NavItem;
+                        return (
+                          <NavLink
+                            key={navItem.to}
+                            to={navItem.to}
+                            end={navItem.to === "/"}
+                            className={({ isActive }) => cx("nav-item", isActive && "active")}
+                          >
+                            {navItem.icon}
+                            {navItem.label}
+                          </NavLink>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
                 {session?.isAuthorizer && (
                   <div>
-                    <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-gold-400">
+                    <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-gold-400">
                       Authorizer
                     </p>
                     <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
@@ -552,7 +655,7 @@ export default function Layout() {
                   </div>
                 )}
                 <div>
-                  <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
                     Tenant admin
                   </p>
                   <a href={PLATFORM_IDENTITY_URL} className="nav-item" target="_blank" rel="noreferrer">

@@ -570,7 +570,7 @@ export default function Reports() {
                       <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
                     </div>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} � ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` � ${formatBytes((r as any).size_bytes)}` : ""}
+                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` · ${formatBytes((r as any).size_bytes)}` : ""}
                     </p>
                   </div>
 

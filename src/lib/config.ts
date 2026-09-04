@@ -1,5 +1,5 @@
 /**
- * Command Centre (app.phantixlabs.com) â€” hardcoded browser config (no VITE_*).
+ * Command Centre (app.phantixlabs.com) — hardcoded browser config (no VITE_*).
  * Browser only talks same-origin; vite/nginx proxies upstream.
  */
 export const API_BASE = "/api/v1";

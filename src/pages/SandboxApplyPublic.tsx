@@ -21,7 +21,7 @@ function isSignedIn(): boolean {
   return Boolean(tokens.appSession || tokens.orgUser || tokens.platform);
 }
 
-/** Sandbox application â€” must be a registered organization (authenticated). */
+/** Sandbox application — must be a registered organization (authenticated). */
 export default function SandboxApplyPublic() {
   const [status, setStatus] = useState<Status>(defaults);
   const [checking, setChecking] = useState(true);
@@ -209,7 +209,7 @@ export default function SandboxApplyPublic() {
                   minLength={10}
                   value={useCase}
                   onChange={(e) => setUseCase(e.target.value)}
-                  placeholder="SOC, assets, reportsâ€¦"
+                  placeholder="SOC, assets, reports…"
                 />
               </div>
               <div>

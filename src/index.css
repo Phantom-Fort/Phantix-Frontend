@@ -360,11 +360,11 @@
   }
 
   .nav-item {
-    @apply flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400
+    @apply flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] leading-tight font-medium text-slate-400
       transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
   }
   .nav-item.active {
-    @apply text-slate-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-[14px];
+    @apply text-slate-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-3;
   }
 
   .prose-doc h1 {

@@ -119,7 +119,7 @@ const demoMe: SandboxMe = {
   latestUpdate: {
     id: 9,
     title: "SOC agent downloads are live",
-    body_md: "Linux / macOS / Windows packages are on Command Centre â†’ SOC â†’ Availability.",
+    body_md: "Linux / macOS / Windows packages are on Command Centre → SOC → Availability.",
     severity: "fix",
     version_label: "2026-08-19",
     published_at: new Date().toISOString(),

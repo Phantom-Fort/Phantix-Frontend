@@ -30,6 +30,13 @@ const MODULES: ModuleEntry[] = [
   { route: "/assets", label: "Assets", section: "Attack Surface", desc: "your attack-surface inventory and asset list", keywords: ["assets", "asset", "inventory", "attack surface", "hosts", "endpoints", "domains", "ip", "subdomain", "github repo"] },
   { route: "/assets/intelligence", label: "Intelligence", section: "Attack Surface", desc: "per-asset intelligence, exposure and priority", keywords: ["intelligence", "asset intelligence", "exposure", "asset risk", "priority", "asset analysis"] },
   { route: "/soc", label: "SOC Monitor", section: "Attack Surface", desc: "live detections, triage and SOC cases", keywords: ["soc", "detections", "triage", "alerts", "incidents", "monitor", "security operations", "cases"] },
+  { route: "/soc/war-room", label: "War Room", section: "Attack Surface", desc: "incident case management with checklists and SLA", keywords: ["war room", "incident", "case", "checklist", "sla", "evidence", "kill chain"] },
+  { route: "/soc/playbooks", label: "Playbooks & MITRE", section: "Attack Surface", desc: "response playbooks and MITRE ATT&CK coverage", keywords: ["playbook", "mitre", "runbook", "response", "procedure", "technique", "coverage"] },
+  { route: "/soc/advisor", label: "SOC Advisor", section: "Attack Surface", desc: "posture score, trends, readiness and recommendations", keywords: ["advisor", "posture", "readiness", "recommendation", "benchmark", "trend", "score"] },
+  { route: "/soc/logs", label: "Log Pipeline", section: "Attack Surface", desc: "security log search and pipeline statistics", keywords: ["log", "logs", "pipeline", "agent log", "search log", "log search"] },
+  { route: "/soc/agents", label: "Agents", section: "Attack Surface", desc: "agent fleet health, registration and install", keywords: ["agent", "agents", "fleet", "install", "deploy", "download agent", "host agent"] },
+  { route: "/soc/cloud", label: "Cloud Integrations", section: "Attack Surface", desc: "connect cloud providers for log ingestion", keywords: ["cloud integration", "cloud log", "aws", "azure", "gcp", "cloud provider", "ingest"] },
+  { route: "/integrations", label: "Integrations Hub", section: "Integrations", desc: "connector catalog, install and manage integrations", keywords: ["integration", "hub", "connector", "slack", "teams", "sso", "scim", "webhook", "oauth", "channel"] },
   { route: "/scans", label: "Scans", section: "Attack Surface", desc: "discovery and vulnerability scans", keywords: ["scans", "scan", "vulnerability scan", "nmap", "nuclei", "discovery", "crawl", "results"] },
   { route: "/vapt", label: "VAPT Campaigns", section: "Attack Surface", desc: "VAPT campaigns, findings and approvals", keywords: ["vapt", "pentest", "penetration", "campaign", "web app test", "testing", "exploit", "vulnerability assessment"] },
   { route: "/risks", label: "Risks", section: "Governance", desc: "the risk register and treatment tracking", keywords: ["risks", "risk", "risk register", "treatment", "threats", "critical risks", "score"] },
@@ -98,7 +105,9 @@ export function helpOverview(): string {
     "Here's where everything lives:\n" +
     "· Dashboard (/dashboard) — posture & key stats\n" +
     "· Assets (/assets) + Intelligence (/assets/intelligence) — inventory & exposure\n" +
-    "· SOC Monitor (/soc), Scans (/scans), VAPT Campaigns (/vapt) — monitoring & testing\n" +
+    "· SOC Monitor (/soc) with War Room, Playbooks, Advisor, Logs, Agents & Cloud Integrations\n" +
+    "· Scans (/scans), VAPT Campaigns (/vapt) — monitoring & testing\n" +
+    "· Integrations Hub (/integrations) — connectors, SSO, SCIM & webhooks\n" +
     "· Risks (/risks), Compliance (/compliance), Reports (/reports) — governance\n" +
     "· Phantix Agent (/agent) — chat & investigations\n" +
     "· Alerts (/alerts), Audit (/audit), People (/people), Support (/support)\n" +

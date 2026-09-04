@@ -35,6 +35,16 @@ function assetTierBadge(a: Asset | null | undefined): { label: string; cls: stri
   return null;
 }
 
+/** Read a local file to text (JSON/YAML API specs). */
+function readTextFile(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Could not read the selected file"));
+    reader.readAsText(file);
+  });
+}
+
 export default function Assets() {
   const { toast, requireDualControl } = useStore();
   const { data, loading, error, reload } = useResource(loadAssetsBundle, {
@@ -67,6 +77,9 @@ export default function Assets() {
   const [showApiModal, setShowApiModal] = useState(false);
   const [apiSpec, setApiSpec] = useState("");
   const [apiFormat, setApiFormat] = useState("openapi");
+  const [apiInputMode, setApiInputMode] = useState<"paste" | "file" | "url">("paste");
+  const [apiFile, setApiFile] = useState<File | null>(null);
+  const [apiUrl, setApiUrl] = useState("");
   const [importing, setImporting] = useState(false);
   const [adding, setAdding] = useState(false);
   const [checked, setChecked] = useState<Set<number>>(new Set());
@@ -278,13 +291,39 @@ export default function Assets() {
   };
 
   const handleApiImport = async () => {
-    if (!apiSpec) { toast("error", "Paste an OpenAPI spec"); return; }
+    // Backend contract (app/engines/asset_engine/schemas/assets.py → ApiSpecImportRequest):
+    //   POST /assets/import/api  { format, content?, url?, confirm_ownership }
+    // File upload is sent as `content`; URLs are fetched server-side via `url`.
+    const body: Record<string, unknown> = { format: apiFormat, confirm_ownership: true };
+
+    if (apiInputMode === "file") {
+      if (!apiFile) { toast("error", "Choose a JSON/YAML file"); return; }
+      try {
+        const content = await readTextFile(apiFile);
+        if (!content.trim()) { toast("error", "File is empty"); return; }
+        body.content = content;
+      } catch (e: any) {
+        toast("error", "Could not read file", e.message || "");
+        return;
+      }
+    } else if (apiInputMode === "url") {
+      if (!apiUrl) { toast("error", "Enter an API doc URL"); return; }
+      body.url = apiUrl;
+    } else {
+      if (!apiSpec.trim()) { toast("error", "Provide an OpenAPI or Postman spec"); return; }
+      body.content = apiSpec;
+    }
+
     if (!(await requireDualControl("API import requires a dual-control operate session."))) return;
     setImporting(true);
     try {
-      await api.post("/assets/import/api", { format: apiFormat, content: apiSpec, confirm_ownership: true });
+      await api.post("/assets/import/api", body);
       toast("success", "API imported", "Endpoints added as assets");
-      setShowApiModal(false); setApiSpec("");
+      setShowApiModal(false);
+      setApiSpec("");
+      setApiFile(null);
+      setApiUrl("");
+      setApiInputMode("paste");
       reload();
     } catch (e: any) {
       toast("error", "Import failed", e.message || "");
@@ -731,7 +770,7 @@ export default function Assets() {
           <Card hover className="flex flex-col">
             <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><FileJson size={18} /></span>
             <h3 className="font-display text-[15px] font-semibold text-slate-100">OpenAPI / Postman</h3>
-            <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">Paste an OpenAPI JSON/YAML spec. Endpoints are imported as API assets with metadata.</p>
+            <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">Import an OpenAPI/Postman spec by paste, file upload, or URL. Endpoints are imported as API assets with metadata.</p>
             <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("API import requires a dual-control operate session.")) setShowApiModal(true); })(); }}>
               Import Spec
             </button>
@@ -982,9 +1021,70 @@ export default function Assets() {
       <Modal open={showApiModal} onClose={() => setShowApiModal(false)} title="Import OpenAPI / Postman">
         <div className="space-y-3">
           <div><label className="label">Format</label><select className="input" value={apiFormat} onChange={(e) => setApiFormat(e.target.value)}><option value="openapi">OpenAPI (JSON/YAML)</option><option value="postman">Postman Collection</option></select></div>
-          <div><label className="label">Spec Content</label><textarea className="input resize-none font-mono text-xs" rows={8} placeholder='{"openapi": "3.0.0", "info": {...}, ...}' value={apiSpec} onChange={(e) => setApiSpec(e.target.value)} /></div>
+
+          <div className="flex rounded-lg border border-phantix-700/50 bg-phantix-900/50 p-0.5">
+            {(["paste", "file", "url"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setApiInputMode(m)}
+                className={cx(
+                  "flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  apiInputMode === m ? "bg-phantix-700/60 text-white" : "text-slate-400 hover:text-slate-200",
+                )}
+              >
+                {m === "paste" ? "Paste" : m === "file" ? "Upload file" : "From URL"}
+              </button>
+            ))}
+          </div>
+
+          {apiInputMode === "paste" && (
+            <div>
+              <label className="label">Spec Content</label>
+              <textarea className="input resize-none font-mono text-xs" rows={8} placeholder='{"openapi": "3.0.0", "info": {...}, ...}' value={apiSpec} onChange={(e) => setApiSpec(e.target.value)} />
+            </div>
+          )}
+
+          {apiInputMode === "file" && (
+            <div>
+              <label className="label">Spec file (.json / .yaml / .yml)</label>
+              <input
+                type="file"
+                accept=".json,.yaml,.yml,application/json,application/yaml,text/yaml,text/plain"
+                className="input"
+                onChange={(e) => setApiFile(e.target.files?.[0] ?? null)}
+              />
+              {apiFile && (
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                  Selected: <span className="text-slate-200">{apiFile.name}</span> · {(apiFile.size / 1024).toFixed(1)} KB
+                </p>
+              )}
+            </div>
+          )}
+
+          {apiInputMode === "url" && (
+            <div>
+              <label className="label">API doc URL</label>
+              <input
+                type="url"
+                className="input"
+                placeholder="https://api.example.com/openapi.json"
+                value={apiUrl}
+                onChange={(e) => setApiUrl(e.target.value)}
+              />
+              <p className="mt-1.5 text-[11px] text-slate-500">Phantix fetches the spec from this URL and imports it automatically.</p>
+            </div>
+          )}
+
           <p className="text-[10px] text-slate-500">Endpoints are imported as API assets with path, method, and auth metadata.</p>
-          <button onClick={handleApiImport} disabled={importing || !apiSpec} className="btn-primary w-full">{importing ? <Spinner className="h-4 w-4" /> : null}Import Endpoints</button>
+          <button
+            onClick={handleApiImport}
+            disabled={importing || (apiInputMode === "file" ? !apiFile : apiInputMode === "url" ? !apiUrl : !apiSpec.trim())}
+            className="btn-primary w-full"
+          >
+            {importing ? <Spinner className="h-4 w-4" /> : null}
+            {importing ? "Importing…" : "Import Endpoints"}
+          </button>
         </div>
       </Modal>
     </div>
