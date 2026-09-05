@@ -1,4 +1,4 @@
-﻿// Central resource loaders --- demo-data only when isDemoMode() is true.
+// Central resource loaders --- demo-data only when isDemoMode() is true.
 import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked, tokens, API_BASE } from "./api";
 import * as demo from "./demo-data";
 import type {
@@ -64,6 +64,31 @@ import type {
   VaptApproval,
   VaptCampaign,
   VaptFinding,
+  IntegrationConnector,
+  IntegrationInstallation,
+  MitreMatrix,
+  MitreStats,
+  MitreTechnique,
+  SocAdvisorDashboard,
+  SocAdvisorRecommendation,
+  SocAdvisorReport,
+  SocAgentFleet,
+  SocCasesSummary,
+  SocCloudConnection,
+  SocCloudProviderCatalog,
+  SocLogPipelineStats,
+  SocLogSearchResponse,
+  SocMitreMatrixPanel,
+  SocPlaybook,
+  SocRunbook,
+  SocSlaDashboard,
+  SocWarRoomCase,
+  SocWarRoomChecklist,
+  SocWarRoomEvidence,
+  SocWarRoomKillChain,
+  SocWarRoomResponse,
+  SocWarRoomSla,
+  SocWarRoomStats,
 } from "./types";
 import {
   extractReportFindings,
@@ -2267,4 +2292,321 @@ export function cloudConnectUrl(connector: CloudConnector): string {
   const pub = connector.webhook?.public_id ?? "";
   const privateId = (connector.webhook as Record<string, unknown> | null)?.["private_id"] ?? "";
   return `${API_BASE}/cloud-security/hooks/${privateId || pub}`;
+}
+
+// ── SOC War Room ──────────────────────────────────────────────────────────────
+export async function loadSocWarRoom(): Promise<SocWarRoomResponse | null> {
+  if (isDemoMode()) { await delay(150); return demo.socWarRoom; }
+  return api.get<SocWarRoomResponse | null>("/soc/war-room").catch(() => null);
+}
+
+export async function loadSocWarRoomCase(id: number): Promise<SocWarRoomCase | null> {
+  if (isDemoMode()) { await delay(100); return demo.warRoomCases.find((c) => c.id === id) ?? null; }
+  return api.get<SocWarRoomCase | null>(`/soc/war-room/${id}`).catch(() => null);
+}
+
+export async function openSocWarRoomCase(body: Record<string, unknown>): Promise<SocWarRoomCase> {
+  if (isDemoMode()) {
+    await delay(300);
+    const c: SocWarRoomCase = {
+      id: 900 + demo.warRoomCases.length,
+      organization_id: 11,
+      title: String(body.title ?? "Untitled case"),
+      severity: String(body.severity ?? "medium"),
+      status: "open",
+      playbook_id: body.playbookId ? Number(body.playbookId) : null,
+      opened_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    };
+    return c;
+  }
+  return api.post<SocWarRoomCase>("/soc/war-room", body);
+}
+
+export async function loadWarRoomChecklist(caseId: number): Promise<SocWarRoomChecklist | null> {
+  if (isDemoMode()) { await delay(100); return demo.socWarRoomChecklist.case_id === caseId ? demo.socWarRoomChecklist : null; }
+  return api.get<SocWarRoomChecklist | null>(`/soc/war-room/${caseId}/checklist`).catch(() => null);
+}
+
+export async function updateChecklistStep(caseId: number, stepId: number, body: Record<string, unknown>): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.patch(`/soc/war-room/${caseId}/checklist/${stepId}`, body);
+}
+
+export async function loadWarRoomEvidence(caseId: number): Promise<SocWarRoomEvidence | null> {
+  if (isDemoMode()) { await delay(100); return demo.warRoomEvidence; }
+  return api.get<SocWarRoomEvidence | null>(`/soc/war-room/${caseId}/evidence`).catch(() => null);
+}
+
+export async function loadWarRoomKillChain(caseId: number): Promise<SocWarRoomKillChain | null> {
+  if (isDemoMode()) { await delay(100); return demo.warRoomKillChain; }
+  return api.get<SocWarRoomKillChain | null>(`/soc/war-room/${caseId}/kill-chain`).catch(() => null);
+}
+
+export async function loadWarRoomSla(caseId: number): Promise<SocWarRoomSla | null> {
+  if (isDemoMode()) { await delay(100); return demo.warRoomSla; }
+  return api.get<SocWarRoomSla | null>(`/soc/war-room/${caseId}/sla`).catch(() => null);
+}
+
+export async function loadWarRoomTimeline(caseId: number): Promise<unknown> {
+  if (isDemoMode()) { await delay(100); return demo.warRoomEvidence.timeline; }
+  return api.get(`/soc/war-room/${caseId}/timeline`).catch(() => null);
+}
+
+export async function linkWarRoomEvidence(caseId: number, logId: number): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.post(`/soc/war-room/${caseId}/evidence-link`, { server_log_id: logId });
+}
+
+// ── SOC Playbooks ─────────────────────────────────────────────────────────────
+export async function loadPlaybooks(params?: { category?: string; mitre_id?: string; enabled?: boolean }): Promise<SocPlaybook[]> {
+  if (isDemoMode()) {
+    await delay(150);
+    let items = demo.socPlaybooks;
+    if (params?.category) items = items.filter((p) => p.category === params.category);
+    if (params?.enabled !== undefined) items = items.filter((p) => p.enabled === params.enabled);
+    return items;
+  }
+  const qs = params ? "?" + new URLSearchParams(params as Record<string, string>).toString() : "";
+  return (await api.get<{ items: SocPlaybook[] } | SocPlaybook[]>(`/soc/provisioning/playbooks${qs}`)) as unknown as SocPlaybook[];
+}
+
+export async function loadPlaybook(id: number): Promise<SocPlaybook | null> {
+  if (isDemoMode()) { await delay(100); return demo.socPlaybooks.find((p) => p.id === id) ?? null; }
+  return api.get<SocPlaybook | null>(`/soc/provisioning/playbooks/${id}`).catch(() => null);
+}
+
+export async function loadRunbooks(): Promise<SocRunbook[]> {
+  if (isDemoMode()) { await delay(150); return demo.socRunbooks; }
+  return api.get<SocRunbook[] | { items: SocRunbook[] }>("/soc/provisioning/runbooks").then(r => (r as { items: SocRunbook[] }).items ?? r as SocRunbook[]);
+}
+
+// ── MITRE ─────────────────────────────────────────────────────────────────────
+export async function loadMitreTechniques(tactic?: string): Promise<MitreTechnique[]> {
+  if (isDemoMode()) {
+    await delay(150);
+    return demo.warRoomKillChain.techniques
+      .map((t) => ({ id: t.technique_id, tactic: t.tactic, technique: t.name, mitigations: [], playbook_count: t.status === "confirmed" ? 1 : 0 }))
+      .filter((t) => !tactic || t.tactic === tactic);
+  }
+  const qs = tactic ? `?tactic=${encodeURIComponent(tactic)}` : "";
+  return api.get<MitreTechnique[] | { items: MitreTechnique[] }>(`/soc/provisioning/mitre/techniques${qs}`).then(r => (r as { items: MitreTechnique[] }).items ?? r as MitreTechnique[]);
+}
+
+export async function loadMitreTechnique(id: string): Promise<MitreTechnique | null> {
+  if (isDemoMode()) {
+    await delay(100);
+    const t = demo.warRoomKillChain.techniques.find((x) => x.technique_id === id);
+    return t ? { id: t.technique_id, tactic: t.tactic, technique: t.name, mitigations: [], playbook_count: 1 } : null;
+  }
+  return api.get<MitreTechnique | null>(`/soc/provisioning/mitre/techniques/${id}`).catch(() => null);
+}
+
+export async function loadMitreMatrix(): Promise<MitreMatrix | null> {
+  if (isDemoMode()) { await delay(150); return demo.mitreMatrix; }
+  return api.get<MitreMatrix | null>("/soc/provisioning/mitre/matrix").catch(() => null);
+}
+
+export async function loadMitreStats(): Promise<MitreStats | null> {
+  if (isDemoMode()) { await delay(100); return demo.mitreStats; }
+  return api.get<MitreStats | null>("/soc/provisioning/mitre/stats").catch(() => null);
+}
+
+// ── SOC Advisor ───────────────────────────────────────────────────────────────
+export async function loadAdvisorDashboard(): Promise<SocAdvisorDashboard | null> {
+  if (isDemoMode()) { await delay(150); return demo.advisorDashboard; }
+  return api.get<SocAdvisorDashboard | null>("/soc/advisor/dashboard").catch(() => null);
+}
+
+export async function loadAdvisorTrends(): Promise<unknown> {
+  if (isDemoMode()) { await delay(100); return demo.advisorDashboard.trend; }
+  return api.get("/soc/advisor/trends").catch(() => null);
+}
+
+export async function loadAdvisorBenchmarks(): Promise<unknown> {
+  if (isDemoMode()) { await delay(100); return demo.advisorDashboard.benchmarks; }
+  return api.get("/soc/advisor/benchmarks").catch(() => null);
+}
+
+export async function loadAdvisorReadiness(framework: string): Promise<unknown> {
+  if (isDemoMode()) { await delay(100); return demo.advisorDashboard.readiness[framework] ?? null; }
+  return api.get(`/soc/advisor/readiness/${encodeURIComponent(framework)}`).catch(() => null);
+}
+
+export async function loadAdvisorRecommendations(status?: string): Promise<SocAdvisorRecommendation[]> {
+  if (isDemoMode()) {
+    await delay(150);
+    return status ? demo.advisorRecommendations.filter((r) => r.status === status) : demo.advisorRecommendations;
+  }
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return api.get<SocAdvisorRecommendation[] | { items: SocAdvisorRecommendation[] }>(`/soc/advisor/recommendations${qs}`).then(r => (r as { items: SocAdvisorRecommendation[] }).items ?? r as SocAdvisorRecommendation[]);
+}
+
+export async function updateAdvisorRecommendation(id: number, body: Record<string, unknown>): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.patch(`/soc/advisor/recommendations/${id}`, body);
+}
+
+export async function generateAdvisorReport(body: Record<string, unknown>): Promise<SocAdvisorReport> {
+  if (isDemoMode()) { await delay(500); return { id: 99, report_type: "posture", title: "Posture report (draft)", status: "draft", score: 68 }; }
+  return api.post<SocAdvisorReport>("/soc/advisor/reports/generate", body);
+}
+
+export async function loadAdvisorReports(): Promise<SocAdvisorReport[]> {
+  if (isDemoMode()) { await delay(150); return demo.advisorReports; }
+  return api.get<SocAdvisorReport[] | { items: SocAdvisorReport[] }>("/soc/advisor/reports").then(r => (r as { items: SocAdvisorReport[] }).items ?? r as SocAdvisorReport[]);
+}
+
+export async function publishAdvisorReport(id: number, reviewedBy?: string): Promise<void> {
+  if (isDemoMode()) { await delay(300); return; }
+  await api.post(`/soc/advisor/reports/${id}/publish${reviewedBy ? `?reviewed_by=${encodeURIComponent(reviewedBy)}` : ""}`);
+}
+
+export async function deleteAdvisorReport(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.delete(`/soc/advisor/reports/${id}`);
+}
+
+// ── SOC Log Pipeline ──────────────────────────────────────────────────────────
+export async function searchSocLogs(params: { q?: string; host?: string; facility?: string; level?: string; limit?: number; offset?: number }): Promise<SocLogSearchResponse> {
+  if (isDemoMode()) {
+    await delay(200);
+    let items = [...demo.socLogEntries];
+    if (params.q) { const n = params.q.toLowerCase(); items = items.filter((e) => e.message.toLowerCase().includes(n)); }
+    if (params.host) items = items.filter((e) => e.host === params.host);
+    if (params.level) items = items.filter((e) => e.level === params.level);
+    return { items, total: items.length, limit: params.limit ?? 50, offset: params.offset ?? 0 };
+  }
+  return api.post<SocLogSearchResponse>("/soc/logs/search", params);
+}
+
+export async function loadLogPipelineStats(): Promise<SocLogPipelineStats | null> {
+  if (isDemoMode()) { await delay(150); return demo.socLogPipelineStats; }
+  return api.get<SocLogPipelineStats | null>("/soc/logs/stats").catch(() => null);
+}
+
+// ── SOC Agent Fleet ───────────────────────────────────────────────────────────
+export async function loadAgentFleet(): Promise<SocAgentFleet | null> {
+  if (isDemoMode()) { await delay(150); return demo.socAgentFleet; }
+  return api.get<SocAgentFleet | null>("/soc/dashboard/agents").catch(() => null);
+}
+
+// ── SOC Dashboard v2 panels ───────────────────────────────────────────────────
+export async function loadDashboardMitreMatrix(): Promise<SocMitreMatrixPanel | null> {
+  if (isDemoMode()) { await delay(150); return demo.dashboardMitreMatrix; }
+  return api.get<SocMitreMatrixPanel | null>("/soc/dashboard/mitre-matrix").catch(() => null);
+}
+
+export async function loadDashboardSla(): Promise<SocSlaDashboard | null> {
+  if (isDemoMode()) { await delay(150); return demo.dashboardSla; }
+  return api.get<SocSlaDashboard | null>("/soc/dashboard/sla").catch(() => null);
+}
+
+export async function loadDashboardLogPipeline(): Promise<SocLogPipelineStats | null> {
+  if (isDemoMode()) { await delay(150); return demo.socLogPipelineStats; }
+  return api.get<SocLogPipelineStats | null>("/soc/dashboard/log-pipeline").catch(() => null);
+}
+
+export async function loadDashboardCasesSummary(): Promise<SocCasesSummary | null> {
+  if (isDemoMode()) { await delay(150); return demo.dashboardCasesSummary; }
+  return api.get<SocCasesSummary | null>("/soc/dashboard/cases-summary").catch(() => null);
+}
+
+export async function loadDashboardWarRoomStats(): Promise<SocWarRoomStats | null> {
+  if (isDemoMode()) { await delay(150); return demo.dashboardWarRoomStats; }
+  return api.get<SocWarRoomStats | null>("/soc/dashboard/war-room-stats").catch(() => null);
+}
+
+export async function loadWeeklySocReport(week?: string): Promise<Record<string, unknown> | null> {
+  if (isDemoMode()) { await delay(200); return { week: week ?? "2026-W34", detections: 42, cases_opened: 6, cases_closed: 4, sla_compliance_pct: 91, top_findings: ["RCE on edge", "Credential stuffing wave"] }; }
+  const qs = week ? `?week=${encodeURIComponent(week)}` : "";
+  return api.get<Record<string, unknown> | null>(`/soc/reports/weekly${qs}`).catch(() => null);
+}
+
+// ── SOC Cloud Integrations ────────────────────────────────────────────────────
+export async function loadCloudProviderCatalog(): Promise<SocCloudProviderCatalog | null> {
+  if (isDemoMode()) { await delay(150); return demo.socCloudProviderCatalog; }
+  return api.get<SocCloudProviderCatalog | null>("/soc/provisioning/cloud/catalog").catch(() => null);
+}
+
+export async function connectCloudProvider(body: Record<string, unknown>): Promise<SocCloudConnection> {
+  if (isDemoMode()) {
+    await delay(300);
+    return { id: 50 + demo.socCloudConnections.length, provider: String(body.provider ?? "aws"), integration_type: String(body.integration_type ?? "log_ingestion"), display_name: String(body.display_name ?? "New connection"), status: "connected", last_sync_at: new Date().toISOString(), created_at: new Date().toISOString() };
+  }
+  return api.post<SocCloudConnection>("/soc/provisioning/cloud/connect", body);
+}
+
+export async function loadCloudConnections(): Promise<SocCloudConnection[]> {
+  if (isDemoMode()) { await delay(150); return demo.socCloudConnections; }
+  return api.get<SocCloudConnection[] | { items: SocCloudConnection[] }>("/soc/provisioning/cloud/connections").then(r => (r as { items: SocCloudConnection[] }).items ?? r as SocCloudConnection[]);
+}
+
+export async function deleteCloudConnection(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.delete(`/soc/provisioning/cloud/connections/${id}`);
+}
+
+export async function syncCloudConnection(id: number, minutes?: number): Promise<void> {
+  if (isDemoMode()) { await delay(300); return; }
+  const qs = minutes ? `?minutes=${minutes}` : "";
+  await api.post(`/soc/provisioning/cloud/connections/${id}/sync${qs}`);
+}
+
+export async function checkCloudConnectionStatus(id: number): Promise<Record<string, unknown> | null> {
+  if (isDemoMode()) { await delay(100); return { status: "healthy", last_sync_ok: true, setup_reminder: null }; }
+  return api.get<Record<string, unknown> | null>(`/soc/provisioning/cloud/connections/${id}/status`).catch(() => null);
+}
+
+// ── Integrations Hub ──────────────────────────────────────────────────────────
+export async function loadHubCatalog(): Promise<IntegrationConnector[]> {
+  if (isDemoMode()) { await delay(200); return demo.hubCatalog; }
+  return api.get<IntegrationConnector[] | { connectors: IntegrationConnector[] }>("/integrations/catalog").then(r => (r as { connectors: IntegrationConnector[] }).connectors ?? r as IntegrationConnector[]);
+}
+
+export async function loadHubInstallations(): Promise<IntegrationInstallation[]> {
+  if (isDemoMode()) { await delay(200); return demo.hubInstallations; }
+  return api.get<IntegrationInstallation[] | { installations: IntegrationInstallation[] }>("/integrations/installations").then(r => (r as { installations: IntegrationInstallation[] }).installations ?? r as IntegrationInstallation[]);
+}
+
+export async function installHubIntegration(body: Record<string, unknown>): Promise<IntegrationInstallation> {
+  if (isDemoMode()) {
+    await delay(400);
+    return { installation_id: 100 + demo.hubInstallations.length, connector_id: String(body.connector_id ?? "webhook"), label: String(body.label ?? "New integration"), status: body.auth_mode === "oauth2" ? "pending_auth" : "active", auth_mode: String(body.auth_mode ?? "oauth2"), config: {}, has_secrets: !!body.secrets, created_at: new Date().toISOString() };
+  }
+  return api.post<IntegrationInstallation>("/integrations/installations", body);
+}
+
+export async function updateHubInstallation(id: number, body: Record<string, unknown>): Promise<void> {
+  if (isDemoMode()) { await delay(200); return; }
+  await api.patch(`/integrations/installations/${id}`, body);
+}
+
+export async function uninstallHubIntegration(id: number): Promise<void> {
+  if (isDemoMode()) { await delay(300); return; }
+  await api.delete(`/integrations/installations/${id}`);
+}
+
+export async function startHubOAuth(id: number): Promise<{ authorize_url: string; state: string } | null> {
+  if (isDemoMode()) { await delay(200); return { authorize_url: "https://example.com/oauth/authorize?demo=1", state: "demo-state" }; }
+  return api.post<{ authorize_url: string; state: string } | null>(`/integrations/installations/${id}/oauth/start`);
+}
+
+export async function testHubInstallation(id: number): Promise<Record<string, unknown> | null> {
+  if (isDemoMode()) { await delay(200); return { ok: true, installation_id: id }; }
+  return api.post<Record<string, unknown> | null>(`/integrations/installations/${id}/test`);
+}
+
+export async function rotateHubSecret(id: number): Promise<{ secret?: string } | null> {
+  if (isDemoMode()) { await delay(300); return { secret: "demo-secret-revoked" }; }
+  return api.post<{ secret?: string } | null>(`/integrations/installations/${id}/rotate-secret`);
+}
+
+// ── Social event for SSE connectivity ─────────────────────────────────────────
+export function warRoomStreamUrl(): string {
+  return `${API_BASE}/soc/war-room/stream`;
+}
+
+export function hubStreamUrl(): string {
+  return `${API_BASE}/integrations/hooks/stream`;
 }

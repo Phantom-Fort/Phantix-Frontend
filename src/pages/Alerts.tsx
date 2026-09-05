@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info } from "lucide-react";
+import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info, Cable, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import DocLink from "@/components/DocLink";
 import { loadAlertsBundle } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { useNavigate } from "react-router-dom";
 import type { AlertSettings } from "@/lib/types";
 
 const emptySettings: AlertSettings = {
@@ -20,6 +21,7 @@ const emptySettings: AlertSettings = {
 
 export default function Alerts() {
   const { toast, requireDualControl } = useStore();
+  const navigate = useNavigate();
   const { data, loading, error, reload } = useResource(loadAlertsBundle, { events: [], settings: emptySettings }, "alerts");
   const alertEvents = data.events;
   const s = data.settings;
@@ -81,7 +83,7 @@ export default function Alerts() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{a.title}</p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} � {timeAgo(a.created_at)}</p>
+                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} · {timeAgo(a.created_at)}</p>
                   </div>
                   <div className="flex gap-1.5">
                     {(a.channels ?? []).map((c) => (
@@ -99,6 +101,23 @@ export default function Alerts() {
 
       {tab === "settings" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Integrations Hub link */}
+          <div className="lg:col-span-2">
+            <Card>
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <Cable size={16} className="text-gold-400" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">Connected channels</p>
+                    <p className="text-xs text-slate-400">Manage Slack, Teams, and other channel integrations from the Integrations Hub</p>
+                  </div>
+                </div>
+                <button className="btn-secondary !px-3 !py-1.5" onClick={() => navigate("/integrations")}>
+                  <ExternalLink size={12} /> Open Integrations Hub
+                </button>
+              </div>
+            </Card>
+          </div>
           <Card>
             <CardHeader title="Client alert SMTP" subtitle="Separate from the Phantix OTP SMTP --- this delivers security alerts + VAPT completion mail" action={<Mail size={16} className="text-slate-500" />} />
             <div className="space-y-3">

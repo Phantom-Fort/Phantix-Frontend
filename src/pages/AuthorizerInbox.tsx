@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";

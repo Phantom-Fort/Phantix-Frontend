@@ -47,7 +47,7 @@ function e(id: string, title: string, description: string, category: string, raw
 export const howToDocs: Entry[] = [
   e("howto-index", "How-to index", "Task guides for Platform and Command Centre.", "how-to", howToIndex),
 
-  e("howto-platform-index", "Platform â€” how-to index", "Org admin tasks on platform.phantixlabs.com.", "how-to-platform", platIndex),
+  e("howto-platform-index", "Platform — how-to index", "Org admin tasks on platform.phantixlabs.com.", "how-to-platform", platIndex),
   e("howto-platform-01", "Platform: Register & sign in", "Create org and MFA login.", "how-to-platform", plat01),
   e("howto-platform-02", "Platform: Setup wizard", "Privacy, email OTP, verification.", "how-to-platform", plat02),
   e("howto-platform-03", "Platform: Add a user", "Create org users for dual control and app access.", "how-to-platform", plat03),
@@ -62,7 +62,7 @@ export const howToDocs: Entry[] = [
   e("howto-platform-12", "Platform: Alerts", "SMTP, WhatsApp, Telegram.", "how-to-platform", plat12),
   e("howto-platform-13", "Platform: Sandbox feedback", "Updates and ratings when enrolled.", "how-to-platform", plat13),
 
-  e("howto-app-index", "Command Centre â€” how-to index", "Operator tasks on app.phantixlabs.com.", "how-to-app", appIndex),
+  e("howto-app-index", "Command Centre — how-to index", "Operator tasks on app.phantixlabs.com.", "how-to-app", appIndex),
   e("howto-app-01", "App: Sign in", "Password, invite link, or demo.", "how-to-app", app01),
   e("howto-app-02", "App: Unlock operate", "Dual-control for scans and writes.", "how-to-app", app02),
   e("howto-app-03", "App: Add & verify assets", "Inventory and verification.", "how-to-app", app03),

@@ -58,7 +58,7 @@ export default function GithubCallback() {
           {state === "loading" && (
             <div className="py-4">
               <Loader2 size={28} className="mx-auto animate-spin text-gold-400" />
-              <p className="mt-4 text-sm text-slate-400">Recording your GitHub connectionâ€¦</p>
+              <p className="mt-4 text-sm text-slate-400">Recording your GitHub connection…</p>
             </div>
           )}
 

@@ -90,13 +90,16 @@ export function Card({
   children,
   className,
   hover,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div
+      onClick={onClick}
       className={cx(
         "card p-5",
         hover && "transition-colors duration-200 hover:border-phantix-600",
@@ -264,15 +267,15 @@ export function ProgressRing({
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
 export function Modal({
-  open,
+  open = true,
   onClose,
   title,
   children,
   wide,
 }: {
-  open: boolean;
+  open?: boolean;
   onClose: () => void;
-  title: React.ReactNode;
+  title?: React.ReactNode;
   children: React.ReactNode;
   wide?: boolean;
 }) {

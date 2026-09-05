@@ -1,4 +1,4 @@
-﻿// Pricing catalog — fetches live pricing from backend. Fallback to defaults when offline.
+// Pricing catalog — fetches live pricing from backend. Fallback to defaults when offline.
 import { API_BASE, isDemoMode } from "./api";
 
 export interface PricingTier {
