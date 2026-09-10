@@ -933,6 +933,61 @@ export interface AgentStreamEvent {
   raw: string;
 }
 
+/** A selectable resource inside an agent scope card (securegraph.agent.scope_card.v1). */
+export interface AgentScopeOption {
+  asset_id?: number | null;
+  resource_id?: number | null;
+  value?: string;
+  name?: string;
+  asset_type?: string;
+  resource_kind?: string;
+  environment?: string | null;
+  criticality?: string | number | null;
+  is_verified?: boolean;
+}
+
+export interface AgentScopeGroup {
+  key: string;
+  label?: string;
+  resource_kind?: string;
+  count?: number;
+  truncated?: boolean;
+  options: AgentScopeOption[];
+}
+
+/**
+ * Org data is never sent to the model until the operator confirms which
+ * resources this run may read. The backend returns this card with HTTP 409
+ * (`scope_confirmation_required`) from the agent chat / run streams.
+ */
+export interface AgentScopeCard {
+  schema?: string;
+  status?: string;
+  confirm_required?: boolean;
+  prompt?: string;
+  purpose?: string;
+  domain?: string;
+  intent?: { id?: string; label?: string; resource_kind?: string; action_class?: string; required_permissions?: string[] };
+  agent?: { id?: string; display_name?: string; domain?: string };
+  resource_kind?: string;
+  groups?: AgentScopeGroup[];
+  suggested_ids?: number[];
+  selection_token?: string;
+  total?: number;
+  selection_ttl_seconds?: number;
+}
+
+/** Grant returned by POST /ai/agent/scope/confirm — binds a run to confirmed org data. */
+export interface AgentScopeGrant {
+  scope_grant: string;
+  asset_ids: number[];
+  resource_ids: number[];
+  purpose?: string;
+  domain?: string;
+  resource_kind?: string;
+  grant_ttl_seconds?: number;
+}
+
 export interface SupportTicket {
   id: number;
   subject: string;

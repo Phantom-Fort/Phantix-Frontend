@@ -3,6 +3,8 @@ import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked, tokens, API_BASE
 import * as demo from "./demo-data";
 import type {
   AgentRun,
+  AgentScopeCard,
+  AgentScopeGrant,
   AgentSkill,
   AgentSkillStatusUpdate,
   AgentStreamEvent,
@@ -1483,6 +1485,9 @@ function agentStreamHeaders(): Record<string, string> {
  * JSON body, so agent chat/runs use fetch + ReadableStream. Parses SSE frames and calls
  * onEvent for every parsed event (connected / meta / reasoning / delta / usage / done / error).
  */
+/** Callback the UI supplies to collect an operator's org-data scope selection. */
+export type AgentScopeHandler = (card: AgentScopeCard) => Promise<AgentScopeGrant | null>;
+
 export async function streamAgentChat(
   body: {
     messages: { role: string; content: string }[];
@@ -1492,15 +1497,17 @@ export async function streamAgentChat(
     max_tokens?: number;
     thinking?: boolean;
     reasoning_effort?: "low" | "high" | "max";
+    scope_grant?: string;
   },
   onEvent: (event: string, data: any) => void,
   signal?: AbortSignal,
+  onScopeRequired?: AgentScopeHandler,
 ): Promise<void> {
   if (isDemoMode()) {
     await streamDemoResponse(body.messages[body.messages.length - 1]?.content ?? "", onEvent, 900);
     return;
   }
-  await streamAgentPost("/ai/agent/chat/stream", body, onEvent, signal);
+  await streamAgentPost("/ai/agent/chat/stream", body, onEvent, signal, onScopeRequired);
 }
 
 /**
@@ -1514,20 +1521,31 @@ export async function streamAgentRun(
     objective: string;
     campaign_id?: number;
     asset_ids?: number[];
-    skill_ids?: number[];
+    finding_keys?: string[];
+    skill_ids?: string[];
     require_human_review?: boolean;
+    scope_grant?: string;
+    resource_ids?: number[];
   },
   onEvent: (event: string, data: any) => void,
   signal?: AbortSignal,
+  onScopeRequired?: AgentScopeHandler,
 ): Promise<void> {
   if (isDemoMode()) {
     await streamDemoRun(body.domain, body.objective, onEvent);
     return;
   }
-  await streamAgentPost("/ai/agent/runs/stream", body, onEvent, signal);
+  await streamAgentPost("/ai/agent/runs/stream", body, onEvent, signal, onScopeRequired);
 }
 
-async function streamAgentPost(path: string, body: unknown, onEvent: (event: string, data: any) => void, signal?: AbortSignal): Promise<void> {
+async function streamAgentPost(
+  path: string,
+  body: unknown,
+  onEvent: (event: string, data: any) => void,
+  signal?: AbortSignal,
+  onScopeRequired?: AgentScopeHandler,
+  scopeAttempt = 0,
+): Promise<void> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
     headers: agentStreamHeaders(),
@@ -1538,6 +1556,25 @@ async function streamAgentPost(path: string, body: unknown, onEvent: (event: str
     let detail: unknown = `SSE failed: ${res.status}`;
     try { detail = (await res.json()).detail ?? detail; } catch { /* non-JSON */ }
     const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+    // Org-data scope gate (securegraph.agent.scope_card.v1): the backend holds
+    // the LLM call until the operator confirms which resources the run may read.
+    const scopeCard = detail && typeof detail === "object"
+      ? (detail as { scope_card?: AgentScopeCard }).scope_card
+      : undefined;
+    if (res.status === 409 && scopeCard && onScopeRequired && scopeAttempt < 2) {
+      const grant = await onScopeRequired(scopeCard);
+      if (!grant) {
+        onEvent("scope_cancelled", { type: "scope_cancelled" });
+        return;
+      }
+      const merged = {
+        ...(body as Record<string, unknown>),
+        scope_grant: grant.scope_grant,
+        asset_ids: grant.asset_ids,
+        resource_ids: grant.resource_ids,
+      };
+      return streamAgentPost(path, merged, onEvent, signal, onScopeRequired, scopeAttempt + 1);
+    }
     // Plan-gated: surface the paid-plan request clearly (402 from entitlement gate)
     // so the app-wide "Upgrade required" handler fires.
     if (res.status === 402) {
@@ -1624,6 +1661,42 @@ async function streamDemoRun(domain: string, objective: string, onEvent: (event:
     await delay(10);
   }
   onEvent("run_completed", { type: "run_completed", analysis_id: analysisId, status: "completed", summary });
+}
+
+/**
+ * Resolve an org-data scope card for a query without starting a model call
+ * (POST /ai/agent/scope/resolve). The chat/run streams usually return the card
+ * inline with a 409, but this powers explicit pre-flight selection too.
+ */
+export async function resolveAgentScope(payload: {
+  query: string;
+  purpose?: string;
+  domain?: string;
+  intent?: string;
+}): Promise<AgentScopeCard | null> {
+  if (isDemoMode()) { await delay(200); return null; }
+  try {
+    return await api.post<AgentScopeCard>("/ai/agent/scope/resolve", payload);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Confirm the operator's resource selection and mint the opaque scope grant
+ * (POST /ai/agent/scope/confirm) that the chat/run streams require.
+ */
+export async function confirmAgentScope(payload: {
+  selection_token: string;
+  asset_ids?: number[];
+  resource_ids?: number[];
+  purpose?: string;
+}): Promise<AgentScopeGrant | null> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { scope_grant: "demo-scope-grant", asset_ids: payload.asset_ids ?? [], resource_ids: payload.resource_ids ?? [] };
+  }
+  return api.post<AgentScopeGrant>("/ai/agent/scope/confirm", payload);
 }
 
 /** Legacy single-turn helper. The checklist only exposes the SSE stream

@@ -10,6 +10,9 @@
 
 const TOKENS_URL = "/api/v1/branding/tokens";
 const CACHE_TTL_MS = 60 * 60 * 1000; // one hour
+// If the route is temporarily unavailable (cold deploy / offline), hold off
+// before hitting it again instead of re-requesting on every call.
+const RETRY_TTL_MS = 5 * 60 * 1000;
 
 export type SeverityKey = "critical" | "high" | "medium" | "low" | "info" | "unrated";
 
@@ -105,14 +108,22 @@ async function load(): Promise<void> {
     if (etag) headers["If-None-Match"] = etag;
     res = await fetch(TOKENS_URL, { headers, cache: "no-store" });
   } catch {
-    return; // offline/blocked → CSS fallbacks (already canonical)
+    // offline/blocked → canonical fallbacks; try again after the cool-off.
+    applied = true;
+    cacheExpiry = Date.now() + RETRY_TTL_MS;
+    return;
   }
   if (res.status === 304) {
     applied = true;
     cacheExpiry = Date.now() + CACHE_TTL_MS;
     return;
   }
-  if (!res.ok) return;
+  if (!res.ok) {
+    // Route not ready (e.g. mid-deploy) → keep fallbacks, retry later.
+    applied = true;
+    cacheExpiry = Date.now() + RETRY_TTL_MS;
+    return;
+  }
   try {
     const data = (await res.json()) as {
       severity?: Record<string, SeverityEntry>;
@@ -132,7 +143,9 @@ async function load(): Promise<void> {
     applyToCss();
     window.dispatchEvent(new CustomEvent("phantix:brand-tokens", { detail: { severity: current } }));
   } catch {
-    /* unparseable body → keep fallbacks */
+    /* unparseable body → keep fallbacks; retry after the cool-off */
+    applied = true;
+    cacheExpiry = Date.now() + RETRY_TTL_MS;
   }
 }
 
