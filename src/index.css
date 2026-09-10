@@ -13,8 +13,8 @@
     --phantix-900: 10 10 10;     /* flat card fill      #0A0A0A */
     --phantix-850: 16 16 16;
     --phantix-800: 24 24 27;     /* zinc-900 */
-    --phantix-700: 39 39 42;     /* zinc-800 → 1px crisp borders */
-    --phantix-600: 63 63 70;     /* zinc-700 */
+    --phantix-700: 63 63 70;     /* zinc-700 → 1px crisp borders */
+    --phantix-600: 82 82 91;     /* zinc-600 */
     --phantix-500: 82 82 91;     /* zinc-600 */
     --phantix-400: 113 113 122;  /* zinc-500 */
     --phantix-300: 161 161 170;  /* zinc-400 */
@@ -57,8 +57,8 @@
     --surface: 0 0 0;
     --surface-card: 10 10 10;
     --surface-inset: 9 9 11;
-    --border-subtle: 39 39 42;
-    --border-strong: 63 63 70;
+    --border-subtle: 63 63 70;
+    --border-strong: 82 82 91;
     /* Full-color tokens used by inline-style primitives (e.g. TextShimmer). */
     --foreground: #e4e4e7;
     --muted-foreground: #a1a1aa;
@@ -74,8 +74,8 @@
     --phantix-900: 255 255 255;  /* flat card fill */
     --phantix-850: 250 250 250;  /* near-white bg */
     --phantix-800: 242 242 242;  /* hover / inset */
-    --phantix-700: 228 228 231;  /* zinc-200 → crisp 1px borders */
-    --phantix-600: 212 212 216;  /* zinc-300 */
+    --phantix-700: 212 212 216;  /* zinc-300 → crisp 1px borders */
+    --phantix-600: 161 161 170;  /* zinc-400 */
     --phantix-500: 161 161 170;  /* zinc-400 */
     --phantix-400: 113 113 122;  /* zinc-500 */
     --phantix-300: 82 82 91;     /* zinc-600 */
@@ -114,8 +114,8 @@
     --surface: 255 255 255;
     --surface-card: 255 255 255;
     --surface-inset: 250 250 250;
-    --border-subtle: 228 228 231;  /* zinc-200 */
-    --border-strong: 212 212 216;  /* zinc-300 */
+    --border-subtle: 212 212 216;  /* zinc-300 */
+    --border-strong: 161 161 170;  /* zinc-400 */
     --foreground: #18181b;
     --muted-foreground: #71717a;
   }
@@ -423,6 +423,13 @@ p {
      Cloudflare's flat, ungrouped list is the density target. */
   .nav-section-label {
     @apply mb-1 px-3 text-[11px] leading-none font-semibold text-slate-500;
+  }
+
+  /* Vivid hairline between sidebar groups; the first group has no rule. */
+  nav > div + div > .nav-section-label {
+    margin-top: 0.7rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid rgb(var(--phantix-600) / 0.85);
   }
 
   .prose-doc h1 {
