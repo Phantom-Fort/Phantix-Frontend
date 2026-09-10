@@ -410,7 +410,7 @@ export default function Layout() {
     <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-[rgb(var(--surface-sidebar))] lg:flex">
         <NavLink to="/" className="flex items-center gap-3 px-4 pb-3 pt-4">
           <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
           <div>

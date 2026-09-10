@@ -146,6 +146,37 @@ export default function AlertNotifications() {
   const [blocking, setBlocking] = useState<AlertNotice | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
 
+  // The Autonomous Pentest Agent's fullscreen console routinely produces its
+  // own critical findings — a full-screen "critical alert" takeover on top of
+  // that console would interrupt the very workflow producing it (and silently
+  // eat clicks on things like the "New engagement" button, since it renders
+  // above the console at z-[100]). While that console is open, critical
+  // alerts still surface (as a toast, still in the bell inbox) but never
+  // block the screen.
+  const agiFullscreenRef = useRef(false);
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      agiFullscreenRef.current = Boolean((e as CustomEvent<{ fullscreen?: boolean }>).detail?.fullscreen);
+      // Don't let an already-showing blocker strand the user once the
+      // fullscreen console opens on top of it.
+      if (agiFullscreenRef.current) {
+        setBlocking((cur) => {
+          if (!cur) return null;
+          setStack((s) => (s.some((x) => x.id === cur.id) ? s : [cur, ...s].slice(0, 4)));
+          window.setTimeout(() => setStack((s) => s.filter((x) => x.id !== cur.id)), TOAST_MS);
+          return null;
+        });
+      }
+    };
+    const onClose = () => { agiFullscreenRef.current = false; };
+    window.addEventListener("phantix:agi-open", onOpen);
+    window.addEventListener("phantix:agi-close", onClose);
+    return () => {
+      window.removeEventListener("phantix:agi-open", onOpen);
+      window.removeEventListener("phantix:agi-close", onClose);
+    };
+  }, []);
+
   const dismissNotice = (id: number) => setStack((s) => s.filter((x) => x.id !== id));
 
   const dismissBlocking = () => {
@@ -155,7 +186,7 @@ export default function AlertNotifications() {
 
   const ingest = useCallback((notice: AlertNotice) => {
     push(notice);
-    if (notice.severity === "critical") {
+    if (notice.severity === "critical" && !agiFullscreenRef.current) {
       setBlocking((cur) => cur ?? notice);
       return;
     }
