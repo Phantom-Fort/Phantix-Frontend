@@ -101,9 +101,9 @@ export default function SandboxApplyPublic() {
 
       <header className="relative z-10 mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
         <a href={LANDING_URL} className="flex items-center gap-2.5">
-          <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
+          <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div>
-            <p className="font-display text-sm font-bold text-white">Phantix</p>
+            <p className="font-display text-sm font-bold text-white">SecureGraph</p>
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </a>
@@ -164,7 +164,7 @@ export default function SandboxApplyPublic() {
               <CheckCircle2 size={36} className="mx-auto text-emerald-400" />
               <p className="mt-4 font-display text-lg font-semibold text-white">Application submitted</p>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Phantix staff will review your organization's application. You will be notified when access is approved.
+                SecureGraph staff will review your organization's application. You will be notified when access is approved.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-2">
                 <Link to="/dashboard" className="btn-primary !text-xs">Command Centre</Link>

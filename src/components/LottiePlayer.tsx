@@ -16,7 +16,7 @@ interface LottiePlayerProps {
 }
 
 /**
- * Minimal lottie-web wrapper used across the Phantix apps.
+ * Minimal lottie-web wrapper used across the SecureGraph apps.
  * Renders a Lottie JSON animation into a container and cleans it up on unmount.
  * Pass either `animationData` (inline JSON) or `src` (runtime path).
  */

@@ -18,6 +18,7 @@ import Reports from "@/pages/Reports";
 import Alerts from "@/pages/Alerts";
 import Audit from "@/pages/Audit";
 import People from "@/pages/People";
+import Privacy from "@/pages/Privacy";
 import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
@@ -38,6 +39,15 @@ import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
 import ThreatIntel from "@/pages/ThreatIntel";
 import Cloud from "@/pages/Cloud";
 import PentestScope from "@/pages/PentestScope";
+import ComplianceQuestionnaire from "@/pages/ComplianceQuestionnaire";
+import ComplianceGaps from "@/pages/ComplianceGaps";
+import ComplianceProfile from "@/pages/ComplianceProfile";
+import ComplianceConnectors from "@/pages/ComplianceConnectors";
+import VaptSchedules from "@/pages/VaptSchedules";
+import VaptSettings from "@/pages/VaptSettings";
+import VaptProcedures from "@/pages/VaptProcedures";
+import ContextProjects from "@/pages/ContextProjects";
+import ThreatModels from "@/pages/ThreatModels";
 import PasswordResetRequest from "@/pages/auth/PasswordResetRequest";
 import PasswordResetComplete from "@/pages/auth/PasswordResetComplete";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
@@ -112,11 +122,20 @@ export default function App() {
             <Route path="/integrations" element={<RequireAuth><IntegrationsHub /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
+            <Route path="/vapt/schedules" element={<RequireAuth><VaptSchedules /></RequireAuth>} />
+            <Route path="/vapt/settings" element={<RequireAuth><VaptSettings /></RequireAuth>} />
+            <Route path="/vapt/procedures" element={<RequireAuth><VaptProcedures /></RequireAuth>} />
             <Route path="/threat-intel" element={<RequireAuth><ThreatIntel /></RequireAuth>} />
             <Route path="/cloud" element={<RequireAuth><Cloud /></RequireAuth>} />
             <Route path="/pentest/external-scope" element={<RequireAuth><PentestScope /></RequireAuth>} />
             <Route path="/risks" element={<RequireAuth><Risks /></RequireAuth>} />
             <Route path="/compliance" element={<RequireAuth><Compliance /></RequireAuth>} />
+            <Route path="/compliance/questionnaire" element={<RequireAuth><ComplianceQuestionnaire /></RequireAuth>} />
+            <Route path="/compliance/gaps" element={<RequireAuth><ComplianceGaps /></RequireAuth>} />
+            <Route path="/compliance/profile" element={<RequireAuth><ComplianceProfile /></RequireAuth>} />
+            <Route path="/compliance/connectors" element={<RequireAuth><ComplianceConnectors /></RequireAuth>} />
+            <Route path="/context" element={<RequireAuth><ContextProjects /></RequireAuth>} />
+            <Route path="/threat-models" element={<RequireAuth><ThreatModels /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
             <Route path="/agent" element={<RequireAuth><Agent /></RequireAuth>} />
             <Route path="/sandbox" element={<RequireAuth><Sandbox /></RequireAuth>} />
@@ -124,6 +143,7 @@ export default function App() {
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />
             <Route path="/people" element={<RequireAuth><People /></RequireAuth>} />
             <Route path="/settings" element={<PlatformSettingsRedirect />} />
+            <Route path="/settings/privacy" element={<RequireAuth><Privacy /></RequireAuth>} />
             <Route path="/support" element={<RequireAuth><Support /></RequireAuth>} />
             <Route path="/authorizations" element={<RequireAuth><AuthorizerInbox /></RequireAuth>} />
             <Route path="/docs" element={<Docs />} />

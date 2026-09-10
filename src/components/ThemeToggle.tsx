@@ -7,7 +7,7 @@ import { cx } from "@/lib/utils";
  * Light / dark / auto theme picker. Dark is the product default; "auto"
  * follows the OS preference live. Renders a compact icon button that opens a
  * small menu, mirroring the Xalgorix webui theme toggle. Fully self-contained
- * (no shared Menu dependency) so the same component works in every Phantix app.
+ * (no shared Menu dependency) so the same component works in every SecureGraph app.
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, mode, setTheme } = useTheme();

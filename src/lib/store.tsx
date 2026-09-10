@@ -41,6 +41,10 @@ type Store = {
   dualControl: DualControlState;
   operate: OperateState;
   securityDbReady: boolean;
+  /** Bootstrap snapshot from GET /billing/entitlements (gates / 402 UX). */
+  billingEntitlements: Record<string, unknown> | null;
+  /** Bootstrap snapshot from GET /billing/credits (wallet; top-up lives on Platform). */
+  creditsBalance: { total?: number; cycle?: string; exhausted?: boolean; low?: boolean } | null;
   /** True while browsing the demo tenant (no API, or demo flag from the landing page). */
   demoActive: boolean;
   /** True when a live API is configured --- enables the "switch to real org" UX. */
@@ -87,6 +91,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     isDemoMode() ? demo.dualControl : emptyDualControl,
   );
   const [securityDbReady, setSecurityDbReady] = useState(isDemoMode());
+  const [billingEntitlements, setBillingEntitlements] = useState<Record<string, unknown> | null>(null);
+  const [creditsBalance, setCreditsBalance] = useState<{ total?: number; cycle?: string; exhausted?: boolean; low?: boolean } | null>(null);
   const [demoTick, setDemoTick] = useState(0);
 
   // Sync session with token state (handles 401-induced token clearing)
@@ -172,6 +178,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setOrg(emptyOrganization);
         setDualControl(emptyDualControl);
         setSecurityDbReady(false);
+        setBillingEntitlements(null);
+        setCreditsBalance(null);
       }
       return;
     }
@@ -182,8 +190,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setOrg(demo.organization);
         setDualControl(demo.dualControl);
         setSecurityDbReady(true);
+        setBillingEntitlements({ premium_active: true, message: "demo" });
+        setCreditsBalance({ total: 5500, cycle: "demo", exhausted: false, low: false });
         return;
       }
+
+      const bootstrapBilling = async (realm?: "application" | "platform") => {
+        const opts = realm ? { realm } : {};
+        const [ent, credits] = await Promise.all([
+          api.get<Record<string, unknown>>("/billing/entitlements", opts).catch(() => null),
+          api.get<{ total?: number; cycle?: string; exhausted?: boolean; low?: boolean }>("/billing/credits", opts).catch(() => null),
+        ]);
+        if (cancelled) return;
+        if (ent) setBillingEntitlements(ent);
+        if (credits) setCreditsBalance(credits);
+      };
+
       // App login: use GET /app/auth/me (tenant-safe identity via app_session)
       if (tokens.appSession && !tokens.platform) {
         try {
@@ -222,6 +244,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             setSession((s) => s ? { ...s, initiatorName: initName, authorizerName: authName } : s);
           }
         } catch { /* backend may not support this */ }
+        await bootstrapBilling("application");
         return;
       }
       try {
@@ -262,6 +285,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (session.userEmail === "" && me.name) {
           setSession((s) => (s ? { ...s, userName: s.userName || me.name, userEmail: s.userEmail } : s));
         }
+        await bootstrapBilling();
       } catch {
         if (!cancelled) {
           setOrg(emptyOrganization);
@@ -622,6 +646,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       dualControl,
       operate,
       securityDbReady,
+      billingEntitlements,
+      creditsBalance,
       demoActive: isDemoMode(),
       hasLiveApi: !!API_BASE,
       enterDemo,
@@ -645,7 +671,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      session, org, dualControl, operate, securityDbReady, toasts, toast, dismissToast,
+      session, org, dualControl, operate, securityDbReady, billingEntitlements, creditsBalance, toasts, toast, dismissToast,
       login, verifyMfa, completeAppLogin, logout, unlockOperateStable, lockOperate, withOperate, enterDemo, switchToRealOrg,
       requireDualControl, dualControlPrompt, closeDualControlPrompt,
       requestDualControlOtp, verifyDualControlOtp, confirmDualControlDevice, demoTick,

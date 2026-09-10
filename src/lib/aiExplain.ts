@@ -1,5 +1,5 @@
 // Comprehensive per-asset AI explainer.
-// Gathers every signal Phantix holds about ONE asset and builds a deep-dive
+// Gathers every signal SecureGraph holds about ONE asset and builds a deep-dive
 // brief: identity, risk trajectory, findings, risks, SOC signals, graph
 // relationships, threats and recommended actions. When the backend AI endpoint
 // answers, its paragraph is woven in; otherwise the deterministic composition
@@ -133,7 +133,7 @@ function sameAsset(a: { asset_id?: number | null; asset_value?: string | null },
   return !!v && !!value && (v === value || value.includes(v) || v.includes(value));
 }
 
-/** Pull every Phantix engine's view of one asset. All loaders fail soft so a
+/** Pull every SecureGraph engine's view of one asset. All loaders fail soft so a
  *  partially-degraded deployment still yields a useful brief. */
 export async function gatherAssetBrief(asset: Asset, preloadedTags?: AssetTag[]): Promise<AssetBrief> {
   const [intelRes, scansRes, risksRes, detsRes, relRes] = await Promise.all([
@@ -303,7 +303,7 @@ function composePostureSummary(brief: AssetBrief): string {
     } else {
       traj = `current risk score sits at ${brief.riskScore}/100`;
     }
-    sentences.push(`Phantix scores this asset ${brief.riskLevel ?? "unrated"} with ${traj}${brief.exposureLevel ? `, exposed via ${brief.exposureLevel.replace(/_/g, " ")}` : ""}.`);
+    sentences.push(`SecureGraph scores this asset ${brief.riskLevel ?? "unrated"} with ${traj}${brief.exposureLevel ? `, exposed via ${brief.exposureLevel.replace(/_/g, " ")}` : ""}.`);
   }
 
   const sevBits = SEV_ORDER.map((s) => `${brief.findingsBySeverity[s] ?? 0} ${s}`).filter((bit) => !bit.startsWith("0 "));

@@ -1,4 +1,4 @@
-// Free, local "where do I find X" navigation guide for the Phantix assistant.
+// Free, local "where do I find X" navigation guide for the SecureGraph assistant.
 // Answers module-discovery questions without any AI/plan call.
 
 export interface NavGuideResult {
@@ -42,7 +42,7 @@ const MODULES: ModuleEntry[] = [
   { route: "/risks", label: "Risks", section: "Governance", desc: "the risk register and treatment tracking", keywords: ["risks", "risk", "risk register", "treatment", "threats", "critical risks", "score"] },
   { route: "/compliance", label: "Compliance", section: "Governance", desc: "compliance frameworks, controls and gaps", keywords: ["compliance", "iso", "grc", "framework", "controls", "audit readiness", "evidence", "policy", "nist", "soc 2"] },
   { route: "/reports", label: "Reports", section: "Governance", desc: "generated reports and findings", keywords: ["reports", "report", "executive summary", "pdf", "findings report", "download"] },
-  { route: "/agent", label: "Phantix Agent", section: "Assistant", desc: "the chat agent and investigations", keywords: ["agent", "chat", "assistant", "ai", "investigate", "investigation", "specialist"] },
+  { route: "/agent", label: "SecureGraph Agent", section: "Assistant", desc: "the chat agent and investigations", keywords: ["agent", "chat", "assistant", "ai", "investigate", "investigation", "specialist"] },
   { route: "/alerts", label: "Alerts", section: "System", desc: "alert configuration and notifications", keywords: ["alerts", "alert", "notifications", "email alerts", "slack", "telegram", "wa"] },
   { route: "/audit", label: "Audit Trail", section: "System", desc: "the audit trail of actions", keywords: ["audit", "audit trail", "activity log", "history", "actions"] },
   { route: "/people", label: "People", section: "System", desc: "team members and access", keywords: ["people", "users", "team", "members", "access", "roles", "staff"] },
@@ -109,7 +109,7 @@ export function helpOverview(): string {
     "· Scans (/scans), VAPT Campaigns (/vapt) — monitoring & testing\n" +
     "· Integrations Hub (/integrations) — connectors, SSO, SCIM & webhooks\n" +
     "· Risks (/risks), Compliance (/compliance), Reports (/reports) — governance\n" +
-    "· Phantix Agent (/agent) — chat & investigations\n" +
+    "· SecureGraph Agent (/agent) — chat & investigations\n" +
     "· Alerts (/alerts), Audit (/audit), People (/people), Support (/support)\n" +
     "· Documentation (/docs) — in-app guides\n\n" +
     "Ask me things like \"where do I find my risk register?\" and I'll point you to the right page."

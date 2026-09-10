@@ -52,9 +52,9 @@ export default function Home() {
       {/* Nav */}
       <header className="relative z-10 border-b border-white/5">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
-          <img src="/logo-white.png" alt="Phantix" className="h-9 w-9 object-contain" />
+          <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div className="leading-tight">
-            <p className="font-display text-[15px] font-bold text-white">Phantix</p>
+            <p className="font-display text-[15px] font-bold text-white">SecureGraph</p>
             <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
           </div>
           <nav className="ml-10 hidden items-center gap-6 text-sm text-slate-400 md:flex">
@@ -157,7 +157,7 @@ export default function Home() {
           </p>
         </motion.div>
 
-        <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
           {pricingTiers.map((t, i) => (
             <motion.div
               key={t.id}

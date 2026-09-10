@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Shield, Search, Filter } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
 import { loadPlaybooks, loadMitreMatrix, loadMitreStats } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import type { SocPlaybook, MitreMatrix, MitreStats } from "@/lib/types";
@@ -50,7 +50,30 @@ export default function SocPlaybooks() {
 
       {tab === "mitre" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
-          {ml ? <Spinner /> : (
+          {ml ? (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="card !p-4">
+                    <div className="skeleton h-7 w-16 rounded" />
+                    <div className="skeleton mt-2 h-3 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="card !p-3" style={{ opacity: 1 - i * 0.08 }}>
+                    <div className="flex items-center justify-between">
+                      <div className="skeleton h-3.5 w-28 rounded" />
+                      <div className="skeleton h-2.5 w-8 rounded" />
+                    </div>
+                    <div className="skeleton mt-2 h-1.5 w-full rounded-full" />
+                    <div className="skeleton mt-1.5 h-2 w-20 rounded" />
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
             <>
               {stats && (
                 <div className="grid grid-cols-3 gap-3">

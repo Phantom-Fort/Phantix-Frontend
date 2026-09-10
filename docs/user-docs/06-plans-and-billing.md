@@ -13,7 +13,7 @@
 
 ---
 
-## Premium
+## Starter & Growth
 
 Active paid subscription unlocks continuous assurance, for example:
 
@@ -34,13 +34,13 @@ If you are an **integrator** or need **programmatic agents**:
 
 > The **only public API payment plan** is **AI Agent access**.
 
-You do **not** buy “full platform API” as a separate SKU. Day-to-day product use is Free/Premium **in the app**. See [10-ai-agent-api.md](./10-ai-agent-api.md).
+You do **not** buy “full platform API” as a separate SKU. Day-to-day product use is Free / Starter / Growth **in the app**. See [10-ai-agent-api.md](./10-ai-agent-api.md).
 
 ---
 
 ## Add-ons & engagements
 
-- Extra packs (compliance depth, cloud, secrets, …) on Premium
+- Extra packs (compliance depth, cloud, secrets, …) on Starter / Growth
 - Human-led VAPT / specialist engagements via sales
 
 ---

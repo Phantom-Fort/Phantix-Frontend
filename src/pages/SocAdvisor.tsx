@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, TrendingUp, BarChart3, CheckCircle, XCircle, FileText, Plus, Download } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
 import { loadAdvisorDashboard, loadAdvisorRecommendations, updateAdvisorRecommendation, loadAdvisorReports, generateAdvisorReport, publishAdvisorReport, deleteAdvisorReport } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
@@ -87,7 +87,24 @@ export default function SocAdvisor() {
 
       {tab === "recommendations" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-2">
-          {rl ? <Spinner /> : recommendations.length === 0 ? (
+          {rl ? (
+            [0, 1, 2, 3].map((i) => (
+              <div key={i} className="card !p-4" style={{ opacity: 1 - i * 0.15 }}>
+                <div className="flex items-start gap-3">
+                  <div className="skeleton mt-1 h-2 w-2 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-3.5 w-2/3 max-w-sm rounded" />
+                    <div className="skeleton h-3 w-full max-w-md rounded" />
+                    <div className="skeleton h-2.5 w-36 rounded" />
+                  </div>
+                  <div className="flex shrink-0 gap-1.5">
+                    <div className="skeleton h-6 w-16 rounded-md" />
+                    <div className="skeleton h-6 w-14 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : recommendations.length === 0 ? (
             <EmptyState icon={<CheckCircle size={32} />} title="All clear" body="No open recommendations." />
           ) : recommendations.map((rec, i) => (
             <motion.div
@@ -130,7 +147,22 @@ export default function SocAdvisor() {
               <FileText size={14} /> Generate report
             </button>
           </div>
-          {rptl ? <Spinner /> : reports.length === 0 ? (
+          {rptl ? (
+            [0, 1, 2].map((i) => (
+              <div key={i} className="card !p-4" style={{ opacity: 1 - i * 0.18 }}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 space-y-2">
+                    <div className="skeleton h-3.5 w-56 max-w-full rounded" />
+                    <div className="skeleton h-2.5 w-40 rounded" />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <div className="skeleton h-6 w-16 rounded-md" />
+                    <div className="skeleton h-6 w-14 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : reports.length === 0 ? (
             <EmptyState icon={<FileText size={32} />} title="No reports" body="Generate a posture report to see recommendations and scores." />
           ) : reports.map((r, i) => (
             <motion.div key={r.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

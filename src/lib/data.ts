@@ -1035,9 +1035,9 @@ export async function loadSocAgentWalkthrough(): Promise<string> {
   if (isDemoMode()) {
     await delay(200);
     return [
-      "# Phantix heartbeat agent",
+      "# SecureGraph heartbeat agent",
       "",
-      "Install on the host. Phantix does **not** VPN in.",
+      "Install on the host. SecureGraph does **not** VPN in.",
       "",
       "1. Mint an org service key on Platform (not a user JWT).",
       "2. Download the installer for your OS.",
@@ -1068,7 +1068,7 @@ export async function loadAlertsBundle() {
       host: String(smtp.host ?? ""),
       port: Number(smtp.port ?? 587),
       from_email: String(smtp.from_email ?? smtp.fromEmail ?? ""),
-      from_name: String(smtp.from_name ?? smtp.fromName ?? "Phantix Alerts"),
+      from_name: String(smtp.from_name ?? smtp.fromName ?? "SecureGraph Alerts"),
       use_tls: smtp.use_tls !== false,
     },
     email_recipients: Array.isArray(raw.email_recipients) ? raw.email_recipients.map(String) : [],
@@ -1543,7 +1543,7 @@ async function streamAgentPost(path: string, body: unknown, onEvent: (event: str
     if (res.status === 402) {
       const readable = (detail && typeof detail === "object" && typeof (detail as any).message === "string")
         ? (detail as any).message
-        : "A paid plan is required to use the Phantix Agent.";
+        : "A paid plan is required to use the SecureGraph Agent.";
       window.dispatchEvent(new CustomEvent("phantix:billing-required", { detail: readable }));
       onEvent("error", { type: "error", error: readable, code: "ai_agent_plan_required", status: 402 });
     } else if (res.status === 403 && /dual|operate|authenticator|session/i.test(msg)) {
@@ -1590,7 +1590,7 @@ async function streamDemoResponse(
   await delay(stepMs);
   onEvent("reasoning", { type: "reasoning", content: "I'll summarize what the user asked and check the current posture signals available in the organization's security data." });
   await delay(stepMs);
-  const answer = `Here's what I can tell you about "${question}":\n\n• I can review open findings, risk posture, asset exposure and recent scan results.\n• In production this answer is synthesized from your live security data (verified findings only — I never invent a vulnerability without a Phantix finding ID).\n• Skills used are shown on the result, and every interaction is governed + audited.\n\nAsk me about assets, VAPT campaigns, critical risks, or compliance gaps for a concrete summary.`;
+  const answer = `Here's what I can tell you about "${question}":\n\n• I can review open findings, risk posture, asset exposure and recent scan results.\n• In production this answer is synthesized from your live security data (verified findings only — I never invent a vulnerability without a SecureGraph finding ID).\n• Skills used are shown on the result, and every interaction is governed + audited.\n\nAsk me about assets, VAPT campaigns, critical risks, or compliance gaps for a concrete summary.`;
   const words = answer.split(" ");
   for (const w of words) {
     onEvent("delta", { type: "delta", content: w + " " });
@@ -1617,7 +1617,7 @@ async function streamDemoRun(domain: string, objective: string, onEvent: (event:
   await delay(250);
   onEvent("reasoning", { type: "reasoning", content: `Correlating ${domain} signals across the organization.` });
   await delay(500);
-  const summary = `${domain} analysis complete. I reviewed the ${domain} inventory, verified findings and posture signals. No finding was changed or created — every item referenced is a Phantix finding with an ID. Skills used: phantix-${domain}@1.0.0.`;
+  const summary = `${domain} analysis complete. I reviewed the ${domain} inventory, verified findings and posture signals. No finding was changed or created — every item referenced is a SecureGraph finding with an ID. Skills used: phantix-${domain}@1.0.0.`;
   const words = summary.split(" ");
   for (const w of words) {
     onEvent("delta", { type: "delta", content: w + " " });
@@ -1631,7 +1631,7 @@ async function streamDemoRun(domain: string, objective: string, onEvent: (event:
 export async function sendAgentMessage(message: string): Promise<string> {
   if (isDemoMode()) {
     await delay(1600);
-    return `I'm Phantix Agent. I understand you asked: "${message}". In production, I would analyze your assets, findings, and risk posture to answer this. Key surfaces you can explore: Assets, Scans, VAPT campaigns, Risks, Compliance, and Reports.`;
+    return `I'm SecureGraph Agent. I understand you asked: "${message}". In production, I would analyze your assets, findings, and risk posture to answer this. Key surfaces you can explore: Assets, Scans, VAPT campaigns, Risks, Compliance, and Reports.`;
   }
   const out: string[] = [];
   await streamAgentChat(
@@ -2582,9 +2582,9 @@ export async function updateHubInstallation(id: number, body: Record<string, unk
   await api.patch(`/integrations/installations/${id}`, body);
 }
 
-export async function uninstallHubIntegration(id: number): Promise<void> {
-  if (isDemoMode()) { await delay(300); return; }
-  await api.delete(`/integrations/installations/${id}`);
+export async function uninstallHubIntegration(id: number): Promise<Record<string, unknown>> {
+  if (isDemoMode()) { await delay(300); return {}; }
+  return api.delete<Record<string, unknown>>(`/integrations/installations/${id}`);
 }
 
 export async function startHubOAuth(id: number): Promise<{ authorize_url: string; state: string } | null> {
@@ -2597,9 +2597,9 @@ export async function testHubInstallation(id: number): Promise<Record<string, un
   return api.post<Record<string, unknown> | null>(`/integrations/installations/${id}/test`);
 }
 
-export async function rotateHubSecret(id: number): Promise<{ secret?: string } | null> {
+export async function rotateHubSecret(id: number): Promise<Record<string, unknown> | null> {
   if (isDemoMode()) { await delay(300); return { secret: "demo-secret-revoked" }; }
-  return api.post<{ secret?: string } | null>(`/integrations/installations/${id}/rotate-secret`);
+  return api.post<Record<string, unknown> | null>(`/integrations/installations/${id}/rotate-secret`);
 }
 
 // ── Social event for SSE connectivity ─────────────────────────────────────────

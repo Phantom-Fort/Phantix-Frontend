@@ -19,7 +19,7 @@ import { cx } from "@/lib/utils";
 // events, and the working indicator identically.
 
 const PERSONA_META: Record<AgentPersona, { label: string; tint: string }> = {
-  orchestrator: { label: "Phantix Autonomous Agent", tint: "text-gold-300" },
+  orchestrator: { label: "SecureGraph Autonomous Agent", tint: "text-gold-300" },
   recon: { label: "Recon agent", tint: "text-severity-low" },
   exploit: { label: "Web exploit agent", tint: "text-severity-high" },
 };

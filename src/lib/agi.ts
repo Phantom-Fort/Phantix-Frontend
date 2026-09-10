@@ -1,4 +1,4 @@
-// Autonomous Pentest Agent (PHANTIX AGI) — customer surface.
+// Autonomous Pentest Agent (SECUREGRAPH AGI) — customer surface.
 // Mirrors app/engines/ai_engine/agi/customer_api.py. Demo-mode fallbacks so the
 // UI is testable without a live runner.
 
@@ -187,7 +187,7 @@ function demoAccess(): AgiAccess {
     modes: {
       agent: {
         id: "agent",
-        label: "Phantix Agent",
+        label: "SecureGraph Agent",
         description: "Analysis, triage, narratives — grounded in existing engine data.",
         cost_tier: "standard",
         available: true,
@@ -392,7 +392,7 @@ export async function recommendAgiIntent(text: string, currentMode: "agent" | "a
       confidence: agi && !agent ? 0.85 : 0.6,
       reason: agi && !agent
         ? "Your request sounds like live testing. The Autonomous Pentest Agent is scoped, approval-gated and better for that."
-        : "Your request sounds like analysis of existing data — the Phantix Agent is faster and cheaper for that.",
+        : "Your request sounds like analysis of existing data — the SecureGraph Agent is faster and cheaper for that.",
       can_switch: !!(agi && !agent) && demoAgreed,
       next_step: agi && !agent && !demoAgreed ? "agreement" : agi && !agent ? "switch" : "stay",
     };

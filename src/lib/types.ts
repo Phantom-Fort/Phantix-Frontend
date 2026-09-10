@@ -1,4 +1,4 @@
-// ── Phantix API model types (mirror backend shapes from the FE docs) ─────────
+// ── SecureGraph API model types (mirror backend shapes from the FE docs) ─────────
 
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
@@ -942,7 +942,7 @@ export interface SupportTicket {
   messages: { from: string; body: string; at: string }[];
 }
 
-// ── Autonomous Pentest Agent (PHANTIX AGI) — customer surface ────────────────
+// ── Autonomous Pentest Agent (SECUREGRAPH AGI) — customer surface ────────────────
 // Mirror of app/engines/ai_engine/agi customer_api + schemas.
 
 /** GET /agi/access — drives the Agent/AGI switcher, agreement modal + blockers. */

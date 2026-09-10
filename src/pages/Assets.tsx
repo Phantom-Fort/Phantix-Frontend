@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound } from "lucide-react";
+import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2 } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
@@ -8,7 +8,8 @@ import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
-import { api, tokens, API_BASE } from "@/lib/api";
+import { api, tokens, API_BASE, ApiError } from "@/lib/api";
+import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@/lib/assetTags";
 import type { Asset, AssetIntelligence, DiscoveryJob } from "@/lib/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
@@ -83,6 +84,10 @@ export default function Assets() {
   const [importing, setImporting] = useState(false);
   const [adding, setAdding] = useState(false);
   const [checked, setChecked] = useState<Set<number>>(new Set());
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [tagForm, setTagForm] = useState({ name: "", color: TAG_COLORS[0], description: "" });
+  const [savingTag, setSavingTag] = useState(false);
+  const [deletingTag, setDeletingTag] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /** Map an asset to the discovery job spec the backend expects. */
@@ -108,6 +113,52 @@ export default function Assets() {
     }
   };
 
+  const handleCreateTag = async () => {
+    const name = tagForm.name.trim();
+    if (!name) {
+      toast("error", "Tag name required");
+      return;
+    }
+    if (!(await requireDualControl("Creating asset tags requires a dual-control operate session."))) return;
+    setSavingTag(true);
+    try {
+      await createAssetTag({ name, color: tagForm.color, description: tagForm.description.trim() || undefined });
+      toast("success", "Tag created", name);
+      setTagModalOpen(false);
+      setTagForm({ name: "", color: TAG_COLORS[0], description: "" });
+      reload();
+    } catch (e) {
+      toast(
+        "error",
+        "Could not create the tag",
+        e instanceof ApiError && e.status === 409
+          ? `A tag named "${name}" already exists.`
+          : e instanceof Error ? e.message : undefined,
+      );
+    } finally {
+      setSavingTag(false);
+    }
+  };
+
+  const handleDeleteTag = async (tagId: number, name: string, assetCount: number) => {
+    // Deleting a tag unassigns it everywhere, so say how much is affected first.
+    const warning = assetCount > 0
+      ? `Delete "${name}"? It is currently on ${assetCount} asset${assetCount === 1 ? "" : "s"} and will be removed from all of them.`
+      : `Delete the tag "${name}"?`;
+    if (!window.confirm(warning)) return;
+    if (!(await requireDualControl("Deleting asset tags requires a dual-control operate session."))) return;
+    setDeletingTag(tagId);
+    try {
+      await deleteAssetTag(tagId);
+      toast("success", "Tag deleted", name);
+      reload();
+    } catch (e) {
+      toast("error", "Could not delete the tag", e instanceof Error ? e.message : undefined);
+    } finally {
+      setDeletingTag(null);
+    }
+  };
+
   const runDiscovery = async (list: Asset[]) => {
     if (!(await requireDualControl("Running discovery jobs requires a dual-control operate session."))) return;
     const targets = list.filter((a) => a && discoveryForAsset(a));
@@ -120,7 +171,7 @@ export default function Assets() {
     for (const a of targets) {
       const spec = discoveryForAsset(a)!;
       try {
-        await api.post("/assets/discovery/jobs", { ...spec, run_inline: true });
+        await api.post("/assets/discovery/jobs", { ...spec, run_inline: false });
         ok += 1;
       } catch {
         fail += 1;
@@ -698,26 +749,26 @@ export default function Assets() {
           {assetTags.map((t) => (
             <Card key={t.id} hover>
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: `${t.color}1f`, color: t.color }}>
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl" style={{ background: `${t.color}1f`, color: t.color }}>
                   <Tag size={16} />
                 </span>
-                <div>
-                  <p className="font-medium text-slate-200">{t.name}</p>
-                  <p className="text-xs text-slate-500">{t.asset_count} assets{t.description ? ` · ${t.description}` : ""}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-slate-200">{t.name}</p>
+                  <p className="truncate text-xs text-slate-500">{t.asset_count ?? 0} assets{t.description ? ` · ${t.description}` : ""}</p>
                 </div>
+                <button
+                  onClick={() => void handleDeleteTag(t.id, t.name, t.asset_count ?? 0)}
+                  disabled={deletingTag === t.id}
+                  className="shrink-0 rounded p-1.5 text-slate-500 transition-colors hover:bg-severity-critical/10 hover:text-severity-critical disabled:opacity-40"
+                  aria-label={`Delete tag ${t.name}`}
+                >
+                  {deletingTag === t.id ? <Spinner className="h-3.5 w-3.5" /> : <Trash2 size={14} />}
+                </button>
               </div>
             </Card>
           ))}
           <Card className="flex items-center justify-center border-dashed">
-            <button
-              className="btn-ghost text-slate-400"
-              onClick={() =>
-                void (async () => {
-                  if (!(await requireDualControl("Creating asset tags requires a dual-control operate session."))) return;
-                  toast("info", "Tag creation", "POST /asset-tags");
-                })()
-              }
-            >
+            <button className="btn-ghost text-slate-400" onClick={() => setTagModalOpen(true)}>
               <Plus size={15} /> New tag
             </button>
           </Card>
@@ -1001,7 +1052,7 @@ export default function Assets() {
             </>
           ) : (
             <>
-              <p className="text-xs text-slate-400">Install the <strong>Phantix GitHub App</strong> on your account or organization. The App is the recommended integration — no tokens to rotate, and repositories are imported automatically.</p>
+              <p className="text-xs text-slate-400">Install the <strong>SecureGraph GitHub App</strong> on your account or organization. The App is the recommended integration — no tokens to rotate, and repositories are imported automatically.</p>
               {githubAppStatus?.connected ? (
                 <div className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-3">
                   <p className="text-sm font-semibold text-emerald-300">GitHub App connected</p>
@@ -1009,7 +1060,7 @@ export default function Assets() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
-                  <p className="text-xs text-slate-300">You'll be redirected to GitHub to install the Phantix App. After approving, repositories are available for import.</p>
+                  <p className="text-xs text-slate-300">You'll be redirected to GitHub to install the SecureGraph App. After approving, repositories are available for import.</p>
                 </div>
               )}
               <button onClick={handleGithubConnect} disabled={importingGithub} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : <Github size={14} className="mr-1 inline" />}{githubAppStatus?.connected ? "Reconnect GitHub App" : "Install GitHub App"}</button>
@@ -1072,7 +1123,7 @@ export default function Assets() {
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
               />
-              <p className="mt-1.5 text-[11px] text-slate-500">Phantix fetches the spec from this URL and imports it automatically.</p>
+              <p className="mt-1.5 text-[11px] text-slate-500">SecureGraph fetches the spec from this URL and imports it automatically.</p>
             </div>
           )}
 
@@ -1084,6 +1135,54 @@ export default function Assets() {
           >
             {importing ? <Spinner className="h-4 w-4" /> : null}
             {importing ? "Importing…" : "Import Endpoints"}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal open={tagModalOpen} onClose={() => setTagModalOpen(false)} title="New asset tag">
+        <div className="space-y-4">
+          <div>
+            <label className="label" htmlFor="tag-name">Name</label>
+            <input
+              id="tag-name"
+              className="input mt-1"
+              placeholder="pci-scope"
+              maxLength={100}
+              value={tagForm.name}
+              onChange={(e) => setTagForm((f) => ({ ...f, name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <p className="label">Colour</p>
+            <div className="mt-1.5 flex flex-wrap gap-2">
+              {TAG_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setTagForm((f) => ({ ...f, color: c }))}
+                  aria-label={`Use colour ${c}`}
+                  className={cx(
+                    "h-7 w-7 rounded-lg border-2 transition-transform",
+                    tagForm.color === c ? "border-white scale-110" : "border-transparent",
+                  )}
+                  style={{ background: c }}
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="label" htmlFor="tag-desc">Description (optional)</label>
+            <input
+              id="tag-desc"
+              className="input mt-1"
+              placeholder="Assets in PCI DSS scope"
+              maxLength={1000}
+              value={tagForm.description}
+              onChange={(e) => setTagForm((f) => ({ ...f, description: e.target.value }))}
+            />
+          </div>
+          <button onClick={() => void handleCreateTag()} disabled={savingTag || !tagForm.name.trim()} className="btn-primary w-full">
+            {savingTag ? <Spinner className="h-4 w-4" /> : <Plus size={15} />}
+            {savingTag ? "Creating…" : "Create tag"}
           </button>
         </div>
       </Modal>

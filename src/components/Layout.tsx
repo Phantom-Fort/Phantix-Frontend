@@ -28,6 +28,7 @@ import {
   FlaskConical,
   Building2,
   Shield,
+  ShieldCheck,
   Activity,
   UserCheck,
   Bot,
@@ -42,6 +43,13 @@ import {
   Puzzle as AgentIcon,
   Cable,
   Puzzle as HubIcon,
+  ClipboardList,
+  SearchCheck,
+  Plug,
+  CalendarClock,
+  SlidersHorizontal,
+  ShieldQuestion,
+  Workflow,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
@@ -68,9 +76,33 @@ const socSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: "/soc/cloud", label: "Cloud Integrations", icon: <Cloud size={17} /> },
 ];
 
+const complianceSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
+  { to: "/compliance", label: "Frameworks", icon: <Scale size={17} /> },
+  { to: "/compliance/questionnaire", label: "Questionnaire", icon: <ClipboardList size={17} /> },
+  { to: "/compliance/gaps", label: "Gap analysis", icon: <SearchCheck size={17} /> },
+  { to: "/compliance/profile", label: "Business profile", icon: <Building2 size={17} /> },
+  { to: "/compliance/connectors", label: "Evidence connectors", icon: <Plug size={17} /> },
+];
+
+const vaptSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
+  { to: "/vapt", label: "Campaigns", icon: <Crosshair size={17} /> },
+  { to: "/vapt/schedules", label: "Schedules", icon: <CalendarClock size={17} /> },
+  { to: "/vapt/procedures", label: "Procedures & rules", icon: <BookOpen size={17} /> },
+  { to: "/vapt/settings", label: "Engine settings", icon: <SlidersHorizontal size={17} /> },
+];
+
+type NavDropdownItem = {
+  type: "dropdown";
+  label: string;
+  icon: React.ReactNode;
+  /** Route prefix that marks this group active. */
+  basePath: string;
+  items: { to: string; label: string; icon: React.ReactNode }[];
+};
+
 const navSections: {
   label: string;
-  items: ({ to: string; label: string; icon: React.ReactNode; badge?: string } | { type: "dropdown"; label: string; icon: React.ReactNode; items: { to: string; label: string; icon: React.ReactNode }[] })[];
+  items: ({ to: string; label: string; icon: React.ReactNode; badge?: string } | NavDropdownItem)[];
 }[] = [
   {
     label: "Overview",
@@ -83,9 +115,9 @@ const navSections: {
     items: [
       { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
       { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
-      { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, items: socSubItems },
+      { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, basePath: "/soc", items: socSubItems },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
-      { to: "/vapt", label: "VAPT Campaigns", icon: <Crosshair size={17} /> },
+      { type: "dropdown", label: "VAPT", icon: <Crosshair size={17} />, basePath: "/vapt", items: vaptSubItems },
       { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
       { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
       { to: "/pentest/external-scope", label: "Pentest scope", icon: <FileSignature size={17} /> },
@@ -101,14 +133,16 @@ const navSections: {
     label: "Governance",
     items: [
       { to: "/risks", label: "Risks", icon: <ShieldAlert size={17} /> },
-      { to: "/compliance", label: "Compliance", icon: <Scale size={17} /> },
+      { type: "dropdown", label: "Compliance", icon: <Scale size={17} />, basePath: "/compliance", items: complianceSubItems },
+      { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
+      { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },
       { to: "/reports", label: "Reports", icon: <FileText size={17} /> },
     ],
   },
   {
     label: "Assistant",
     items: [
-      { to: "/agent", label: "Phantix Agent", icon: <Bot size={17} /> },
+      { to: "/agent", label: "SecureGraph Agent", icon: <Bot size={17} /> },
     ],
   },
   {
@@ -119,24 +153,28 @@ const navSections: {
   },
 ];
 
-function SocDropdownComponent() {
+/**
+ * Collapsible nav group. Opens itself whenever the current route is inside the
+ * group, so deep-linking to a sub-page still shows where you are.
+ */
+function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
   const location = useLocation();
-  const socActive = location.pathname.startsWith("/soc");
-  const [open, setOpen] = useState(socActive);
+  const groupActive = location.pathname.startsWith(basePath);
+  const [open, setOpen] = useState(groupActive);
 
   useEffect(() => {
-    setOpen(location.pathname.startsWith("/soc"));
-  }, [location.pathname]);
+    if (location.pathname.startsWith(basePath)) setOpen(true);
+  }, [location.pathname, basePath]);
 
   return (
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className={cx("nav-item w-full justify-between", socActive && "active")}
+        className={cx("nav-item w-full justify-between", groupActive && "active")}
       >
         <span className="flex items-center gap-3">
-          <Activity size={17} />
-          SOC Monitor
+          {icon}
+          {label}
         </span>
         <ChevronDown
           size={14}
@@ -153,11 +191,13 @@ function SocDropdownComponent() {
             className="overflow-hidden"
           >
             <div className="ml-7 mt-0.5 space-y-0.5 border-l border-phantix-700/50 pl-2.5">
-              {socSubItems.map((sub) => (
+              {items.map((sub) => (
                 <NavLink
                   key={sub.to}
                   to={sub.to}
-                  end={sub.to === "/soc"}
+                  // The group's own landing route must match exactly, or it would
+                  // stay highlighted on every sub-page.
+                  end={sub.to === basePath}
                   className={({ isActive }) => cx("nav-item !py-2", isActive && "active")}
                 >
                   {sub.icon}
@@ -372,23 +412,23 @@ export default function Layout() {
       {/* ── Sidebar ─────────────────────────────────────────── */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-phantix-950 lg:flex">
         <NavLink to="/" className="flex items-center gap-3 px-4 pb-3 pt-4">
-          <img src="/logo-white.png" alt="Phantix" className="h-8 w-8 object-contain" />
+          <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
           <div>
-            <p className="font-display text-[15px] font-bold leading-tight text-white">Phantix</p>
+            <p className="font-display text-[15px] font-bold leading-tight text-white">SecureGraph</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </NavLink>
 
-        <nav className="flex-1 space-y-2.5 overflow-y-auto px-2.5 pb-3">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto px-2.5 pb-3">
           {sections.map((section) => (
             <div key={section.label}>
-              <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
+              <p className="nav-section-label">
                 {section.label}
               </p>
 <div className="space-y-0.5">
                     {section.items.map((item) => {
                       if ("type" in item && item.type === "dropdown") {
-                        return <SocDropdownComponent key={item.label} />;
+                        return <NavDropdown key={item.label} {...item} />;
                       }
                       const navItem = item as NavItem;
                       return (
@@ -408,7 +448,7 @@ export default function Layout() {
           ))}
           {session?.isAuthorizer && (
             <div>
-              <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-gold-400">
+              <p className="nav-section-label text-gold-400">
                 Authorizer
               </p>
               <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
@@ -418,7 +458,7 @@ export default function Layout() {
             </div>
           )}
           <div>
-            <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <p className="nav-section-label">
               Tenant admin
             </p>
             <a
@@ -434,10 +474,10 @@ export default function Layout() {
         </nav>
 
         {/* Dual-control widget */}
-        <div className="border-t border-phantix-700/60 p-2.5">
-          <div className="rounded-md bg-phantix-900 border border-phantix-700 p-2.5">
+        <div className="border-t border-phantix-700/60 p-2">
+          <div className="rounded-md bg-phantix-900 border border-phantix-700 p-2">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Dual control</p>
+              <p className="text-[11px] font-semibold text-slate-500">Dual control</p>
               {operate.unlocked ? (
                 <Unlock size={13} className="text-emerald-400" />
               ) : (
@@ -445,18 +485,18 @@ export default function Layout() {
               )}
             </div>
             {operate.unlocked ? (
-              <div className="mt-1.5 space-y-1">
+              <div className="mt-1 space-y-1">
                 <p className="text-xs font-medium text-emerald-300">Operating as {operate.actingUser}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] capitalize text-slate-500">{operate.actingRole}</span>
                   {operate.expiresAt && <OperateCountdown expiresAt={operate.expiresAt} />}
                 </div>
-                <button onClick={lockOperate} className="mt-1 w-full rounded-md border border-phantix-700 bg-phantix-850 py-1.5 text-[11px] font-medium text-slate-300 hover:bg-phantix-800">
+                <button onClick={lockOperate} className="mt-1 w-full rounded-md border border-phantix-700 bg-phantix-850 py-1 text-[11px] font-medium text-slate-300 hover:bg-phantix-800">
                   Lock session
                 </button>
               </div>
             ) : (
-              <div className="mt-1.5">
+              <div className="mt-1">
                 {dualControl.configured ? (
                   <>
                     <p className="text-[11px] leading-4 text-slate-500">
@@ -469,7 +509,7 @@ export default function Layout() {
                     {(session?.isInitiator || session?.isAuthorizer) && (
                       <button
                         onClick={() => void requireDualControl("Unlock operate mode to perform protected mutations.")}
-                        className="btn-primary mt-1.5 w-full !px-3 !py-1.5 !text-[11px]"
+                        className="btn-primary mt-1 w-full !px-3 !py-1 !text-[11px]"
                       >
                         <Unlock size={12} /> Unlock operate
                       </button>
@@ -478,10 +518,10 @@ export default function Layout() {
                 ) : (
                   <>
                     <p className="text-[11px] leading-4 text-slate-500">Dual control not set up</p>
-                    <p className="mt-1 text-[10px] leading-4 text-slate-600">Reports & views work without it. Mutations require setup on the Platform.</p>
+                    <p className="mt-0.5 text-[10px] leading-4 text-slate-600">Reports & views work without it. Mutations require setup on the Platform.</p>
                     <a
                       href={PLATFORM_IDENTITY_URL}
-                      className="btn-secondary mt-1.5 w-full !px-3 !py-1.5 !text-[11px]"
+                      className="btn-secondary mt-1 w-full !px-3 !py-1 !text-[11px]"
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -579,6 +619,12 @@ export default function Layout() {
                         <ExternalLink size={15} /> Platform settings
                       </a>
                       <button
+                        onClick={() => navigate("/settings/privacy")}
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
+                      >
+                        <ShieldCheck size={15} /> Privacy & data requests
+                      </button>
+                      <button
                         onClick={() => navigate("/docs")}
                         className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
                       >
@@ -616,16 +662,16 @@ export default function Layout() {
               exit={{ opacity: 0, height: 0 }}
               className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b border-phantix-700/60 bg-phantix-950 shadow-card lg:hidden"
             >
-              <nav className="space-y-3 px-2.5 py-3">
+              <nav className="space-y-1.5 px-2.5 py-3">
                 {sections.map((section) => (
                   <div key={section.label}>
-                    <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
+                    <p className="nav-section-label">
                       {section.label}
                     </p>
                     <div className="space-y-0.5">
                       {section.items.map((item) => {
                         if ("type" in item && item.type === "dropdown") {
-                          return <SocDropdownComponent key={item.label} />;
+                          return <NavDropdown key={item.label} {...item} />;
                         }
                         const navItem = item as NavItem;
                         return (
@@ -645,7 +691,7 @@ export default function Layout() {
                 ))}
                 {session?.isAuthorizer && (
                   <div>
-                    <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-gold-400">
+                    <p className="nav-section-label text-gold-400">
                       Authorizer
                     </p>
                     <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
@@ -655,7 +701,7 @@ export default function Layout() {
                   </div>
                 )}
                 <div>
-                  <p className="mb-0.5 px-2.5 text-[9px] leading-none font-semibold uppercase tracking-[0.14em] text-slate-600">
+                  <p className="nav-section-label">
                     Tenant admin
                   </p>
                   <a href={PLATFORM_IDENTITY_URL} className="nav-item" target="_blank" rel="noreferrer">
@@ -712,7 +758,7 @@ export default function Layout() {
       {/* Autonomous Pentest Agent — right-side drawer with full-screen option */}
       {AGI_ENABLED && session?.authenticated && <AgiDrawer />}
 
-      {/* Phantix Agent — floating chatbot assistant */}
+      {/* SecureGraph Agent — floating chatbot assistant */}
       <AgentAssistant />
 
       {/* Running operations tray — bottom-right, redirects to the page of each pending action */}

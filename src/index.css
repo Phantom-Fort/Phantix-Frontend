@@ -26,11 +26,15 @@
     --gold-500: 212 162 78;
     --gold-600: 185 134 47;
 
-    --severity-critical: 244 63 94;
-    --severity-high: 251 146 60;
-    --severity-medium: 250 204 21;
-    --severity-low: 56 189 248;
-    --severity-info: 148 163 184;
+    /* Canonical severity scale (GET /api/v1/branding/tokens). Same values on
+       dark and light so the console matches generated reports. Overridden at
+       runtime when the tokens endpoint answers (lib/branding.ts). */
+    --severity-critical: 220 38 38;      /* #DC2626 */
+    --severity-high: 234 88 12;          /* #EA580C */
+    --severity-medium: 202 138 4;        /* #CA8A04 */
+    --severity-low: 22 163 74;           /* #16A34A */
+    --severity-info: 14 165 233;         /* #0EA5E9 */
+    --severity-unrated: 102 112 133;     /* #667085 */
 
     /* Text scale remapped slate → zinc so body copy is neutral, not blue-gray. */
     --slate-50: 250 250 250;
@@ -83,11 +87,13 @@
     --gold-500: 127 78 12;
     --gold-600: 102 60 8;
 
-    --severity-critical: 220 38 60;
-    --severity-high: 234 116 30;
-    --severity-medium: 174 140 10;
-    --severity-low: 2 132 199;
-    --severity-info: 100 116 139;
+    /* Canonical severity scale — single shared values (see dark block). */
+    --severity-critical: 220 38 38;      /* #DC2626 */
+    --severity-high: 234 88 12;          /* #EA580C */
+    --severity-medium: 202 138 4;        /* #CA8A04 */
+    --severity-low: 22 163 74;           /* #16A34A */
+    --severity-info: 14 165 233;         /* #0EA5E9 */
+    --severity-unrated: 102 112 133;     /* #667085 */
 
     /* Text scale: low=dark (high contrast on white), high=light (muted). */
     --slate-50: 9 9 11;        /* zinc-950 — highest contrast */
@@ -95,12 +101,12 @@
     --slate-200: 39 39 42;     /* zinc-800 */
     --slate-300: 63 63 70;     /* zinc-700 */
     --slate-400: 82 82 91;     /* zinc-600 */
-    --slate-500: 113 113 122;  /* zinc-500 */
-    --slate-600: 161 161 170;  /* zinc-400 */
-    --slate-700: 212 212 216;  /* zinc-300 */
-    --slate-800: 228 228 231;  /* zinc-200 */
-    --slate-900: 244 244 245;  /* zinc-100 */
-    --slate-950: 250 250 250;  /* zinc-50 */
+    --slate-500: 82 82 91;     /* zinc-600 — was zinc-500; that read too light next to 400 */
+    --slate-600: 113 113 122;  /* zinc-500 — was zinc-400 (#a1a1aa, ~2.4:1, failed AA on white) */
+    --slate-700: 161 161 170;  /* zinc-400 */
+    --slate-800: 212 212 216;  /* zinc-300 */
+    --slate-900: 228 228 231;  /* zinc-200 */
+    --slate-950: 244 244 245;  /* zinc-100 */
 
     --color-white: 9 9 11;     /* "white" text → near-black on light bg */
     --color-black: 0 0 0;
@@ -201,7 +207,9 @@
 
   html {
     /* Readability: 17px root scales every rem-based text size and spacing,
-       so standard Tailwind sizes (xs, sm, base…) render ~6% larger for all users. */
+       so standard Tailwind sizes (xs, sm, base…) render ~6% larger for all
+       users — closer to Cloudflare-dashboard-scale UI text without being
+       oversized (18px ran too big; also helps the sidebar fit more rows). */
     font-size: 17px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -256,6 +264,9 @@
   :root[data-theme="light"] .skeleton {
     background-color: rgb(242 242 242);
   }
+  :root[data-theme="light"] .skeleton::after {
+    background-image: linear-gradient(to right, transparent, rgb(255 255 255 / 0.85), transparent);
+  }
   :root[data-theme="light"] .shadow-glow {
     box-shadow: 0 0 0 1px rgba(183, 126, 34, 0.3);
   }
@@ -277,6 +288,32 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-phantix-600/70;
   }
+}
+
+/* Focus that is visible but never decorative: one 2px gold outline, 2px offset,
+   for any focusable that doesn't already draw its own ring. .btn and .input
+   carry a bespoke box-shadow ring, so suppress the outline there instead of
+   stacking two indicators (Learn UI — Accessibility as craft). */
+:focus-visible {
+  outline: 2px solid rgb(var(--gold-400) / 0.9);
+  outline-offset: 2px;
+}
+.btn:focus-visible,
+.input:focus-visible,
+[class*="ring-"]:focus-visible {
+  outline: none;
+}
+
+/* Headings wrap so no line is left one word short; prose balances its last
+   line. Both are free — pure paint work, no reflow cost worth measuring. */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
 }
 
 @layer components {
@@ -353,18 +390,39 @@
   .skeleton {
     @apply rounded-md bg-phantix-800/60 relative overflow-hidden;
   }
+  /* The sweep is a transform, not a background-position shift, so a page full
+     of skeletons stays on the compositor. Deliberately NOT the `shimmer`
+     keyframe from tailwind.config.js — that one animates background-position
+     (for TextShimmer) and moves a translated pseudo-element not at all. */
   .skeleton::after {
     content: "";
-    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-phantix-600/25 to-transparent;
-    animation: shimmer 1.8s infinite;
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-phantix-600/25 to-transparent;
+    transform: translateX(-100%);
+    animation: skeleton-sweep 1.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform;
   }
+  /* Stagger sibling placeholders so a list reads as one wave rather than a
+     rank of blocks blinking in lockstep. */
+  .skeleton:nth-child(2)::after { animation-delay: 0.09s; }
+  .skeleton:nth-child(3)::after { animation-delay: 0.18s; }
+  .skeleton:nth-child(4)::after { animation-delay: 0.27s; }
+  .skeleton:nth-child(5)::after { animation-delay: 0.36s; }
+  .skeleton:nth-child(n + 6)::after { animation-delay: 0.45s; }
 
   .nav-item {
-    @apply flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] leading-tight font-medium text-slate-400
+    @apply flex items-center gap-3 rounded-md px-3 py-1.5 text-sm leading-tight font-medium text-slate-400
       transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
   }
   .nav-item.active {
-    @apply text-slate-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-3;
+    @apply text-slate-100 bg-phantix-850 border-l-2 border-gold-400 -ml-0.5 pl-[10px];
+  }
+
+  /* Sidebar section label — quiet grouping caption, not a shouted all-caps
+     divider. Regular case, medium weight, readable grey. Kept tight (not
+     roomy) so a full nav with several groups still fits without scrolling —
+     Cloudflare's flat, ungrouped list is the density target. */
+  .nav-section-label {
+    @apply mb-1 px-3 text-[11px] leading-none font-semibold text-slate-500;
   }
 
   .prose-doc h1 {
@@ -632,5 +690,27 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Skeleton sweep — light travels left to right, then holds before repeating.
+   The hold (60%→100%) keeps the loading state from reading as a strobe. */
+@keyframes skeleton-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* No travelling light for users who asked the OS for calmer interfaces — the
+   placeholder blocks themselves still say "loading". (The root app's blanket
+   reduced-motion reset covers this too; stated here so each app stands alone.) */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+    opacity: 0;
   }
 }

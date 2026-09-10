@@ -6,7 +6,7 @@ import { useCallback, useSyncExternalStore } from "react";
  * Mirrors the Xalgorix webui store: a tiny useSyncExternalStore-based store so
  * any component can read/set the theme without a context provider. The choice
  * is persisted to localStorage and mirrored onto <html> as the `data-theme`
- * attribute (the Phantix CSS contract, see index.css) plus the `theme-color`
+ * attribute (the SecureGraph CSS contract, see index.css) plus the `theme-color`
  * meta tag and `color-scheme`.
  *
  * Modes: "light" | "dark" | "system". "system" follows the OS

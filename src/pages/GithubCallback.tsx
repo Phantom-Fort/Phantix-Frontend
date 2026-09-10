@@ -69,7 +69,7 @@ export default function GithubCallback() {
               </span>
               <h1 className="mt-5 font-display text-2xl font-bold text-white">GitHub connected</h1>
               <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-400">
-                The Phantix GitHub App is now installed. Manage repositories and analysis on the Platform.
+                The SecureGraph GitHub App is now installed. Manage repositories and analysis on the Platform.
               </p>
               <a
                 href="https://platform.phantixlabs.com/github"

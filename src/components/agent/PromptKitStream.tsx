@@ -18,7 +18,7 @@ import type { AgiTranscriptChunk } from "@/lib/types";
 // Memoized so appending a new chunk does not re-render every prior bubble.
 
 const PERSONA_LABEL: Record<string, string> = {
-  orchestrator: "Phantix Autonomous Agent",
+  orchestrator: "SecureGraph Autonomous Agent",
   recon: "Recon",
   exploit: "Exploit",
 };

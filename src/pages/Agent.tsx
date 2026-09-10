@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
+import ModelPicker from "@/components/ModelPicker";
 import DocLink from "@/components/DocLink";
 import { Markdown } from "@/components/prompt-kit/markdown";
 import {
@@ -101,7 +102,7 @@ function clarifyRequest(raw: string): ClarifyResult {
   if (/^(hi|hello|hey|thanks|thank you|ok|okay|bye)\b/.test(q)) {
     return {
       clear: false,
-      reply: "I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. What would you like to look into?",
+      reply: "I'm SecureGraph Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. What would you like to look into?",
       followUps: ["Summarize my current security posture", "Which assets are highest risk?", "How many critical risks are open right now?"],
     };
   }
@@ -206,9 +207,9 @@ export default function Agent() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="text-center">
             <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-phantix-800/70 text-gold-400"><Bot size={30} /></span>
-            <h2 className="mt-5 font-display text-2xl font-bold text-white">Phantix Agent is disabled</h2>
+            <h2 className="mt-5 font-display text-2xl font-bold text-white">SecureGraph Agent is disabled</h2>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">
-              Your organization has turned off the Phantix Agent. Ask an administrator to enable it from the
+              Your organization has turned off the SecureGraph Agent. Ask an administrator to enable it from the
               Platform's AI settings to start chatting with your security data.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
@@ -229,18 +230,22 @@ export default function Agent() {
   return (
     <div className={cx("mx-auto", mode === "agi" ? "max-w-none" : "max-w-[900px]")}>
       <PageHeader
-        title="Phantix Agent"
+        title="SecureGraph Agent"
         description="Chief Security Agent routes to specialists (SOC, GRC, VAPT, Threat Intel, Asset). AI orchestrates; engines execute — AI never discovers a vulnerability without a finding ID."
         actions={
           <span className="flex items-center gap-2">
             <DocLink docId="howto-app-13" label="Agent how-to" />
-            <span className="chip border-phantix-600/50 bg-phantix-800/60 font-mono text-slate-300"><Cpu size={11} className="mr-1 inline" /> {status?.agent?.model ?? MODEL_BADGE}</span>
+            <ModelPicker
+              surface={mode === "agi" ? "pentest" : "general"}
+              value={status?.agent?.model ?? MODEL_BADGE}
+              onChange={() => loadAiStatus().then((s) => setStatus(s)).catch(() => {})}
+            />
             <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Sparkles size={11} className="mr-1 inline" /> {streamEnabled ? "Live stream" : "Enabled"}</span>
           </span>
         }
       />
 
-      {/* Mode switch — Phantix Agent vs Autonomous Pentest Agent */}
+      {/* Mode switch — SecureGraph Agent vs Autonomous Pentest Agent */}
       <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
         <button
           onClick={() => {
@@ -249,7 +254,7 @@ export default function Agent() {
           }}
           className={cx("flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors", mode === "agent" ? "bg-phantix-800/70 text-white" : "text-slate-400 hover:text-slate-200")}
         >
-          <Bot size={15} /> Phantix Agent
+          <Bot size={15} /> SecureGraph Agent
         </button>
         {AGI_ENABLED && (
           <button
@@ -361,8 +366,8 @@ function AgentChat({
 
   const dispatchSend = async (msg: string) => {
     if (busy) abortRef.current?.abort();
-    // Phantix Agent operates on org data — require an unlocked dual-control session.
-    if (!(await requireDualControl("Using the Phantix Agent requires a dual-control operate session."))) return;
+    // SecureGraph Agent operates on org data — require an unlocked dual-control session.
+    if (!(await requireDualControl("Using the SecureGraph Agent requires a dual-control operate session."))) return;
 
     // Clarify first: quick prompts / vague asks are answered locally so the user
     // pins down a specific request before any backend (LLM) call happens.
@@ -405,8 +410,8 @@ function AgentChat({
       if ((e as Error)?.name !== "AbortError") {
         const planRequired = (e as any)?.status === 402 || (e as any)?.detail?.code === "ai_agent_plan_required";
         if (planRequired) {
-          toast("warning", "Upgrade required", "The Phantix Agent is part of a paid plan. Upgrade on the Platform to keep chatting.");
-          setMessages((m) => [...m, { role: "agent", text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
+          toast("warning", "Upgrade required", "The SecureGraph Agent is part of a paid plan. Upgrade on the Platform to keep chatting.");
+          setMessages((m) => [...m, { role: "agent", text: "This reply requires the SecureGraph Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
         } else {
           toast("error", "Agent unavailable", e instanceof Error ? e.message : "");
           setMessages((m) => [...m, { role: "agent", text: "I couldn't process that request. Please try again." }]);
@@ -474,7 +479,7 @@ function AgentChat({
         <div className="flex items-center gap-3 border-b border-phantix-700/40 px-5 py-3.5">
           <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
-            <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
+            <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
             <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
               Chief Agent · routes to specialists
               {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}

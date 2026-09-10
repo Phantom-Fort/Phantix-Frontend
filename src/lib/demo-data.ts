@@ -71,6 +71,33 @@ import type {
   VaptFinding,
   Severity,
 } from "./types";
+// Type-only imports: erased at compile time, so the GRC/VAPT/context modules can
+// import these fixtures back without creating a runtime import cycle.
+import type {
+  AnswererAudit,
+  AnswererSession,
+  BusinessProfile,
+  ComplianceLevel,
+  EvidenceConnector,
+  GapAnalysis,
+  QuestionnaireList,
+  QuestionnaireProgress,
+  QuestionnaireQuestion,
+} from "./complianceGrc";
+import type {
+  CorrelationRule,
+  RuleCandidate,
+  VaptProcedure,
+  VaptSchedule,
+  VaptSettings,
+} from "./vaptOps";
+import type {
+  DocumentHit,
+  ProductProject,
+  ProjectGraph,
+  RememberedModel,
+  ThreatModelDetail,
+} from "./productContext";
 
 // Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
 // (/demo or demo session flag). Live mode must never import this
@@ -145,7 +172,7 @@ export const dualControl: DualControlState = {
 export const dbConnections: DbConnection[] = [
   {
     id: 4,
-    name: "Phantix Security Store",
+    name: "SecureGraph Store",
     connection_purpose: "security_data_storage",
     db_type: "postgresql",
     host: "10.20.0.14",
@@ -395,10 +422,10 @@ export const alertSettings: AlertSettings = {
 export const auditEvents: AuditEvent[] = [
   { id: 601, action_key: "risk.treatment.approve", action_label: "PATCH /api/v1/risks/treatments/3/approve", category: "risks", status: "completed", summary: "Approved treatment: TLS baseline remediation", details: { path: "/api/v1/risks/treatments/3/approve", method: "PATCH", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-20T08:05:00Z" },
   { id: 600, action_key: "vapt.campaign.start", action_label: "POST /api/v1/vapt/campaigns/13/start", category: "vapt", status: "completed", summary: "Started campaign: Q3 External Assessment", details: { path: "/api/v1/vapt/campaigns/13/start", method: "POST", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-14T10:30:00Z" },
-  { id: 599, action_key: "data.access", action_label: "GET /api/v1/assets/intelligence/dashboard", category: "data_access", status: "completed", summary: "GET /api/v1/assets/intelligence/dashboard", details: { path: "/api/v1/assets/intelligence/dashboard", method: "GET", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Phantix Test Org", authorizer_title: "org_admin", created_at: "2026-07-13T15:22:00Z" },
-  { id: 598, action_key: "data.access", action_label: "GET /api/v1/scans/results", category: "data_access", status: "completed", summary: "GET /api/v1/scans/results", details: { path: "/api/v1/scans/results", method: "GET", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Phantix Test Org", authorizer_title: "org_admin", created_at: "2026-07-13T15:20:00Z" },
+  { id: 599, action_key: "data.access", action_label: "GET /api/v1/assets/intelligence/dashboard", category: "data_access", status: "completed", summary: "GET /api/v1/assets/intelligence/dashboard", details: { path: "/api/v1/assets/intelligence/dashboard", method: "GET", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "SecureGraph Test Org", authorizer_title: "org_admin", created_at: "2026-07-13T15:22:00Z" },
+  { id: 598, action_key: "data.access", action_label: "GET /api/v1/scans/results", category: "data_access", status: "completed", summary: "GET /api/v1/scans/results", details: { path: "/api/v1/scans/results", method: "GET", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "SecureGraph Test Org", authorizer_title: "org_admin", created_at: "2026-07-13T15:20:00Z" },
   { id: 597, action_key: "compliance.assessment.run", action_label: "POST /api/v1/compliance/assessments/2/run", category: "compliance", status: "completed", summary: "Ran ISO 27001 assessment", details: { path: "/api/v1/compliance/assessments/2/run", method: "POST", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-12T11:00:00Z" },
-  { id: 596, action_key: "data.access", action_label: "GET /api/v1/risks/prioritized", category: "data_access", status: "completed", summary: "GET /api/v1/risks/prioritized", details: { path: "/api/v1/risks/prioritized", method: "GET", actor_user_id: 3, actor_email: "chidi@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.13", initiator_name: "Chidi Eze", initiator_title: "CISO", authorizer_name: "Phantix Test Org", authorizer_title: "org_admin", created_at: "2026-07-12T09:30:00Z" },
+  { id: 596, action_key: "data.access", action_label: "GET /api/v1/risks/prioritized", category: "data_access", status: "completed", summary: "GET /api/v1/risks/prioritized", details: { path: "/api/v1/risks/prioritized", method: "GET", actor_user_id: 3, actor_email: "chidi@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.13", initiator_name: "Chidi Eze", initiator_title: "CISO", authorizer_name: "SecureGraph Test Org", authorizer_title: "org_admin", created_at: "2026-07-12T09:30:00Z" },
   { id: 595, action_key: "report.generate", action_label: "POST /api/v1/reports", category: "reports", status: "completed", summary: "Generated vapt_campaign report for campaign #12", details: { path: "/api/v1/reports", method: "POST", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-11T14:00:00Z" },
   { id: 594, action_key: "auth.org_user.login", action_label: "POST /api/v1/auth/login", category: "auth", status: "completed", summary: "Org user login (dual_control)", details: { path: "/api/v1/auth/login", method: "POST", actor_user_id: 3, actor_email: "chidi@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.13", initiator_name: "Chidi Eze", initiator_title: "CISO", authorizer_name: null, authorizer_title: null, created_at: "2026-07-10T07:02:00Z" },
 ];
@@ -460,7 +487,7 @@ export const aiStatus: AiStatus = {
 };
 
 export const agentSkills: AgentSkill[] = [
-  { id: 1, name: "phantix-vapt-writeup", description: "Drafts verified VAPT finding write-ups from campaign data. Only references findings with a Phantix finding ID.", version: "1.0.0", domain: "vapt", status: "active", score: 0.94, uses: 187, last_used_at: "2026-07-21T09:00:00Z", created_at: "2026-06-02T10:00:00Z" },
+  { id: 1, name: "phantix-vapt-writeup", description: "Drafts verified VAPT finding write-ups from campaign data. Only references findings with a SecureGraph finding ID.", version: "1.0.0", domain: "vapt", status: "active", score: 0.94, uses: 187, last_used_at: "2026-07-21T09:00:00Z", created_at: "2026-06-02T10:00:00Z" },
   { id: 2, name: "phantix-asset-exposure-brief", description: "Summarizes an asset's external exposure from intelligence signals.", version: "1.1.0", domain: "asset", status: "active", score: 0.91, uses: 142, last_used_at: "2026-07-20T14:22:00Z", created_at: "2026-06-05T10:00:00Z" },
   { id: 3, name: "phantix-soc-triage-assist", description: "Assists SOC triage: correlates detections, suggests priority for human review.", version: "0.9.0", domain: "soc", status: "candidate", score: 0.78, uses: 21, last_used_at: "2026-07-18T11:40:00Z", created_at: "2026-07-01T10:00:00Z" },
   { id: 4, name: "phantix-grc-gap-brief", description: "Explains compliance framework gaps with control evidence references.", version: "1.0.0", domain: "grc", status: "candidate", score: 0.82, uses: 9, last_used_at: null, created_at: "2026-07-08T10:00:00Z" },
@@ -638,13 +665,13 @@ export const socAdapters: SocAdapter[] = [
 // ── Orchestration: Cloud Security connectors (cloud.md) ─────────────────────
 export const cloudProviders: CloudProvider[] = [
   { id: "vercel", name: "Vercel", description: "Log drains + deployment telemetry", kind: "paas", webhook: { label: "Log drain / webhook", ingestUrlHint: "Vercel → Project → Integrations → Log Drains", signatureHeader: "x-vercel-signature" } },
-  { id: "aws", name: "AWS", description: "CloudTrail / EventBridge events", kind: "cloud", webhook: { label: "EventBridge target", ingestUrlHint: "AWS console → EventBridge → Rule target", signatureHeader: "X-Phantix-Signature" } },
-  { id: "azure", name: "Azure", description: "Azure Monitor / Sentinel log analytics", kind: "cloud", webhook: { label: "Log Analytics workspace", ingestUrlHint: "Azure → Log Analytics → Custom log", signatureHeader: "X-Phantix-Signature" } },
-  { id: "gcp", name: "Google Cloud", description: "Cloud logging sinks", kind: "cloud", webhook: { label: "Pub/Sub push subscription", ingestUrlHint: "GCP → Logging → Sink → Pub/Sub", signatureHeader: "X-Phantix-Signature" } },
-  { id: "hetzner", name: "Hetzner", description: "VPS / server events", kind: "vps", webhook: { label: "Webhook notification", ingestUrlHint: "Hetzner Cloud → Project → Webhooks", signatureHeader: "X-Phantix-Signature" } },
-  { id: "digitalocean", name: "DigitalOcean", description: "Droplet / alert webhooks", kind: "vps", webhook: { label: "Alert webhook", ingestUrlHint: "DO → Monitoring → Alerts → Notification channel", signatureHeader: "X-Phantix-Signature" } },
+  { id: "aws", name: "AWS", description: "CloudTrail / EventBridge events", kind: "cloud", webhook: { label: "EventBridge target", ingestUrlHint: "AWS console → EventBridge → Rule target", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "azure", name: "Azure", description: "Azure Monitor / Sentinel log analytics", kind: "cloud", webhook: { label: "Log Analytics workspace", ingestUrlHint: "Azure → Log Analytics → Custom log", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "gcp", name: "Google Cloud", description: "Cloud logging sinks", kind: "cloud", webhook: { label: "Pub/Sub push subscription", ingestUrlHint: "GCP → Logging → Sink → Pub/Sub", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "hetzner", name: "Hetzner", description: "VPS / server events", kind: "vps", webhook: { label: "Webhook notification", ingestUrlHint: "Hetzner Cloud → Project → Webhooks", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "digitalocean", name: "DigitalOcean", description: "Droplet / alert webhooks", kind: "vps", webhook: { label: "Alert webhook", ingestUrlHint: "DO → Monitoring → Alerts → Notification channel", signatureHeader: "X-SecureGraph-Signature" } },
   { id: "github", name: "GitHub", description: "Audit log + security alerts", kind: "code", webhook: { label: "Repository webhook", ingestUrlHint: "GitHub → Settings → Webhooks", signatureHeader: "X-Hub-Signature-256" } },
-  { id: "uptimekuma", name: "Uptime Kuma", description: "Availability notification webhooks", kind: "monitoring", webhook: { label: "Notification webhook URL", ingestUrlHint: "Uptime Kuma → Settings → Notifications", signatureHeader: "X-Phantix-Signature" } },
+  { id: "uptimekuma", name: "Uptime Kuma", description: "Availability notification webhooks", kind: "monitoring", webhook: { label: "Notification webhook URL", ingestUrlHint: "Uptime Kuma → Settings → Notifications", signatureHeader: "X-SecureGraph-Signature" } },
 ];
 
 export const cloudConnectors: CloudConnector[] = [
@@ -1234,4 +1261,1095 @@ export const socCloudProviderCatalog: SocCloudProviderCatalog = {
 export const socCloudConnections: SocCloudConnection[] = [
   { id: 1, provider: "aws", integration_type: "log_ingestion", display_name: "Acme prod CloudTrail", status: "connected", last_sync_at: "2026-08-23T06:00:00Z", created_at: "2026-07-02T09:00:00Z" },
   { id: 2, provider: "aws_eventbridge", integration_type: "webhook", display_name: "EventBridge → SOC", status: "connected", last_sync_at: "2026-08-23T07:00:00Z", created_at: "2026-07-10T09:00:00Z" },
+];
+
+// ── Compliance GRC: questionnaire, gaps, profile, evidence connectors ─────────
+// Shapes mirror app/engines/compliance_engine/api/compliance.py as encoded in
+// src/lib/complianceGrc.ts. Every derived number below is computed from the rows
+// it summarises the way the server computes it — see `questionnaireProgress`.
+
+/** The demo explorer's own org-user id (orgUsers 1-4 are their colleagues). */
+const DEMO_ANSWERER_ID = 5;
+
+function myAnswer(value: string, notes: string | null, updatedAt: string): AnswererAudit {
+  return {
+    organization_user_id: DEMO_ANSWERER_ID,
+    answered_by_name: "Demo Explorer",
+    answered_by_email: "demo@acme.ng",
+    stated_role: "Compliance Officer",
+    stated_title: "Head of Governance, Risk & Compliance",
+    answer_value: value,
+    notes,
+    updated_at: updatedAt,
+  };
+}
+
+function colleagueAnswer(
+  userId: number,
+  name: string,
+  email: string,
+  role: string,
+  title: string,
+  value: string,
+  notes: string | null,
+  updatedAt: string,
+): AnswererAudit {
+  return {
+    organization_user_id: userId,
+    answered_by_name: name,
+    answered_by_email: email,
+    stated_role: role,
+    stated_title: title,
+    answer_value: value,
+    notes,
+    updated_at: updatedAt,
+  };
+}
+
+export const questionnaireQuestions: QuestionnaireQuestion[] = [
+  {
+    id: 1001,
+    question_key: "gov.security_policy",
+    prompt: "Do you have a documented information security policy approved by leadership?",
+    help_text: "An approved policy signed off at board or executive level, reviewed at least annually.",
+    category: "Governance",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "soc2"],
+    source_controls: [
+      { framework_id: "iso27001", control_id: "A.5.1" },
+      { framework_id: "soc2", control_id: "CC1.1" },
+    ],
+    sort_order: 10,
+    my_answer: myAnswer("yes", "Approved by the board on 2026-03-14, next review March 2027.", "2026-08-28T09:12:00Z"),
+    answers_from_others: [
+      colleagueAnswer(2, "Chidi Eze", "chidi@acme.ng", "CISO", "Chief Information Security Officer", "yes", null, "2026-08-27T15:40:00Z"),
+    ],
+    answer_count: 2,
+    is_seeded: true,
+  },
+  {
+    id: 1002,
+    question_key: "gov.security_owner",
+    prompt: "Is a named individual accountable for information security?",
+    help_text: "One person, named in the policy, with the authority to require remediation.",
+    category: "Governance",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "ndpr"],
+    source_controls: [{ framework_id: "iso27001", control_id: "A.5.2" }],
+    sort_order: 20,
+    my_answer: myAnswer("yes", "CISO (Chidi Eze) since 2025.", "2026-08-28T09:14:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1003,
+    question_key: "gov.risk_register",
+    prompt: "Do you maintain a risk register that is reviewed at least annually?",
+    help_text: "A living register with owners and treatment decisions, not a one-off assessment.",
+    category: "Governance",
+    risk: "medium",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001"],
+    source_controls: [{ framework_id: "iso27001", control_id: "A.5.7" }],
+    sort_order: 30,
+    my_answer: myAnswer("partial", "Register exists in SecureGraph but treatment owners are not assigned for every entry.", "2026-08-28T09:20:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1004,
+    question_key: "ac.mfa_admin",
+    prompt: "Is multi-factor authentication enforced on all administrative accounts?",
+    help_text: "Enforced technically, not requested by policy. Includes cloud consoles and the VPN.",
+    category: "Access Control",
+    risk: "critical",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "soc2", "pci_dss"],
+    source_controls: [
+      { framework_id: "iso27001", control_id: "A.8.5" },
+      { framework_id: "pci_dss", control_id: "8.4.2" },
+    ],
+    sort_order: 40,
+    my_answer: myAnswer("yes", "Entra conditional access blocks admin sign-in without MFA.", "2026-08-28T09:26:00Z"),
+    answers_from_others: [
+      colleagueAnswer(1, "Ada Okonkwo", "ada@acme.ng", "IT Admin", "Head of IT Operations", "yes", "Enforced on AWS, Azure and the VPN.", "2026-08-26T11:05:00Z"),
+    ],
+    answer_count: 2,
+    is_seeded: true,
+  },
+  {
+    id: 1005,
+    question_key: "ac.joiner_leaver",
+    prompt: "Is there a documented joiner, mover and leaver process for access rights?",
+    help_text: "Covers provisioning on hire, change on role move, and revocation within one business day of exit.",
+    category: "Access Control",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "soc2"],
+    source_controls: [{ framework_id: "iso27001", control_id: "A.5.11" }],
+    sort_order: 50,
+    my_answer: myAnswer("partial", "Joiner and leaver are documented; movers are handled ad hoc by the line manager.", "2026-08-28T09:31:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1006,
+    question_key: "ac.privileged_review",
+    prompt: "Are privileged access rights reviewed at least quarterly?",
+    help_text: "A recorded review with evidence of who reviewed, when, and what was revoked.",
+    category: "Access Control",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "pci_dss"],
+    source_controls: [
+      { framework_id: "iso27001", control_id: "A.8.2" },
+      { framework_id: "pci_dss", control_id: "7.2.4" },
+    ],
+    sort_order: 60,
+    my_answer: null,
+    answers_from_others: [],
+    answer_count: 0,
+    is_seeded: true,
+  },
+  {
+    id: 1007,
+    question_key: "dp.data_inventory",
+    prompt: "Do you maintain an inventory of the personal data you process?",
+    help_text: "Categories of data subject, lawful basis, retention and where the data lives.",
+    category: "Data Protection",
+    risk: "critical",
+    answer_type: "yes_no_partial",
+    framework_ids: ["ndpr"],
+    source_controls: [{ framework_id: "ndpr", control_id: "2.1" }],
+    sort_order: 70,
+    my_answer: myAnswer("yes", "Record of processing activities maintained by the GRC team.", "2026-08-28T09:38:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1008,
+    question_key: "dp.dpo_appointed",
+    prompt: "Have you appointed a Data Protection Officer?",
+    help_text: "NDPR requires a DPO for organizations processing personal data of more than 2,000 data subjects.",
+    category: "Data Protection",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["ndpr"],
+    source_controls: [{ framework_id: "ndpr", control_id: "4.1" }],
+    sort_order: 80,
+    my_answer: myAnswer("no", "Being recruited — the role is open as of Q3.", "2026-08-28T09:41:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1009,
+    question_key: "dp.encryption_at_rest",
+    prompt: "Is personal and cardholder data encrypted at rest?",
+    help_text: "Includes database storage, backups and any exports held outside the primary system.",
+    category: "Data Protection",
+    risk: "critical",
+    answer_type: "yes_no_partial",
+    framework_ids: ["ndpr", "pci_dss"],
+    source_controls: [
+      { framework_id: "pci_dss", control_id: "3.5.1" },
+      { framework_id: "ndpr", control_id: "2.6" },
+    ],
+    sort_order: 90,
+    my_answer: myAnswer("yes", "AES-256 via KMS on RDS and S3.", "2026-08-28T09:45:00Z"),
+    answers_from_others: [
+      colleagueAnswer(1, "Ada Okonkwo", "ada@acme.ng", "IT Admin", "Head of IT Operations", "yes", "Backups encrypted with the same CMK.", "2026-08-26T11:12:00Z"),
+    ],
+    answer_count: 2,
+    is_seeded: true,
+  },
+  {
+    id: 1010,
+    question_key: "dp.retention_schedule",
+    prompt: "Is there a documented data retention and disposal schedule?",
+    help_text: "States how long each data category is kept and how it is destroyed.",
+    category: "Data Protection",
+    risk: "medium",
+    answer_type: "yes_no_partial",
+    framework_ids: ["ndpr"],
+    source_controls: [{ framework_id: "ndpr", control_id: "2.9" }],
+    sort_order: 100,
+    my_answer: null,
+    answers_from_others: [],
+    answer_count: 0,
+    is_seeded: true,
+  },
+  {
+    id: 1011,
+    question_key: "ir.plan_documented",
+    prompt: "Do you have a documented incident response plan?",
+    help_text: "Roles, severity thresholds, escalation path and external notification duties.",
+    category: "Incident Response",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "soc2", "ndpr"],
+    source_controls: [
+      { framework_id: "iso27001", control_id: "A.5.24" },
+      { framework_id: "soc2", control_id: "CC7.4" },
+    ],
+    sort_order: 110,
+    my_answer: myAnswer("yes", "Plan v3 published February 2026; tabletop exercise run in June.", "2026-08-28T09:52:00Z"),
+    answers_from_others: [
+      colleagueAnswer(3, "Tunde Bakare", "tunde@acme.ng", "Security Engineer", "SOC Analyst", "yes", "SOC runbooks reference it directly.", "2026-08-25T08:20:00Z"),
+    ],
+    answer_count: 2,
+    is_seeded: true,
+  },
+  {
+    id: 1012,
+    question_key: "ir.breach_notification_72h",
+    prompt: "Can you notify the regulator of a personal data breach within 72 hours?",
+    help_text: "The clock starts at awareness, not at confirmation. Evidence means a tested process.",
+    category: "Incident Response",
+    risk: "critical",
+    answer_type: "yes_no_partial",
+    framework_ids: ["ndpr"],
+    source_controls: [{ framework_id: "ndpr", control_id: "4.2" }],
+    sort_order: 120,
+    my_answer: myAnswer("partial", "Process is written but has never been exercised end to end with legal counsel.", "2026-08-28T09:56:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1013,
+    question_key: "ops.backup_restore_test",
+    prompt: "Are backups tested by restore at least every six months?",
+    help_text: "A restore that was actually performed and signed off, not a backup job that reported success.",
+    category: "Operations",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001"],
+    source_controls: [{ framework_id: "iso27001", control_id: "A.8.13" }],
+    sort_order: 130,
+    my_answer: myAnswer("no", "Last verified restore was August 2025 — overdue.", "2026-08-28T10:02:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1014,
+    question_key: "tp.vendor_due_diligence",
+    prompt: "Do you perform security due diligence on third-party vendors before onboarding?",
+    help_text: "A recorded assessment proportionate to the data or access the vendor receives.",
+    category: "Third Parties",
+    risk: "medium",
+    answer_type: "yes_no_partial",
+    framework_ids: ["iso27001", "soc2"],
+    source_controls: [{ framework_id: "iso27001", control_id: "A.5.19" }],
+    sort_order: 140,
+    my_answer: null,
+    answers_from_others: [],
+    answer_count: 0,
+    is_seeded: true,
+  },
+  {
+    id: 1015,
+    question_key: "ops.external_vuln_scan",
+    prompt: "Are vulnerability scans run at least quarterly on internet-facing systems?",
+    help_text: "Authenticated where possible, with findings tracked to closure.",
+    category: "Operations",
+    risk: "high",
+    answer_type: "yes_no_partial",
+    framework_ids: ["pci_dss", "iso27001"],
+    source_controls: [
+      { framework_id: "pci_dss", control_id: "11.3.2" },
+      { framework_id: "iso27001", control_id: "A.8.8" },
+    ],
+    sort_order: 150,
+    my_answer: myAnswer("yes", "Continuous scanning through SecureGraph; findings feed the risk register.", "2026-08-28T10:08:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+  {
+    id: 1016,
+    question_key: "ops.call_recording_chd",
+    prompt: "Do you record customer calls that capture cardholder data?",
+    help_text: "Answer N/A if you operate no telephone channel that takes card numbers.",
+    category: "Operations",
+    risk: "medium",
+    answer_type: "yes_no_partial",
+    framework_ids: ["pci_dss"],
+    source_controls: [{ framework_id: "pci_dss", control_id: "3.3.2" }],
+    sort_order: 160,
+    my_answer: myAnswer("na", "No telephone payment channel — card capture is web and app only.", "2026-08-28T10:11:00Z"),
+    answers_from_others: [],
+    answer_count: 1,
+    is_seeded: true,
+  },
+];
+
+/** The answer that counts for a question: yours, else the earliest colleague's. */
+function resolvedAnswer(q: QuestionnaireQuestion): string | null {
+  return q.my_answer?.answer_value ?? q.answers_from_others[0]?.answer_value ?? null;
+}
+
+/**
+ * Progress is *derived*, not hand-written, so the totals can never drift from
+ * the questions above — the same relationship the server guarantees. The
+ * attestation score weights a partial at half a yes and excludes N/A from the
+ * denominator, which is how the engine describes its own scoring.
+ */
+function questionnaireProgress(items: QuestionnaireQuestion[]): QuestionnaireProgress {
+  const answered = items.filter((q) => q.answer_count > 0);
+  const tally = { yes: 0, no: 0, partial: 0, na: 0 } as Record<string, number>;
+  for (const q of answered) {
+    const value = resolvedAnswer(q);
+    if (value && value in tally) tally[value] += 1;
+  }
+
+  const scored = tally.yes + tally.no + tally.partial;
+  const attestation = scored ? ((tally.yes + tally.partial * 0.5) / scored) * 100 : null;
+
+  const byCategory: Record<string, { total: number; answered: number }> = {};
+  for (const q of items) {
+    const key = q.category ?? "Uncategorised";
+    byCategory[key] ??= { total: 0, answered: 0 };
+    byCategory[key].total += 1;
+    if (q.answer_count > 0) byCategory[key].answered += 1;
+  }
+
+  const level: ComplianceLevel =
+    attestation == null
+      ? { id: "not_started", label: "Not started", score: null, band: null }
+      : attestation >= 85
+        ? { id: "strong", label: "Strong", score: Math.round(attestation * 10) / 10, band: "green" }
+        : attestation >= 65
+          ? { id: "substantial", label: "Substantial", score: Math.round(attestation * 10) / 10, band: "amber" }
+          : attestation >= 40
+            ? { id: "developing", label: "Developing", score: Math.round(attestation * 10) / 10, band: "orange" }
+            : { id: "initial", label: "Initial", score: Math.round(attestation * 10) / 10, band: "red" };
+
+  return {
+    organization_id: organization.id,
+    applicable_frameworks: APPLICABLE_FRAMEWORKS,
+    total_questions: items.length,
+    answered_unique_questions: answered.length,
+    unanswered: items.length - answered.length,
+    percent_complete: items.length ? Math.round((answered.length / items.length) * 1000) / 10 : 0,
+    total_answer_events: items.reduce((n, q) => n + q.answer_count, 0),
+    by_category: byCategory,
+    attestation_score: attestation == null ? null : Math.round(attestation * 10) / 10,
+    compliance_level: level,
+    yes_count: tally.yes,
+    no_count: tally.no,
+    partial_count: tally.partial,
+    not_applicable: tally.na,
+    disclaimer: QUESTIONNAIRE_DISCLAIMER,
+    disclaimer_short: "Self-attestation only — not a substitute for a GRC specialist audit.",
+    replaces_certified_audit: false,
+  };
+}
+
+/** Resolved from the business profile below (NG, financial services, cards). */
+const APPLICABLE_FRAMEWORKS = ["ndpr", "iso27001", "soc2", "pci_dss"];
+
+const QUESTIONNAIRE_DISCLAIMER =
+  "These answers are your organization's own attestation. They are recorded against the person and the role they declared, and they inform your compliance posture — but they are not independently verified by SecureGraph and do not replace a certified audit by a qualified GRC assessor.";
+
+export const questionnaireProgressSummary: QuestionnaireProgress = questionnaireProgress(questionnaireQuestions);
+
+export const questionnaire: QuestionnaireList = {
+  applicable_frameworks: APPLICABLE_FRAMEWORKS,
+  total: questionnaireQuestions.length,
+  items: questionnaireQuestions,
+  progress: questionnaireProgressSummary,
+  answer_choices: ["yes", "no", "partial", "na"],
+  disclaimer: QUESTIONNAIRE_DISCLAIMER,
+};
+
+/** What POST /compliance/questionnaire/session returns once a role is declared. */
+export const answererSession: AnswererSession = {
+  id: 4101,
+  organization_id: organization.id,
+  organization_user_id: DEMO_ANSWERER_ID,
+  stated_role: "Compliance Officer",
+  stated_title: "Head of Governance, Risk & Compliance",
+  user_email: "demo@acme.ng",
+  user_full_name: "Demo Explorer",
+  created_at: "2026-08-28T09:10:00Z",
+  last_activity_at: "2026-08-28T10:11:00Z",
+};
+
+/** Flattened audit trail behind GET /compliance/questionnaire/answers. */
+export const questionnaireAnswerAudit: AnswererAudit[] = questionnaireQuestions
+  .flatMap((q) => [...(q.my_answer ? [q.my_answer] : []), ...q.answers_from_others])
+  .sort((a, b) => String(b.updated_at ?? "").localeCompare(String(a.updated_at ?? "")));
+
+// ── Gap analysis ─────────────────────────────────────────────────────────────
+
+const gapRows = [
+  { framework_id: "iso27001", control_id: "A.8.13", title: "Information backup", category: "Technological", risk: "high" },
+  { framework_id: "iso27001", control_id: "A.8.2", title: "Privileged access rights", category: "Technological", risk: "high" },
+  { framework_id: "iso27001", control_id: "A.5.19", title: "Information security in supplier relationships", category: "Organizational", risk: "medium" },
+  { framework_id: "iso27001", control_id: "A.8.9", title: "Configuration management", category: "Technological", risk: "high" },
+  { framework_id: "iso27001", control_id: "A.8.16", title: "Monitoring activities", category: "Technological", risk: "medium" },
+  { framework_id: "ndpr", control_id: "4.1", title: "Appointment of a Data Protection Officer", category: "Accountability", risk: "high" },
+  { framework_id: "ndpr", control_id: "2.9", title: "Data retention and disposal", category: "Data Lifecycle", risk: "medium" },
+  { framework_id: "ndpr", control_id: "4.2", title: "Breach notification within 72 hours", category: "Incident Response", risk: "critical" },
+  { framework_id: "pci_dss", control_id: "7.2.4", title: "Review of user accounts and access privileges", category: "Access Control", risk: "high" },
+  { framework_id: "pci_dss", control_id: "6.3.3", title: "Security patches installed within one month", category: "Vulnerability Management", risk: "critical" },
+  { framework_id: "pci_dss", control_id: "10.4.1", title: "Daily review of audit logs", category: "Logging", risk: "medium" },
+  { framework_id: "soc2", control_id: "CC6.7", title: "Restriction of data transmission and movement", category: "Logical Access", risk: "medium" },
+  { framework_id: "soc2", control_id: "CC9.2", title: "Vendor and business partner risk management", category: "Risk Mitigation", risk: "medium" },
+];
+
+const controlsTouched = [
+  { framework_id: "iso27001", control_id: "A.8.5", title: "Secure authentication", findings_count: 3 },
+  { framework_id: "iso27001", control_id: "A.8.8", title: "Management of technical vulnerabilities", findings_count: 9 },
+  { framework_id: "iso27001", control_id: "A.8.24", title: "Use of cryptography", findings_count: 4 },
+  { framework_id: "ndpr", control_id: "2.6", title: "Security of processing", findings_count: 5 },
+  { framework_id: "pci_dss", control_id: "4.2.1", title: "Strong cryptography in transit", findings_count: 4 },
+  { framework_id: "pci_dss", control_id: "11.3.2", title: "External vulnerability scanning", findings_count: 9 },
+  { framework_id: "soc2", control_id: "CC7.1", title: "Detection of configuration changes", findings_count: 2 },
+];
+
+const gapMappings = [
+  { finding_id: 5101, severity: "critical", framework_id: "pci_dss", control_id: "4.2.1", relationship: "demonstrates_failure", title: "TLS 1.0 accepted on edge gateway" },
+  { finding_id: 5101, severity: "critical", framework_id: "iso27001", control_id: "A.8.24", relationship: "demonstrates_failure", title: "TLS 1.0 accepted on edge gateway" },
+  { finding_id: 5104, severity: "high", framework_id: "iso27001", control_id: "A.8.8", relationship: "demonstrates_failure", title: "Outdated OpenSSL on portal tier" },
+  { finding_id: 5108, severity: "high", framework_id: "iso27001", control_id: "A.8.5", relationship: "demonstrates_failure", title: "Password authentication exposed on SSH" },
+  { finding_id: 5112, severity: "medium", framework_id: "ndpr", control_id: "2.6", relationship: "demonstrates_control", title: "Database encryption verified" },
+  { finding_id: 5115, severity: "medium", framework_id: "soc2", control_id: "CC7.1", relationship: "demonstrates_control", title: "Change detection active on production" },
+];
+
+const gapRecommendations = [
+  {
+    title: "Perform and sign off a backup restore test",
+    detail: "ISO 27001 A.8.13 has no supporting evidence and your attestation records the last verified restore as August 2025. One documented restore closes the gap.",
+    priority: "high",
+    control_ids: ["A.8.13"],
+  },
+  {
+    title: "Run a quarterly privileged access review",
+    detail: "Both ISO 27001 A.8.2 and PCI DSS 7.2.4 need a recorded review with a reviewer, a date and the revocations made. The org user list already exports what you need.",
+    priority: "high",
+    control_ids: ["A.8.2", "7.2.4"],
+  },
+  {
+    title: "Appoint a Data Protection Officer",
+    detail: "NDPR 4.1 is mandatory at your data-subject volume and the questionnaire records the role as open. Naming an interim DPO removes the finding while recruitment continues.",
+    priority: "high",
+    control_ids: ["4.1"],
+  },
+  {
+    title: "Close the patch window on internet-facing systems",
+    detail: "PCI DSS 6.3.3 requires critical patches inside one month. Nine open verified findings on the portal tier are older than that today.",
+    priority: "critical",
+    control_ids: ["6.3.3"],
+  },
+  {
+    title: "Publish a retention and disposal schedule",
+    detail: "NDPR 2.9 is unanswered and no evidence maps to it. A schedule per data category is the smallest artefact that satisfies the control.",
+    priority: "medium",
+    control_ids: ["2.9"],
+  },
+];
+
+function countBy<T>(rows: T[], key: (row: T) => string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const row of rows) {
+    const k = key(row);
+    out[k] = (out[k] ?? 0) + 1;
+  }
+  return out;
+}
+
+export const gapAnalysis: GapAnalysis = {
+  frameworks: APPLICABLE_FRAMEWORKS,
+  findings_in: 24,
+  summary: {
+    total_gaps: gapRows.length,
+    controls_evaluated: gapRows.length + controlsTouched.length,
+    controls_covered: controlsTouched.length,
+    by_framework: countBy(gapRows, (g) => g.framework_id),
+    by_risk: countBy(gapRows, (g) => g.risk),
+    generated_at: "2026-09-05T06:30:00Z",
+  },
+  gaps: gapRows,
+  controls_touched: controlsTouched,
+  mappings: gapMappings,
+  recommendations: gapRecommendations,
+};
+
+// ── Business profile + framework recommendations ─────────────────────────────
+
+export const businessProfile: BusinessProfile = {
+  id: 61,
+  organization_id: organization.id,
+  country: "NG",
+  customer_countries: ["NG", "GH", "KE", "GB"],
+  industry: "Financial Services",
+  company_size: "201-1000",
+  handles_personal_data: true,
+  handles_health_records: false,
+  handles_payment_cards: true,
+  handles_government_contracts: false,
+  handles_financial_transactions: true,
+  cloud_providers: ["aws", "azure"],
+  has_public_apis: true,
+  uses_ai: true,
+  data_retention_period_days: 2555,
+  created_at: "2026-06-02T11:20:00Z",
+  updated_at: "2026-08-28T08:45:00Z",
+};
+
+/** Scores are the engine's applicability confidence, not a compliance score. */
+export const frameworkRecommendations = [
+  {
+    framework_id: "ndpr",
+    name: "NDPR",
+    score: 98,
+    reason: "You are registered in Nigeria and process personal data of Nigerian data subjects, so the NDPR applies by law rather than by choice.",
+  },
+  {
+    framework_id: "pci_dss",
+    name: "PCI DSS 4.0",
+    score: 95,
+    reason: "You handle payment card data. Your acquirer will require an attestation of compliance at the level set by your annual transaction volume.",
+  },
+  {
+    framework_id: "iso27001",
+    name: "ISO/IEC 27001:2022",
+    score: 86,
+    reason: "Financial services counterparties in GB and KE routinely require certification, and it subsumes most of your other control obligations.",
+  },
+  {
+    framework_id: "soc2",
+    name: "SOC 2 Type II",
+    score: 74,
+    reason: "You expose public APIs to business customers, which is the usual trigger for a SOC 2 report request during procurement.",
+  },
+  {
+    framework_id: "gdpr",
+    name: "GDPR",
+    score: 61,
+    reason: "You list GB among your customer countries, so UK GDPR obligations attach to those data subjects even though you are not established in the UK.",
+  },
+];
+
+// ── Evidence connectors ──────────────────────────────────────────────────────
+
+export const evidenceConnectors: EvidenceConnector[] = [
+  {
+    connector_id: "securegraph_posture",
+    name: "SecureGraph posture",
+    description: "Verified findings, asset inventory and scan history already held in your security database.",
+    ready: true,
+    configured: true,
+    evidence_count: 46,
+    last_collected_at: "2026-09-05T06:30:00Z",
+  },
+  {
+    connector_id: "aws_config",
+    name: "AWS Config",
+    description: "Config rules, CloudTrail status and KMS key policies for the accounts you connect.",
+    ready: true,
+    configured: true,
+    evidence_count: 31,
+    last_collected_at: "2026-09-05T06:30:00Z",
+  },
+  {
+    connector_id: "entra_id",
+    name: "Microsoft Entra ID",
+    description: "Conditional access policies, MFA registration state and privileged role assignments.",
+    ready: true,
+    configured: true,
+    evidence_count: 18,
+    last_collected_at: "2026-09-05T06:30:00Z",
+  },
+  {
+    connector_id: "github",
+    name: "GitHub",
+    description: "Branch protection, required reviews and secret-scanning status across your repositories.",
+    ready: false,
+    configured: false,
+    evidence_count: 0,
+    last_collected_at: null,
+  },
+  {
+    connector_id: "wazuh",
+    name: "Wazuh",
+    description: "Agent coverage, file integrity monitoring and log retention from your SIEM.",
+    ready: false,
+    configured: false,
+    evidence_count: 0,
+    last_collected_at: null,
+  },
+  {
+    connector_id: "jira",
+    name: "Jira",
+    description: "Change tickets and approval records used to evidence change management controls.",
+    ready: false,
+    configured: false,
+    evidence_count: 0,
+    last_collected_at: null,
+  },
+];
+
+/**
+ * GET /compliance/evidence/summary. `total` and `controls` are the field names
+ * the connectors page reads first; the richer breakdown is what the engine
+ * returns alongside them.
+ */
+export const evidenceSummary: Record<string, unknown> = {
+  organization_id: organization.id,
+  total: 95,
+  controls: 38,
+  by_connector: {
+    securegraph_posture: 46,
+    aws_config: 31,
+    entra_id: 18,
+  },
+  by_framework: { iso27001: 34, pci_dss: 26, ndpr: 21, soc2: 14 },
+  last_collected_at: "2026-09-05T06:30:00Z",
+  stale_after_days: 90,
+};
+
+// ── VAPT operations: schedules, settings, procedures, correlation ────────────
+// Shapes mirror app/engines/vapt_engine/api/{schedules,procedures,approvals}.py
+// as encoded in src/lib/vaptOps.ts.
+
+/** Schedules only look alive if the next run is genuinely ahead of now. */
+function hoursFromNow(hours: number): string {
+  return new Date(Date.now() + hours * 3_600_000).toISOString();
+}
+
+export const vaptProcedures: VaptProcedure[] = [
+  {
+    procedure_key: "external_web_app_assessment",
+    display_name: "External web application assessment",
+    category: "application",
+    phase: "exploitation",
+    required_role: "authorizer",
+    is_active: true,
+    description: "Authenticated and unauthenticated testing of an internet-facing web application against the OWASP Top 10.",
+    steps: [
+      { order: 1, name: "Scope confirmation", requires_approval: true },
+      { order: 2, name: "Passive reconnaissance", requires_approval: false },
+      { order: 3, name: "Authentication and session testing", requires_approval: false },
+      { order: 4, name: "Injection and access-control testing", requires_approval: true },
+      { order: 5, name: "Verification and evidence capture", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "external_network_discovery",
+    display_name: "External network discovery",
+    category: "network",
+    phase: "reconnaissance",
+    required_role: "initiator",
+    is_active: true,
+    description: "Non-intrusive enumeration of the external perimeter: hosts, ports, services and TLS posture.",
+    steps: [
+      { order: 1, name: "Asset scope resolution", requires_approval: false },
+      { order: 2, name: "Port and service enumeration", requires_approval: false },
+      { order: 3, name: "TLS and certificate inspection", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "api_security_assessment",
+    display_name: "API security assessment",
+    category: "application",
+    phase: "exploitation",
+    required_role: "authorizer",
+    is_active: true,
+    description: "Schema-driven testing of REST endpoints for broken object-level authorization, rate limiting and mass assignment.",
+    steps: [
+      { order: 1, name: "Specification ingest", requires_approval: false },
+      { order: 2, name: "Authorization matrix testing", requires_approval: true },
+      { order: 3, name: "Rate limit and abuse testing", requires_approval: true },
+      { order: 4, name: "Evidence capture", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "cloud_configuration_review",
+    display_name: "Cloud configuration review",
+    category: "cloud",
+    phase: "assessment",
+    required_role: "initiator",
+    is_active: true,
+    description: "Read-only review of IAM, storage exposure, logging and encryption settings across connected cloud accounts.",
+    steps: [
+      { order: 1, name: "Account inventory", requires_approval: false },
+      { order: 2, name: "IAM and key policy review", requires_approval: false },
+      { order: 3, name: "Public exposure check", requires_approval: false },
+      { order: 4, name: "Logging and retention check", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "internal_network_assessment",
+    display_name: "Internal network assessment",
+    category: "network",
+    phase: "exploitation",
+    required_role: "authorizer",
+    is_active: true,
+    description: "Segmentation, lateral movement and privilege escalation testing from an assumed foothold inside the network.",
+    steps: [
+      { order: 1, name: "Foothold confirmation", requires_approval: true },
+      { order: 2, name: "Segmentation validation", requires_approval: false },
+      { order: 3, name: "Privilege escalation attempts", requires_approval: true },
+      { order: 4, name: "Cleanup and evidence capture", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "credential_hygiene_audit",
+    display_name: "Credential hygiene audit",
+    category: "identity",
+    phase: "assessment",
+    required_role: "initiator",
+    is_active: true,
+    description: "Checks MFA coverage, dormant privileged accounts and credentials exposed in public breach corpora.",
+    steps: [
+      { order: 1, name: "Directory export", requires_approval: false },
+      { order: 2, name: "MFA coverage analysis", requires_approval: false },
+      { order: 3, name: "Breach corpus correlation", requires_approval: false },
+    ],
+  },
+  {
+    procedure_key: "mobile_app_assessment",
+    display_name: "Mobile application assessment",
+    category: "application",
+    phase: "exploitation",
+    required_role: "authorizer",
+    is_active: false,
+    description: "Static and dynamic analysis of Android and iOS builds. Disabled for this organization pending tooling rollout.",
+    steps: [
+      { order: 1, name: "Build intake", requires_approval: true },
+      { order: 2, name: "Static analysis", requires_approval: false },
+      { order: 3, name: "Runtime instrumentation", requires_approval: true },
+    ],
+  },
+];
+
+export const vaptSchedules: VaptSchedule[] = [
+  {
+    id: 301,
+    organization_id: organization.id,
+    schedule_name: "Weekly perimeter discovery",
+    description: "Keeps the external asset picture current between full engagements.",
+    procedure_key: "external_network_discovery",
+    asset_scope_template: { asset_types: ["domain", "subdomain", "ip"], tags: ["external"], verified_only: true },
+    campaign_config: { max_findings: 500, notify_on_completion: true },
+    cron_expression: "7d",
+    timezone: "Africa/Lagos",
+    max_concurrent_per_org: 1,
+    allowed_days_of_week: ["mon", "tue", "wed", "thu"],
+    blackout_windows: [{ start: "08:00", end: "18:00", days: ["mon", "tue", "wed", "thu", "fri"] }],
+    is_active: true,
+    skip_next: false,
+    pause_until: null,
+    last_run_at: "2026-08-31T22:00:00Z",
+    last_run_campaign_id: 4411,
+    next_run_at: hoursFromNow(38),
+    total_runs: 17,
+    total_failures: 1,
+    created_at: "2026-05-18T09:30:00Z",
+    updated_at: "2026-08-31T22:06:00Z",
+  },
+  {
+    id: 302,
+    organization_id: organization.id,
+    schedule_name: "Monthly API assessment",
+    description: "Authorization matrix and rate-limit testing against the public API.",
+    procedure_key: "api_security_assessment",
+    asset_scope_template: { asset_ids: [102], tags: ["pci-scope"], verified_only: true },
+    campaign_config: { require_dual_control: true, evidence_retention_days: 365 },
+    cron_expression: "30d",
+    timezone: "Africa/Lagos",
+    max_concurrent_per_org: 1,
+    allowed_days_of_week: ["sat", "sun"],
+    blackout_windows: [
+      { start: "06:00", end: "22:00", days: ["mon", "tue", "wed", "thu", "fri"] },
+      { start: "00:00", end: "23:59", days: ["fri"] },
+    ],
+    is_active: true,
+    skip_next: true,
+    pause_until: null,
+    last_run_at: "2026-08-16T02:00:00Z",
+    last_run_campaign_id: 4388,
+    next_run_at: hoursFromNow(242),
+    total_runs: 4,
+    total_failures: 0,
+    created_at: "2026-05-20T14:10:00Z",
+    updated_at: "2026-09-02T10:04:00Z",
+  },
+  {
+    id: 303,
+    organization_id: organization.id,
+    schedule_name: "Quarterly cloud configuration review",
+    description: "Read-only IAM, exposure and logging review across the AWS and Azure accounts.",
+    procedure_key: "cloud_configuration_review",
+    asset_scope_template: { cloud_accounts: ["aws:acme-prod", "azure:acme-core"] },
+    campaign_config: { read_only: true },
+    cron_expression: "0 3 1 */3 *",
+    timezone: "UTC",
+    max_concurrent_per_org: 2,
+    allowed_days_of_week: null,
+    blackout_windows: [],
+    is_active: false,
+    skip_next: false,
+    pause_until: "2026-10-01T00:00:00Z",
+    last_run_at: "2026-07-01T03:00:00Z",
+    last_run_campaign_id: 4290,
+    next_run_at: null,
+    total_runs: 2,
+    total_failures: 1,
+    created_at: "2026-06-01T08:00:00Z",
+    updated_at: "2026-08-20T16:22:00Z",
+  },
+];
+
+export const vaptSettings: VaptSettings = {
+  organization_id: organization.id,
+  mining_consent_enabled: true,
+  mining_consent_granted_at: "2026-06-14T13:05:00Z",
+  mining_data_scope: "findings_and_correlations",
+  ai_threshold: "high",
+};
+
+export const vaptCorrelationRules: CorrelationRule[] = [
+  {
+    id: 1,
+    rule_key: "tls_weak_plus_public_admin",
+    name: "Weak TLS on a host exposing an admin interface",
+    description: "Raises severity when a host that negotiates TLS 1.0/1.1 also exposes an authenticated administrative path.",
+    severity: "critical",
+    source: "builtin",
+  },
+  {
+    id: 2,
+    rule_key: "cred_reuse_across_environments",
+    name: "Credential reuse across environments",
+    description: "Correlates identical credential material observed in both a production and a non-production asset.",
+    severity: "high",
+    source: "builtin",
+  },
+  {
+    id: 3,
+    rule_key: "unauth_api_plus_pii_response",
+    name: "Unauthenticated API returning personal data",
+    description: "Pairs a missing authorization finding with a response body classified as containing personal data.",
+    severity: "critical",
+    source: "builtin",
+  },
+  {
+    id: 4,
+    rule_key: "stale_patch_plus_known_exploit",
+    name: "Missing patch with a known public exploit",
+    description: "Escalates an outdated-package finding when the matching CVE has a public proof of concept.",
+    severity: "high",
+    source: "builtin",
+  },
+  {
+    id: 5,
+    rule_key: "acme_portal_session_fixation",
+    name: "Portal session fixation pattern",
+    description: "Organization rule: the customer portal reissues a session cookie without rotation after privilege change.",
+    severity: "medium",
+    source: "organization",
+  },
+];
+
+export const vaptRuleCandidates: RuleCandidate[] = [
+  {
+    pattern: "open_redirect + oauth_callback_on_same_host",
+    description: "An open redirect and an OAuth callback consistently appear on the same host before token-theft findings are raised.",
+    frequency: 34,
+    confidence: 0.82,
+    first_seen_at: "2026-06-22T00:00:00Z",
+    last_seen_at: "2026-09-01T00:00:00Z",
+  },
+  {
+    pattern: "verbose_error_page + database_version_disclosure",
+    description: "Stack-trace error pages are followed by database version disclosure on the same asset in most observed engagements.",
+    frequency: 27,
+    confidence: 0.74,
+    first_seen_at: "2026-05-30T00:00:00Z",
+    last_seen_at: "2026-08-28T00:00:00Z",
+  },
+  {
+    pattern: "s3_public_read + backup_naming_convention",
+    description: "Publicly readable buckets whose object keys match backup naming conventions correlate with sensitive data exposure.",
+    frequency: 19,
+    confidence: 0.68,
+    first_seen_at: "2026-07-04T00:00:00Z",
+    last_seen_at: "2026-08-30T00:00:00Z",
+  },
+  {
+    pattern: "dormant_privileged_account + no_mfa",
+    description: "Privileged accounts dormant for over 90 days are disproportionately the ones without MFA registered.",
+    frequency: 12,
+    confidence: 0.61,
+    first_seen_at: "2026-07-19T00:00:00Z",
+    last_seen_at: "2026-09-02T00:00:00Z",
+  },
+];
+
+export const vaptMiningNote =
+  "Mined from de-identified cross-organization patterns under your mining consent. Candidates are not active rules — SecureGraph staff review and promote them.";
+
+// ── Product context and threat models ────────────────────────────────────────
+// Shapes mirror app/engines/threat_model_engine/api/{context,threat_models}.py
+// as encoded in src/lib/productContext.ts.
+
+export const productProjects: ProductProject[] = [
+  { id: 51, name: "Customer payments portal", stage: "live", active: true, created_at: "2026-05-12T10:00:00Z", updated_at: "2026-08-30T14:20:00Z" },
+  { id: 52, name: "Open banking API", stage: "in_build", active: true, created_at: "2026-06-08T09:15:00Z", updated_at: "2026-09-01T11:05:00Z" },
+  { id: 53, name: "Merchant onboarding service", stage: "planned", active: true, created_at: "2026-08-19T15:40:00Z", updated_at: "2026-08-19T15:40:00Z" },
+  { id: 54, name: "Internal reconciliation tooling", stage: "live", active: true, created_at: "2026-05-29T08:05:00Z", updated_at: "2026-07-22T09:50:00Z" },
+];
+
+/** Parsed from each project's uploaded .drawio diagram. */
+export const projectGraphs: Record<number, ProjectGraph> = {
+  51: {
+    boundaries: [
+      { id: 1, name: "Internet", trusted: false },
+      { id: 2, name: "Public DMZ", trusted: false },
+      { id: 3, name: "Application tier", trusted: true },
+      { id: 4, name: "Data tier", trusted: true },
+    ],
+    components: [
+      { id: 901, name: "Customer browser", kind: "actor", boundary_id: 1, trusted: false, external: true },
+      { id: 902, name: "CDN / WAF", kind: "gateway", boundary_id: 2, trusted: false, external: true },
+      { id: 903, name: "Portal web app", kind: "service", boundary_id: 3, trusted: true, external: false },
+      { id: 904, name: "Payments API", kind: "service", boundary_id: 3, trusted: true, external: false },
+      { id: 905, name: "Session store", kind: "datastore", boundary_id: 3, trusted: true, external: false },
+      { id: 906, name: "Card vault", kind: "datastore", boundary_id: 4, trusted: true, external: false },
+      { id: 907, name: "Customer database", kind: "datastore", boundary_id: 4, trusted: true, external: false },
+      { id: 908, name: "Payment processor", kind: "third_party", boundary_id: 1, trusted: false, external: true },
+      { id: 909, name: "Audit log sink", kind: "datastore", boundary_id: 4, trusted: true, external: false },
+    ],
+    flows: [
+      { id: 8001, source_component_id: 901, target_component_id: 902, source_name: "Customer browser", target_name: "CDN / WAF", crosses_boundary: true, roles: ["customer"], actions: ["http_request"], data: ["credentials", "card_number"] },
+      { id: 8002, source_component_id: 902, target_component_id: 903, source_name: "CDN / WAF", target_name: "Portal web app", crosses_boundary: true, roles: ["customer"], actions: ["http_request"], data: ["credentials", "card_number"] },
+      { id: 8003, source_component_id: 903, target_component_id: 905, source_name: "Portal web app", target_name: "Session store", crosses_boundary: false, roles: ["service"], actions: ["read", "write"], data: ["session_token"] },
+      { id: 8004, source_component_id: 903, target_component_id: 904, source_name: "Portal web app", target_name: "Payments API", crosses_boundary: false, roles: ["service"], actions: ["rpc"], data: ["card_number", "amount"] },
+      { id: 8005, source_component_id: 904, target_component_id: 906, source_name: "Payments API", target_name: "Card vault", crosses_boundary: true, roles: ["service"], actions: ["tokenize"], data: ["card_number"] },
+      { id: 8006, source_component_id: 904, target_component_id: 908, source_name: "Payments API", target_name: "Payment processor", crosses_boundary: true, roles: ["service"], actions: ["authorize"], data: ["card_token", "amount"] },
+      { id: 8007, source_component_id: 903, target_component_id: 907, source_name: "Portal web app", target_name: "Customer database", crosses_boundary: true, roles: ["service"], actions: ["read", "write"], data: ["personal_data"] },
+      { id: 8008, source_component_id: 904, target_component_id: 909, source_name: "Payments API", target_name: "Audit log sink", crosses_boundary: true, roles: ["service"], actions: ["append"], data: ["audit_event"] },
+    ],
+  },
+  52: {
+    boundaries: [
+      { id: 1, name: "Third-party TPP", trusted: false },
+      { id: 2, name: "API edge", trusted: false },
+      { id: 3, name: "Core services", trusted: true },
+    ],
+    components: [
+      { id: 921, name: "Third-party provider", kind: "actor", boundary_id: 1, trusted: false, external: true },
+      { id: 922, name: "API gateway", kind: "gateway", boundary_id: 2, trusted: false, external: true },
+      { id: 923, name: "Consent service", kind: "service", boundary_id: 3, trusted: true, external: false },
+      { id: 924, name: "Accounts service", kind: "service", boundary_id: 3, trusted: true, external: false },
+      { id: 925, name: "Consent store", kind: "datastore", boundary_id: 3, trusted: true, external: false },
+    ],
+    flows: [
+      { id: 8101, source_component_id: 921, target_component_id: 922, source_name: "Third-party provider", target_name: "API gateway", crosses_boundary: true, roles: ["tpp"], actions: ["oauth_authorize"], data: ["client_credentials"] },
+      { id: 8102, source_component_id: 922, target_component_id: 923, source_name: "API gateway", target_name: "Consent service", crosses_boundary: true, roles: ["tpp"], actions: ["rpc"], data: ["consent_grant"] },
+      { id: 8103, source_component_id: 923, target_component_id: 925, source_name: "Consent service", target_name: "Consent store", crosses_boundary: false, roles: ["service"], actions: ["read", "write"], data: ["consent_grant"] },
+      { id: 8104, source_component_id: 922, target_component_id: 924, source_name: "API gateway", target_name: "Accounts service", crosses_boundary: true, roles: ["tpp"], actions: ["rpc"], data: ["account_balance", "personal_data"] },
+    ],
+  },
+  53: { boundaries: [], components: [], flows: [] },
+  54: {
+    boundaries: [
+      { id: 1, name: "Corporate network", trusted: true },
+      { id: 2, name: "Data tier", trusted: true },
+    ],
+    components: [
+      { id: 941, name: "Finance analyst", kind: "actor", boundary_id: 1, trusted: true, external: false },
+      { id: 942, name: "Reconciliation UI", kind: "service", boundary_id: 1, trusted: true, external: false },
+      { id: 943, name: "Ledger warehouse", kind: "datastore", boundary_id: 2, trusted: true, external: false },
+    ],
+    flows: [
+      { id: 8201, source_component_id: 941, target_component_id: 942, source_name: "Finance analyst", target_name: "Reconciliation UI", crosses_boundary: false, roles: ["analyst"], actions: ["http_request"], data: ["query"] },
+      { id: 8202, source_component_id: 942, target_component_id: 943, source_name: "Reconciliation UI", target_name: "Ledger warehouse", crosses_boundary: true, roles: ["service"], actions: ["read"], data: ["transaction_records"] },
+    ],
+  },
+};
+
+/** Chunks returned by GET /context/projects/{id}/search. */
+export const projectDocumentHits: Record<number, DocumentHit[]> = {
+  51: [
+    { id: 7101, title: "Payments portal requirements v4", chunk: "All cardholder data must be tokenised by the Payments API before it reaches any persistent store. The portal web app must never write a PAN to the customer database.", score: 0.91 },
+    { id: 7102, title: "Payments portal requirements v4", chunk: "Session tokens are rotated on privilege change and on successful step-up authentication. Idle sessions expire after 15 minutes.", score: 0.84 },
+    { id: 7103, title: "PCI scope narrative", chunk: "The card vault is the only component within PCI DSS scope for storage. The processor connection is outbound-only over mutual TLS.", score: 0.79 },
+    { id: 7104, title: "Payments portal requirements v4", chunk: "Every authorisation attempt is appended to the audit log sink; the sink is append-only and readable by the compliance team.", score: 0.72 },
+  ],
+  52: [
+    { id: 7201, title: "Open banking API specification", chunk: "Consent grants are explicit, time-bound and revocable by the customer at any time. A revoked grant must invalidate issued access tokens within 60 seconds.", score: 0.88 },
+    { id: 7202, title: "Open banking API specification", chunk: "Third-party providers authenticate with mutual TLS and signed client assertions. Client secrets alone are not accepted.", score: 0.81 },
+    { id: 7203, title: "Rate limiting policy", chunk: "Per-TPP quotas are enforced at the gateway. Breaching a quota returns 429 with a Retry-After header and raises a SOC signal.", score: 0.66 },
+  ],
+  54: [
+    { id: 7401, title: "Reconciliation tooling brief", chunk: "The tool is read-only against the ledger warehouse. No component in this project may issue a write to the ledger.", score: 0.86 },
+  ],
+};
+
+/**
+ * Threat models keyed by model id. The API cannot list these, so the demo seeds
+ * the same per-browser index a real session would build up by opening them.
+ */
+export const threatModels: Record<number, ThreatModelDetail> = {
+  9001: {
+    model: {
+      id: 9001,
+      project_id: 51,
+      stage: "live",
+      status: "complete",
+      context_snapshot_hash: "3f9c1a7e0b482d6c",
+    },
+    threats: [
+      { id: 9101, category: "Spoofing", title: "Session fixation on the customer portal", impact: "An attacker who plants a session identifier before sign-in can ride the authenticated session.", grade: "supported", verification_question: null, source_flow_id: 8003, source_component_id: 905, status: "open", owner_type: "component", owner_ref: 905 },
+      { id: 9102, category: "Tampering", title: "Amount manipulation between portal and Payments API", impact: "The transaction amount crosses an internal boundary without an integrity check, so a compromised portal can alter it.", grade: "supported", verification_question: null, source_flow_id: 8004, source_component_id: 904, status: "open", owner_type: "flow", owner_ref: 8004 },
+      { id: 9103, category: "Information disclosure", title: "PAN reaching the customer database", impact: "If tokenisation is bypassed, cardholder data lands in a store outside the declared PCI boundary.", grade: "speculative", verification_question: "Does the portal web app ever write a raw card number to the customer database?", source_flow_id: 8007, source_component_id: 907, status: "open", owner_type: "flow", owner_ref: 8007 },
+      { id: 9104, category: "Repudiation", title: "Authorisation events missing from the audit sink", impact: "A failed append to the audit log sink is not retried, so a disputed transaction may have no record.", grade: "supported", verification_question: null, source_flow_id: 8008, source_component_id: 909, status: "open", owner_type: "flow", owner_ref: 8008 },
+      { id: 9105, category: "Denial of service", title: "Unbounded retry against the payment processor", impact: "Retries to the third-party processor are not rate limited, which can exhaust the merchant quota.", grade: "speculative", verification_question: "Is there a circuit breaker on the processor authorize call?", source_flow_id: 8006, source_component_id: 908, status: "open", owner_type: "flow", owner_ref: 8006 },
+      { id: 9106, category: "Elevation of privilege", title: "WAF bypass via direct origin access", impact: "If the application tier is reachable without traversing the CDN, the WAF ruleset is not applied.", grade: "supported", verification_question: null, source_flow_id: 8002, source_component_id: 903, status: "mitigated", owner_type: "component", owner_ref: 903 },
+      { id: 9107, category: "Information disclosure", title: "Card token replay against the processor", impact: "A captured card token could be replayed if it is not bound to a single authorisation.", grade: "refuted", verification_question: null, source_flow_id: 8006, source_component_id: 908, status: "closed", owner_type: "flow", owner_ref: 8006 },
+    ],
+    questions: [
+      { id: 9201, question: "Does the portal web app ever write a raw card number to the customer database?", answer: null, open: true },
+      { id: 9202, question: "Is there a circuit breaker on the processor authorize call?", answer: null, open: true },
+      { id: 9203, question: "Is the application tier reachable on a route that does not pass through the CDN?", answer: "No — the origin security group only accepts the CDN prefix list.", open: false },
+    ],
+  },
+  9002: {
+    model: {
+      id: 9002,
+      project_id: 52,
+      stage: "in_build",
+      status: "awaiting_clarification",
+      context_snapshot_hash: "8b21d40fa7e35c69",
+    },
+    threats: [
+      { id: 9301, category: "Spoofing", title: "Third-party provider impersonation", impact: "Client assertions signed with a long-lived key allow a leaked key to impersonate a TPP indefinitely.", grade: "supported", verification_question: null, source_flow_id: 8101, source_component_id: 921, status: "open", owner_type: "flow", owner_ref: 8101 },
+      { id: 9302, category: "Elevation of privilege", title: "Consent scope widening after grant", impact: "If scope is re-read from the request rather than the stored grant, a TPP can widen its own access.", grade: "speculative", verification_question: "Is the effective scope always read from the consent store rather than the incoming token?", source_flow_id: 8102, source_component_id: 923, status: "open", owner_type: "flow", owner_ref: 8102 },
+      { id: 9303, category: "Information disclosure", title: "Account data returned after consent revocation", impact: "Tokens issued before revocation may remain valid past the 60-second invalidation requirement.", grade: "supported", verification_question: null, source_flow_id: 8104, source_component_id: 924, status: "open", owner_type: "flow", owner_ref: 8104 },
+      { id: 9304, category: "Denial of service", title: "Quota exhaustion by a single TPP", impact: "Per-TPP quotas are enforced at the gateway only, so an internal caller can bypass them.", grade: "speculative", verification_question: "Are per-TPP quotas enforced anywhere other than the gateway?", source_flow_id: 8104, source_component_id: 922, status: "open", owner_type: "component", owner_ref: 922 },
+    ],
+    questions: [
+      { id: 9401, question: "Is the effective scope always read from the consent store rather than the incoming token?", answer: null, open: true },
+      { id: 9402, question: "Are per-TPP quotas enforced anywhere other than the gateway?", answer: null, open: true },
+      { id: 9403, question: "How long may an access token remain valid after its consent grant is revoked?", answer: "Tokens are checked against the consent store on every call, so revocation takes effect on the next request.", open: false },
+    ],
+  },
+};
+
+/** Seeds the per-browser model index so the demo has models to open. */
+export const rememberedThreatModels: RememberedModel[] = [
+  { modelId: 9001, projectId: 51, projectName: "Customer payments portal", seenAt: Date.parse("2026-09-01T10:15:00Z") },
+  { modelId: 9002, projectId: 52, projectName: "Open banking API", seenAt: Date.parse("2026-08-27T16:40:00Z") },
 ];

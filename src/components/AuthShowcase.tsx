@@ -356,9 +356,9 @@ const INSIGHTS: Insight[] = [
   {
     id: "ai",
     icon: <Cpu size={20} />,
-    kicker: "Phantix AI agent",
-    title: "Phantix Agent — AI that never clocks out.",
-    body: "Phantix Agent plans, scans and correlates across your assets around the clock — every action governed, audited and human-approved.",
+    kicker: "SecureGraph AI agent",
+    title: "SecureGraph Agent — AI that never clocks out.",
+    body: "SecureGraph Agent plans, scans and correlates across your assets around the clock — every action governed, audited and human-approved.",
     stat: { label: "coverage", value: 24 },
     scene: <AgentBotScene />,
   },
@@ -531,7 +531,7 @@ export default function AuthShowcase() {
 
       <header className="relative z-10 flex items-center gap-3 p-10 pb-6">
         <BrandLogo className="h-9 w-9 object-contain [filter:brightness(0)_invert(1)]" />
-        <span className="font-display text-lg font-semibold text-white">Phantix Security</span>
+        <span className="font-display text-lg font-semibold text-white">SecureGraph</span>
       </header>
 
       <main className="relative z-10 grid flex-1 grid-cols-1 items-center gap-10 px-10 py-6 xl:grid-cols-[1.05fr_0.95fr] xl:gap-14">

@@ -4,7 +4,7 @@
 // internals are intentionally not exposed here.
 
 // Top-level public / marketing docs
-import whatIsPhantix from "@docs/docs/01-what-is-phantix.md?raw";
+import whatIsSecureGraph from "@docs/docs/01-what-is-securegraph.md?raw";
 import businessLeaders from "@docs/docs/02-for-business-leaders.md?raw";
 import securityIt from "@docs/docs/03-for-security-and-it.md?raw";
 import investorsPartners from "@docs/docs/04-for-investors-and-partners.md?raw";
@@ -56,26 +56,26 @@ export const docCategories = [
 export const docs: DocEntry[] = [
   // Help Centre
   { id: "hc-getting-started", title: "Getting started", description: "Register your organization, complete setup, and take your first security actions.", category: "help", content: hcGettingStarted, badge: "Start here" },
-  { id: "hc-security-database", title: "Connect a security database", description: "Set up PostgreSQL (Supabase, Neon, RDS, DigitalOcean, Railway) — Phantix-hosted coming soon.", category: "help", content: hcSecurityDb },
+  { id: "hc-security-database", title: "Connect a security database", description: "Set up PostgreSQL (Supabase, Neon, RDS, DigitalOcean, Railway) — SecureGraph-hosted coming soon.", category: "help", content: hcSecurityDb },
   { id: "hc-email-smtp", title: "Email & SMTP", description: "Configure SES, Brevo, Mailgun, SendGrid, Google, or Microsoft 365 for OTPs and alerts.", category: "help", content: hcEmail },
   { id: "hc-alert-channels", title: "Alert channels", description: "Set up WhatsApp (Meta) and Telegram Bot alerts for security events.", category: "help", content: hcAlerts },
-  { id: "hc-github", title: "Connect GitHub", description: "Install the Phantix GitHub App and analyze public or private repositories.", category: "help", content: hcGithub },
-  { id: "hc-plans-billing", title: "Plans & billing", description: "Understand Free, Premium, add-ons, and the public AI Agent API plan.", category: "help", content: hcBilling },
+  { id: "hc-github", title: "Connect GitHub", description: "Install the SecureGraph GitHub App and analyze public or private repositories.", category: "help", content: hcGithub },
+  { id: "hc-plans-billing", title: "Plans & billing", description: "Understand Free, Starter, Growth, Enterprise, and the public AI Agent API plan.", category: "help", content: hcBilling },
   { id: "hc-daily-activities", title: "Daily activities", description: "Recommended day/week/month workflows to keep your posture current.", category: "help", content: hcDaily },
   { id: "hc-features", title: "Features overview", description: "The public feature set — assets, scans, VAPT, risks, compliance, reporting.", category: "help", content: hcFeatures },
   { id: "hc-users-approvals", title: "Users & approvals", description: "Invite users, set up dual-control initiator/authorizer, and approve sensitive actions.", category: "help", content: hcUsers },
-  { id: "hc-ai-agent", title: "AI Agent API", description: "Use the public Phantix Agent API for programmatic security investigations.", category: "help", content: hcAiAgent },
+  { id: "hc-ai-agent", title: "AI Agent API", description: "Use the public SecureGraph Agent API for programmatic security investigations.", category: "help", content: hcAiAgent },
   { id: "hc-privacy", title: "Privacy & security", description: "How your security data stays under your keys with the hybrid database model.", category: "help", content: hcPrivacy },
   { id: "hc-troubleshooting", title: "Troubleshooting", description: "Common setup and connection issues and how to fix them.", category: "help", content: hcTroubleshoot },
 
   // Public guides
-  { id: "what-is-phantix", title: "What is Phantix", description: "The one-liner, positioning, and value for organizations.", category: "guides", content: whatIsPhantix },
+  { id: "what-is-securegraph", title: "What is SecureGraph", description: "The one-liner, positioning, and value for organizations.", category: "guides", content: whatIsSecureGraph },
   { id: "for-business-leaders", title: "For business leaders", description: "Board-level outcomes: continuity, trust, and faster audits.", category: "guides", content: businessLeaders },
   { id: "for-security-it", title: "For security & IT", description: "What CISOs, IT managers, and security engineers get.", category: "guides", content: securityIt },
   { id: "for-investors-partners", title: "For investors & partners", description: "Investor, MSSP, and reseller perspective on the platform.", category: "guides", content: investorsPartners },
   { id: "product-capabilities", title: "Product capabilities", description: "Product depth across surfaces and modules.", category: "guides", content: capabilities },
   { id: "privacy-trust", title: "Privacy & trust", description: "The privacy model, NDPA, and dual-control safeguards.", category: "guides", content: privacyTrust },
-  { id: "pricing-plans", title: "Pricing & plans", description: "Free, Premium, add-ons, and engagements — priced in NGN.", category: "guides", content: pricingPlans },
+  { id: "pricing-plans", title: "Pricing & plans", description: "Free, Starter, Growth, Enterprise, and engagements — priced in NGN.", category: "guides", content: pricingPlans },
   { id: "how-it-works", title: "How it works", description: "The journey from signup to board-ready report.", category: "guides", content: howItWorks },
   { id: "ai-accountability", title: "AI with accountability", description: "AI that advises — it never invents security facts.", category: "guides", content: aiAccountability },
   { id: "for-developers", title: "For developers", description: "Public API overview and the AI Agent API plan.", category: "guides", content: forDevelopers },
@@ -96,7 +96,7 @@ export function getDoc(id: string): DocEntry | undefined {
 
 const DOC_ID_BY_FILE: Record<string, string> = {
   // Public guides (docs/)
-  "01-what-is-phantix.md": "what-is-phantix",
+  "01-what-is-securegraph.md": "what-is-securegraph",
   "02-for-business-leaders.md": "for-business-leaders",
   "03-for-security-and-it.md": "for-security-it",
   "04-for-investors-and-partners.md": "for-investors-partners",

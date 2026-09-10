@@ -31,13 +31,13 @@ export default function Docs() {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative mb-10 overflow-hidden rounded-3xl border border-phantix-700/40 bg-gradient-to-b from-phantix-800/60 to-phantix-900/60 px-8 py-12">
         <div className="pointer-events-none absolute inset-0 bg-grid-faint bg-grid opacity-30 [mask-image:radial-gradient(ellipse_60%_80%_at_50%_0%,black,transparent)]" />
         <div className="relative max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold-400">Phantix documentation</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold-400">SecureGraph documentation</p>
           <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-white">
             The help centre, in one place
           </h1>
           <p className="mt-3 text-[15px] leading-7 text-slate-400">
             Setup guides, day-to-day workflows, and public product documentation —
-            written for the people running their organization on Phantix.
+            written for the people running their organization on SecureGraph.
           </p>
           <div className="relative mt-6 max-w-lg">
             <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />

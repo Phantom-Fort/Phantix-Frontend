@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Swords, Plus, ArrowRight, Check, Clock, AlertTriangle, FileText, ShieldAlert } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState, Modal } from "@/components/ui";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, PageSkeleton, ErrorState, EmptyState, Modal } from "@/components/ui";
 import { loadSocWarRoom, loadWarRoomChecklist, updateChecklistStep, loadWarRoomEvidence, loadWarRoomKillChain, loadWarRoomSla, openSocWarRoomCase } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
@@ -163,7 +163,14 @@ function CaseDetailView({ caseId, onBack }: { caseId: number; onBack: () => void
 
       {detailTab === "evidence" && (
         <div className="mt-4 space-y-2">
-          {ev ? <Spinner /> : (evidence?.timeline ?? []).map((evt, i) => (
+          {ev ? (
+            [0, 1, 2, 3].map((i) => (
+              <div key={i} className="card !p-3 space-y-2" style={{ opacity: 1 - i * 0.15 }}>
+                <div className="skeleton h-3.5 w-2/3 max-w-sm rounded" />
+                <div className="skeleton h-2.5 w-40 rounded" />
+              </div>
+            ))
+          ) : (evidence?.timeline ?? []).map((evt, i) => (
             <Card key={`${evt.id}-${i}`} className="!p-3">
               <p className="text-sm text-slate-200">{evt.title}</p>
               <p className="text-xs text-slate-500">{evt.event_type} &middot; {timeAgo(evt.created_at)}</p>
@@ -174,7 +181,15 @@ function CaseDetailView({ caseId, onBack }: { caseId: number; onBack: () => void
 
       {detailTab === "kill-chain" && (
         <div className="mt-4 space-y-2">
-          {kc ? <Spinner /> : (killChain?.techniques ?? []).map((t) => (
+          {kc ? (
+            [0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-900 px-4 py-2.5" style={{ opacity: 1 - i * 0.15 }}>
+                <div className="skeleton h-3.5 w-3.5 shrink-0 rounded" />
+                <div className="skeleton h-3.5 w-48 max-w-[50%] rounded" />
+                <div className="skeleton ml-auto h-4 w-20 rounded-md" />
+              </div>
+            ))
+          ) : (killChain?.techniques ?? []).map((t) => (
             <div key={t.technique_id} className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-900 px-4 py-2.5">
               <ShieldAlert size={14} className="text-gold-400" />
               <span className="text-sm text-slate-200">{t.name}</span>
@@ -186,7 +201,11 @@ function CaseDetailView({ caseId, onBack }: { caseId: number; onBack: () => void
 
       {detailTab === "sla" && (
         <div className="mt-4 space-y-2">
-          {slaLoading ? <Spinner /> : (sla?.targets ?? []).map((m) => (
+          {slaLoading ? (
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => <div key={i} className="skeleton h-8 rounded-md" style={{ opacity: 1 - i * 0.2 }} />)}
+            </div>
+          ) : (sla?.targets ?? []).map((m) => (
             <div key={m.metric} className="flex items-center justify-between rounded-md border border-phantix-700 bg-phantix-900 px-4 py-2.5">
               <span className="text-sm text-slate-200">{m.metric}</span>
               <div className="flex items-center gap-3 text-xs">

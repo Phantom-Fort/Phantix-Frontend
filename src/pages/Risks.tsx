@@ -121,7 +121,7 @@ export default function Risks() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Risk register"
-        description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned --- Phantix never owns them."
+        description="Auto-created from verified scan results, scored with explainable Likelihood×Impact + rules, prioritized by phantix.risk_priority.v1. Risks are client-owned --- SecureGraph never owns them."
         actions={
           <>
             <DocLink docId="howto-app-09" label="Risks how-to" />
@@ -321,7 +321,17 @@ export default function Risks() {
       {/* History modal */}
       <Modal open={historyOpen} onClose={() => { setHistoryOpen(false); setHistory(null); }} title="Risk history" wide>
         {historyLoading ? (
-          <div className="flex items-center gap-2 text-sm text-slate-400"><Spinner className="h-4 w-4" /> Loading history...</div>
+          <div className="space-y-2.5">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start gap-3" style={{ opacity: 1 - i * 0.15 }}>
+                <div className="skeleton mt-1 h-2 w-2 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="skeleton h-3 w-2/3 rounded" />
+                  <div className="skeleton h-2.5 w-24 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : history && history.length > 0 ? (
           <div className="space-y-2 max-h-[500px] overflow-auto">
             {history.map((h: any, i: number) => (

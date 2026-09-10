@@ -827,9 +827,18 @@ export default function Reports() {
                 {gate?.needs_acknowledgement
                   ? <><ShieldAlert size={13} className="text-severity-medium" /> Verification pending</>
                   : <><ShieldCheck size={13} className="text-emerald-400" /> Verification gate</>}
-                {gateLoading && <Spinner className="h-3 w-3" />}
               </p>
               {gateError && <p className="mt-1.5 text-[11px] text-severity-critical">{gateError}</p>}
+              {gateLoading && !gateError && (
+                <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="rounded-lg bg-phantix-900/60 px-2.5 py-1.5">
+                      <div className="skeleton h-4 w-8 rounded" />
+                      <div className="skeleton mt-1.5 h-2.5 w-16 rounded" />
+                    </div>
+                  ))}
+                </div>
+              )}
               {!gateLoading && gate && !gateError && (
                 <>
                   <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
@@ -950,8 +959,15 @@ export default function Reports() {
         {detail && (
           <div className="space-y-4">
             {detailLoading && (
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <Spinner className="h-4 w-4" /> Loading report sections...
+              <div className="space-y-5">
+                {[0, 1, 2].map((s) => (
+                  <div key={s} className="space-y-2.5" style={{ opacity: 1 - s * 0.18 }}>
+                    <div className="skeleton h-4 w-48 rounded" />
+                    <div className="skeleton h-3 w-full rounded" />
+                    <div className="skeleton h-3 w-full rounded" />
+                    <div className="skeleton h-3 w-3/4 rounded" />
+                  </div>
+                ))}
               </div>
             )}
 

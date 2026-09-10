@@ -75,7 +75,7 @@ export const howToDocs: Entry[] = [
   e("howto-app-10", "App: Compliance assessment", "Frameworks and evidence.", "how-to-app", app10),
   e("howto-app-11", "App: Generate reports", "Library formats including pptx/html.", "how-to-app", app11),
   e("howto-app-12", "App: Findings tracker", "Living remediation board.", "how-to-app", app12),
-  e("howto-app-13", "App: Phantix Agent", "Chat and skills.", "how-to-app", app13),
+  e("howto-app-13", "App: SecureGraph Agent", "Chat and skills.", "how-to-app", app13),
   e("howto-app-14", "App: Authorizer approvals", "Approve protected actions.", "how-to-app", app14),
-  e("howto-app-15", "App: Support ticket", "Contact Phantix support.", "how-to-app", app15),
+  e("howto-app-15", "App: Support ticket", "Contact SecureGraph support.", "how-to-app", app15),
 ];

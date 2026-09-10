@@ -1,4 +1,4 @@
-// ── Phantix API client ────────────────────────────────────────────────────────
+// ── SecureGraph API client ────────────────────────────────────────────────────────
 // Token model: app_session + device, platform, dual-control, staff (never mixed).
 // API base from src/lib/config.ts (no Vite env). Demo only via /demo flag.
 import { API_BASE as CONFIG_API_BASE } from "./config";
@@ -78,6 +78,27 @@ export class ApiError extends Error {
     this.detail = detail;
     this.correlationId = correlationId;
   }
+}
+
+/**
+ * Wait (seconds) carried by a 429 "too many failed attempts" response, if the
+ * server put a number in the detail. There is no Retry-After header yet, so the
+ * callers should fall back to a generic "try again shortly" when this is null.
+ */
+export function throttleSeconds(err: unknown): number | null {
+  if (!(err instanceof ApiError) || err.status !== 429) return null;
+  const msg = typeof err.message === "string" ? err.message : "";
+  const m = msg.match(/(\d+)\s*seconds?/i);
+  return m ? Math.max(1, parseInt(m[1], 10)) : null;
+}
+
+/**
+ * Middleware-parked action (approvals-and-sensitive-actions §2.2): a 2xx with
+ * `pending: true` means the call did NOT run — it was filed for an authorizer.
+ * The UI must say "sent for approval", never that the action happened.
+ */
+export function isPendingApproval(body: unknown): boolean {
+  return !!body && typeof body === "object" && (body as { pending?: unknown }).pending === true;
 }
 
 // ── Correlation ID (00-shared-auth-and-client.md §6) ────────────────────────
@@ -167,7 +188,7 @@ async function request<T>(
     // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
     if (realm === "application") headers["X-Device-Id"] = deviceId();
     // Dual-control operate session: attach on ALL mutations when a token exists so
-    // the Phantix Agent, Pentest Agent, and platform mutations share ONE operate
+    // the SecureGraph Agent, Pentest Agent, and platform mutations share ONE operate
     // session. Stale/expired tokens are handled separately (the backend rejects the
     // mutation, not the org/app session — see the 401 handling below).
     const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
@@ -285,6 +306,16 @@ async function request<T>(
       const upgradeMsg = typeof detail === "string" ? detail : "Upgrade required";
       window.dispatchEvent(new CustomEvent("phantix:billing-required", { detail: upgradeMsg }));
     }
+    // Login throttling (staging-rollout §8): failed attempts are throttled per
+    // identifier — 5 failures/5 min → 429. Surface the wait; never present it as
+    // a wrong-password error.
+    if (res.status === 429) {
+      const throttleMsg = typeof detail === "string" ? detail : detailObj?.message ? String(detailObj.message) : "";
+      const sec = throttleMsg.match(/(\d+)\s*seconds?/i);
+      window.dispatchEvent(new CustomEvent("phantix:throttled", {
+        detail: { seconds: sec ? Math.max(1, parseInt(sec[1], 10)) : null },
+      }));
+    }
     throw withCorrelation(new ApiError(res.status, detail, correlationId), correlationId);
   }
   if (res.status === 204) return undefined as T;
@@ -327,6 +358,30 @@ export const api = {
       try {
         const j = await res.clone().json();
         detail = (j && typeof j === "object" && "detail" in j ? j.detail : j) ?? res.statusText;
+      } catch { /* non-JSON */ }
+      throw new ApiError(res.status, detail, res.headers.get("X-Correlation-ID") || undefined);
+    }
+    return res.blob();
+  },
+
+  /** POST that returns a file (e.g. threat-model export) — auth + JSON body. */
+  async postDownload(path: string, body?: unknown): Promise<Blob> {
+    const headers: Record<string, string> = {};
+    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
+    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    headers["X-Device-Id"] = deviceId();
+    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+    headers["Content-Type"] = "application/json";
+
+    const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: JSON.stringify(body ?? {}) });
+    applyTokenRenewal(res);
+    trackCorrelationId(res);
+    if (!res.ok) {
+      let detail: unknown = res.statusText;
+      try {
+        const j = await res.clone().json();
+        detail = (j && typeof j === "object" && "detail" in j ? (j as { detail?: unknown }).detail : j) ?? res.statusText;
       } catch { /* non-JSON */ }
       throw new ApiError(res.status, detail, res.headers.get("X-Correlation-ID") || undefined);
     }

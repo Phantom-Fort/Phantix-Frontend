@@ -74,7 +74,7 @@ export const PHASES: { id: AttackPhase; label: string; short: string }[] = [
 
 export const PERSONAS: { id: AgentPersona | "all"; label: string }[] = [
   { id: "all", label: "All agents" },
-  { id: "orchestrator", label: "Phantix Autonomous Agent" },
+  { id: "orchestrator", label: "SecureGraph Autonomous Agent" },
   { id: "recon", label: "Recon Agent" },
   { id: "exploit", label: "Web Exploit Agent" },
 ];

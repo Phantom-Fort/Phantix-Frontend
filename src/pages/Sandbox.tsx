@@ -122,7 +122,7 @@ if (loading) {
         <EmptyState
           icon={<FlaskConical size={28} />}
           title="Not enrolled"
-          body="Your organization is not in the launch sandbox cohort. Phantix staff enroll orgs from the staff portal (max 20 seats)."
+          body="Your organization is not in the launch sandbox cohort. SecureGraph staff enroll orgs from the staff portal (max 20 seats)."
         />
       </div>
     );
@@ -150,7 +150,7 @@ if (loading) {
 
       <div className="mb-5 rounded-2xl border border-phantix-700/40 bg-phantix-900/40 px-4 py-3 text-xs leading-5 text-slate-400">
         Sandboxed orgs use the full product across <strong className="text-slate-200">Command Centre</strong> (this app)
-        and <strong className="text-slate-200">Platform</strong> (org management). Staff portal is Phantix-internal only.
+        and <strong className="text-slate-200">Platform</strong> (org management). Staff portal is SecureGraph-internal only.
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">

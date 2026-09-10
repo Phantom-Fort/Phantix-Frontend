@@ -260,7 +260,7 @@ export default function Cloud() {
                 <button className="btn-secondary !px-3" onClick={() => copy(createdResult.url, "Ingest URL")}><Copy size={14} /></button>
               </div>
             </div>
-            <p className="text-[11px] leading-5 text-slate-500">Vercel: use the secret as the signing secret (<code className="font-mono">x-vercel-signature</code>). GitHub: <code className="font-mono">X-Hub-Signature-256</code>. Others: <code className="font-mono">X-Phantix-Signature: sha256=&lt;hmac&gt;</code>.</p>
+            <p className="text-[11px] leading-5 text-slate-500">Vercel: use the secret as the signing secret (<code className="font-mono">x-vercel-signature</code>). GitHub: <code className="font-mono">X-Hub-Signature-256</code>. Others: <code className="font-mono">X-SecureGraph-Signature: sha256=&lt;hmac&gt;</code>.</p>
             <button className="btn-primary w-full" onClick={() => { setAddOpen(false); setCreatedResult(null); setSelectedProvider(null); }}>Done</button>
           </div>
         ) : (
