@@ -119,7 +119,7 @@ export default function Alerts() {
             </Card>
           </div>
           <Card>
-            <CardHeader title="Client alert SMTP" subtitle="Separate from the Phantix OTP SMTP --- this delivers security alerts + VAPT completion mail" action={<Mail size={16} className="text-slate-500" />} />
+            <CardHeader title="Client alert SMTP" subtitle="Separate from the SecureGraph OTP SMTP --- this delivers security alerts + VAPT completion mail" action={<Mail size={16} className="text-slate-500" />} />
             <div className="space-y-3">
               {[
                 ["Host", `${s.smtp.host}:${s.smtp.port}`],

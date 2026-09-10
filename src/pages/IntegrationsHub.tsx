@@ -4,6 +4,7 @@ import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, Externa
 import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@/components/ui";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
+import { isPendingApproval } from "@/lib/api";
 import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@/lib/data";
 import { timeAgo, cx } from "@/lib/utils";
 import type { IntegrationConnector, IntegrationInstallation } from "@/lib/types";
@@ -107,7 +108,11 @@ export default function IntegrationsHub() {
                     </button>
                     <button
                       className="btn-ghost !px-2 !py-1 !text-xs"
-                      onClick={() => { void rotateHubSecret(inst.installation_id); toast("success", "Secret rotated", "New secret generated."); }}
+                      onClick={async () => {
+                        const res = await rotateHubSecret(inst.installation_id);
+                        if (isPendingApproval(res)) toast("info", "Sent for approval", "Secret rotation is parked for an authorizer.");
+                        else toast("success", "Secret rotated", "New secret generated.");
+                      }}
                     >
                       <RefreshCw size={12} /> Rotate
                     </button>
@@ -115,9 +120,10 @@ export default function IntegrationsHub() {
                       className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical"
                       onClick={async () => {
                         if (!(await requireDualControl("Uninstall requires dual-control."))) return;
-                        await uninstallHubIntegration(inst.installation_id);
+                        const res = await uninstallHubIntegration(inst.installation_id);
                         reload();
-                        toast("success", "Uninstalled", `${inst.label} disconnected.`);
+                        if (isPendingApproval(res)) toast("info", "Sent for approval", `${inst.label} disconnect is parked for an authorizer.`);
+                        else toast("success", "Uninstalled", `${inst.label} disconnected.`);
                       }}
                     >
                       <Trash2 size={12} />
@@ -188,8 +194,12 @@ function InstallModal({ connectorId, catalog, onClose, onInstalled }: { connecto
     if (secrets.trim()) {
       body.secrets = { webhook_url: secrets.trim() };
     }
-    await installHubIntegration(body);
-    toast("success", "Installed", `${connector.name} installed successfully.`);
+    const res = await installHubIntegration(body);
+    if (isPendingApproval(res)) {
+      toast("info", "Sent for approval", `${connector.name} install is parked for an authorizer — approve it from Authorizations to finish.`);
+    } else {
+      toast("success", "Installed", `${connector.name} installed successfully.`);
+    }
     onInstalled();
   };
 

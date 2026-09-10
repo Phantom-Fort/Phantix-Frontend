@@ -1,5 +1,5 @@
 // ── First-party, cookieless analytics (free tier — no third party) ───────────
-// Fire-and-forget page-vision beacons to the Phantix backend. No cookies, no
+// Fire-and-forget page-vision beacons to the SecureGraph backend. No cookies, no
 // fingerprints, no PII: path, referrer, coarse screen and UTM only. Respects
 // Do Not Track and an env kill-switch, and never blocks or logs errors.
 //
@@ -7,7 +7,8 @@
 // staff via GET /api/v1/admin/analytics/summary (staff portal → Analytics).
 
 const COLLECT_URL = "/api/v1/analytics/collect";
-const APP_SOURCE = "command-centre";
+// Payload `app` per surface: "app" | "platform" | "staff" (staging-rollout §9).
+const APP_SOURCE = "app";
 
 const ENV = (import.meta as unknown as { env?: Record<string, unknown> }).env ?? {};
 const DEV = Boolean(ENV.DEV);
@@ -15,6 +16,12 @@ const DISABLED = String(ENV.VITE_ANALYTICS_DISABLED ?? "") === "true";
 
 let sessionId = "";
 let lastPath = "";
+
+/** Field caps are enforced server-side (path 400, ref 600, sid 64) — truncate client-side. */
+function cap(value: string | null | undefined, max: number): string | null {
+  if (!value) return null;
+  return value.length > max ? value.slice(0, max) : value;
+}
 
 function dnt(): boolean {
   return navigator.doNotTrack === "1" || (window as { doNotTrack?: string }).doNotTrack === "1";
@@ -43,10 +50,10 @@ function payload(): Record<string, unknown> {
   }
   return {
     app: APP_SOURCE,
-    sid: sessionKey(),
-    path: window.location.pathname,
-    ref: document.referrer || null,
-    screen: `${window.screen.width}x${window.screen.height}`,
+    sid: cap(sessionKey(), 64) ?? undefined,
+    path: cap(window.location.pathname, 400) ?? "/",
+    ref: cap(document.referrer, 600),
+    screen: `${window.innerWidth}x${window.innerHeight}`,
     lang: navigator.language || null,
     tz: Intl.DateTimeFormat().resolvedOptions().timeZone || null,
     utm: Object.keys(utm).length ? utm : null,

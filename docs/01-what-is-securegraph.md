@@ -1,8 +1,8 @@
-# What is Phantix?
+# What is SecureGraph?
 
 **PROTECT. PREVENT. PERFORM.**
 
-Phantix is a **cybersecurity command centre** for organizations that need real visibility, honest findings, and board-ready proof — without surrendering their security data to another black-box SaaS.
+SecureGraph is a **cybersecurity command centre** for organizations that need real visibility, honest findings, and board-ready proof — without surrendering their security data to another black-box SaaS.
 
 ---
 
@@ -14,7 +14,7 @@ Phantix is a **cybersecurity command centre** for organizations that need real v
 
 ## The problem we solve
 
-| Pain | What goes wrong | What Phantix changes |
+| Pain | What goes wrong | What SecureGraph changes |
 |------|-----------------|----------------------|
 | Blind surface | You can’t protect assets you haven’t inventoried | Continuous asset intelligence |
 | Scan noise | False positives destroy trust in the program | Verification gate before client reports |
@@ -35,7 +35,7 @@ Phantix is a **cybersecurity command centre** for organizations that need real v
 
 ## Who it’s for
 
-| Audience | Why Phantix |
+| Audience | Why SecureGraph |
 |----------|-------------|
 | **SMEs & scale-ups** | Enterprise-grade posture without an in-house SOC budget |
 | **Security / IT leads** | Engineer-grade evidence, approvals, audit trail |
@@ -45,7 +45,7 @@ Phantix is a **cybersecurity command centre** for organizations that need real v
 
 ---
 
-## What Phantix is not
+## What SecureGraph is not
 
 - Not a tool dump of random scanners with no ownership model
 - Not “AI that invents vulnerabilities”
@@ -55,7 +55,7 @@ Phantix is a **cybersecurity command centre** for organizations that need real v
 
 ---
 
-## The Phantix promise
+## The SecureGraph promise
 
 **Privacy by design. Verification before reputation. Impact before noise.**
 

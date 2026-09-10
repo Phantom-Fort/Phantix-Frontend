@@ -5,7 +5,7 @@ import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationB
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
 import { loadVaptBundle } from "@/lib/data";
-import { api, isDemoMode } from "@/lib/api";
+import { api, isDemoMode, isPendingApproval } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
 import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@/lib/utils";
@@ -146,8 +146,12 @@ export default function Vapt() {
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
     if (!(await requireDualControl(`${action} campaign requires a dual-control operate session.`))) return;
     try {
-      await api.post(`/vapt/campaigns/${id}/${action}`, extra || {});
-      toast("success", `${action}`, `Campaign #${id} ${action} requested`);
+      const res = await api.post<Record<string, unknown>>(`/vapt/campaigns/${id}/${action}`, extra || {});
+      if (isPendingApproval(res)) {
+        toast("info", "Sent for approval", `Campaign #${id} ${action} is parked for an authorizer — approve it from Authorizations for it to run.`);
+      } else {
+        toast("success", `${action}`, `Campaign #${id} ${action} requested`);
+      }
       reload();
     } catch (e: any) {
       if (e.status === 409) {

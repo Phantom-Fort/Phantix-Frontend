@@ -1,5 +1,5 @@
 /**
- * Human-readable explanations for Phantix audit endpoints.
+ * Human-readable explanations for SecureGraph audit endpoints.
  * The audit trail stores raw API paths; this maps them to a short label and a
  * ≤2-sentence description so operators can understand what an action did.
  */
@@ -31,7 +31,7 @@ const EXACT: Record<string, EndpointDesc> = {
   },
   "GET /github/install-url": {
     label: "Get GitHub install link",
-    detail: "Builds a signed URL that installs the Phantix GitHub App on the organization's GitHub account.",
+    detail: "Builds a signed URL that installs the SecureGraph GitHub App on the organization's GitHub account.",
   },
   "POST /github/callback": {
     label: "Record GitHub install result",
@@ -47,7 +47,7 @@ const EXACT: Record<string, EndpointDesc> = {
   },
   "POST /github/repositories/analyze": {
     label: "Analyze a GitHub repository",
-    detail: "Queues a security analysis of a repository, subject to the organization's plan (private repos require Premium).",
+    detail: "Queues a security analysis of a repository, subject to the organization's plan (private repos require a paid plan).",
   },
   "DELETE /github/installation": {
     label: "Disconnect GitHub",
@@ -276,7 +276,7 @@ const EXACT: Record<string, EndpointDesc> = {
     detail: "Marks an asset's verification status after ownership confirmation.",
   },
 
-  // ── AGI / Pentest Agent / Phantix Agent ─────────────────────────────
+  // ── AGI / Pentest Agent / SecureGraph Agent ─────────────────────────────
   "GET /agi/access": {
     label: "Read AGI access",
     detail: "Reads the organization's Autonomous Pentest Agent access and entitlements.",
@@ -318,8 +318,8 @@ const EXACT: Record<string, EndpointDesc> = {
     detail: "Approves or rejects a state-changing step proposed by the autonomous agent.",
   },
   "POST /ai/agent/chat/stream": {
-    label: "Chat with Phantix Agent",
-    detail: "Streams a reply from the Phantix Agent security assistant against the organization's data.",
+    label: "Chat with SecureGraph Agent",
+    detail: "Streams a reply from the SecureGraph Agent security assistant against the organization's data.",
   },
   "POST /ai/agent/runs/stream": {
     label: "Run agent investigation",
@@ -327,11 +327,11 @@ const EXACT: Record<string, EndpointDesc> = {
   },
   "GET /ai/settings": {
     label: "Read AI settings",
-    detail: "Reads the Phantix Agent settings for the organization.",
+    detail: "Reads the SecureGraph Agent settings for the organization.",
   },
   "PUT /ai/settings": {
     label: "Update AI settings",
-    detail: "Updates Phantix Agent settings such as enabled state and mode.",
+    detail: "Updates SecureGraph Agent settings such as enabled state and mode.",
   },
   "GET /agi/org/settings/bootstrap": {
     label: "Load AGI settings",
@@ -431,7 +431,7 @@ const EXACT: Record<string, EndpointDesc> = {
   },
   "POST /support/tickets": {
     label: "Create support ticket",
-    detail: "Submits a support ticket to Phantix.",
+    detail: "Submits a support ticket to SecureGraph.",
   },
 
   // ── Identity / service keys / security db ───────────────────────────
@@ -489,7 +489,7 @@ const MODULE_FALLBACK: Record<string, EndpointDesc> = {
   },
   ai: {
     label: "AI action",
-    detail: "An action on the Phantix Agent or an AI-powered capability.",
+    detail: "An action on the SecureGraph Agent or an AI-powered capability.",
   },
   alerts: {
     label: "Alert action",

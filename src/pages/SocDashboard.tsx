@@ -732,7 +732,7 @@ export default function SocDashboard() {
       {tab === "adapters" && (
         <div className="space-y-4">
           <Card>
-            <CardHeader title="Enrichment adapters" subtitle="Optional external enrichment only — SOC operates fully on internal Phantix signals" />
+            <CardHeader title="Enrichment adapters" subtitle="Optional external enrichment only — SOC operates fully on internal SecureGraph signals" />
             <div className="grid gap-3 md:grid-cols-2">
               {(adaptersRes.data ?? []).map((a) => (
                 <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
@@ -748,7 +748,7 @@ export default function SocDashboard() {
               ))}
             </div>
             <div className="mt-4 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-3.5 text-xs leading-5 text-slate-500">
-              <strong className="text-slate-300">Note:</strong> adapters are optional enrichment only. SOC operates fully on internal Phantix
+              <strong className="text-slate-300">Note:</strong> adapters are optional enrichment only. SOC operates fully on internal SecureGraph
               signals without external SIEM/SOAR. <span className="font-mono">siem_connectors_live: false</span>
             </div>
           </Card>

@@ -53,6 +53,7 @@ export default {
           medium: "rgb(var(--severity-medium) / <alpha-value>)",
           low: "rgb(var(--severity-low) / <alpha-value>)",
           info: "rgb(var(--severity-info) / <alpha-value>)",
+          unrated: "rgb(var(--severity-unrated) / <alpha-value>)",
         },
         slate: {
           50: "rgb(var(--slate-50) / <alpha-value>)",

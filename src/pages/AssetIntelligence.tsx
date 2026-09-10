@@ -476,7 +476,7 @@ export default function AssetIntelligenceDashboard() {
       <Card>
         <CardHeader
           title={<><Sparkles size={16} className="inline text-gold-400 mr-1" /> Explain with AI</>}
-          subtitle="Pick any asset — Phantix gathers its intelligence, findings, risks, SOC signals and relationships into one comprehensive deep-dive. Never invents CVEs or scores."
+          subtitle="Pick any asset — SecureGraph gathers its intelligence, findings, risks, SOC signals and relationships into one comprehensive deep-dive. Never invents CVEs or scores."
         />
         <div className="space-y-3">
           <div data-asset-picker>

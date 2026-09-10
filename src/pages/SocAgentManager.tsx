@@ -17,7 +17,7 @@ export default function SocAgentManager() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Agents"
-        description="Unified Phantix agent fleet: register, monitor, and deploy log-shipping agents."
+        description="Unified SecureGraph agent fleet: register, monitor, and deploy log-shipping agents."
       />
 
       {fleet && (
@@ -72,7 +72,7 @@ export default function SocAgentManager() {
       {install && (
         <div className="mt-6">
           <Card className="!p-4">
-            <CardHeader title="Agent installation" subtitle="Deploy the Phantix agent to start log-shipping." />
+            <CardHeader title="Agent installation" subtitle="Deploy the SecureGraph agent to start log-shipping." />
             <div className="mt-4 space-y-3">
               {(install.channels ?? []).map((ch) => (
                 <div key={ch.id} className="flex items-center justify-between rounded-md border border-phantix-700 bg-phantix-950/50 px-4 py-3">

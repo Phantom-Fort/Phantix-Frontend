@@ -16,7 +16,7 @@ import { useStickToBottom } from "@/lib/useStickToBottom";
 type Msg = { role: "user" | "agent"; text: string; thinking?: string; nav?: { route: string; label: string; also?: { route: string; label: string }[] } };
 
 const DEFAULT_GREETING =
-  "Hi, I'm Phantix Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. I can also point you to any page in the app — just ask \u201cwhere do I find\u2026\u201d. What would you like to look into?";
+  "Hi, I'm SecureGraph Agent — your security operations assistant. I can summarize your posture, surface highest-risk assets, list open critical risks, preview report findings, and explain risks or findings. I can also point you to any page in the app — just ask \u201cwhere do I find\u2026\u201d. What would you like to look into?";
 
 const SUGGESTIONS = [
   "Summarize my current security posture",
@@ -106,7 +106,7 @@ export default function AgentAssistant() {
       return;
     }
 
-    if (!(await requireDualControl("Using Phantix Agent requires a dual-control operate session."))) return;
+    if (!(await requireDualControl("Using SecureGraph Agent requires a dual-control operate session."))) return;
     setConnError(null);
     setMessages((m) => [...m, { role: "user", text: msg }]);
     setInput("");
@@ -137,7 +137,7 @@ export default function AgentAssistant() {
       if ((e as Error)?.name !== "AbortError") {
         const planRequired = (e as any)?.status === 402 || (e as any)?.detail?.code === "ai_agent_plan_required";
         if (planRequired) {
-          setMessages((m) => [...m, { role: "agent", text: "This reply requires the Phantix Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
+          setMessages((m) => [...m, { role: "agent", text: "This reply requires the SecureGraph Agent, which is part of a paid plan. Upgrade on the Platform to keep chatting with your security data." }]);
         } else {
           const name = String((e as any)?.name ?? "");
           const message = String((e as any)?.message ?? "");
@@ -173,8 +173,8 @@ export default function AgentAssistant() {
       <button
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-4 right-4 z-[75] flex h-20 w-20 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105 sm:bottom-8 sm:right-8 sm:h-40 sm:w-40"
-        title="Phantix Agent assistant"
-        aria-label="Toggle Phantix Agent assistant"
+        title="SecureGraph Agent assistant"
+        aria-label="Toggle SecureGraph Agent assistant"
       >
         <LottiePlayer animationData={chatbotData} className="h-20 w-20 sm:h-40 sm:w-40" loop />
       </button>
@@ -193,7 +193,7 @@ export default function AgentAssistant() {
               <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
                 <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
                 <div className="min-w-0">
-                  <p className="font-display text-sm font-semibold text-white">Phantix Agent</p>
+                  <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
                   <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
                     Security operations assistant
                     {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}

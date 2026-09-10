@@ -4,7 +4,7 @@ import {
   Activity, Plus, RefreshCw, Play, Trash2, Pencil, Wifi, WifiOff, AlertTriangle,
   Clock, CheckCircle2, XCircle, ExternalLink, Globe2, Server, ShieldCheck, Terminal,
 } from "lucide-react";
-import { Card, CardHeader, StatCard, Modal, EmptyState, StatusBadge, SeverityBadge, Spinner } from "@/components/ui";
+import { Card, CardHeader, StatCard, Modal, EmptyState, StatusBadge, SeverityBadge, Spinner, StatCardSkeleton, CardSectionSkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx, titleCase, formatBytes } from "@/lib/utils";
 import {
@@ -240,7 +240,15 @@ export default function SocAvailability() {
   }
 
   if (loading) {
-    return <div className="flex min-h-[30vh] items-center justify-center"><Spinner className="h-6 w-6" /></div>;
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} />)}
+        </div>
+        <CardSectionSkeleton rows={3} />
+        <CardSectionSkeleton rows={4} />
+      </div>
+    );
   }
 
   return (
@@ -371,7 +379,7 @@ export default function SocAvailability() {
       <Card>
         <CardHeader
           title="Download heartbeat agent"
-          subtitle="Install on the host. Phantix does not VPN in."
+          subtitle="Install on the host. SecureGraph does not VPN in."
           action={<Server size={16} className="text-gold-400" />}
         />
         <div className="mb-3 rounded-xl border border-gold-400/20 bg-gold-400/5 px-3.5 py-2.5 text-xs leading-5 text-slate-400">
@@ -462,7 +470,16 @@ export default function SocAvailability() {
 
       <Modal open={walkthroughOpen} onClose={() => setWalkthroughOpen(false)} title="Agent walkthrough" wide>
         {walkthroughLoading ? (
-          <div className="flex justify-center py-10"><Spinner className="h-6 w-6" /></div>
+          <div className="space-y-5 rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4">
+            {[0, 1, 2].map((b) => (
+              <div key={b} className="space-y-2.5" style={{ opacity: 1 - b * 0.18 }}>
+                <div className="skeleton h-3.5 w-52 max-w-full rounded" />
+                <div className="skeleton h-3 w-full rounded" />
+                <div className="skeleton h-3 w-full rounded" />
+                <div className="skeleton h-3 w-4/5 rounded" />
+              </div>
+            ))}
+          </div>
         ) : (
           <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4 text-xs leading-6 text-slate-300">
             {walkthroughMd ?? ""}

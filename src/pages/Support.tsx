@@ -30,7 +30,7 @@ export default function Support() {
     <div className="mx-auto max-w-[1000px]">
       <PageHeader
         title="Support"
-        description="Tickets route to the Phantix support desk. Staff reply from their console; you get email updates via alert SMTP."
+        description="Tickets route to the SecureGraph support desk. Staff reply from their console; you get email updates via alert SMTP."
         actions={<span className="flex items-center gap-2"><DocLink docId="howto-app-15" label="Support how-to" /><button className="btn-primary" onClick={() => setOpen(true)}><Plus size={15} /> New ticket</button></span>}
       />
 

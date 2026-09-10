@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
@@ -54,20 +54,35 @@ export default function AuthorizerInbox() {
   });
 
   const handleDecide = async (item: InboxItem, approve: boolean) => {
-    setActing(item.pendingId || item.requestId || item.treatmentId || null);
     const dp = (item as any).decidePaths ?? (item as any).decide_paths ?? {};
     const path = approve ? (dp.approve || dp.decide) : (dp.reject || dp.decide);
     if (!path) { toast("error", "No decision path"); return; }
 
+    // A rejection is a decision someone will have to answer for later, so it
+    // carries the authorizer's own words rather than a hardcoded "Rejected".
+    // The server requires at least 2 characters on the dual-control channel.
+    let reason = "";
+    if (!approve) {
+      const entered = window.prompt(`Why are you rejecting "${item.title || item.kind}"?`, "");
+      if (entered === null) return;
+      reason = entered.trim();
+      if (reason.length < 2) {
+        toast("error", "A reason is required", "Say why this was rejected — it is recorded on the audit trail.");
+        return;
+      }
+    }
+
+    setActing(item.pendingId || item.requestId || item.treatmentId || null);
+
     let body: Record<string, unknown>;
     if (item.channel === "vapt") {
       body = approve
-        ? { approve: true, notes: "Approved" }
-        : { approve: false, rejection_reason: "Rejected" };
+        ? { approve: true }
+        : { approve: false, rejection_reason: reason };
     } else if (approve) {
-      body = { notes: "Approved" };
+      body = {};
     } else {
-      body = { reason: "Rejected" };
+      body = { reason };
     }
 
     try {
@@ -198,6 +213,83 @@ export default function AuthorizerInbox() {
           <div><p className="text-sm font-medium text-white">Audit Trail</p><p className="text-xs text-slate-400">Pending actions</p></div>
         </a>
       </div>
+
+      <AuthorizerCatalog />
+    </div>
+  );
+}
+
+/**
+ * Reference list of what actually needs an authorizer, from
+ * GET /authorizer/catalog. Collapsed by default — it answers "why did this land
+ * in my inbox?" without competing with the queue itself.
+ */
+function AuthorizerCatalog() {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<Record<string, unknown>[] | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (!open || rows || failed) return;
+    void (async () => {
+      try {
+        const res = await api.get<{ items?: unknown[]; note?: string }>("/authorizer/catalog", { dualControl: true });
+        setRows(Array.isArray(res.items) ? (res.items as Record<string, unknown>[]) : []);
+        setNote(res.note ?? null);
+      } catch {
+        setFailed(true);
+      }
+    })();
+  }, [open, rows, failed]);
+
+  return (
+    <div className="mt-6">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between rounded-lg border border-phantix-700 bg-phantix-900/60 px-4 py-3 text-left transition-colors hover:border-phantix-600"
+      >
+        <span className="flex items-center gap-2 text-sm text-slate-300">
+          <Shield size={15} className="text-phantix-400" />
+          What requires an authorizer?
+        </span>
+        <span className="text-xs text-slate-500">{open ? "Hide" : "Show"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-2 rounded-lg border border-phantix-700 bg-phantix-900/40 p-4">
+          {failed ? (
+            <p className="text-xs text-slate-500">The catalog could not be loaded.</p>
+          ) : !rows ? (
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skeleton h-9 rounded-md" style={{ opacity: 1 - i * 0.2 }} />
+              ))}
+            </div>
+          ) : !rows.length ? (
+            <p className="text-xs text-slate-500">No action types are registered.</p>
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                {rows.map((r, i) => (
+                  <div key={i} className="rounded-md border border-phantix-700/60 bg-phantix-950/40 p-2.5">
+                    <p className="text-xs text-slate-200">
+                      {String(r.label ?? r.title ?? r.action_key ?? r.key ?? `Action ${i + 1}`)}
+                    </p>
+                    {(r.action_key ?? r.key) != null && (
+                      <p className="mt-0.5 font-mono text-[10px] text-slate-500">{String(r.action_key ?? r.key)}</p>
+                    )}
+                    {r.description != null && (
+                      <p className="mt-1 text-[11px] leading-4 text-slate-400">{String(r.description)}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {note && <p className="mt-3 text-[11px] leading-4 text-slate-500">{note}</p>}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

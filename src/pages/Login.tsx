@@ -54,6 +54,34 @@ function isDeviceBoundError(err: unknown): boolean {
   );
 }
 
+/**
+ * 429 login-throttle lock (staging-rollout §8). Failed logins are throttled per
+ * identifier (5 failures / 5 min → 429). The client dispatches
+ * "phantix:throttled" (lib/api.ts); this hook counts down the lock so submit
+ * buttons disable until it elapses. Returns remaining seconds (0 = unlocked).
+ */
+function useLoginThrottle(): number {
+  const [until, setUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const onThrottle = (e: Event) => {
+      const seconds = (e as CustomEvent<{ seconds?: number | null }>).detail?.seconds;
+      const wait = seconds && seconds > 0 ? seconds : 60;
+      setUntil(Date.now() + wait * 1000);
+      setNow(Date.now());
+    };
+    window.addEventListener("phantix:throttled", onThrottle);
+    return () => window.removeEventListener("phantix:throttled", onThrottle);
+  }, []);
+  useEffect(() => {
+    if (until == null) return;
+    const t = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [until == null]);
+  return until == null ? 0 : Math.max(0, Math.ceil((until - now) / 1000));
+}
+
 export default function Login() {
   const { enterDemo, toast } = useStore();
   const navigate = useNavigate();
@@ -144,9 +172,11 @@ function ReturningLogin({
   const [blocked, setBlocked] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [deviceWait, setDeviceWait] = useState(false);
+  const retryIn = useLoginThrottle();
 
   const startLogin = async () => {
     if (!email.trim() || !password) return;
+    if (retryIn > 0) return;
     setBusy(true);
     setError(null);
     setBlocked(null);
@@ -214,6 +244,7 @@ function ReturningLogin({
   };
 
   const verify = async () => {
+    if (retryIn > 0) return;
     setBusy(true);
     setError(null);
     try {
@@ -332,8 +363,8 @@ function ReturningLogin({
                   </div>
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || !email.trim() || !password}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
+                <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !email.trim() || !password}>
+                  {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
                 <NewsletterField />
                 <Link to="/password-reset" className="block text-center text-xs text-slate-500 hover:text-slate-300">Forgot password?</Link>
@@ -349,12 +380,12 @@ function ReturningLogin({
                     {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                   </p>
                 </div>
-                <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verify()} />
+                <OtpInput value={code} onChange={setCode} onEnter={() => retryIn === 0 && code.length === 6 && void verify()} />
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verify()}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : <>Verify & sign in</>}
+                <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || code.length !== 6} onClick={() => void verify()}>
+                  {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : <>Verify & sign in</>}
                 </button>
-                <button type="button" onClick={() => void resendCode()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
+                <button type="button" onClick={() => void resendCode()} disabled={busy || retryIn > 0} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Resend code</button>
                 <button type="button" onClick={() => { setStage("email"); setError(null); }} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">Use a different account</button>
               </motion.div>
             )}
@@ -425,6 +456,7 @@ function AppLoginFlow({
   const [orgName, setOrgName] = useState("");
   const [userName, setUserName] = useState("");
   const [blocked, setBlocked] = useState<string | null>(null);
+  const retryIn = useLoginThrottle();
 
   // Step 1: validate the invite link (APP_ACCESS_INVITE_AND_LOGIN_FE.md §6 Step A)
   useEffect(() => {
@@ -464,6 +496,7 @@ function AppLoginFlow({
 
   // Step B1 — first visit: set a new password (min 8)
   const handleSetPassword = async () => {
+    if (retryIn > 0) return;
     if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
     if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     setBusy(true);
@@ -495,6 +528,7 @@ function AppLoginFlow({
 
   // Step B2 — invite link + existing password
   const handlePassword = async () => {
+    if (retryIn > 0) return;
     setBusy(true);
     setError(null);
     try {
@@ -524,6 +558,7 @@ function AppLoginFlow({
 
   // Step C — MFA → dual tokens (+ dual-control session when eligible)
   const verifyMfa = async () => {
+    if (retryIn > 0) return;
     setBusy(true);
     setError(null);
     try {
@@ -653,7 +688,7 @@ function AppLoginFlow({
 
   // Resend the OTP for the invite flow (POST /app/auth/otp).
   const resendInviteOtp = async () => {
-    if (busy) return;
+    if (busy || retryIn > 0) return;
     setBusy(true);
     setError(null);
     try {
@@ -748,8 +783,8 @@ function AppLoginFlow({
                   </div>
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || !password || !confirmPassword}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Saving...</> : <>Set password & continue <ArrowRight size={15} /></>}
+                <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !password || !confirmPassword}>
+                  {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Saving...</> : <>Set password & continue <ArrowRight size={15} /></>}
                 </button>
               </motion.form>
             )}
@@ -765,8 +800,8 @@ function AppLoginFlow({
                   </div>
                 </div>
                 {error && <p className="text-sm text-severity-critical">{error}</p>}
-                <button className="btn-primary w-full !py-3" disabled={busy || !password}>
-                  {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Checking...</> : <>Continue <ArrowRight size={15} /></>}
+                <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !password}>
+                  {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Checking...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
               </motion.form>
             )}
@@ -819,12 +854,12 @@ function AppLoginFlow({
                         </p>
                       )}
                     </div>
-                    <OtpInput value={code} onChange={setCode} onEnter={() => code.length === 6 && void verifyMfa()} />
+                    <OtpInput value={code} onChange={setCode} onEnter={() => retryIn === 0 && code.length === 6 && void verifyMfa()} />
                     {error && <p className="text-sm text-severity-critical">{error}</p>}
-                    <button className="btn-primary w-full !py-3" disabled={busy || code.length !== 6} onClick={() => void verifyMfa()}>
-                      {busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : "Verify & sign in"}
+                    <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || code.length !== 6} onClick={() => void verifyMfa()}>
+                      {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : "Verify & sign in"}
                     </button>
-                    <button type="button" onClick={() => void resendInviteOtp()} disabled={busy} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
+                    <button type="button" onClick={() => void resendInviteOtp()} disabled={busy || retryIn > 0} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
                       Resend code
                     </button>
                     <p className="text-center text-[11px] text-slate-600">
@@ -931,7 +966,7 @@ function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
     try {
       const url = new URL(trimmed);
       if (!url.hostname.includes("phantix") && !url.hostname.includes("localhost")) {
-        setError("This doesn't look like a Phantix login link. Expected domain: app.phantixlabs.com");
+        setError("This doesn't look like a SecureGraph login link. Expected domain: app.phantixlabs.com");
         return;
       }
       if (!url.pathname.startsWith("/login")) {

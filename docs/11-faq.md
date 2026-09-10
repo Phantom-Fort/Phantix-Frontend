@@ -2,7 +2,7 @@
 
 ---
 
-### What is Phantix?
+### What is SecureGraph?
 
 A cybersecurity command centre: inventory, assessment, verified reporting, risk, compliance, alerts, and accountable AI — with your security data designed to stay in your database.
 

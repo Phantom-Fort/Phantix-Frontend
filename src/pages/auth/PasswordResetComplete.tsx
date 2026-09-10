@@ -64,7 +64,7 @@ export default function PasswordResetComplete() {
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
           <BrandLogo className="h-10 w-auto object-contain" />
-          <p className="mt-3 text-sm text-slate-400">Phantix Command Centre</p>
+          <p className="mt-3 text-sm text-slate-400">SecureGraph Command Centre</p>
         </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur">

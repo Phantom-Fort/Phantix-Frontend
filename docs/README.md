@@ -20,7 +20,7 @@ These documents are **client-facing**. Use them for:
 
 | File | Best for |
 |------|----------|
-| [01-what-is-phantix.md](./01-what-is-phantix.md) | Hero, one-liner, positioning |
+| [01-what-is-securegraph.md](./01-what-is-securegraph.md) | Hero, one-liner, positioning |
 | [02-for-business-leaders.md](./02-for-business-leaders.md) | CEOs, founders, boards |
 | [03-for-security-and-it.md](./03-for-security-and-it.md) | CISOs, IT managers, security engineers |
 | [04-for-investors-and-partners.md](./04-for-investors-and-partners.md) | Investors, MSSPs, resellers |

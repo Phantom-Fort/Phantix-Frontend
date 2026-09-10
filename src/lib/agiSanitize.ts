@@ -26,7 +26,7 @@ const PROVIDER_PATTERNS: RegExp[] = [
   /ENGINE_LEARNING/i,
   /AUTONOMY=/i,
   /ORG_ASSETS/i,
-  /You are PHANTIX AGI/i,
+  /You are SECUREGRAPH AGI/i,
 ];
 
 export function sanitizeAgiContent(content: string): string {
