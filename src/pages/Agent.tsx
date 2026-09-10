@@ -39,12 +39,14 @@ import {
   streamAgentRun,
   loadAgentSkills,
   setAgentSkillStatus,
+  confirmAgentScope,
 } from "@/lib/data";
+import AgentScopeGate, { type AgentScopeSelection } from "@/components/AgentScopeGate";
 import { PLATFORM_AI_URL } from "@/lib/links";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
 import { useChatSend } from "@/lib/useChatSend";
-import type { AiStatus, AgentSkill } from "@/lib/types";
+import type { AiStatus, AgentSkill, AgentScopeCard, AgentScopeGrant } from "@/lib/types";
 
 type ChatMsg = {
   role: "user" | "agent";
@@ -327,6 +329,9 @@ function AgentChat({
   const [liveRunId, setLiveRunId] = useState("");
   const [tools, setTools] = useState<{ tool: string; ok: boolean }[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(false);
+  const [scopeCard, setScopeCard] = useState<AgentScopeCard | null>(null);
+  const [scopeBusy, setScopeBusy] = useState(false);
+  const scopeResolver = useRef<((grant: AgentScopeGrant | null) => void) | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const chatSend = useChatSend();
 
@@ -355,6 +360,41 @@ function AgentChat({
     setLiveRunId("");
     setTools([]);
     setThinkingOpen(false);
+  };
+
+  // Org-data scope gate: the backend holds the model call and answers 409 with
+  // a scope card; this promise resolves once the operator confirms or cancels.
+  const requestScope = (card: AgentScopeCard) => {
+    setScopeCard(card);
+    return new Promise<AgentScopeGrant | null>((resolve) => { scopeResolver.current = resolve; });
+  };
+
+  const submitScope = async (selection: AgentScopeSelection) => {
+    if (!scopeCard?.selection_token) { cancelScope(); return; }
+    setScopeBusy(true);
+    try {
+      const grant = await confirmAgentScope({
+        selection_token: scopeCard.selection_token,
+        asset_ids: selection.asset_ids,
+        resource_ids: selection.resource_ids,
+        purpose: scopeCard.purpose,
+      });
+      scopeResolver.current?.(grant);
+    } catch (e) {
+      toast("error", "Scope confirmation failed", e instanceof Error ? e.message : "");
+      scopeResolver.current?.(null);
+    } finally {
+      scopeResolver.current = null;
+      setScopeBusy(false);
+      setScopeCard(null);
+    }
+  };
+
+  const cancelScope = () => {
+    scopeResolver.current?.(null);
+    scopeResolver.current = null;
+    setScopeBusy(false);
+    setScopeCard(null);
   };
 
   const send = (text?: string) => {
@@ -400,11 +440,14 @@ function AgentChat({
             const m = { role: "agent" as const, text: answer || "No response from agent.", thinking: thinking || undefined };
             setMessages((prev) => [...prev, m]);
             resetLive();
+          } else if (event === "scope_cancelled") {
+            setMessages((prev) => [...prev, { role: "agent", text: "Scope selection cancelled — no organization data was shared with the agent." }]);
           } else if (event === "error") {
             throw new Error(data?.error ?? "Agent stream error");
           }
         },
         controller.signal,
+        requestScope,
       );
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
@@ -454,11 +497,14 @@ function AgentChat({
             const skills = Array.isArray(data?.skills) ? data.skills.map(String) : undefined;
             setMessages((prev) => [...prev, { role: "agent", text: (data?.summary ?? summary) || `${domain} analysis complete.`, runId: liveRunId || undefined, skills }]);
             resetLive();
+          } else if (event === "scope_cancelled") {
+            setMessages((prev) => [...prev, { role: "agent", text: "Scope selection cancelled — no organization data was shared with the agent." }]);
           } else if (event === "error") {
             throw new Error(data?.error ?? "Run stream error");
           }
         },
         controller.signal,
+        requestScope,
       );
     } catch (e) {
       if ((e as Error)?.name !== "AbortError") {
@@ -649,6 +695,15 @@ function AgentChat({
           </p>
         </div>
       </Card>
+
+      {scopeCard && (
+        <AgentScopeGate
+          card={scopeCard}
+          busy={scopeBusy}
+          onConfirm={(selection) => void submitScope(selection)}
+          onCancel={cancelScope}
+        />
+      )}
     </motion.div>
   );
 }
