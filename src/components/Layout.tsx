@@ -135,6 +135,7 @@ const navSections: {
     label: "Governance",
     items: [
       { to: "/risks", label: "Risks", icon: <ShieldAlert size={17} /> },
+      { to: "/posture", label: "Posture", icon: <Activity size={17} /> },
       { type: "dropdown", label: "Compliance", icon: <Scale size={17} />, basePath: "/compliance", items: complianceSubItems },
       { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
       { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },

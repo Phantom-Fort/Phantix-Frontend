@@ -10,6 +10,7 @@ import {
   type VaptProcedure, type VaptSchedule,
 } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
+import ContinuousReassessmentCard from "@/components/ContinuousReassessmentCard";
 
 // ── Recurring VAPT schedules ─────────────────────────────────────────────────
 // A schedule runs a procedure against a scope on a cadence. Blackout windows
@@ -89,6 +90,8 @@ export default function VaptSchedules() {
               hint="soonest scheduled"
             />
           </div>
+
+          <ContinuousReassessmentCard />
 
           {!rows.length ? (
             <Card>

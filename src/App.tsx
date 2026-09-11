@@ -14,6 +14,7 @@ import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
 import Vapt from "@/pages/Vapt";
 import Code from "@/pages/Code";
+import Posture from "@/pages/Posture";
 import Risks from "@/pages/Risks";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
@@ -126,6 +127,7 @@ export default function App() {
             <Route path="/integrations" element={<RequireAuth><IntegrationsHub /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
             <Route path="/code" element={<RequireAuth><Code /></RequireAuth>} />
+            <Route path="/posture" element={<RequireAuth><Posture /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/vapt/schedules" element={<RequireAuth><VaptSchedules /></RequireAuth>} />
             <Route path="/vapt/settings" element={<RequireAuth><VaptSettings /></RequireAuth>} />

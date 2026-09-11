@@ -255,3 +255,56 @@ export function asArray<T>(v: T[] | { items?: T[] } | null | undefined): T[] {
   if (Array.isArray(v)) return v;
   return Array.isArray(v?.items) ? (v!.items as T[]) : [];
 }
+
+// ── Continuous reassessment (W4) ─────────────────────────────────────────────
+// Cadence + change-triggered re-assessment driven by product context.
+
+export interface ContinuousReassessmentSchedule {
+  id: number;
+  project_id?: number;
+  target_key?: string;
+  cadence?: string;
+  debounce_hours?: number;
+  is_active?: boolean;
+  schedule_name?: string | null;
+  next_run_at?: string | null;
+  last_run_at?: string | null;
+  created_at?: string | null;
+  [k: string]: unknown;
+}
+
+export interface ContinuousReassessmentEnable {
+  project_id: number;
+  target_key: string;
+  cadence?: string;
+  debounce_hours?: number;
+  asset_ids?: number[];
+  schedule_name?: string;
+}
+
+export async function listContinuousReassessment(projectId?: number) {
+  const qs = projectId ? `?project_id=${projectId}` : "";
+  return api.get<{ organization_id: number; schedules: ContinuousReassessmentSchedule[] }>(
+    `/vapt/continuous-reassessment${qs}`,
+  );
+}
+
+export async function enableContinuousReassessment(body: ContinuousReassessmentEnable) {
+  return api.post<ContinuousReassessmentSchedule>("/vapt/continuous-reassessment", {
+    debounce_hours: 24,
+    cadence: "7d",
+    ...body,
+  });
+}
+
+export async function proposeContinuousReassessment(body: {
+  project_id: number;
+  target_key: string;
+  asset_ids?: number[];
+  reason?: string;
+}) {
+  return api.post<{ ok: boolean; [k: string]: unknown }>("/vapt/continuous-reassessment/propose", {
+    reason: "manual",
+    ...body,
+  });
+}
