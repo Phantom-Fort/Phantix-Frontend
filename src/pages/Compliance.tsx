@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Scale, Play, Database, FileUp, ClipboardList, CheckCircle2, XCircle, HelpCircle, Plug } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Scale, Play, FileUp, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import DocLink from "@/components/DocLink";
-import { loadComplianceBundle, runComplianceAssessment, collectComplianceEvidence, addComplianceEvidence } from "@/lib/data";
+import { loadComplianceBundle, runComplianceAssessment, addComplianceEvidence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -32,7 +33,6 @@ export default function Compliance() {
   });
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [evidenceBusy, setEvidenceBusy] = useState(false);
-  const [collectBusy, setCollectBusy] = useState(false);
   const [evidenceForm, setEvidenceForm] = useState({
     framework_id: "",
     control_id: "",
@@ -90,20 +90,6 @@ export default function Compliance() {
     }
   };
 
-  const collectEvidence = async () => {
-    if (!(await requireDualControl("Evidence collection requires a dual-control operate session."))) return;
-    setCollectBusy(true);
-    try {
-      const res = await collectComplianceEvidence();
-      toast("success", "Collection started", res.message);
-      reload();
-    } catch (e: any) {
-      toast("error", "Collection failed", e?.message || "Could not start evidence collection");
-    } finally {
-      setCollectBusy(false);
-    }
-  };
-
   if (loading) {
     return <PageSkeleton variant="cards" rows={6} actions />;
   }
@@ -149,7 +135,6 @@ export default function Compliance() {
           { id: "frameworks", label: "Frameworks", count: complianceFrameworks.length },
           { id: "controls", label: "Control results", count: complianceControlResults.length },
           { id: "evidence", label: "Evidence", count: evidenceItems.length },
-          { id: "questionnaire", label: "Questionnaire" },
         ]}
         active={tab}
         onChange={setTab}
@@ -178,37 +163,17 @@ export default function Compliance() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5">
             <Card>
-              <CardHeader title="Evidence connectors" subtitle="Phase 4 --- live collection into your security DB" />
-              <div className="space-y-2.5">
-                {[
-                  { name: "wazuh", state: "configured", note: "SIEM alerts + agent coverage" },
-                  { name: "manual", state: "ready", note: "Policy uploads & attestations" },
-                  { name: "azure", state: "scaffold", note: "Graph sample mode" },
-                  { name: "aws", state: "scaffold", note: "IAM sample mode" },
-                ].map((c) => (
-                  <div key={c.name} className="flex items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
-                    <Plug size={15} className={c.state === "configured" ? "text-emerald-400" : "text-slate-500"} />
-                    <div className="flex-1">
-                      <p className="font-mono text-sm text-slate-200">{c.name}</p>
-                      <p className="text-xs text-slate-500">{c.note}</p>
-                    </div>
-                    <StatusBadge status={c.state === "configured" ? "ready" : c.state === "ready" ? "pending" : "draft"} />
-                  </div>
-                ))}
-              </div>
-              <button
-                className="btn-secondary mt-4 w-full"
-                onClick={() => void collectEvidence()}
-                disabled={collectBusy}
-              >
-                <Database size={14} /> {collectBusy ? "Collecting..." : "Collect evidence now"}
-              </button>
-            </Card>
-
-            <Card>
-              <CardHeader title="Recommended frameworks" subtitle="From your business profile (jurisdiction + industry)" />
+              <CardHeader
+                title="Recommended frameworks"
+                subtitle="From your business profile (jurisdiction + industry)"
+                action={
+                  <Link to="/compliance/connectors" className="text-xs font-semibold text-gold-400 hover:text-gold-300">
+                    Evidence connectors →
+                  </Link>
+                }
+              />
               <div className="space-y-2.5">
                 {complianceFrameworks.filter((f) => f.recommended).map((f) => (
                   <div key={f.id} className="flex items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
@@ -326,44 +291,6 @@ export default function Compliance() {
               </Card>
             </motion.div>
           ))}
-        </motion.div>
-      )}
-
-      {tab === "questionnaire" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-            <Card className="lg:col-span-1">
-              <CardHeader title="Your progress" subtitle="Merged across applicable frameworks" />
-              <div className="flex items-center justify-center py-2">
-                <ProgressRing value={68} size={140} color="#E8B54D">
-                  <span className="font-display text-3xl font-bold text-white">68%</span>
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500">answered</span>
-                </ProgressRing>
-              </div>
-              <p className="mt-2 text-center text-xs leading-5 text-slate-500">
-                Questions merge across ISO 27001, NDPR, SOC 2 and PCI DSS --- one answer can satisfy multiple controls.
-              </p>
-            </Card>
-            <Card className="lg:col-span-2">
-              <CardHeader title="Answering rules" subtitle="Multi-user GRC attribution" action={<ClipboardList size={15} className="text-slate-500" />} />
-              <div className="space-y-3 text-sm leading-6 text-slate-300">
-                {[
-                  ["Declare your role first", "POST /compliance/questionnaire/session with stated_role (e.g. CISO) before answering --- required for audit."],
-                  ["Per-user upserts", "Multiple org users can answer the same question; the worst answer wins in merged assessments."],
-                  ["Full attribution", "Every answer stores user id, name, email, stated role and session id --- exportable via GET .../answers."],
-                  ["Named users only", "Company-only JWTs may be rejected --- answer as an org user."],
-                ].map(([t, d]) => (
-                  <div key={t} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
-                    <p className="font-semibold text-slate-100">{t}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-400">{d}</p>
-                  </div>
-                ))}
-              </div>
-              <button className="btn-primary mt-4" onClick={() => toast("info", "Questionnaire", "Continue answering --- 32 of 47 questions complete.")}>
-                Continue questionnaire
-              </button>
-            </Card>
-          </div>
         </motion.div>
       )}
 

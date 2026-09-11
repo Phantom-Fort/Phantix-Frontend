@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Share2, Shield, Upload,
+  Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Share2, Upload,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
@@ -266,9 +266,9 @@ function ProjectDrawer({ project, onClose }: { project: ProductProject; onClose:
     <Modal open onClose={onClose} title={project.name} wide>
       <div className="space-y-5">
         <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Components" value={String(components.length)} icon={<Boxes size={16} />} />
-          <StatCard label="Flows" value={String(flows.length)} icon={<GitFork size={16} />} />
-          <StatCard label="Crossing boundaries" value={String(flows.filter((f) => f.crosses_boundary).length)} icon={<Shield size={16} />} />
+          <StatCard label="Components" value={String(components.length)} />
+          <StatCard label="Flows" value={String(flows.length)} />
+          <StatCard label="Crossing boundaries" value={String(flows.filter((f) => f.crosses_boundary).length)} />
         </div>
 
         <div className="flex flex-wrap gap-2">

@@ -21,6 +21,8 @@
     --phantix-200: 212 212 216;  /* zinc-300 */
     --phantix-100: 228 228 231;  /* zinc-200 */
 
+    --gold-100: 250 227 179;
+    --gold-200: 246 214 148;
     --gold-300: 243 205 126;
     --gold-400: 232 181 77;
     --gold-500: 212 162 78;
@@ -84,6 +86,8 @@
     --phantix-200: 63 63 70;     /* zinc-700 */
     --phantix-100: 39 39 42;     /* zinc-800 */
 
+    --gold-100: 154 103 22;
+    --gold-200: 154 103 22;
     --gold-300: 154 103 22;
     --gold-400: 154 103 22;
     --gold-500: 127 78 12;
@@ -127,25 +131,156 @@
   :root[data-theme="light"] .btn-primary {
     background-color: #ffffff;
     border-color: rgb(154 103 22 / 0.45);
-    color: rgb(154 103 22);
+    color: rgb(120 74 12);
   }
 
+  /* Gold borders at low alpha (tuned for a bright gold-400 sitting on a near-
+     black dark-theme surface) go nearly invisible once gold-400 itself becomes
+     a dark brown on a white light-theme surface — same alpha fraction, far
+     less contrast against white. Re-baseline each fraction actually used in
+     the app so chip/card outlines stay crisp in light mode too. */
+  :root[data-theme="light"] .border-gold-400\/15 { border-color: rgb(120 74 12 / 0.35); }
+  :root[data-theme="light"] .border-gold-400\/20 { border-color: rgb(120 74 12 / 0.4); }
+  :root[data-theme="light"] .border-gold-400\/25 { border-color: rgb(120 74 12 / 0.45); }
+  :root[data-theme="light"] .border-gold-400\/30 { border-color: rgb(120 74 12 / 0.5); }
+  :root[data-theme="light"] .border-gold-400\/40 { border-color: rgb(120 74 12 / 0.55); }
+  :root[data-theme="light"] .border-gold-400\/50 { border-color: rgb(120 74 12 / 0.65); }
+  :root[data-theme="light"] .border-gold-400\/60 { border-color: rgb(120 74 12 / 0.7); }
+
   /* Gold stays as text accent, never a background fill. */
+  :root[data-theme="light"] .text-gold-100,
+  :root[data-theme="light"] .text-gold-200,
   :root[data-theme="light"] .text-gold-300,
   :root[data-theme="light"] .text-gold-400,
   :root[data-theme="light"] .text-gold-500,
   :root[data-theme="light"] .text-gold-600 {
-    color: rgb(154 103 22);
+    color: rgb(120 74 12);
   }
+  /* NOTE: this used to also match `.chip.text-gold-300/400` to strip padding
+     and background — but nearly every functional status chip in the app
+     (Security DB, Demo tenant, PAT badges, running/ready states, etc.) uses
+     that exact class combo, so the rule was collapsing them to bare bordered
+     text with no chip padding in light mode. Scoped back down to its actual
+     cases: an icon inheriting gold text inside a chip, and gold text nested
+     inside an already gold-filled container (where a second bg/padding would
+     double up). */
   :root[data-theme="light"] svg.text-gold-300,
   :root[data-theme="light"] svg.text-gold-400,
   :root[data-theme="light"] svg.text-gold-500,
-  :root[data-theme="light"] .chip.text-gold-300,
-  :root[data-theme="light"] .chip.text-gold-400,
   :root[data-theme="light"] [class*="bg-gold"] .text-gold-300,
   :root[data-theme="light"] [class*="bg-gold"] .text-gold-400 {
     background-color: transparent;
     padding: 0;
+  }
+
+  /* Non-brand accent colors (warning/success/info/reasoning chips and banners)
+     are plain Tailwind palette classes, not CSS-var-backed like gold/severity/
+     slate — so unlike those, they never adapt to the light theme on their own.
+     The 100–300 shades are tuned for light text on a near-black surface; on a
+     white surface they wash out to near-invisible. Darken them here so every
+     amber/emerald/sky/purple/violet banner stays readable in light mode
+     without having to touch each call site individually. */
+  :root[data-theme="light"] .text-amber-100,
+  :root[data-theme="light"] .text-amber-200,
+  :root[data-theme="light"] .text-amber-300,
+  :root[data-theme="light"] .text-amber-400 {
+    color: rgb(146 64 14); /* amber-800 */
+  }
+  :root[data-theme="light"] .text-emerald-100,
+  :root[data-theme="light"] .text-emerald-200,
+  :root[data-theme="light"] .text-emerald-300,
+  :root[data-theme="light"] .text-emerald-400 {
+    color: rgb(6 95 70); /* emerald-800 */
+  }
+  :root[data-theme="light"] .text-green-100,
+  :root[data-theme="light"] .text-green-200,
+  :root[data-theme="light"] .text-green-300,
+  :root[data-theme="light"] .text-green-400 {
+    color: rgb(22 101 52); /* green-800 */
+  }
+  :root[data-theme="light"] .text-lime-100,
+  :root[data-theme="light"] .text-lime-200,
+  :root[data-theme="light"] .text-lime-300,
+  :root[data-theme="light"] .text-lime-400 {
+    color: rgb(63 98 18); /* lime-800 */
+  }
+  :root[data-theme="light"] .text-yellow-100,
+  :root[data-theme="light"] .text-yellow-200,
+  :root[data-theme="light"] .text-yellow-300,
+  :root[data-theme="light"] .text-yellow-400 {
+    color: rgb(133 77 14); /* yellow-800 */
+  }
+  :root[data-theme="light"] .text-orange-100,
+  :root[data-theme="light"] .text-orange-200,
+  :root[data-theme="light"] .text-orange-300,
+  :root[data-theme="light"] .text-orange-400 {
+    color: rgb(154 52 18); /* orange-800 */
+  }
+  :root[data-theme="light"] .text-teal-100,
+  :root[data-theme="light"] .text-teal-200,
+  :root[data-theme="light"] .text-teal-300,
+  :root[data-theme="light"] .text-teal-400 {
+    color: rgb(17 94 89); /* teal-800 */
+  }
+  :root[data-theme="light"] .text-cyan-100,
+  :root[data-theme="light"] .text-cyan-200,
+  :root[data-theme="light"] .text-cyan-300,
+  :root[data-theme="light"] .text-cyan-400 {
+    color: rgb(21 94 117); /* cyan-800 */
+  }
+  :root[data-theme="light"] .text-sky-100,
+  :root[data-theme="light"] .text-sky-200,
+  :root[data-theme="light"] .text-sky-300,
+  :root[data-theme="light"] .text-sky-400 {
+    color: rgb(7 89 133); /* sky-800 */
+  }
+  :root[data-theme="light"] .text-blue-100,
+  :root[data-theme="light"] .text-blue-200,
+  :root[data-theme="light"] .text-blue-300,
+  :root[data-theme="light"] .text-blue-400 {
+    color: rgb(30 64 175); /* blue-800 */
+  }
+  :root[data-theme="light"] .text-indigo-100,
+  :root[data-theme="light"] .text-indigo-200,
+  :root[data-theme="light"] .text-indigo-300,
+  :root[data-theme="light"] .text-indigo-400 {
+    color: rgb(55 48 163); /* indigo-800 */
+  }
+  :root[data-theme="light"] .text-purple-100,
+  :root[data-theme="light"] .text-purple-200,
+  :root[data-theme="light"] .text-purple-300,
+  :root[data-theme="light"] .text-purple-400 {
+    color: rgb(107 33 168); /* purple-800 */
+  }
+  :root[data-theme="light"] .text-violet-100,
+  :root[data-theme="light"] .text-violet-200,
+  :root[data-theme="light"] .text-violet-300,
+  :root[data-theme="light"] .text-violet-400 {
+    color: rgb(91 33 182); /* violet-800 */
+  }
+  :root[data-theme="light"] .text-fuchsia-100,
+  :root[data-theme="light"] .text-fuchsia-200,
+  :root[data-theme="light"] .text-fuchsia-300,
+  :root[data-theme="light"] .text-fuchsia-400 {
+    color: rgb(134 25 143); /* fuchsia-800 */
+  }
+  :root[data-theme="light"] .text-pink-100,
+  :root[data-theme="light"] .text-pink-200,
+  :root[data-theme="light"] .text-pink-300,
+  :root[data-theme="light"] .text-pink-400 {
+    color: rgb(157 23 77); /* pink-800 */
+  }
+  :root[data-theme="light"] .text-rose-100,
+  :root[data-theme="light"] .text-rose-200,
+  :root[data-theme="light"] .text-rose-300,
+  :root[data-theme="light"] .text-rose-400 {
+    color: rgb(159 18 57); /* rose-800 */
+  }
+  :root[data-theme="light"] .text-red-100,
+  :root[data-theme="light"] .text-red-200,
+  :root[data-theme="light"] .text-red-300,
+  :root[data-theme="light"] .text-red-400 {
+    color: rgb(153 27 27); /* red-800 */
   }
 
   /* Brand / CTA panels — always a dark neutral background (not navy). */

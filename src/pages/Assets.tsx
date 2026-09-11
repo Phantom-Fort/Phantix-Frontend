@@ -7,7 +7,7 @@ import DocLink from "@/components/DocLink";
 import MobileHandoffCard from "@/components/MobileHandoffCard";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
-import { timeAgo, titleCase, cx } from "@/lib/utils";
+import { timeAgo, titleCase, cx, severityMeta } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { api, tokens, API_BASE, ApiError } from "@/lib/api";
 import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@/lib/assetTags";
@@ -874,7 +874,11 @@ export default function Assets() {
               })()}
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">{titleCase(selected.asset_type)}</span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300 capitalize">{selected.environment}</span>
-              <span className="chip border-severity-high/30 bg-severity-high/10 text-severity-high capitalize">{selected.criticality} criticality</span>
+              {(() => {
+                const key = String(selected.criticality ?? "").toLowerCase() as keyof typeof severityMeta;
+                const m = severityMeta[key] ?? severityMeta.medium;
+                return <span className={cx("chip capitalize", m.bg, m.color, m.border)}>{selected.criticality} criticality</span>;
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               {[

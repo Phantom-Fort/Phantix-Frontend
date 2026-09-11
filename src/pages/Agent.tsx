@@ -591,7 +591,7 @@ function AgentChat({
                       </StepsItem>
                     </Steps>
                   )}
-                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
+                  <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
                   {m.skills && m.skills.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[10px] text-slate-500">Skills:</span>
@@ -653,7 +653,7 @@ function AgentChat({
                 )}
                 {liveRunId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveAnswer && (
-                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
+                  <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
                 )}
               </div>
             </div>

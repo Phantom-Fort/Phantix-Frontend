@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BadgeCheck, ClipboardList, Info, Loader2, RefreshCw, Search, UserCheck, Users,
+  ClipboardList, Info, Loader2, RefreshCw, Search, UserCheck, Users,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, ProgressBar, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, ProgressBar, RiskBadge, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import { ApiError } from "@/lib/api";
 import {
@@ -190,15 +190,14 @@ export default function ComplianceQuestionnaire() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Answered" value={`${p.answered_unique_questions}/${p.total_questions}`} icon={<ClipboardList size={18} />} hint={`${p.unanswered} left`} />
-            <StatCard label="Complete" value={`${Math.round(p.percent_complete)}%`} icon={<BadgeCheck size={18} />} hint="of applicable controls" />
+            <StatCard label="Answered" value={`${p.answered_unique_questions}/${p.total_questions}`} hint={`${p.unanswered} left`} />
+            <StatCard label="Complete" value={`${Math.round(p.percent_complete)}%`} hint="of applicable controls" />
             <StatCard
               label="Attestation level"
               value={p.compliance_level?.label ?? "Not started"}
-              icon={<BadgeCheck size={18} />}
               hint={p.attestation_score != null ? `score ${Math.round(p.attestation_score)}` : "no score yet"}
             />
-            <StatCard label="Answer events" value={String(p.total_answer_events)} icon={<Users size={18} />} hint="including colleagues" />
+            <StatCard label="Answer events" value={String(p.total_answer_events)} hint="including colleagues" />
           </div>
 
           <Card>
@@ -382,7 +381,7 @@ function QuestionRow({
             {question.framework_ids.map((f) => (
               <span key={f} className="chip border-phantix-700 uppercase text-phantix-300">{f}</span>
             ))}
-            {question.risk && <span className="chip border-severity-medium/30 text-severity-medium">{question.risk}</span>}
+            {question.risk && <RiskBadge level={question.risk} />}
             {question.answer_count > 0 && (
               <button onClick={onShowAudit} className="chip border-phantix-700 text-slate-400 hover:text-slate-200">
                 <Users size={10} className="mr-1 inline" />

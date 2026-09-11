@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
+import { RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@/lib/complianceGrc";
@@ -98,7 +98,7 @@ export default function ComplianceGaps() {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Compliance gaps"
         description="Your live findings mapped onto framework controls. What is left is the set of controls nothing in your current security posture demonstrates."
@@ -131,14 +131,14 @@ export default function ComplianceGaps() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Open gaps" value={String(data.gaps.length)} icon={<AlertTriangle size={18} />} hint="controls not demonstrated" />
-            <StatCard label="Controls touched" value={String(data.controls_touched.length)} icon={<ShieldCheck size={18} />} hint="covered by findings" />
-            <StatCard label="Findings mapped" value={String(data.findings_in)} icon={<Target size={18} />} hint="fed into the mapping" />
-            <StatCard label="Frameworks" value={String(data.frameworks.length)} icon={<ShieldCheck size={18} />} hint={data.frameworks.join(", ") || "none resolved"} />
+            <StatCard label="Open gaps" value={String(data.gaps.length)} hint="controls not demonstrated" />
+            <StatCard label="Controls touched" value={String(data.controls_touched.length)} hint="covered by findings" />
+            <StatCard label="Findings mapped" value={String(data.findings_in)} hint="fed into the mapping" />
+            <StatCard label="Frameworks" value={String(data.frameworks.length)} hint={data.frameworks.join(", ") || "none resolved"} />
           </div>
 
           {mapping && (
-            <div className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-200">
+            <div className="rounded-md border border-gold-400/30 bg-gold-400/10 px-3 py-2 text-xs text-gold-200">
               Mapped <strong>{mapping.findings_in ?? 0}</strong> finding(s) →{" "}
               <strong>{mapping.mappings?.length ?? mapping.summary?.mapping_rows ?? 0}</strong> control mapping(s)
               {Array.isArray(mapping.frameworks) && mapping.frameworks.length > 0

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, Send, Smartphone, ShieldCheck, AlertTriangle } from "lucide-react";
-import { Card, CardHeader } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
@@ -57,13 +57,11 @@ export default function MobileHandoffCard() {
   };
 
   return (
-    <Card>
-      <CardHeader
-        title="Mobile endpoints → authorized scope"
-        subtitle="Hand off discovered mobile API endpoints to W4 reassessment (never auto-scans)"
-        action={<Smartphone size={16} className="text-gold-300" />}
-      />
-      <div className="space-y-3">
+    <Card hover className="flex flex-col">
+      <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><Smartphone size={18} /></span>
+      <h3 className="font-display text-[15px] font-semibold text-slate-100">Mobile endpoints → authorized scope</h3>
+      <p className="mt-1.5 text-[13px] leading-6 text-slate-400">Hand off discovered mobile API endpoints to W4 reassessment (never auto-scans)</p>
+      <div className="mt-4 space-y-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Product project</label>

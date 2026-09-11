@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, GitBranch, Lightbulb, RefreshCw, Search, Workflow } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, Tabs, PageBodySkeleton } from "@/components/ui";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, SeverityBadge, Spinner, StatCard, Tabs, PageBodySkeleton } from "@/components/ui";
 import {
   asArray, listCorrelationRules, listMinedCandidates, listProcedures,
   procedureKey, procedureName,
   type CorrelationRule, type RuleCandidate, type VaptProcedure,
 } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
+import type { Severity } from "@/lib/types";
 
 // ── Procedure catalogue, correlation rules and mined candidates ──────────────
 // Read-only reference for what the testing engine can run and how it correlates
@@ -17,6 +18,11 @@ type Tab = "procedures" | "rules" | "candidates";
 
 function text(v: unknown, fallback = "—"): string {
   return v == null || v === "" ? fallback : String(v);
+}
+
+function sevOf(s: unknown): Severity {
+  const v = String(s ?? "").toLowerCase();
+  return (["critical", "high", "medium", "low", "info"] as const).includes(v as Severity) ? (v as Severity) : "info";
 }
 
 export default function VaptProcedures() {
@@ -77,7 +83,7 @@ export default function VaptProcedures() {
   }, [procedures]);
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Procedures & correlation"
         description="What the testing engine can run, how it correlates findings, and which new rules it has mined from observed patterns."
@@ -107,9 +113,9 @@ export default function VaptProcedures() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Procedures" value={String(procedures.length)} icon={<BookOpen size={18} />} hint={`${Object.keys(categories).length} categories`} />
-            <StatCard label="Correlation rules" value={String(rules.length)} icon={<GitBranch size={18} />} hint="builtin + org overrides" />
-            <StatCard label="Mined candidates" value={String(candidates.length)} icon={<Lightbulb size={18} />} hint="awaiting review" />
+            <StatCard label="Procedures" value={String(procedures.length)} hint={`${Object.keys(categories).length} categories`} />
+            <StatCard label="Correlation rules" value={String(rules.length)} hint="builtin + org overrides" />
+            <StatCard label="Mined candidates" value={String(candidates.length)} hint="awaiting review" />
           </div>
 
           <Tabs
@@ -166,7 +172,7 @@ export default function VaptProcedures() {
                         {r.rule_key && <p className="mt-1 font-mono text-[11px] text-slate-500">{text(r.rule_key)}</p>}
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
-                        {r.severity && <span className="chip border-phantix-700 capitalize text-slate-400">{text(r.severity)}</span>}
+                        {r.severity && <SeverityBadge severity={sevOf(r.severity)} />}
                         {r.source && <span className="chip border-phantix-700 text-slate-500">{text(r.source)}</span>}
                       </div>
                     </div>

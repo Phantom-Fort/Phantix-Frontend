@@ -64,7 +64,7 @@ export default function VaptSettings() {
   const mining = Boolean(settings?.mining_consent_enabled);
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="VAPT settings"
         description="How the testing engine behaves for your organization — data-mining consent and the severity floor at which the AI planner gets involved."

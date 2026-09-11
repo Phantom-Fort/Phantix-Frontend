@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Activity, RefreshCw, RotateCcw, BookOpen, AlertTriangle, TrendingDown, Layers } from "lucide-react";
-import { PageHeader, Card, CardHeader, EmptyState, Spinner, StatCard } from "@/components/ui";
+import { PageHeader, Card, CardHeader, EmptyState, Spinner, StatCard, RiskBadge, PageBodySkeleton } from "@/components/ui";
 import { api } from "@/lib/api";
+import { loadPostureSnapshot, loadPostureReviewsDue, loadPostureDrift } from "@/lib/vaptOps";
+import { listProjects } from "@/lib/productContext";
 import { useStore } from "@/lib/store";
 import { cx, timeAgo } from "@/lib/utils";
 
@@ -65,9 +67,9 @@ export default function Posture() {
   const load = useCallback(async () => {
     setLoading(true);
     const [snap, proj, dueRes] = await Promise.all([
-      api.get<PostureSnapshot>("/posture").catch(() => null),
-      api.get<any>("/context/projects").catch(() => null),
-      api.get<any>("/posture/reviews-due").catch(() => null),
+      loadPostureSnapshot().catch(() => null),
+      listProjects().catch(() => null),
+      loadPostureReviewsDue().catch(() => null),
     ]);
     setSnapshot(snap);
     const items: Project[] = Array.isArray(proj) ? proj : (proj?.items ?? []);
@@ -85,7 +87,7 @@ export default function Posture() {
     async (id: number) => {
       setDriftLoading(true);
       try {
-        setDrift(await api.get<any>(`/posture/drift?project_id=${id}`));
+        setDrift(await loadPostureDrift(id));
       } catch {
         setDrift(null);
       } finally {
@@ -127,7 +129,7 @@ export default function Posture() {
   const surfaces = Object.entries(snapshot?.surfaces ?? {});
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Posture"
         description="Per-surface posture, product-context drift and accepted risks due for re-review (continuous loop)."
@@ -138,8 +140,8 @@ export default function Posture() {
         }
       />
 
-      {loading ? (
-        <div className="p-6"><Spinner /></div>
+      {loading && !snapshot ? (
+        <PageBodySkeleton stats={4} variant="section" rows={5} />
       ) : (
         <div className="space-y-5">
           {/* Overall + surfaces */}
@@ -261,7 +263,7 @@ export default function Posture() {
                     {due.map((r) => (
                       <tr key={r.id} className="border-b border-phantix-700/20 hover:bg-phantix-800/40">
                         <td className="td text-sm text-slate-200">{r.title || `Risk #${r.id}`}</td>
-                        <td className="td text-xs capitalize text-slate-300">{r.risk_level || "—"}</td>
+                        <td className="td">{r.risk_level ? <RiskBadge level={r.risk_level} /> : <span className="text-xs text-slate-500">—</span>}</td>
                         <td className="td text-xs text-slate-300">{r.residual_risk_score ?? r.residual_risk_level ?? "—"}</td>
                         <td className="td text-xs text-slate-500">{r.accepted_at ? timeAgo(r.accepted_at) : "—"}</td>
                         <td className="td text-xs text-severity-high">{r.next_review_at ? timeAgo(r.next_review_at) : "—"}</td>

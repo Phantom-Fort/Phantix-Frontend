@@ -308,3 +308,68 @@ export async function proposeContinuousReassessment(body: {
     ...body,
   });
 }
+
+// ── Posture (continuous loop — W7 LOOP-01/02/03) ─────────────────────────────
+// Per-surface posture snapshot, accepted risks due for re-review, and
+// product-context drift. Backs src/pages/Posture.tsx.
+
+export interface PostureSurfaceScore {
+  score?: number;
+  total?: number;
+  reportable?: number;
+  critical?: number;
+  high?: number;
+}
+
+export interface PostureSnapshot {
+  organization_id?: number;
+  surfaces?: Record<string, PostureSurfaceScore>;
+  overall_score?: number | null;
+  surfaces_covered?: number;
+  generated_at?: string;
+}
+
+export interface PostureDueRisk {
+  id: number;
+  title?: string;
+  risk_level?: string;
+  residual_risk_score?: number | null;
+  residual_risk_level?: string | null;
+  accepted_at?: string | null;
+  next_review_at?: string | null;
+  review_interval_days?: number | null;
+  asset_id?: number | null;
+  vulnerability_key?: string | null;
+  treatment_plan?: string | null;
+}
+
+export interface PostureDrift {
+  drift_count?: number;
+  drift?: Array<{ project_name?: string; project_id?: number; reason?: string; detail?: string }>;
+  projects?: number;
+  [k: string]: unknown;
+}
+
+export async function loadPostureSnapshot() {
+  if (isDemoMode()) {
+    await delay();
+    return demo.postureSnapshot;
+  }
+  return api.get<PostureSnapshot>("/posture");
+}
+
+export async function loadPostureReviewsDue() {
+  if (isDemoMode()) {
+    await delay();
+    return { risks: demo.postureReviewsDue };
+  }
+  return api.get<{ risks: PostureDueRisk[] }>("/posture/reviews-due");
+}
+
+export async function loadPostureDrift(projectId: number) {
+  if (isDemoMode()) {
+    await delay(320);
+    return demo.postureDrift[projectId] ?? { drift_count: 0, drift: [], projects: 0 };
+  }
+  return api.get<PostureDrift>(`/posture/drift?project_id=${projectId}`);
+}

@@ -91,7 +91,10 @@ export function NotificationBell() {
       >
         <Bell size={16} />
         {unread > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[9px] font-bold text-white">
+          <span
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[9px] font-bold"
+            style={{ color: "#fff" }}
+          >
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -278,7 +281,7 @@ export default function AlertNotifications() {
               <button
                 onClick={dismissBlocking}
                 aria-label="Dismiss critical alert"
-                className="absolute -right-1 -top-1 rounded-full border border-white/30 bg-severity-critical p-2 text-white/90 transition-colors hover:bg-white/10"
+                className="absolute -right-1 -top-1 rounded-full border border-[#ffffff]/30 bg-severity-critical p-2 text-[#ffffff]/90 transition-colors hover:bg-[#ffffff]/10"
               >
                 <X size={18} />
               </button>
@@ -286,23 +289,23 @@ export default function AlertNotifications() {
               <div className="relative mx-auto h-24 w-24">
                 <span className="absolute inset-0 animate-ping rounded-full bg-red-300/40" />
                 <span className="absolute inset-0 animate-pulse rounded-full bg-red-200/30" />
-                <span className="absolute inset-0 flex items-center justify-center rounded-full border-2 border-white/60 bg-gradient-to-br from-red-500 to-red-700 shadow-glow-red">
-                  <AlertTriangle size={44} className="text-white" />
+                <span className="absolute inset-0 flex items-center justify-center rounded-full border-2 border-[#ffffff]/60 bg-gradient-to-br from-red-500 to-red-700 shadow-glow-red">
+                  <AlertTriangle size={44} className="text-[#ffffff]" />
                 </span>
               </div>
 
-              <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-red-100/90">
+              <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fee2e2]/90">
                 <BellRing size={13} /> Critical security alert
               </p>
-              <h2 className="mt-3 font-display text-2xl font-bold leading-tight text-white">{blocking.title}</h2>
-              <p className="mt-3 text-sm text-red-100/80">
+              <h2 className="mt-3 font-display text-2xl font-bold leading-tight text-[#ffffff]">{blocking.title}</h2>
+              <p className="mt-3 text-sm text-[#fee2e2]/80">
                 A critical alert was sent to your organization's email recipients. Review it immediately.
-                {blocking.eventType && <span className="mt-1 block font-mono text-xs text-red-200/70">{blocking.eventType}</span>}
+                {blocking.eventType && <span className="mt-1 block font-mono text-xs text-[#fecaca]/70">{blocking.eventType}</span>}
               </p>
 
               <button
                 onClick={dismissBlocking}
-                className="mt-8 rounded-xl border border-white/40 bg-white/10 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"
+                className="mt-8 rounded-xl border border-[#ffffff]/40 bg-[#ffffff]/10 px-6 py-2.5 text-sm font-semibold text-[#ffffff] transition-colors hover:bg-[#ffffff]/20"
               >
                 Dismiss
               </button>

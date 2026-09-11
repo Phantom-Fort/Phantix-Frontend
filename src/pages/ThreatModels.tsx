@@ -147,20 +147,63 @@ export default function ThreatModels() {
             project-scoped index (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>).
           </p>
 
-          <Card>
-            <CardHeader title="Products" subtitle="Add a product's information, then generate its model" />
-            {!projects.length ? (
+          {!projects.length ? (
+            <Card>
+              <CardHeader title="Your product" subtitle="Add its information, then generate its model" />
               <EmptyState
                 icon={<ShieldAlert size={22} />}
-                title="No products yet"
-                body="Create a product, then add its information — product description, architecture diagram or requirements. Threats are derived from that context."
+                title="No product yet"
+                body="Create your product, then add its information — product description, architecture diagram or requirements. Threats are derived from that context."
                 action={
                   <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
                     <Plus size={13} className="mr-1.5 inline" /> New product
                   </button>
                 }
               />
-            ) : (
+            </Card>
+          ) : projects.length === 1 ? (
+            // Single-product orgs go straight to the Inputs/Generate flow — there's
+            // nothing to choose between, so we don't frame this as a product picker.
+            (() => {
+              const p = projects[0];
+              const summary = summaries[p.id];
+              const notReady = summary != null && !summary.ready;
+              return (
+                <Card>
+                  <CardHeader
+                    title={p.name}
+                    subtitle={`#${p.id} · ${p.stage}`}
+                    action={
+                      <button onClick={() => setCreating(true)} className="btn-ghost text-xs !py-1.5" title="Add another product">
+                        <Plus size={12} className="mr-1.5 inline" /> Add product
+                      </button>
+                    }
+                  />
+                  <ReadinessChips summary={summary} />
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setInputsFor(p)}
+                      className={cx("btn-secondary text-xs !py-1.5", notReady && "text-gold-200")}
+                      title="Add product information, a diagram or requirements"
+                    >
+                      <FileText size={12} className="mr-1.5 inline" /> Inputs
+                    </button>
+                    <button
+                      onClick={() => void generate(p)}
+                      disabled={generating === p.id}
+                      className="btn-primary text-xs !py-1.5 disabled:opacity-40"
+                      title={notReady ? "Add an input first so the model has something to reason over" : undefined}
+                    >
+                      {generating === p.id ? <Loader2 size={12} className="mr-1.5 inline animate-spin" /> : <Sparkles size={12} className="mr-1.5 inline" />}
+                      Generate
+                    </button>
+                  </div>
+                </Card>
+              );
+            })()
+          ) : (
+            <Card>
+              <CardHeader title="Products" subtitle="Pick a product, then generate its model" />
               <div className="space-y-2">
                 {projects.map((p) => {
                   const summary = summaries[p.id];
@@ -194,8 +237,8 @@ export default function ThreatModels() {
                   );
                 })}
               </div>
-            )}
-          </Card>
+            </Card>
+          )}
 
           <Card>
             <CardHeader

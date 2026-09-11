@@ -1,9 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   GitBranch, GitPullRequest, Wrench, ShieldCheck, RefreshCw, ExternalLink, Loader2, Send, Github, Play, AlertTriangle,
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Spinner, Tabs } from "@/components/ui";
 import { api } from "@/lib/api";
+import {
+  loadGithubInstallation,
+  loadBranchReviewWallet,
+  loadBranchReviewSettings,
+  loadBranchReviewEvents,
+  loadAutofixStatus,
+  loadGithubRepositories,
+} from "@/lib/codeOps";
 import { useStore } from "@/lib/store";
 import { cx, timeAgo } from "@/lib/utils";
 
@@ -67,11 +76,11 @@ export default function Code() {
     setLoading(true);
     setReposError(null);
     const [inst, walletRes, settingsRes, eventsRes, autofixRes] = await Promise.all([
-      api.get<any>("/github/installation").catch(() => null),
-      api.get<any>("/github/branch-reviews/wallet").catch(() => null),
-      api.get<any>("/github/branch-reviews/settings").catch(() => null),
-      api.get<any>("/github/branch-reviews/events").catch(() => null),
-      api.get<any>("/ai/autofix/status").catch(() => null),
+      loadGithubInstallation().catch(() => null),
+      loadBranchReviewWallet().catch(() => null),
+      loadBranchReviewSettings().catch(() => null),
+      loadBranchReviewEvents().catch(() => null),
+      loadAutofixStatus().catch(() => null),
     ]);
     setInstallation(inst);
     setWallet(walletRes);
@@ -81,7 +90,7 @@ export default function Code() {
     for (const s of settingsRes?.items ?? []) map[s.github_repository_id] = s;
     setSettings(map);
     try {
-      const r = await api.get<any>("/github/repositories");
+      const r = await loadGithubRepositories();
       setRepos(Array.isArray(r?.items) ? r.items : []);
     } catch (e: any) {
       setRepos([]);
@@ -97,7 +106,7 @@ export default function Code() {
   const connected = Boolean(installation?.connected || installation?.status === "active" || installation?.installation_id);
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Code"
         description="AutoFix, Continuous PR, connected repositories and branch-review runs."
@@ -136,6 +145,7 @@ export default function Code() {
       />
 
       {tab === "repositories" && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <CardHeader title="Connected repositories" subtitle="Repositories the GitHub App can read and review" action={<GitBranch size={16} className="text-gold-300" />} />
           {loading ? (
@@ -193,9 +203,11 @@ export default function Code() {
             </div>
           )}
         </Card>
+        </motion.div>
       )}
 
       {tab === "pull-requests" && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <CardHeader title="Recent branch-review runs" subtitle="Every push the reviewer processed — PR safety before merge" action={<GitPullRequest size={16} className="text-gold-300" />} />
           {loading ? (
@@ -231,9 +243,11 @@ export default function Code() {
             </div>
           )}
         </Card>
+        </motion.div>
       )}
 
       {tab === "autofix" && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <Card>
           <CardHeader title="AutoFix" subtitle="Block-scoped, verified fixes — proposed for human review" action={<Wrench size={16} className="text-gold-300" />} />
           <div className="space-y-3 text-sm leading-6 text-slate-300">
@@ -253,9 +267,14 @@ export default function Code() {
             </div>
           </div>
         </Card>
+        </motion.div>
       )}
 
-      {tab === "continuous-pr" && <ContinuousPrForm repos={repos} onDone={() => void load()} />}
+      {tab === "continuous-pr" && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <ContinuousPrForm repos={repos} onDone={() => void load()} />
+        </motion.div>
+      )}
     </div>
   );
 }

@@ -86,6 +86,9 @@ import type {
 } from "./complianceGrc";
 import type {
   CorrelationRule,
+  PostureDrift,
+  PostureDueRisk,
+  PostureSnapshot,
   RuleCandidate,
   VaptProcedure,
   VaptSchedule,
@@ -98,6 +101,14 @@ import type {
   RememberedModel,
   ThreatModelDetail,
 } from "./productContext";
+import type {
+  AutofixStatus,
+  BranchReviewWallet,
+  GithubInstallation,
+  Repo as GithubRepo,
+  ReviewEvent,
+  ReviewSetting,
+} from "./codeOps";
 
 // Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
 // (/demo or demo session flag). Live mode must never import this
@@ -2353,3 +2364,80 @@ export const rememberedThreatModels: RememberedModel[] = [
   { modelId: 9001, projectId: 51, projectName: "Customer payments portal", seenAt: Date.parse("2026-09-01T10:15:00Z") },
   { modelId: 9002, projectId: 52, projectName: "Open banking API", seenAt: Date.parse("2026-08-27T16:40:00Z") },
 ];
+
+// ── Code — GitHub App, branch-review wallet/settings/events, AutoFix ─────────
+
+export const githubInstallation: GithubInstallation = {
+  connected: true,
+  status: "active",
+  installation_id: 58214930,
+  account_login: "acme-financial",
+};
+
+export const branchReviewWallet: BranchReviewWallet = {
+  balance_ngn: 42500,
+  currency: "NGN",
+  updated_at: "2026-09-10T08:00:00Z",
+};
+
+export const githubRepositories: GithubRepo[] = [
+  { id: 401, name: "core-ledger", full_name: "acme-financial/core-ledger", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/core-ledger", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 402, name: "payments-api", full_name: "acme-financial/payments-api", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/payments-api", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 403, name: "portal-web", full_name: "acme-financial/portal-web", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/portal-web", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 404, name: "mobile-android", full_name: "acme-financial/mobile-android", private: true, default_branch: "develop", html_url: "https://github.com/acme-financial/mobile-android", can_analyze: false, analyze_blocked_reason: "Android source review requires the premium AutoFix add-on.", requires_premium: true },
+];
+
+export const branchReviewSettings: ReviewSetting[] = [
+  { github_repository_id: 401, enabled: true, watched_branch: "main", post_github_comment: true },
+  { github_repository_id: 402, enabled: true, watched_branch: "main", post_github_comment: true },
+  { github_repository_id: 403, enabled: false, watched_branch: "main", post_github_comment: false },
+];
+
+export const branchReviewEvents: ReviewEvent[] = [
+  { id: 9501, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger", sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", size_tier: "M", status: "charged", amount_ngn: 350, created_at: "2026-09-10T14:22:00Z" },
+  { id: 9502, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api", sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", size_tier: "L", status: "reviewed", amount_ngn: 620, created_at: "2026-09-09T10:05:00Z" },
+  { id: 9503, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger", sha: "998877665544a1b2", ref: "refs/heads/main", size_tier: "S", status: "reserved", amount_ngn: 150, created_at: "2026-09-10T16:40:00Z" },
+  { id: 9504, repo: "acme-financial/portal-web", repo_url: "https://github.com/acme-financial/portal-web", sha: "112233445566c3d4", ref: "refs/heads/hotfix/csp-header", size_tier: "S", status: "failed", created_at: "2026-09-08T07:12:00Z" },
+];
+
+export const autofixStatus: AutofixStatus = {
+  continuous_pr: { opens_pr: true, signed_commits: true },
+  queue: "2 queued",
+};
+
+// ── Posture — continuous loop surfaces, drift, accepted risks due ───────────
+
+export const postureSnapshot: PostureSnapshot = {
+  organization_id: 11,
+  surfaces: {
+    external: { score: 78, total: 42, reportable: 9, critical: 1, high: 3 },
+    internal: { score: 64, total: 18, reportable: 6, critical: 0, high: 2 },
+    cloud: { score: 71, total: 25, reportable: 5, critical: 1, high: 1 },
+    code: { score: 58, total: 12, reportable: 4, critical: 1, high: 2 },
+  },
+  overall_score: 68,
+  surfaces_covered: 4,
+  generated_at: "2026-09-11T06:00:00Z",
+};
+
+export const postureReviewsDue: PostureDueRisk[] = [
+  { id: 515, title: "Excessive IAM permissions on CI deploy role", risk_level: "critical", residual_risk_score: 58, residual_risk_level: "high", accepted_at: "2026-06-01T12:00:00Z", next_review_at: "2026-09-01T12:00:00Z", review_interval_days: 90, asset_id: null, vulnerability_key: "ci-deploy-role-overpermissioned", treatment_plan: "Scoped down pending Terraform module review; compensating CloudTrail alerting in place." },
+  { id: 507, title: "OpenSSH backports missing", risk_level: "medium", residual_risk_score: 41, residual_risk_level: "medium", accepted_at: "2026-06-20T10:00:00Z", next_review_at: "2026-09-05T10:00:00Z", review_interval_days: 90, asset_id: 105, vulnerability_key: "openssh-8.9p1", treatment_plan: "Patch window scheduled with infra during the next maintenance cycle." },
+  { id: 512, title: "Self-signed certificate on staging load balancer", risk_level: "low", residual_risk_score: 22, residual_risk_level: "low", accepted_at: "2026-05-15T09:30:00Z", next_review_at: "2026-08-15T09:30:00Z", review_interval_days: 90, asset_id: 111, vulnerability_key: "staging-selfsigned-cert", treatment_plan: "Accepted — staging is not internet-reachable outside the VPN." },
+];
+
+/** Keyed by product-context project id (see `productProjects`). */
+export const postureDrift: Record<number, PostureDrift> = {
+  51: { drift_count: 0, drift: [], projects: 1 },
+  52: {
+    drift_count: 1,
+    drift: [{ project_name: "Open banking API", project_id: 52, reason: "New third-party consent flow added", detail: "2 components and 3 flows added since the last threat model; TPP token exchange now crosses a new trust boundary." }],
+    projects: 1,
+  },
+  53: { drift_count: 0, drift: [], projects: 1 },
+  54: {
+    drift_count: 1,
+    drift: [{ project_name: "Internal reconciliation tooling", project_id: 54, reason: "Data flow reclassified", detail: "Reconciliation export now includes customer PII that was not present in the last product-context snapshot." }],
+    projects: 1,
+  },
+};
