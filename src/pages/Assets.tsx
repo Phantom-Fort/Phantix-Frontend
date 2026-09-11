@@ -4,6 +4,7 @@ import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, 
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
+import MobileHandoffCard from "@/components/MobileHandoffCard";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, titleCase, cx } from "@/lib/utils";
@@ -856,6 +857,8 @@ export default function Assets() {
             </button>
             <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/upload/apk</p>
           </Card>
+
+          <MobileHandoffCard />
         </motion.div>
       )}
 

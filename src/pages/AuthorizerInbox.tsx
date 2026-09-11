@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import { CheckCircle2, XCircle, Shield, ShieldCheck, Crosshair, AlertTriangle } from "lucide-react";
+import { PageHeader, Card, CardHeader, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
 import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
@@ -43,6 +43,13 @@ export default function AuthorizerInbox() {
   const { data: inbox, loading, error, reload } = useResource(
     () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
     emptyInbox,
+  );
+
+  // Current dual-control designation (GET /audit/control-roles) — read-only here;
+  // assignment is managed in the platform portal.
+  const { data: controlRoles } = useResource(
+    () => api.get<any>("/audit/control-roles", { dualControl: true }),
+    null,
   );
 
   const items = inbox?.items || [];
@@ -125,6 +132,30 @@ export default function AuthorizerInbox() {
           </span>
         }
       />
+
+      {controlRoles?.configured && (
+        <Card className="mb-4">
+          <CardHeader
+            title="Control roles"
+            subtitle="Who proposes and who approves under dual control"
+            action={<ShieldCheck size={16} className="text-gold-400" />}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">Initiator</p>
+              <p className="mt-1 text-sm text-slate-200">
+                {controlRoles.initiator_name || controlRoles.initiator_title || "—"}
+              </p>
+            </div>
+            <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">Authorizer</p>
+              <p className="mt-1 text-sm text-slate-200">
+                {controlRoles.authorizer_name || controlRoles.authorizer_title || "—"}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="flex flex-wrap items-center gap-1.5 mb-4">
         {[
