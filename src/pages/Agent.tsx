@@ -523,7 +523,7 @@ function AgentChat({
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="flex h-[66vh] flex-col !p-0 overflow-hidden">
         <div className="flex items-center gap-3 border-b border-phantix-700/40 px-5 py-3.5">
-          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
+          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
             <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
             <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -578,7 +578,7 @@ function AgentChat({
               </div>
             ) : (
               <div key={i} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
                 <div className="min-w-0 max-w-[88%] space-y-2">
                   {m.runId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
                   {m.thinking && (
@@ -623,7 +623,7 @@ function AgentChat({
           {/* Live streaming turn — Tool calls, Steps thinking, streamed Markdown */}
           {busy && (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
               <div className="min-w-0 max-w-[88%] space-y-2">
                 {tools.length > 0 && (
                   <div className="space-y-1.5">

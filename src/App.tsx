@@ -4,6 +4,7 @@ import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
 import { OperationsProvider } from "@/lib/operations";
 import Layout from "@/components/Layout";
 import DualControlOverlay from "@/components/DualControlOverlay";
+import CookieConsent from "@/components/CookieConsent";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import DeviceConfirm from "@/pages/DeviceConfirm";
@@ -12,6 +13,7 @@ import Dashboard from "@/pages/Dashboard";
 import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
 import Vapt from "@/pages/Vapt";
+import Code from "@/pages/Code";
 import Risks from "@/pages/Risks";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
@@ -19,6 +21,7 @@ import Alerts from "@/pages/Alerts";
 import Audit from "@/pages/Audit";
 import People from "@/pages/People";
 import Privacy from "@/pages/Privacy";
+import Cookies from "@/pages/Cookies";
 import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
@@ -102,6 +105,7 @@ export default function App() {
           <Route path="/password-reset" element={<PasswordResetRequest />} />
           <Route path="/reset-password" element={<PasswordResetComplete />} />
           <Route path="/device-confirm" element={<DeviceConfirm />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
           {/* Public sandbox application — no auth (entry from phantixlabs.com) */}
@@ -121,6 +125,7 @@ export default function App() {
             <Route path="/soc/cloud" element={<RequireAuth><SocCloudIntegration /></RequireAuth>} />
             <Route path="/integrations" element={<RequireAuth><IntegrationsHub /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
+            <Route path="/code" element={<RequireAuth><Code /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/vapt/schedules" element={<RequireAuth><VaptSchedules /></RequireAuth>} />
             <Route path="/vapt/settings" element={<RequireAuth><VaptSettings /></RequireAuth>} />
@@ -152,6 +157,7 @@ export default function App() {
           </Route>
         </Routes>
         <DualControlOverlay />
+        <CookieConsent />
         <ToastViewport />
         </BrowserRouter>
       </OperationsProvider>

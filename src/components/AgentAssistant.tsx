@@ -172,11 +172,11 @@ export default function AgentAssistant() {
       {/* Floating launcher (bottom-right) */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-4 z-[75] flex h-20 w-20 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105 sm:bottom-8 sm:right-8 sm:h-40 sm:w-40"
+        className="fixed bottom-4 right-8 z-[75] flex h-14 w-14 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105 sm:bottom-8 sm:right-16 sm:h-20 sm:w-20"
         title="SecureGraph Agent assistant"
         aria-label="Toggle SecureGraph Agent assistant"
       >
-        <LottiePlayer animationData={chatbotData} className="h-20 w-20 sm:h-40 sm:w-40" loop />
+        <LottiePlayer animationData={chatbotData} className="h-14 w-14 sm:h-20 sm:w-20" loop />
       </button>
 
       <AnimatePresence>

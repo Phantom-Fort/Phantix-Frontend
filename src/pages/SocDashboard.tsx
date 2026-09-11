@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, Gauge, Shield, Wifi, Monitor, Clock, AlertTriangle, Crosshair,
+  Gauge, Shield, Wifi, Monitor, Clock, Crosshair,
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
   ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio, HeartPulse,
 } from "lucide-react";
@@ -374,17 +374,6 @@ export default function SocDashboard() {
         actions={
           <div className="flex items-center gap-2">
             <DocLink docId="howto-app-07" label="SOC how-to" />
-            <span
-              className={cx(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                liveConnected
-                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                  : "border-phantix-700/50 bg-phantix-950/60 text-slate-500",
-              )}
-            >
-              <span className={cx("h-1.5 w-1.5 rounded-full", liveConnected ? "bg-emerald-400 animate-pulse" : "bg-slate-600")} />
-              {liveConnected ? "Live" : "Offline"}
-            </span>
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={reloadQueue} title="Refresh">
               <RefreshCw size={14} />
             </button>
@@ -399,11 +388,10 @@ export default function SocDashboard() {
         </div>
       )}
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Engine" value={<span className={cx("capitalize", status.data?.status === "implemented" ? "text-emerald-400" : "text-slate-300")}>{status.data?.status === "implemented" ? "Online" : status.data?.status ?? "loading"}</span>} icon={<Gauge size={18} />} />
-        <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} icon={<Crosshair size={18} />} />
-        <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} icon={<AlertTriangle size={18} />} accent="red" />
-        <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} icon={<Activity size={18} />} />
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} />
+        <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} />
+        <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} />
       </div>
 
       <Tabs
@@ -505,7 +493,7 @@ export default function SocDashboard() {
               <div className="flex items-center justify-between gap-2 border-b border-phantix-800/50 px-4 py-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                    <Radio size={14} className={cx(liveConnected ? "text-emerald-400" : "text-slate-500")} />
+                    <Radio size={14} className={cx(liveConnected ? "text-gold-400" : "text-slate-500")} />
                     Live feed
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-500 truncate">
@@ -516,9 +504,8 @@ export default function SocDashboard() {
               </div>
               {/* Heartbeat status strip */}
               <div className="flex items-center gap-2.5 border-b border-phantix-700/30 bg-phantix-950/40 px-3 py-2.5">
-                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gold-400/25 bg-gold-400/10 text-gold-400">
                   <HeartPulse size={14} />
-                  {liveConnected && <span className="ecg-ping absolute inset-0 rounded-lg border border-emerald-400/40" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-slate-100">{liveConnected ? "Server responsive" : "Waiting for heartbeat"}</p>
@@ -532,7 +519,7 @@ export default function SocDashboard() {
                   <polyline
                     points="0,12 8,12 11,12 13,6 15,18 17,10 19,12 32,12 36,12 39,7 41,17 43,11 45,12 64,12"
                     fill="none"
-                    stroke="#34D399"
+                    stroke="#E8B54D"
                     strokeWidth="2"
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -553,7 +540,7 @@ export default function SocDashboard() {
                     >
                       <span className={cx(
                         "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                        hot ? "bg-severity-critical" : isSoc ? "bg-gold-400" : "bg-emerald-400/80",
+                        hot ? "bg-severity-critical" : isSoc ? "bg-gold-400" : "bg-slate-400",
                       )} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -566,7 +553,7 @@ export default function SocDashboard() {
                   );
                 }) : (
                   <div className="flex h-full min-h-[12rem] flex-col items-center justify-center gap-1 px-4 text-center text-xs text-slate-500">
-                    <Wifi size={16} className={cx(liveConnected ? "text-emerald-500/50" : "text-slate-600")} />
+                    <Wifi size={16} className={cx(liveConnected ? "text-gold-400/60" : "text-slate-600")} />
                     {liveConnected ? "Connected — waiting for events" : "Stream offline"}
                   </div>
                 )}

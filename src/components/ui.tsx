@@ -182,25 +182,18 @@ export function AnimatedNumber({ value, duration = 900 }: { value: number; durat
 export function StatCard({
   label,
   value,
-  icon,
   hint,
-  accent = "gold",
   delay = 0,
 }: {
   label: string;
   value: React.ReactNode;
-  icon: React.ReactNode;
+  /** @deprecated no longer rendered — stat cards are data + naming only, no icon chrome. */
+  icon?: React.ReactNode;
   hint?: React.ReactNode;
+  /** @deprecated no longer rendered — kept optional so existing call sites keep compiling. */
   accent?: "gold" | "blue" | "red" | "green";
   delay?: number;
 }) {
-  // Flat cards: the accent is carried by the icon color only (no gradient washes).
-  const accents = {
-    gold: "text-gold-400",
-    blue: "text-slate-400",
-    red: "text-severity-critical",
-    green: "text-emerald-400",
-  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
@@ -209,10 +202,7 @@ export function StatCard({
       className="card relative overflow-hidden p-5"
     >
       <div className="relative">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
-          <span className={accents[accent]}>{icon}</span>
-        </div>
+        <p className="text-xs font-medium uppercase tracking-wider text-slate-400">{label}</p>
         <p className="mt-2 font-mono text-[28px] font-semibold leading-none tracking-tight text-white">{value}</p>
         {hint && <div className="mt-2 text-xs text-slate-400">{hint}</div>}
       </div>

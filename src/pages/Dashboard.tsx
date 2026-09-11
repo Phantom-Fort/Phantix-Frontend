@@ -2,8 +2,8 @@ import React, { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Boxes, ShieldAlert, Radar, Crosshair, ArrowRight, BellRing,
-  ShieldCheck, Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
+  Boxes, ShieldAlert, ArrowRight, BellRing,
+  Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
@@ -202,17 +202,6 @@ export default function Dashboard() {
                 <FlaskConical size={11} className="mr-1 inline" /> Lab
               </span>
             )}
-            <span
-              className={cx(
-                "chip text-[10px]",
-                connected
-                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                  : "border-slate-500/40 bg-slate-500/10 text-slate-400",
-              )}
-            >
-              <span className={cx("mr-1 inline-block h-1.5 w-1.5 rounded-full", connected ? "bg-emerald-400 animate-pulse-soft" : "bg-slate-500")} />
-              {connected ? "Live" : "Offline"}
-            </span>
           </div>
           <h1 className="mt-1 font-display text-[26px] font-bold tracking-tight text-white">Command center</h1>
           {lab?.surfaces && lab.surfaces.length > 0 && (
@@ -246,24 +235,18 @@ export default function Dashboard() {
         <StatCard
           label="Posture"
           value={<AnimatedNumber value={postureScore} />}
-          icon={<ShieldCheck size={17} />}
-          accent="gold"
           delay={0}
           hint={<span>{activeAssets} active assets</span>}
         />
         <StatCard
           label="Open findings"
           value={<AnimatedNumber value={openFindings} />}
-          icon={<Crosshair size={17} />}
-          accent="red"
           delay={0.04}
           hint={<span>From intelligence / tracker</span>}
         />
         <StatCard
           label="Open risks"
           value={<AnimatedNumber value={openRisks} />}
-          icon={<ShieldAlert size={17} />}
-          accent="red"
           delay={0.08}
           hint={
             <span>
@@ -274,16 +257,12 @@ export default function Dashboard() {
         <StatCard
           label="SOC open"
           value={<AnimatedNumber value={socOpen} />}
-          icon={<Radar size={17} />}
-          accent="blue"
           delay={0.12}
           hint={<span>{cc?.soc?.available === false ? "SOC offline" : "Detection queue"}</span>}
         />
         <StatCard
           label="Tracker open"
           value={<AnimatedNumber value={trackerOpen} />}
-          icon={<KanbanSquare size={17} />}
-          accent="green"
           delay={0.16}
           hint={
             <span>
@@ -305,7 +284,7 @@ export default function Dashboard() {
                   className={cx(
                     "chip text-xs",
                     trendDelta > 0
-                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                      ? "border-gold-400/30 bg-gold-400/10 text-gold-300"
                       : trendDelta < 0
                         ? "border-severity-critical/30 bg-severity-critical/10 text-severity-critical"
                         : "text-slate-400",
@@ -560,28 +539,24 @@ export default function Dashboard() {
                 action={
                   <span className={cx(
                     "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-medium",
-                    connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+                    connected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
                   )}>
-                    <span className="relative flex h-2 w-2">
-                      {connected && <span className="ecg-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />}
-                      <span className={cx("relative inline-flex h-2 w-2 rounded-full", connected ? "bg-emerald-400" : "bg-severity-medium")} />
-                    </span>
-                    {connected ? "Live · heartbeat OK" : "Reconnecting…"}
+                    <span className={cx("inline-flex h-2 w-2 rounded-full", connected ? "bg-gold-400" : "bg-severity-medium")} />
+                    {connected ? "Stream connected" : "Reconnecting…"}
                   </span>
                 }
               />
             </div>
             {/* Heartbeat status strip */}
             <div className="flex items-center gap-3 border-y border-phantix-700 bg-phantix-950/60 px-5 py-3">
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gold-400/25 bg-gold-400/10 text-gold-400">
                 <HeartPulse size={16} />
-                {connected && <span className="ecg-ping absolute inset-0 rounded-md border border-emerald-400/40" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-100">{connected ? "Server responsive" : "Waiting for heartbeat"}</p>
                 <p className="text-xs text-slate-500">
                   {lastHeartbeatAt
-                    ? <>Last heartbeat ping <span className="font-mono text-emerald-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
+                    ? <>Last heartbeat ping <span className="font-mono text-gold-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
                     : connected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the command-centre stream…"}
                 </p>
               </div>
@@ -589,7 +564,7 @@ export default function Dashboard() {
                 <polyline
                   points="0,15 10,15 15,15 18,7 21,23 24,13 27,15 44,15 49,15 54,9 57,21 60,13 63,15 90,15"
                   fill="none"
-                  stroke="#34D399"
+                  stroke="#E8B54D"
                   strokeWidth="2"
                   strokeLinejoin="round"
                   strokeLinecap="round"

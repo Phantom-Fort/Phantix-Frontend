@@ -35,3 +35,7 @@ flowchart TD
 
 - Customer Agent ≠ Staff AGI Management (engagements/containers).
 - Plan may return 402 if AI agent entitlement missing.
+- To watch a live pentest advance through its methodology loop — including the
+  trust-boundary and auth/access-matrix phases and the recon / autofix /
+  verify-all subagents — see
+  [17-autonomous-pentest.md](./17-autonomous-pentest.md).

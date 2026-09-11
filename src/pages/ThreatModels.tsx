@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 import { ApiError } from "@/lib/api";
 import {
   answerThreatClarification, deliverThreatModel, exportThreatModel, generateThreatModel, getThreatModel, GRADE_TONE,
-  listProjects, listThreatModels, LOCAL_MODEL_INDEX, patchThreat, regenerateThreatModel,
+  listProjects, listThreatModels, patchThreat, regenerateThreatModel,
   type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
 } from "@/lib/productContext";
 import { cx } from "@/lib/utils";
@@ -17,8 +17,9 @@ import { cx } from "@/lib/utils";
 // well the model's own evidence supports them, and anything it could not settle
 // becomes a verification question — answering one re-grades the affected threats.
 //
-// Index: GET /threat-models?project_id= (authoritative). LOCAL_MODEL_INDEX is
-// only a fallback when the list call fails.
+// Index: GET /threat-models?project_id= is authoritative (staging rollout §11b).
+// There is no local browser index — a model created on another device or by the
+// refresh schedule is still found, and the list is never a stale local guess.
 
 export default function ThreatModels() {
   const { toast } = useStore();
@@ -58,10 +59,10 @@ export default function ThreatModels() {
       if (fromApi.length) {
         setRemembered(fromApi);
       } else {
-        setRemembered(LOCAL_MODEL_INDEX.list());
+        setRemembered([]);
       }
     } catch (e) {
-      setRemembered(LOCAL_MODEL_INDEX.list());
+      setRemembered([]);
       setError(
         e instanceof ApiError && e.status === 409
           ? "Security storage is not activated yet — product context and threat models live there."
@@ -101,12 +102,7 @@ export default function ThreatModels() {
   };
 
   const openById = (id: number, project?: ProductProject) => {
-    LOCAL_MODEL_INDEX.remember({
-      modelId: id,
-      projectId: project?.id ?? 0,
-      projectName: project?.name ?? "",
-      seenAt: Date.now(),
-    });
+    void project;
     setOpenModelId(id);
   };
 
@@ -202,7 +198,6 @@ export default function ThreatModels() {
                     </button>
                     <button
                       onClick={() => {
-                        LOCAL_MODEL_INDEX.forget(r.modelId);
                         setRemembered((rows) => rows.filter((x) => x.modelId !== r.modelId));
                       }}
                       className="shrink-0 rounded p-1 text-slate-500 hover:text-slate-300"

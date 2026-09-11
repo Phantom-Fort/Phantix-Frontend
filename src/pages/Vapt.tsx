@@ -95,6 +95,8 @@ export default function Vapt() {
   const [tab, setTab] = useState("campaigns");
   const [selected, setSelected] = useState<VaptCampaign | null>(null);
   const [findingSelected, setFindingSelected] = useState<VaptFinding | null>(null);
+  const [retesting, setRetesting] = useState(false);
+  const [retestResult, setRetestResult] = useState<{ outcome: string; engine: string; verdict: string; reason: string } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard" as "standard" | "poc", bruteforceAcked: false });
@@ -141,6 +143,30 @@ export default function Vapt() {
   const pending = vaptApprovals.filter((a) => a.status === "pending");
   const selectedFinding = findingSelected;
   const selectedSteps = selectedFinding?.attack_path_object?.steps;
+
+  // Retest a finding after remediation: deterministic engine first, AI fallback.
+  const handleRetest = async (f: VaptFinding) => {
+    setRetesting(true);
+    setRetestResult(null);
+    try {
+      const res = await api.post<{ outcome: string; engine: string; verdict: string; reason: string }>(
+        `/vapt/campaigns/${f.campaign_id}/findings/${f.id}/retest`,
+      );
+      setRetestResult(res);
+      const label =
+        res.outcome === "resolved" ? "Resolved" : res.outcome === "still_present" ? "Still present" : "Inconclusive";
+      toast(
+        res.outcome === "resolved" ? "success" : res.outcome === "still_present" ? "warning" : "info",
+        `Retest: ${label}`,
+        `Decided by the ${res.engine === "ai" ? "AI" : "deterministic"} engine`,
+      );
+      void reload?.();
+    } catch (e: any) {
+      toast("error", "Retest failed", e?.message || "");
+    } finally {
+      setRetesting(false);
+    }
+  };
 
   // Campaign action handlers
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
@@ -773,7 +799,7 @@ export default function Vapt() {
       )}
 
       {/* Finding detail modal */}
-      <Modal open={!!findingSelected} onClose={() => setFindingSelected(null)} title={findingSelected?.title ?? "Finding"} wide>
+      <Modal open={!!findingSelected} onClose={() => { setFindingSelected(null); setRetestResult(null); }} title={findingSelected?.title ?? "Finding"} wide>
         {findingSelected && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -871,6 +897,50 @@ export default function Vapt() {
                 </p>
               </div>
             )}
+
+            {/* Retest after remediation: deterministic findings unit test first, AI engine on fallback */}
+            <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Retest after remediation</p>
+                  <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                    Re-runs the deterministic findings check; if it can’t decide, the AI engine judges the finding data.
+                  </p>
+                </div>
+                <button
+                  className="btn-secondary shrink-0 !px-2.5 !py-1 text-xs"
+                  disabled={retesting}
+                  onClick={() => void handleRetest(findingSelected)}
+                >
+                  {retesting ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : <Radar size={12} className="mr-1 inline" />}
+                  {retesting ? "Retesting…" : "Retest"}
+                </button>
+              </div>
+              {retestResult && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    className={cx(
+                      "chip text-[10px]",
+                      retestResult.outcome === "resolved"
+                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                        : retestResult.outcome === "still_present"
+                          ? "border-severity-high/30 bg-severity-high/10 text-severity-high"
+                          : "border-slate-500/30 bg-slate-500/10 text-slate-400",
+                    )}
+                  >
+                    {retestResult.outcome === "resolved"
+                      ? "Resolved"
+                      : retestResult.outcome === "still_present"
+                        ? "Still present"
+                        : "Inconclusive"}
+                  </span>
+                  <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">
+                    {retestResult.engine === "ai" ? "AI engine" : "deterministic engine"}
+                  </span>
+                  {retestResult.reason && <span className="text-[10px] text-slate-500">{retestResult.reason}</span>}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>

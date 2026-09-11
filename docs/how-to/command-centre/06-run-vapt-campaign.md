@@ -33,3 +33,20 @@ flowchart TD
 6. **Start** campaign; watch phase + progress.
 7. Open findings; verify important items.
 8. Generate report when ready ([11-generate-reports.md](./11-generate-reports.md)).
+
+---
+
+## Retest after remediation
+
+In a finding's detail, **Retest** re-checks whether the issue still holds after a
+fix. It runs the deterministic findings check first; only if that can't decide
+does the AI engine judge the finding from its stored evidence. The result is one
+of **Resolved**, **Still present**, or **Inconclusive**, and the UI shows which
+engine decided.
+
+- **Resolved** — the finding is marked a false positive and the human-review flag
+  is cleared.
+- **Still present** — the finding is flagged for human review.
+- **Inconclusive** — no status change; the finding is left for a human.
+
+Retest is a findings-page action — it does not start a new campaign.

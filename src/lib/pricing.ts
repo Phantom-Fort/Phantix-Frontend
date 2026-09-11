@@ -34,21 +34,22 @@ interface BillingPricingResponse {
 
 const freeFeatures = [
   "Asset inventory + discovery (domain, nmap, GitHub, OpenAPI)",
-  "On-demand scans — one active job per org",
-  "Verified-only findings with dedupe",
-  "JSON / CSV reports (free formats)",
+  "VAPT campaigns + vulnerability scanner — one active job per org",
+  "1 threat-modelling project from your product context",
+  "PR/MR review and channel alerts (WhatsApp/Telegram) — metered by AI credits",
+  "All report types & formats — PDF / DOCX / XLSX / HTML / PPTX / MD / JSON / CSV (free on every plan)",
+  "500 one-time AI credits, then free open-source models (admin opt-in)",
   "Dual control, MFA, immutable audit + evidence redaction — free on every plan",
   "Community support",
 ];
 
 const starterFeatures = [
   "Everything in Free",
-  "Full engine — complete code review, web/API/mobile assessment, threat modelling",
-  "Context + threat modelling with doc & architecture imports (draw.io) — monthly model refreshes",
-  "PR/MR review automation (limited volume) with context-aware AI triage",
-  "On-demand authenticated web / API / mobile assessment",
+  "Full engine — mobile, cloud, supply-chain and advanced scanners",
+  "Context + threat modelling — more projects and monthly model refreshes",
+  "Continuous PR/MR review across all enabled repos",
+  "Higher volume — more assets, users and concurrent scans",
   "AI credits — 3,000 onboarding allotment plus a recurring plan allowance (top up in-workspace)",
-  "PDF / HTML / MD board-ready reports + WA / Telegram alert channels",
   "Standard support",
 ];
 

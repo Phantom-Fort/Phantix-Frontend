@@ -4,8 +4,9 @@
 // Everything persists to the customer's own security DB, so every call here can
 // answer 409 when that storage is not activated yet.
 //
-// List: GET /threat-models?project_id= (authoritative). LOCAL_MODEL_INDEX remains
-// a per-browser fallback when the list call fails or demo mode has no API.
+// List: GET /threat-models?project_id= is authoritative and the live page reads
+// only it (staging rollout §11b). LOCAL_MODEL_INDEX is retained as a demo/dev
+// helper only; it is not consulted by the live threat-models page.
 import { api, delay, isDemoMode } from "./api";
 import * as demo from "./demo-data";
 

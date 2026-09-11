@@ -7,6 +7,7 @@ import {
 import { Modal, Spinner } from "@/components/ui";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
+import PentestTodo from "@/components/PentestTodo";
 import { ApprovalNotice, ClarificationAsk, IssuesStrip, ToolGroupCard } from "@/components/AgiStream";
 import { PromptKitStream } from "@/components/agent/PromptKitStream";
 import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
@@ -711,35 +712,6 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 <p className="wb-pane-title">1 · Choose an engagement</p>
                 <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 wb-xs"><Plus size={12} className="mr-1 inline" /> New</button>
               </div>
-              {engLoading ? (
-                <div className="space-y-2">
-                  <div className="skeleton h-16 rounded-xl" />
-                  <div className="skeleton h-16 rounded-xl" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {engagements.length === 0 && !createOpen && (
-                    <p className="wb-sm rounded-xl border border-dashed border-phantix-700/50 px-3 py-4 text-center text-slate-500">No engagements yet. Create one with a tight allowlist to start.</p>
-                  )}
-                  {engagements.map((e) => (
-                    <button
-                      key={e.id}
-                      onClick={() => setSelectedEng(e.id)}
-                      className={cx(
-                        "w-full rounded-xl border px-3 py-2.5 text-left transition-colors",
-                        selectedEng === e.id ? "border-gold-400/50 bg-gold-400/5" : "border-phantix-700/40 bg-phantix-900/40 hover:border-phantix-500/40",
-                      )}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Globe2 size={13} className="shrink-0 text-gold-400" />
-                        <span className="wb-sm min-w-0 truncate font-semibold text-slate-200">{e.name}</span>
-                        <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{e.status}</span>
-                      </div>
-                      <p className="wb-2xs mt-1 truncate font-mono text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {createOpen && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-3">
@@ -825,6 +797,36 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 </motion.div>
               )}
 
+              {engLoading ? (
+                <div className="space-y-2">
+                  <div className="skeleton h-16 rounded-xl" />
+                  <div className="skeleton h-16 rounded-xl" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {engagements.length === 0 && !createOpen && (
+                    <p className="wb-sm rounded-xl border border-dashed border-phantix-700/50 px-3 py-4 text-center text-slate-500">No engagements yet. Create one with a tight allowlist to start.</p>
+                  )}
+                  {engagements.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => setSelectedEng(e.id)}
+                      className={cx(
+                        "w-full rounded-xl border px-3 py-2.5 text-left transition-colors",
+                        selectedEng === e.id ? "border-gold-400/50 bg-gold-400/5" : "border-phantix-700/40 bg-phantix-900/40 hover:border-phantix-500/40",
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Globe2 size={13} className="shrink-0 text-gold-400" />
+                        <span className="wb-sm min-w-0 truncate font-semibold text-slate-200">{e.name}</span>
+                        <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{e.status}</span>
+                      </div>
+                      <p className="wb-2xs mt-1 truncate font-mono text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div>
                 <p className="wb-pane-title">2 · Instruction</p>
                 <textarea
@@ -873,8 +875,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-center gap-1.5 border-b border-phantix-700/40 px-3 py-2">
-                <span className={cx("chip !px-2 !py-0.5 wb-2xs", running ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
-                  {running ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> running</span> : "stopped"}
+                <span className={cx("chip !px-2 !py-0.5 wb-2xs", running ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
+                  {running ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-gold-400" /> running</span> : "stopped"}
                 </span>
                 <span className="chip !px-2 !py-0.5 wb-2xs min-w-0 truncate text-slate-500">{selected?.name}</span>
                 <span className="chip !px-2 !py-0.5 wb-2xs shrink-0 font-mono text-slate-500">#{session.id}</span>
@@ -892,6 +894,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   <CornerUpLeft size={11} className="mr-1 inline" /> Sessions
                 </button>
               </div>
+
+              {/* Live pentest to-do: the loop checklist, ticked off as the agent advances */}
+              {session.job && (
+                <div className="border-b border-phantix-700/40 px-3 py-2">
+                  <PentestTodo job={session.job as Parameters<typeof PentestTodo>[0]["job"]} running={running} />
+                </div>
+              )}
 
               <div className="relative min-h-0 flex-1">
                 <div ref={scrollRef} onScroll={onScroll} className="wb-scroll h-full space-y-2 overflow-y-auto p-3">

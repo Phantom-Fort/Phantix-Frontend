@@ -25,6 +25,8 @@ Platform must have setup complete + security DB bootstrapped first.
 | 13 | Use Phantix Agent | [13-use-phantix-agent.md](./13-use-phantix-agent.md) |
 | 14 | Authorizer approvals | [14-authorizer-approvals.md](./14-authorizer-approvals.md) |
 | 15 | Open a support ticket | [15-support-ticket.md](./15-support-ticket.md) |
+| 16 | Threat models | [16-threat-models.md](./16-threat-models.md) |
+| 17 | Autonomous pentest agent | [17-autonomous-pentest.md](./17-autonomous-pentest.md) |
 
 ## Typical weekly operating flow
 

@@ -244,8 +244,17 @@ function prettyJson(raw: string): string | null {
   }
 }
 
+// Friendly display names for the pentest subagent / gate tools so the stream
+// reads clearly instead of showing raw tool ids.
+const TOOL_LABELS: Record<string, string> = {
+  recon_subagent: "Recon subagent",
+  autofix_subagent: "Autofix subagent",
+  verify_all: "Verify-all gate",
+};
+
 function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {
-  const toolName = typeof t.meta?.tool === "string" ? (t.meta.tool as string) : "tool";
+  const rawTool = typeof t.meta?.tool === "string" ? (t.meta.tool as string) : "tool";
+  const toolName = TOOL_LABELS[rawTool] ?? rawTool;
 
   // First line that looks like a shell command becomes the "Input"; the rest is output.
   const { command, body } = useMemo(() => {

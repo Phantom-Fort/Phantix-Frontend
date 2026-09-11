@@ -122,7 +122,7 @@ export default function AssetIntelligenceDashboard() {
   const eventMetaFor = (evt: string): { label: string; icon: any; cls: string } => {
     switch (evt) {
       case "heartbeat":
-        return { label: "Server heartbeat", icon: HeartPulse, cls: "border-emerald-400/25 bg-emerald-400/10 text-emerald-400" };
+        return { label: "Server heartbeat", icon: HeartPulse, cls: "border-gold-400/25 bg-gold-400/10 text-gold-400" };
       case "riskScoreChanged":
         return { label: "Risk score changed", icon: AlertTriangle, cls: "border-severity-high/25 bg-severity-high/10 text-severity-high" };
       case "assetDiscovered":
@@ -215,10 +215,6 @@ export default function AssetIntelligenceDashboard() {
         actions={
           <div className="flex items-center gap-2">
             <DocLink docId="howto-app-04" label="Discovery how-to" />
-            <span className={cx("flex items-center gap-1.5 text-xs font-mono mr-1", liveConnected ? "text-emerald-400" : "text-slate-500")}>
-              {liveConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-              {liveConnected ? "Live" : "Offline"}
-            </span>
             <button onClick={handleRefreshIntel} className="btn-ghost text-sm px-3 py-1.5">
               <RefreshCw size={14} />
               Refresh Intel
@@ -349,18 +345,15 @@ export default function AssetIntelligenceDashboard() {
       <Card className="mb-6 overflow-hidden !p-0">
         <div className="px-5 pt-5">
           <CardHeader
-            title={<><Activity size={16} className="inline text-emerald-400 mr-1" /> Live Activity</>}
+            title={<><Activity size={16} className="inline text-gold-400 mr-1" /> Activity</>}
             subtitle="Heartbeat + engine events streamed from your security database via SSE"
             action={
               <span className={cx(
                 "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium",
-                liveConnected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+                liveConnected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
               )}>
-                <span className="relative flex h-2 w-2">
-                  {liveConnected && <span className="ecg-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />}
-                  <span className={cx("relative inline-flex h-2 w-2 rounded-full", liveConnected ? "bg-emerald-400" : "bg-severity-medium")} />
-                </span>
-                {liveConnected ? "Live · heartbeat OK" : "Reconnecting…"}
+                <span className={cx("inline-flex h-2 w-2 rounded-full", liveConnected ? "bg-gold-400" : "bg-severity-medium")} />
+                {liveConnected ? "Stream connected" : "Reconnecting…"}
               </span>
             }
           />
@@ -368,9 +361,8 @@ export default function AssetIntelligenceDashboard() {
 
         {/* Heartbeat status strip */}
         <div className="flex items-center gap-3 border-y border-phantix-700/30 bg-phantix-950/40 px-5 py-3">
-          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gold-400/25 bg-gold-400/10 text-gold-400">
             <HeartPulse size={17} />
-            {liveConnected && <span className="ecg-ping absolute inset-0 rounded-xl border border-emerald-400/40" />}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-slate-100">
@@ -378,7 +370,7 @@ export default function AssetIntelligenceDashboard() {
             </p>
             <p className="text-xs text-slate-500">
               {lastHeartbeatAt
-                ? <>Last heartbeat ping <span className="font-mono text-emerald-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
+                ? <>Last heartbeat ping <span className="font-mono text-gold-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
                 : liveConnected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the event stream…"}
             </p>
           </div>
@@ -387,7 +379,7 @@ export default function AssetIntelligenceDashboard() {
             <polyline
               points="0,17 14,17 20,17 24,8 28,26 32,14 36,17 58,17 64,17 70,10 74,24 78,15 82,17 120,17"
               fill="none"
-              stroke="#34D399"
+              stroke="#E8B54D"
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -408,21 +400,21 @@ export default function AssetIntelligenceDashboard() {
                   key={`${evt.ts}-${i}`}
                   className={cx(
                     "group flex items-center gap-3 rounded-lg border px-2.5 py-2 transition-colors",
-                    isHeartbeat ? "border-emerald-400/15 bg-emerald-400/[0.04]" : "border-phantix-700/30 bg-phantix-900/40 hover:bg-phantix-800/40",
+                    isHeartbeat ? "border-gold-400/15 bg-gold-400/[0.04]" : "border-phantix-700/30 bg-phantix-900/40 hover:bg-phantix-800/40",
                   )}
                 >
                   <span className={cx("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border", meta.cls)}>
                     {isHeartbeat
-                      ? <HeartPulse size={12} className={liveConnected ? "text-emerald-400" : "text-slate-500"} />
+                      ? <HeartPulse size={12} className={liveConnected ? "text-gold-400" : "text-slate-500"} />
                       : <meta.icon size={12} />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className={cx("truncate text-xs font-medium", isHeartbeat ? "text-emerald-300" : "text-slate-200")}>
+                    <p className={cx("truncate text-xs font-medium", isHeartbeat ? "text-gold-300" : "text-slate-200")}>
                       {meta.label}
                       {valueLabel && !isHeartbeat && <span className="font-mono text-slate-500"> · {valueLabel}</span>}
                     </p>
                     {isHeartbeat && (
-                      <p className="text-[10px] text-emerald-400/70">Security database reachable — event stream healthy</p>
+                      <p className="text-[10px] text-gold-400/70">Security database reachable — event stream healthy</p>
                     )}
                   </div>
                   {isRiskEvent(evt.event) && (payload.previousRiskLevel || payload.riskLevel) && (
@@ -438,7 +430,7 @@ export default function AssetIntelligenceDashboard() {
         ) : (
           <div className="flex items-center gap-2 px-5 py-5 text-xs text-slate-500">
             {liveConnected ? (
-              <><span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-emerald-400" /> Connected — waiting for the first heartbeat ping…</>
+              <><span className="h-1.5 w-1.5 rounded-full bg-gold-400" /> Connected — waiting for the first heartbeat ping…</>
             ) : (
               <><span className="h-1.5 w-1.5 animate-pulse-soft rounded-full bg-severity-medium" /> Offline — live updates will resume on reconnect.</>
             )}

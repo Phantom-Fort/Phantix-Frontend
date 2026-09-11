@@ -35,6 +35,7 @@ import {
   Cloud,
   Fingerprint,
   FileSignature,
+  GitBranch,
   FlaskConical as FlaskNav,
   Swords,
   Puzzle,
@@ -117,6 +118,7 @@ const navSections: {
       { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
       { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, basePath: "/soc", items: socSubItems },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
+      { to: "/code", label: "Code", icon: <GitBranch size={17} /> },
       { type: "dropdown", label: "VAPT", icon: <Crosshair size={17} />, basePath: "/vapt", items: vaptSubItems },
       { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
       { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
@@ -566,7 +568,10 @@ export default function Layout() {
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
             <ThemeToggle />
             <NotificationBell />
-            <span className="chip hidden border-emerald-400/30 bg-emerald-400/10 text-emerald-300 md:inline-flex">
+            <span className={cx(
+              "chip hidden md:inline-flex",
+              securityDbReady ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+            )}>
               <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
             </span>
             <span className="chip hidden font-mono border-phantix-700 bg-phantix-900 text-slate-300 md:inline-flex">
