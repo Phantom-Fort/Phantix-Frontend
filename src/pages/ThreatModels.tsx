@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  AlertTriangle, ChevronDown, Download, FileText, HelpCircle, Info, Loader2, Play, RefreshCw, Search, Send, ShieldAlert, Sparkles, X,
+  ChevronDown, Download, FileText, HelpCircle, Info, Loader2, Play, Plus, RefreshCw, Search, Send, ShieldAlert, Sparkles, X,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
+import { CreateProductModal, ProjectInputsModal } from "@/components/ThreatModelInputs";
 import { useStore } from "@/lib/store";
 import { ApiError } from "@/lib/api";
 import {
-  answerThreatClarification, deliverThreatModel, exportThreatModel, generateThreatModel, getThreatModel, GRADE_TONE,
+  answerThreatClarification, deliverThreatModel, exportThreatModel, generateThreatModel, getContextSummary, getThreatModel, GRADE_TONE,
   listProjects, listThreatModels, patchThreat, regenerateThreatModel,
-  type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
+  type ProductContextSummary, type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
 } from "@/lib/productContext";
 import { cx } from "@/lib/utils";
 
@@ -30,6 +31,9 @@ export default function ThreatModels() {
   const [generating, setGenerating] = useState<number | null>(null);
   const [lookupId, setLookupId] = useState("");
   const [openModelId, setOpenModelId] = useState<number | null>(null);
+  const [summaries, setSummaries] = useState<Record<number, ProductContextSummary | null>>({});
+  const [creating, setCreating] = useState(false);
+  const [inputsFor, setInputsFor] = useState<ProductProject | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,6 +42,13 @@ export default function ThreatModels() {
       const res = await listProjects(true);
       const projectItems = Array.isArray(res.items) ? res.items : [];
       setProjects(projectItems);
+      // Readiness per project drives the input checklist and the generate guard.
+      const summaryRows = await Promise.all(
+        projectItems.map((p) => getContextSummary(p.id, p).catch(() => null)),
+      );
+      const nextSummaries: Record<number, ProductContextSummary | null> = {};
+      projectItems.forEach((p, i) => { nextSummaries[p.id] = summaryRows[i]; });
+      setSummaries(nextSummaries);
       const byId = new Map(projectItems.map((p) => [p.id, p]));
       const lists = await Promise.all(
         projectItems.map((p) => listThreatModels(p.id).catch(() => null)),
@@ -107,14 +118,19 @@ export default function ThreatModels() {
   };
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Threat models"
-        description="STRIDE-style threats derived from a project's real components and data flows, graded by how well the evidence supports them."
+        description="STRIDE-style threats derived from a product's real components, data flows and product information, graded by how well the evidence supports them."
         actions={
-          <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
-            <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
+              <Plus size={13} className="mr-1.5 inline" /> New product
+            </button>
+            <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
+              <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
+            </button>
+          </div>
         }
       />
 
@@ -126,36 +142,57 @@ export default function ThreatModels() {
         <div className="space-y-5">
           <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[11px] leading-5 text-gold-200">
             <Info size={12} className="mt-0.5 shrink-0" />
-            Models are loaded from the project-scoped index
-            (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>). You can still open any model by id.
+            A model comes from a product's information. Add <strong className="font-semibold">product information</strong>, an architecture diagram
+            or requirements under <span className="mx-1 font-mono">Inputs</span>, then generate. Models load from the
+            project-scoped index (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>).
           </p>
 
           <Card>
-            <CardHeader title="Generate a model" subtitle="Pick a project with parsed context" />
+            <CardHeader title="Products" subtitle="Add a product's information, then generate its model" />
             {!projects.length ? (
               <EmptyState
                 icon={<ShieldAlert size={22} />}
-                title="No projects yet"
-                body="Create a product project and upload its architecture diagram first — threats are derived from that model."
+                title="No products yet"
+                body="Create a product, then add its information — product description, architecture diagram or requirements. Threats are derived from that context."
+                action={
+                  <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
+                    <Plus size={13} className="mr-1.5 inline" /> New product
+                  </button>
+                }
               />
             ) : (
               <div className="space-y-2">
-                {projects.map((p) => (
-                  <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
-                    <div className="min-w-0">
-                      <p className="text-sm text-slate-200">{p.name}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">#{p.id} · {p.stage}</p>
+                {projects.map((p) => {
+                  const summary = summaries[p.id];
+                  const notReady = summary != null && !summary.ready;
+                  return (
+                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
+                      <div className="min-w-0">
+                        <p className="text-sm text-slate-200">{p.name}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-500">#{p.id} · {p.stage}</p>
+                        <ReadinessChips summary={summary} />
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button
+                          onClick={() => setInputsFor(p)}
+                          className={cx("btn-ghost text-xs !py-1.5", notReady && "text-gold-200")}
+                          title="Add product information, a diagram or requirements"
+                        >
+                          <FileText size={12} className="mr-1.5 inline" /> Inputs
+                        </button>
+                        <button
+                          onClick={() => void generate(p)}
+                          disabled={generating === p.id}
+                          className="btn-secondary text-xs !py-1.5 disabled:opacity-40"
+                          title={notReady ? "Add an input first so the model has something to reason over" : undefined}
+                        >
+                          {generating === p.id ? <Loader2 size={12} className="mr-1.5 inline animate-spin" /> : <Sparkles size={12} className="mr-1.5 inline" />}
+                          Generate
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => void generate(p)}
-                      disabled={generating === p.id}
-                      className="btn-secondary shrink-0 text-xs !py-1.5"
-                    >
-                      {generating === p.id ? <Loader2 size={12} className="mr-1.5 inline animate-spin" /> : <Sparkles size={12} className="mr-1.5 inline" />}
-                      Generate
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </Card>
@@ -216,6 +253,50 @@ export default function ThreatModels() {
       {openModelId != null && (
         <ThreatModelDrawer modelId={openModelId} onClose={() => setOpenModelId(null)} />
       )}
+
+      {creating && (
+        <CreateProductModal
+          onClose={() => setCreating(false)}
+          onCreated={(p) => {
+            setCreating(false);
+            void load();
+            setInputsFor(p);
+          }}
+        />
+      )}
+
+      {inputsFor && (
+        <ProjectInputsModal
+          project={inputsFor}
+          onClose={() => {
+            setInputsFor(null);
+            void load();
+          }}
+          onChanged={() => void load()}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReadinessChips({ summary }: { summary?: ProductContextSummary | null }) {
+  if (!summary) {
+    return <p className="mt-1.5 text-[11px] text-slate-600">Add product information, a diagram or requirements</p>;
+  }
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+      {summary.inputs.map((item) => (
+        <span
+          key={item.key}
+          title={`${item.hint}${item.met ? " — present" : " — missing"}`}
+          className={cx(
+            "chip",
+            item.met ? "border-emerald-400/30 text-emerald-400" : "border-phantix-700 text-slate-600",
+          )}
+        >
+          {item.label}
+        </span>
+      ))}
     </div>
   );
 }
@@ -387,9 +468,9 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
             </p>
           )}
           <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Threats" value={String(threats.length)} icon={<AlertTriangle size={16} />} />
-            <StatCard label="Evidence-supported" value={String(supported)} icon={<ShieldAlert size={16} />} />
-            <StatCard label="Open questions" value={String(open.length)} icon={<HelpCircle size={16} />} />
+            <StatCard label="Threats" value={String(threats.length)} />
+            <StatCard label="Evidence-supported" value={String(supported)} />
+            <StatCard label="Open questions" value={String(open.length)} />
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">

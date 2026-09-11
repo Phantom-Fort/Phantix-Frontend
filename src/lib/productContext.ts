@@ -7,11 +7,18 @@
 // List: GET /threat-models?project_id= is authoritative and the live page reads
 // only it (staging rollout §11b). LOCAL_MODEL_INDEX is retained as a demo/dev
 // helper only; it is not consulted by the live threat-models page.
-import { api, delay, isDemoMode } from "./api";
+import { api, ApiError, delay, isDemoMode } from "./api";
 import * as demo from "./demo-data";
 
 export const PROJECT_STAGES = ["planned", "in_build", "live"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
+
+/**
+ * Document kind for the structured product-information form. Distinct from
+ * free-text `requirements` so the readiness checklist can tell a written product
+ * description apart from a pasted specification.
+ */
+export const PRODUCT_INFORMATION_KIND = "product_information";
 
 export interface ProductProject {
   id: number;
@@ -20,6 +27,60 @@ export interface ProductProject {
   active: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+// ── Product information (the structured threat-modelling inputs) ─────────────
+//
+// The engine reasons over a project's components, flows and documents. The
+// product-information form collects the parts a diagram cannot express (purpose,
+// data classification, compliance scope, assumptions) and composes them into one
+// markdown document stored with kind `product_information`.
+
+export interface ProductInformationFields {
+  description?: string;
+  users?: string;
+  dataHandled?: string;
+  dataClassification?: string;
+  criticality?: string;
+  compliance?: string;
+  entryPoints?: string;
+  trustBoundaries?: string;
+  objectives?: string;
+  assumptions?: string;
+  outOfScope?: string;
+}
+
+export interface ProductInformationField {
+  key: keyof ProductInformationFields;
+  label: string;
+  hint: string;
+  placeholder: string;
+}
+
+export const PRODUCT_INFORMATION_FIELDS: ProductInformationField[] = [
+  { key: "description", label: "Purpose and description", hint: "What the product does and the problem it solves.", placeholder: "A payments API that lets merchants refund customers…" },
+  { key: "users", label: "Users and actors", hint: "Who uses it and with what roles.", placeholder: "Merchants (admin), support agents (read), customers (self-service)…" },
+  { key: "dataHandled", label: "Data handled", hint: "What the product stores, processes or moves.", placeholder: "Card tokens, refund amounts, bank account references…" },
+  { key: "dataClassification", label: "Data classification", hint: "PII / PCI / PHI / secrets / regulatory categories.", placeholder: "PCI-DSS cardholder data; PII (names, emails)…" },
+  { key: "criticality", label: "Business criticality", hint: "Impact of compromise or outage.", placeholder: "High — refunds move real money…" },
+  { key: "compliance", label: "Compliance scope", hint: "Frameworks that apply.", placeholder: "PCI-DSS, SOC 2, GDPR/NDPR…" },
+  { key: "entryPoints", label: "Entry points and authentication", hint: "Interfaces, APIs, authn/authz.", placeholder: "Public REST API (OAuth2), merchant dashboard (SSO), webhooks…" },
+  { key: "trustBoundaries", label: "Trust boundaries", hint: "Where trust changes between zones.", placeholder: "Internet → DMZ → payments core; internal → bank partner…" },
+  { key: "objectives", label: "Security objectives", hint: "What must hold for the product to be safe.", placeholder: "Only the owning merchant can refund its own payments…" },
+  { key: "assumptions", label: "Assumptions", hint: "What the model may take as given.", placeholder: "The bank partner authenticates callbacks…" },
+  { key: "outOfScope", label: "Out of scope", hint: "What the model should not consider.", placeholder: "The legacy admin console is being retired…" },
+];
+
+/** Compose the structured fields into one markdown document. Empty fields are dropped. */
+export function buildProductInformationDocument(fields: ProductInformationFields): string {
+  const lines = ["# Product information"];
+  for (const field of PRODUCT_INFORMATION_FIELDS) {
+    const value = (fields[field.key] ?? "").trim();
+    if (!value) continue;
+    lines.push("", `## ${field.label}`, "", value);
+  }
+  // Only the title with nothing under it → nothing worth ingesting.
+  return lines.length > 1 ? `${lines.join("\n").trim()}\n` : "";
 }
 
 export interface ProjectComponent {
@@ -87,6 +148,106 @@ export async function createProject(name: string, stage: ProjectStage) {
   }
   return api.post<ProductProject>("/context/projects", { name, stage });
 }
+
+/** PATCH /context/projects/{id} — correct the product information after creation. */
+export async function updateProject(projectId: number, patch: { name?: string; stage?: ProjectStage }) {
+  if (isDemoMode()) {
+    await delay(300);
+    return { id: projectId, ...patch } as Partial<ProductProject> & { id: number };
+  }
+  return api.patch<ProductProject>(`/context/projects/${projectId}`, patch);
+}
+
+// ── Readiness — what a threat model needs vs what the project has ────────────
+
+export interface ContextInputRequirement {
+  key: string;
+  label: string;
+  hint: string;
+  met: boolean;
+}
+
+export interface ProductContextSummary {
+  project_id: number;
+  project_name?: string | null;
+  stage?: string | null;
+  components: number;
+  boundaries: number;
+  flows: number;
+  cross_boundary_flows: number;
+  documents: number;
+  document_kinds?: Record<string, number>;
+  has_diagram: boolean;
+  has_requirements: boolean;
+  has_product_information: boolean;
+  inputs: ContextInputRequirement[];
+  ready: boolean;
+  missing: string[];
+}
+
+const CONTEXT_INPUT_CATALOGUE: Array<{ key: string; label: string; hint: string }> = [
+  { key: PRODUCT_INFORMATION_KIND, label: "Product information", hint: "Purpose, users, data handled, criticality and compliance scope." },
+  { key: "architecture", label: "Architecture diagram", hint: "Upload a .drawio with components, trust boundaries and flows." },
+  { key: "requirements", label: "Requirements / design notes", hint: "Security requirements, roles, data classification and assumptions." },
+  { key: "trust_boundaries", label: "Trust boundaries", hint: "Zones the diagram marks trusted or untrusted." },
+  { key: "data_flows", label: "Data flows", hint: "Direction-aware flows between components." },
+];
+
+function summarizeLocal(
+  project: ProductProject,
+  graph: ProjectGraph,
+  kinds: Record<string, number>,
+): ProductContextSummary {
+  const components = graph.components?.length ?? 0;
+  const boundaries = graph.boundaries?.length ?? 0;
+  const flows = (graph.flows ?? []).length;
+  const crossBoundary = (graph.flows ?? []).filter((f) => f.crosses_boundary).length;
+  const hasDiagram = components + boundaries + flows > 0;
+  const hasRequirements = (kinds.requirements ?? 0) > 0;
+  const hasProductInformation = (kinds[PRODUCT_INFORMATION_KIND] ?? 0) > 0;
+  const met: Record<string, boolean> = {
+    [PRODUCT_INFORMATION_KIND]: hasProductInformation,
+    architecture: hasDiagram,
+    requirements: hasRequirements,
+    trust_boundaries: boundaries > 0,
+    data_flows: flows > 0,
+  };
+  const inputs = CONTEXT_INPUT_CATALOGUE.map((c) => ({ ...c, met: met[c.key] ?? false }));
+  return {
+    project_id: project.id,
+    project_name: project.name,
+    stage: project.stage,
+    components,
+    boundaries,
+    flows,
+    cross_boundary_flows: crossBoundary,
+    documents: Object.values(kinds).reduce((a, b) => a + b, 0),
+    document_kinds: kinds,
+    has_diagram: hasDiagram,
+    has_requirements: hasRequirements,
+    has_product_information: hasProductInformation,
+    inputs,
+    ready: hasDiagram || hasRequirements || hasProductInformation,
+    missing: Object.entries(met).filter(([, v]) => !v).map(([k]) => k),
+  };
+}
+
+/** GET /context/projects/{id}/summary — readiness of the threat-modelling inputs. */
+export async function getContextSummary(projectId: number, project?: ProductProject): Promise<ProductContextSummary | null> {
+  if (isDemoMode()) {
+    await delay(260);
+    const found = project ?? demo.productProjects.find((p) => p.id === projectId);
+    if (!found) return null;
+    return summarizeLocal(found, demo.projectGraphs[projectId] ?? { components: [], flows: [], boundaries: [] }, {});
+  }
+  try {
+    return await api.get<ProductContextSummary>(`/context/projects/${projectId}/summary`);
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 
 export async function projectGraph(projectId: number) {
   if (isDemoMode()) {
