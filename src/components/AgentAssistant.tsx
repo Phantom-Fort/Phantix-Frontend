@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown, BrainCircuit } from "lucide-react";
+import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown, BrainCircuit, BookOpen, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { streamAgentChat } from "@/lib/data";
 import { useStore } from "@/lib/store";
@@ -44,6 +44,10 @@ export default function AgentAssistant() {
   const navigate = useNavigate();
   const emailKey = session?.userEmail ?? "guest";
   const [open, setOpen] = useState(false);
+  // The assistant has two jobs: answer with your security data, or route you to
+  // the support desk. The switch makes the second one explicit, because a user
+  // with an issue should not have to know which one is which.
+  const [mode, setMode] = useState<"agent" | "support">("agent");
   const [messages, setMessages] = useState<Msg[]>(() => loadChat(emailKey));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -200,13 +204,86 @@ export default function AgentAssistant() {
                   </p>
                 </div>
                 <div className="ml-auto flex items-center gap-1">
+                  {/* Agent ⇄ Support */}
+                  <div className="mr-1 flex items-center rounded-lg border border-phantix-700/50 bg-phantix-900/60 p-0.5" role="tablist" aria-label="Assistant mode">
+                    {(["agent", "support"] as const).map((m) => (
+                      <button
+                        key={m}
+                        role="tab"
+                        aria-selected={mode === m}
+                        onClick={() => setMode(m)}
+                        className={cx(
+                          "rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition-colors",
+                          mode === m ? "bg-phantix-800 text-white" : "text-slate-500 hover:text-slate-300",
+                        )}
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                   <button onClick={resetChat} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Reset conversation"><Trash2 size={14} /></button>
                   <button onClick={() => setOpen(false)} className="rounded-lg p-1.5 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Close"><X size={15} /></button>
                 </div>
               </div>
 
+              {/* Support mode — same launcher, different job: route the user to help. */}
+              {mode === "support" && (
+                <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+                  <p className="text-xs leading-5 text-slate-400">
+                    Stuck on something? Raise it with the support desk — it is submitted on behalf of your
+                    organization, and the thread is answered here and by email.
+                  </p>
+                  <button
+                    onClick={() => { setOpen(false); navigate("/support?new=1"); }}
+                    className="flex items-start gap-3 rounded-xl border border-gold-400/30 bg-gold-400/[0.08] px-3.5 py-3 text-left transition-colors hover:bg-gold-400/[0.14]"
+                  >
+                    <Sparkles size={15} className="mt-0.5 shrink-0 text-gold-300" />
+                    <span>
+                      <span className="block text-xs font-semibold text-gold-200">Open a support ticket</span>
+                      <span className="block text-[11px] leading-5 text-gold-100/80">Describe the issue and pick a priority — critical is triaged first.</span>
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => { setOpen(false); navigate("/support"); }}
+                    className="flex items-start gap-3 rounded-xl border border-phantix-700/50 px-3.5 py-3 text-left transition-colors hover:bg-phantix-800/40"
+                  >
+                    <ArrowRight size={15} className="mt-0.5 shrink-0 text-slate-400" />
+                    <span>
+                      <span className="block text-xs font-semibold text-slate-200">Support centre</span>
+                      <span className="block text-[11px] leading-5 text-slate-500">Your tickets, live replies and first-response targets.</span>
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => { setOpen(false); navigate("/docs"); }}
+                    className="flex items-start gap-3 rounded-xl border border-phantix-700/50 px-3.5 py-3 text-left transition-colors hover:bg-phantix-800/40"
+                  >
+                    <BookOpen size={15} className="mt-0.5 shrink-0 text-slate-400" />
+                    <span>
+                      <span className="block text-xs font-semibold text-slate-200">Documentation &amp; Help Centre</span>
+                      <span className="block text-[11px] leading-5 text-slate-500">Setup guides, how-tos and FAQs — most answers are already written down.</span>
+                    </span>
+                  </button>
+                  <a
+                    href="mailto:support@phantixlabs.com"
+                    className="flex items-start gap-3 rounded-xl border border-phantix-700/50 px-3.5 py-3 transition-colors hover:bg-phantix-800/40"
+                  >
+                    <Mail size={15} className="mt-0.5 shrink-0 text-slate-400" />
+                    <span>
+                      <span className="block text-xs font-semibold text-slate-200">Email the desk</span>
+                      <span className="block text-[11px] leading-5 text-slate-500">support@phantixlabs.com</span>
+                    </span>
+                  </a>
+                  <div className="mt-auto rounded-xl border border-severity-critical/25 bg-severity-critical/[0.06] px-3.5 py-3">
+                    <p className="text-[11px] leading-5 text-red-200/85">
+                      <strong className="text-severity-critical">Live incident?</strong> Choose Critical priority and the
+                      “Security incident” category so it is triaged first.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Messages */}
-              <div className="relative min-h-0 flex-1">
+              <div className={cx("relative min-h-0 flex-1", mode === "support" && "hidden")}>
                 <div ref={scrollRef} onScroll={onScroll} className="h-full space-y-3 overflow-y-auto p-3.5">
                   {connError && (
                     <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
@@ -307,7 +384,7 @@ export default function AgentAssistant() {
               )}
 
               {/* Composer */}
-              <div className="border-t border-phantix-700/40 p-3">
+              <div className={cx("border-t border-phantix-700/40 p-3", mode === "support" && "hidden")}>
                 <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 focus-within:border-gold-400/40">
                   <input
                     value={input}
