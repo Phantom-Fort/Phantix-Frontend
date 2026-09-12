@@ -104,6 +104,11 @@ import type {
 import type {
   AutofixStatus,
   BranchReviewWallet,
+  CodeAiExplanation,
+  CodeBlob,
+  CodeFinding,
+  CodeFindingFile,
+  CodeSeverityCounts,
   GithubInstallation,
   Repo as GithubRepo,
   ReviewEvent,
@@ -2441,3 +2446,261 @@ export const postureDrift: Record<number, PostureDrift> = {
     projects: 1,
   },
 };
+
+// ── Code review — the GitHub-style finding view (block · why · fix · PR) ─────
+// Line content here stands in for what the live page reads from GitHub at the
+// reviewed SHA; the platform never stores customer source, so in demo mode the
+// "blob" is fixture text rather than a cached copy of anything real.
+
+export const codeFindingCounts: CodeSeverityCounts = {
+  critical: 1,
+  high: 3,
+  medium: 2,
+  low: 0,
+  info: 0,
+  total: 6,
+};
+
+export const codeFindingFiles: CodeFindingFile[] = [
+  { github_repository_id: 402, repo: "acme-financial/payments-api", path: "app/api/transfers.py", language: "python", findings: 2, worst_severity: "critical", layers: ["sast"], autofix_pr_url: null, sha: "f6e5d4c3b2a19087" },
+  { github_repository_id: 401, repo: "acme-financial/core-ledger", path: ".github/workflows/release.yml", language: "yaml", findings: 2, worst_severity: "high", layers: ["pipeline"], autofix_pr_url: "https://github.com/acme-financial/core-ledger/pull/128", sha: "a1b2c3d4e5f60718" },
+  { github_repository_id: 401, repo: "acme-financial/core-ledger", path: "infra/k8s/ledger-deployment.yaml", language: "yaml", findings: 1, worst_severity: "high", layers: ["iac"], autofix_pr_url: null, sha: "a1b2c3d4e5f60718" },
+  { github_repository_id: 402, repo: "acme-financial/payments-api", path: "requirements.txt", language: "text", findings: 1, worst_severity: "medium", layers: ["sca"], autofix_pr_url: null, sha: "f6e5d4c3b2a19087" },
+];
+
+export const codeFindings: CodeFinding[] = [
+  {
+    id: 7101, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "sast", tool: "code_graph", rule_id: "sql-orm-execution-sinks", severity: "critical",
+    title: "SQL / ORM execution sinks", path: "app/api/transfers.py", language: "python",
+    start_line: 88, end_line: 91, cwe: "CWE-89", status: "open", reportable: true,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 3,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/app/api/transfers.py#L88-L91",
+    autofix: { state: "none" }, why: "Query execution is where a string built from request data becomes database instructions.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+  {
+    id: 7102, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "secrets", tool: "github_analysis", rule_id: "hardcoded-api-key-pattern", severity: "high",
+    title: "Hardcoded API key pattern", path: "app/api/transfers.py", language: "python",
+    start_line: 14, end_line: 14, cwe: "CWE-798", status: "open", reportable: false,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 1,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/app/api/transfers.py#L14",
+    autofix: { state: "none" }, why: "An API key literal in source is readable by everyone with repository access.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+  {
+    id: 7103, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "pipeline", tool: "code_layer_pipeline", rule_id: "workflow-uses-pull-request-target", severity: "high",
+    title: "Workflow uses pull_request_target", path: ".github/workflows/release.yml", language: "yaml",
+    start_line: 5, end_line: 5, cwe: "CWE-94", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 2,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/.github/workflows/release.yml#L5",
+    autofix: { state: "pr_open", pr_number: 128, pr_url: "https://github.com/acme-financial/core-ledger/pull/128", branch: "securegraph/autofix/workflow-uses-pull-request-target-7103-a1b2c3", commit_sha: "cc11dd22ee33ff44", signed: true, detail: "Draft PR open — a developer must review and merge it.", updated_at: "2026-09-10T15:02:00Z" },
+    why: "pull_request_target runs the workflow with a read/write token and access to repository secrets.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7104, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "pipeline", tool: "code_layer_pipeline", rule_id: "action-pinned-to-a-moving-reference", severity: "medium",
+    title: "Action pinned to a moving reference", path: ".github/workflows/release.yml", language: "yaml",
+    start_line: 22, end_line: 22, cwe: "CWE-829", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 2,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/.github/workflows/release.yml#L22",
+    autofix: { state: "none" }, why: "A tag or branch is a pointer the action's owner can repoint at any time.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7105, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "iac", tool: "code_layer_iac", rule_id: "privileged-container", severity: "high",
+    title: "Privileged container", path: "infra/k8s/ledger-deployment.yaml", language: "yaml",
+    start_line: 31, end_line: 31, cwe: "CWE-250", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 1,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/infra/k8s/ledger-deployment.yaml#L31",
+    autofix: { state: "permission_required", detail: "GitHub App write access required: https://github.com/apps/securegraph/installations/new", updated_at: "2026-09-11T09:14:00Z" },
+    why: "A privileged container runs with the host's full capability set and device access.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7106, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "sca", tool: "dependency_intel", rule_id: "vulnerable-dependency-cryptography-41-0-1-ghsa-jfhm-5ghh-2f97", severity: "medium",
+    title: "Vulnerable dependency cryptography@41.0.1 (GHSA-jfhm-5ghh-2f97)", path: "requirements.txt", language: "text",
+    start_line: null, end_line: null, cwe: "CWE-1395", status: "open", reportable: false,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 4,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/requirements.txt",
+    autofix: { state: "none" }, why: "A dependency resolved here has a published advisory.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+];
+
+const DEMO_WHY: Record<number, string> = {
+  7101: "Query execution is where a string built from request data becomes database instructions. If any part of the statement is concatenated or interpolated rather than bound, an attacker controls the query's structure and can read or modify data the endpoint never intended to expose.",
+  7102: "An API key literal in source is readable by everyone with repository access, survives in history after deletion, and is copied into every build artifact and container image. It also cannot be rotated without a code change and a deploy, so in practice it never gets rotated.",
+  7103: "pull_request_target runs the workflow with a read/write token and access to repository secrets, in the context of the base repository — while the pull request's code comes from a fork anyone can open. If the job checks out or executes the head ref, attacker code runs with your secrets and can push to the repository.",
+  7104: "A tag or branch is a pointer the action's owner can repoint at any time, and tags can be force-moved silently. Your pipeline therefore executes whatever that name means at run time — the supply-chain equivalent of `latest` — with your token and secrets in scope.",
+  7105: "A privileged container runs with the host's full capability set and device access, so the kernel boundary that makes containers a security feature is gone. Any code execution inside this workload is effectively code execution on the node, and from there on every other pod scheduled there.",
+  7106: "A dependency resolved here has a published advisory, so the vulnerable code is part of your build whether or not you call the affected function. Exploitation needs no access to your source — the advisory and often a proof of concept are public.",
+};
+
+const DEMO_FIX: Record<number, string> = {
+  7101: "Use parameter binding for every value — placeholders with a params argument, or the ORM's expression language — and never f-strings, % , + or .format() in SQL. Identifiers that genuinely must be dynamic belong in a hard-coded allowlist, not in interpolation.",
+  7102: "Treat the credential as compromised: rotate it at the provider first, because git history and every fork, clone and CI cache still hold the old value even after you delete the line. Then move the value to the platform's secret store and read it from the environment at run time.",
+  7103: "Use the pull_request trigger for anything that touches PR code; it runs without secrets by design. If you need pull_request_target for labelling or commenting, never check out the head SHA in that job, and move any build step into a separate workflow_run job gated behind an environment approval.",
+  7104: "Pin every third-party action to a full 40-character commit SHA with the version in a trailing comment, and let Dependabot raise the bumps so upgrades are reviewed diffs rather than silent changes.",
+  7105: "Remove privileged: true and grant only the specific capabilities the process needs via securityContext.capabilities.add. Workloads that genuinely need host access belong in a separate, tightly reviewed DaemonSet, not in an application deployment.",
+  7106: "Upgrade to the fixed version named in the advisory and keep the lockfile pinned so the resolution is reproducible. When no fix is released, remove or replace the package, or document the compensating control.",
+};
+
+const DEMO_BLOB_LINES: Record<number, { first: number; text: string }> = {
+  7101: {
+    first: 82,
+    text: [
+      "@router.get(\"/transfers/{account_id}\")",
+      "async def list_transfers(account_id: str, db: AsyncSession = Depends(get_db)):",
+      "    \"\"\"Recent transfers for one account.\"\"\"",
+      "    if not account_id:",
+      "        raise HTTPException(422, detail=\"account_id required\")",
+      "",
+      "    query = (",
+      "        \"SELECT id, amount, created_at FROM transfers \"",
+      "        \"WHERE account_id = '\" + account_id + \"' ORDER BY created_at DESC\"",
+      "    )",
+      "    rows = (await db.execute(text(query))).all()",
+      "    return {\"items\": [dict(r._mapping) for r in rows]}",
+    ].join("\n"),
+  },
+  7102: {
+    first: 8,
+    text: [
+      "from fastapi import APIRouter, Depends, HTTPException",
+      "from sqlalchemy import text",
+      "",
+      "from app.db.session import get_db",
+      "",
+      "router = APIRouter()",
+      "",
+      "PROVIDER_API_KEY = \"sk**********\"",
+      "SETTLEMENT_WINDOW_HOURS = 24",
+      "",
+      "",
+    ].join("\n"),
+  },
+  7103: {
+    first: 1,
+    text: [
+      "name: release",
+      "",
+      "on:",
+      "  workflow_dispatch:",
+      "  pull_request_target:",
+      "    types: [opened, synchronize]",
+      "",
+      "permissions:",
+      "  contents: write",
+      "",
+    ].join("\n"),
+  },
+  7104: {
+    first: 16,
+    text: [
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v4",
+      "        with:",
+      "          ref: ${{ github.event.pull_request.head.sha }}",
+      "      - uses: actions/setup-python@main",
+      "      - run: make release",
+      "",
+    ].join("\n"),
+  },
+  7105: {
+    first: 25,
+    text: [
+      "    spec:",
+      "      containers:",
+      "        - name: ledger",
+      "          image: ghcr.io/acme-financial/ledger:2.14.0",
+      "          ports:",
+      "            - containerPort: 8080",
+      "          securityContext:",
+      "            privileged: true",
+      "            runAsNonRoot: false",
+      "          resources:",
+      "            limits:",
+      "              memory: 1Gi",
+    ].join("\n"),
+  },
+  7106: {
+    first: 1,
+    text: [
+      "fastapi==0.115.0",
+      "sqlalchemy==2.0.34",
+      "cryptography==41.0.1",
+      "httpx==0.27.2",
+      "pydantic==2.9.2",
+    ].join("\n"),
+  },
+};
+
+export function codeFindingDetail(id: number): CodeFinding {
+  const base = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  return {
+    ...base,
+    description: `${base.title} matched in ${base.path}`,
+    why: DEMO_WHY[base.id] ?? base.why ?? null,
+    fix: DEMO_FIX[base.id] ?? null,
+    reference_url: "https://cheatsheetseries.owasp.org/",
+    guidance_specific: true,
+    detail: { rule_id: base.rule_id, layer: base.layer },
+    ai_explanation: null,
+    ai_explained_at: null,
+  };
+}
+
+export function codeFindingBlob(id: number): CodeBlob {
+  const finding = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  const fixture = DEMO_BLOB_LINES[finding.id] ?? { first: 1, text: "" };
+  const rows = fixture.text.split("\n");
+  const start = finding.start_line ?? null;
+  const end = finding.end_line ?? start;
+  return {
+    ok: true,
+    path: finding.path,
+    language: finding.language,
+    sha: finding.sha,
+    repo: finding.repo,
+    start_line: start,
+    end_line: end,
+    first_line: fixture.first,
+    last_line: fixture.first + rows.length - 1,
+    total_lines: fixture.first + rows.length + 40,
+    anchored: start != null,
+    redacted: finding.layer === "secrets",
+    permalink: finding.permalink,
+    lines: rows.map((content, i) => {
+      const number = fixture.first + i;
+      return {
+        number,
+        content,
+        highlight: start != null && number >= start && number <= (end ?? start),
+      };
+    }),
+  };
+}
+
+export function codeFindingExplanation(id: number): CodeAiExplanation {
+  const finding = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  return {
+    explanation: `In this repository the weakness is reachable from an authenticated but unprivileged caller: ${finding.path} is imported by the request path that serves customer-facing traffic, so the matched line runs on data that crosses the trust boundary.`,
+    impact: "An attacker with a low-privilege account could read or modify records belonging to other tenants.",
+    remediation: DEMO_FIX[finding.id] ?? "Apply the rule guidance above.",
+    root_cause: "Input from the request is carried to the sink without passing through the validation layer the rest of the module uses.",
+    confidence: 0.82,
+    requires_human_review: false,
+    hallucination_flagged: false,
+    model_provider: "demo",
+    model_name: "demo-reasoner",
+  };
+}
