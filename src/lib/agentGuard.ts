@@ -73,6 +73,16 @@ export async function requestAgentApproval(action: string, reason: string, analy
 export async function decideAgentApproval(approvalId: string, approve: boolean, notes = "") {
   if (isDemoMode()) {
     await delay(320);
+    // Mutate the shared demo fixture so the next loadAgentApprovals() reflects
+    // the decision — otherwise the row never leaves "pending" and the guard
+    // panel looks like the click did nothing.
+    const row = demoApprovals.find((a) => a.approval_id === approvalId);
+    if (row) {
+      row.status = approve ? "approved" : "rejected";
+      row.decided_at = new Date().toISOString();
+      row.decided_by = "you";
+      row.authorized = approve;
+    }
     return { approval_id: approvalId, status: approve ? "approved" : "rejected", authorization: approve ? { single_use: true } : null };
   }
   return api.post<Record<string, unknown>>(

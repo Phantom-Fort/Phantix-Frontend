@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { GitBranch, Loader2, Play, RefreshCw, CalendarClock } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertTriangle, GitBranch, Loader2, Play, RefreshCw, CalendarClock } from "lucide-react";
 import { Card, CardHeader, EmptyState, Spinner } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useStore } from "@/lib/store";
@@ -23,7 +24,9 @@ export default function ContinuousReassessmentCard() {
   const [rows, setRows] = useState<ContinuousReassessmentSchedule[]>([]);
   const [projects, setProjects] = useState<{ id: number; name?: string }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [enableBusy, setEnableBusy] = useState(false);
+  const [proposeBusyId, setProposeBusyId] = useState<number | string | null>(null);
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState("");
@@ -32,15 +35,22 @@ export default function ContinuousReassessmentCard() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [sched, proj] = await Promise.all([
-      listContinuousReassessment().catch(() => null),
-      api.get<any>("/context/projects").catch(() => null),
-    ]);
-    setRows(Array.isArray(sched?.schedules) ? sched.schedules : []);
-    const items = Array.isArray(proj) ? proj : (proj?.items ?? []);
-    setProjects(items);
-    setProjectId((prev) => prev ?? items[0]?.id ?? null);
-    setLoading(false);
+    setError(null);
+    try {
+      const [sched, proj] = await Promise.all([
+        listContinuousReassessment(),
+        api.get<any>("/context/projects").catch(() => null),
+      ]);
+      setRows(Array.isArray(sched?.schedules) ? sched.schedules : []);
+      const items = Array.isArray(proj) ? proj : (proj?.items ?? []);
+      setProjects(items);
+      setProjectId((prev) => prev ?? items[0]?.id ?? null);
+    } catch (e: any) {
+      setRows([]);
+      setError(e?.detail?.message || e?.message || "Continuous reassessment schedules unavailable.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -52,7 +62,7 @@ export default function ContinuousReassessmentCard() {
       toast("error", "Project and target key required");
       return;
     }
-    setBusy(true);
+    setEnableBusy(true);
     try {
       await enableContinuousReassessment({
         project_id: projectId,
@@ -68,13 +78,13 @@ export default function ContinuousReassessmentCard() {
     } catch (e: any) {
       toast("error", "Could not enable", e?.message || "");
     } finally {
-      setBusy(false);
+      setEnableBusy(false);
     }
   };
 
   const propose = async (s: ContinuousReassessmentSchedule) => {
     if (s.project_id == null || !s.target_key) return;
-    setBusy(true);
+    setProposeBusyId(s.id);
     try {
       await proposeContinuousReassessment({
         project_id: s.project_id,
@@ -85,7 +95,7 @@ export default function ContinuousReassessmentCard() {
     } catch (e: any) {
       toast("error", "Could not propose", e?.message || "");
     } finally {
-      setBusy(false);
+      setProposeBusyId(null);
     }
   };
 
@@ -106,39 +116,56 @@ export default function ContinuousReassessmentCard() {
         }
       />
 
-      {open && (
-        <div className="mb-4 grid grid-cols-1 gap-3 rounded-md border border-phantix-700/40 bg-phantix-950/40 p-3 sm:grid-cols-4">
-          <div className="sm:col-span-2">
-            <label className="label">Product project</label>
-            <select className="input" value={projectId ?? ""} onChange={(e) => setProjectId(Number(e.target.value) || null)}>
-              {projects.length === 0 && <option value="">No projects</option>}
-              {projects.map((p) => <option key={p.id} value={p.id}>{p.name || `Project #${p.id}`}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Target key</label>
-            <input className="input font-mono !text-xs" placeholder="tk_…" value={targetKey} onChange={(e) => setTargetKey(e.target.value)} />
-          </div>
-          <div>
-            <label className="label">Cadence</label>
-            <select className="input" value={cadence} onChange={(e) => setCadence(e.target.value)}>
-              {CADENCES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Debounce (hours)</label>
-            <input type="number" min={1} max={168} className="input" value={debounceHours} onChange={(e) => setDebounceHours(Number(e.target.value) || 24)} />
-          </div>
-          <div className="flex items-end sm:col-span-3">
-            <button className="btn-primary text-xs" disabled={busy} onClick={() => void enable()}>
-              {busy ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : null} Enable continuous reassessment
-            </button>
-          </div>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.15 }}
+            className="overflow-hidden"
+          >
+            <div className="mb-4 grid grid-cols-1 gap-3 rounded-md border border-phantix-700/40 bg-phantix-950/40 p-3 sm:grid-cols-4">
+              <div className="sm:col-span-2">
+                <label className="label">Product project</label>
+                <select className="input" value={projectId ?? ""} onChange={(e) => setProjectId(Number(e.target.value) || null)}>
+                  {projects.length === 0 && <option value="">No projects</option>}
+                  {projects.map((p) => <option key={p.id} value={p.id}>{p.name || `Project #${p.id}`}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Target key</label>
+                <input className="input font-mono !text-xs" placeholder="tk_…" value={targetKey} onChange={(e) => setTargetKey(e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Cadence</label>
+                <select className="input" value={cadence} onChange={(e) => setCadence(e.target.value)}>
+                  {CADENCES.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Debounce (hours)</label>
+                <input type="number" min={1} max={168} className="input" value={debounceHours} onChange={(e) => setDebounceHours(Number(e.target.value) || 24)} />
+              </div>
+              <div className="flex items-end sm:col-span-3">
+                <button className="btn-primary text-xs" disabled={enableBusy} onClick={() => void enable()}>
+                  {enableBusy ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : null} Enable continuous reassessment
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {loading ? (
-        <Spinner />
+        <div className="flex justify-center py-6"><Spinner /></div>
+      ) : error ? (
+        <EmptyState
+          icon={<AlertTriangle size={20} />}
+          title="Schedules unavailable"
+          body={error}
+          action={<button className="btn-secondary" onClick={() => void load()}>Retry</button>}
+        />
       ) : rows.length === 0 ? (
         <EmptyState icon={<GitBranch size={20} />} title="No continuous schedules" body="Enable one to re-assess the scope when the product design changes." />
       ) : (
@@ -154,8 +181,9 @@ export default function ContinuousReassessmentCard() {
                   {s.last_run_at && <span>last {timeAgo(String(s.last_run_at))}</span>}
                 </p>
               </div>
-              <button className="btn-ghost !px-2.5 !py-1 !text-xs" disabled={busy} onClick={() => void propose(s)}>
-                <Play size={11} className="mr-1 inline" /> Propose now
+              <button className="btn-ghost !px-2.5 !py-1 !text-xs" disabled={proposeBusyId === s.id} onClick={() => void propose(s)}>
+                {proposeBusyId === s.id ? <Loader2 size={11} className="mr-1 inline animate-spin" /> : <Play size={11} className="mr-1 inline" />}
+                Propose now
               </button>
             </div>
           ))}

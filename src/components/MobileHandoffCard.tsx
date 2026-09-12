@@ -26,8 +26,8 @@ export default function MobileHandoffCard() {
         setProjects(items);
         setProjectId((prev) => prev ?? items[0]?.id ?? null);
       })
-      .catch(() => undefined);
-  }, []);
+      .catch((e: any) => toast("error", "Projects unavailable", e?.detail?.message || e?.message));
+  }, [toast]);
 
   const handoff = async () => {
     let parsed: Record<string, unknown> = {};

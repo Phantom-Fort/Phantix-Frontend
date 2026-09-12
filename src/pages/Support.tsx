@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { LifeBuoy, Plus, MessageSquare } from "lucide-react";
 import { PageHeader, Card, StatusBadge, Modal, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
 import { loadSupportTickets } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
@@ -12,6 +13,11 @@ export default function Support() {
   const { toast } = useStore();
   const { data: supportTickets, loading, error, reload } = useResource(loadSupportTickets, []);
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(supportTickets.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = supportTickets.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   if (loading) {
     return <PageSkeleton variant="list" rows={5} actions />;
@@ -38,7 +44,7 @@ export default function Support() {
         <Card><EmptyState icon={<LifeBuoy size={22} />} title="No tickets yet" body="We're here when you need us." /></Card>
       ) : (
         <div className="space-y-3">
-          {supportTickets.map((t, i) => (
+          {paginated.map((t, i) => (
             <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card hover className="!p-4">
                 <div className="flex flex-wrap items-center gap-3">
@@ -64,6 +70,13 @@ export default function Support() {
               </Card>
             </motion.div>
           ))}
+          <Pagination
+            totalItems={supportTickets.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 

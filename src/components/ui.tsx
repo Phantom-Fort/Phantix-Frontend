@@ -216,7 +216,7 @@ export function ProgressRing({
   size = 120,
   stroke = 10,
   color = "rgb(var(--gold-400))",
-  track = "#27272A",
+  track = "rgb(var(--phantix-800))",
   children,
 }: {
   value: number; // 0-100

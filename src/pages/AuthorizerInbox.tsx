@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, ShieldCheck, Crosshair, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
@@ -39,6 +40,8 @@ export default function AuthorizerInbox() {
   const { toast } = useStore();
   const [filter, setFilter] = useState<string>("all");
   const [acting, setActing] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { data: inbox, loading, error, reload } = useResource(
     () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
@@ -59,6 +62,11 @@ export default function AuthorizerInbox() {
     if (filter === "risk") return i.channel === "risk";
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  useEffect(() => { setPage(1); }, [filter, pageSize]);
 
   const handleDecide = async (item: InboxItem, approve: boolean) => {
     const dp = (item as any).decidePaths ?? (item as any).decide_paths ?? {};
@@ -186,7 +194,7 @@ export default function AuthorizerInbox() {
         <EmptyState icon={<CheckCircle2 size={24} />} title="All clear" body="No pending approvals --- everything is authorized." />
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => {
+          {paginated.map((item) => {
             const busy = acting === (item.pendingId || item.requestId || item.treatmentId || null);
             const channelIcon = item.channel === "dual_control" ? <Shield size={16} className="text-gold-400" />
               : item.channel === "vapt" ? <Crosshair size={16} className="text-severity-medium" />
@@ -227,6 +235,13 @@ export default function AuthorizerInbox() {
               </motion.div>
             );
           })}
+          <Pagination
+            totalItems={filtered.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 

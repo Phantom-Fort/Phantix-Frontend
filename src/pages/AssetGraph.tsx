@@ -92,7 +92,7 @@ export default function AssetGraph() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Asset Relationship Graph"
-        description="Force-directed map of your attack surface — grouped by tags and asset types, like a vault of linked notes"
+        description="Force-directed map of your attack surface — grouped by tags and asset types, connected by real engine relationships"
         actions={<>
             <DocLink docId="howto-app-04" label="Discovery how-to" />
           <Link to="/assets/intelligence" className="btn-secondary text-sm px-3 py-1.5">

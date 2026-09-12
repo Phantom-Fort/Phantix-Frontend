@@ -443,7 +443,7 @@ export default function AssetIntelligenceDashboard() {
         <Card>
           <CardHeader
             title={<><Network size={16} className="inline text-gold-400 mr-1" /> Relationship Graph</>}
-            subtitle="Obsidian-style force map — assets clustered by tags and asset types, connected to real engine relationships"
+            subtitle="Force-directed map — assets clustered by tags and asset types, connected to real engine relationships"
             action={
               <Link to="/assets/intelligence/graph" className="text-xs font-semibold text-gold-400 hover:text-gold-300 flex items-center gap-1">
                 Open full view <ArrowRight size={12} />

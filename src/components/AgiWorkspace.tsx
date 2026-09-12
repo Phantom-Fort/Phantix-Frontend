@@ -5,6 +5,7 @@ import {
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
 import PentestTodo from "@/components/PentestTodo";
@@ -996,6 +997,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   pendingCount={actions.length}
                   running={running}
                   compact={COMPACT}
+                  collapsible={COMPACT}
+                  defaultCollapsed={COMPACT}
                 />
               </div>
 
@@ -1233,6 +1236,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           <button onClick={() => void accept()} disabled={!agreementChecked || accepting} className="btn-primary w-full !py-2.5 !text-xs">
             {accepting ? <Loader2 size={12} className="mr-1 animate-spin inline" /> : <ShieldCheck size={13} className="mr-1 inline" />} Accept & continue
           </button>
+          {/* Help sits under the button so the agreement is read first — the guide
+              explains scope, approvals and what the agent may never touch.
+              DocLink opens in a new tab, so this modal (and the drawer, if
+              open) stays exactly as the operator left it. */}
+          <div className="flex justify-center">
+            <DocLink docId="howto-app-17" />
+          </div>
         </div>
       </Modal>
     </div>

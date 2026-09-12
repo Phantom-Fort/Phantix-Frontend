@@ -139,14 +139,14 @@ const navSections: {
       { type: "dropdown", label: "Compliance", icon: <Scale size={17} />, basePath: "/compliance", items: complianceSubItems },
       { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
       { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },
-      { to: "/reports", label: "Reports", icon: <FileText size={17} /> },
+      { to: "/reports", label: "Report Solutions", icon: <FileText size={17} /> },
     ],
   },
   {
     label: "Assistant",
     items: [
       { to: "/agent", label: "SecureGraph Agent", icon: <Bot size={17} /> },
-      { to: "/agent-activity", label: "Agent activity", icon: <Activity size={17} /> },
+      { to: "/agent-activity", label: "Agent Activity", icon: <Activity size={17} /> },
     ],
   },
   {

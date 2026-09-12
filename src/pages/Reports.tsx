@@ -2,8 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
-import { loadReportsBundle, patchTrackerFinding, retestTrackerFinding } from "@/lib/data";
+import ReportSolutions from "@/components/ReportSolutions";
+import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerFinding } from "@/lib/data";
+import type { ReportTypeEntry } from "@/lib/types";
 import { api, ApiError } from "@/lib/api";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@/lib/utils";
@@ -224,13 +227,45 @@ export default function Reports() {
     "reports",
   );
   const { reports, trackerFindings, trackerSummary } = data;
-  const initialTab = params.get("tab") === "tracker" ? "tracker" : "reports";
+  const requestedTab = params.get("tab");
+  const initialTab =
+    requestedTab === "tracker" || requestedTab === "reports" ? requestedTab : "solutions";
   const [tab, setTab] = useState(initialTab);
+  const [reportTypes, setReportTypes] = useState<ReportTypeEntry[]>([]);
+  const [typesLoading, setTypesLoading] = useState(true);
   const [genOpen, setGenOpen] = useState(false);
+  const [reportsPage, setReportsPage] = useState(1);
+  const [reportsPageSize, setReportsPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const reportsTotalPages = Math.max(1, Math.ceil(reports.length / reportsPageSize));
+  const reportsSafePage = Math.min(reportsPage, reportsTotalPages);
+  const reportsPageItems = reports.slice((reportsSafePage - 1) * reportsPageSize, reportsSafePage * reportsPageSize);
+  const [trackerPage, setTrackerPage] = useState(1);
+  const [trackerPageSize, setTrackerPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const trackerTotalPages = Math.max(1, Math.ceil(trackerFindings.length / trackerPageSize));
+  const trackerSafePage = Math.min(trackerPage, trackerTotalPages);
+  const trackerPageItems = trackerFindings.slice((trackerSafePage - 1) * trackerPageSize, trackerSafePage * trackerPageSize);
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const fetchedCampaigns = useRef(false);
+
+  // The catalog is what the page offers; without it there is nothing to pick.
+  useEffect(() => {
+    let cancelled = false;
+    loadReportTypes()
+      .then((items) => {
+        if (!cancelled) setReportTypes(items);
+      })
+      .catch(() => {
+        if (!cancelled) setReportTypes([]);
+      })
+      .finally(() => {
+        if (!cancelled) setTypesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const highlightKey = params.get("key") || "";
 
   // Verification gate (AUGUST_2026_REPORTING…_FE.md §A): preview verified vs
@@ -512,8 +547,8 @@ export default function Reports() {
   return (
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
-        title="Reports"
-        description="Library of generated artifacts (md/json/xlsx/pdf/docx/pptx/html). The tracker tab is a living remediation board — not a report file."
+        title="Report solutions"
+        description="Generate a report for the question you need answered — across every attack surface and every engine, not just VAPT. The library holds what has already been produced; the tracker is a living remediation board, not a report file."
         actions={
           <>
           <DocLink docId="howto-app-11" label="Reports how-to" />
@@ -526,12 +561,29 @@ export default function Reports() {
 
       <Tabs
         tabs={[
+          { id: "solutions", label: "Report solutions", count: reportTypes.length || undefined },
           { id: "reports", label: "Report library", count: reports.length },
           { id: "tracker", label: "Findings tracker", count: trackerFindings.length },
         ]}
         active={tab}
         onChange={setTab}
       />
+
+      {tab === "solutions" && (
+        <ReportSolutions
+          types={reportTypes}
+          loading={typesLoading}
+          busyType={genSubmitting ? genForm.report_type : null}
+          onGenerate={(entry) => {
+            setGenForm((prev) => ({
+              ...prev,
+              report_type: entry.report_type,
+              campaign_id: entry.requires_campaign ? prev.campaign_id : "",
+            }));
+            setGenOpen(true);
+          }}
+        />
+      )}
 
       {tab === "reports" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -544,7 +596,7 @@ export default function Reports() {
             </p>
           </div>
 
-          {reports.map((r, i) => (
+          {reportsPageItems.map((r, i) => (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card hover>
                 <div
@@ -621,6 +673,14 @@ export default function Reports() {
             </motion.div>
           ))}
 
+          <Pagination
+            totalItems={reports.length}
+            page={reportsSafePage}
+            pageSize={reportsPageSize}
+            onPageChange={setReportsPage}
+            onPageSizeChange={setReportsPageSize}
+          />
+
           <p className="text-xs text-slate-500">
             Retention: REPORT_MAX_VERSIONS=3 per type --- oldest archives automatically with a ReportArchived
             alert. Prefer run_inline=false for large campaigns to avoid gateway timeouts; poll GET /reports/{"{id}"}
@@ -685,7 +745,7 @@ export default function Reports() {
                     </tr>
                   </thead>
                   <tbody>
-                    {trackerFindings.map((f) => (
+                    {trackerPageItems.map((f) => (
                       <tr
                         key={f.finding_key}
                         id={`tracker-${f.finding_key}`}
@@ -780,6 +840,13 @@ export default function Reports() {
                     ))}
                   </tbody>
                 </table>
+                <Pagination
+                  totalItems={trackerFindings.length}
+                  page={trackerSafePage}
+                  pageSize={trackerPageSize}
+                  onPageChange={setTrackerPage}
+                  onPageSizeChange={setTrackerPageSize}
+                />
               </div>
             )}
           </Card>
@@ -796,12 +863,30 @@ export default function Reports() {
           )}
           <div>
             <label className="label">Report type</label>
+            {/* Driven by the served catalog, so a report type added in the
+                backend is selectable here without a frontend change. The old
+                hard-coded four silently hid the cross-surface types. */}
             <select className="input" value={genForm.report_type} onChange={(e) => setGenForm((p) => ({ ...p, report_type: e.target.value }))}>
-              <option value="vapt_campaign">vapt_campaign --- full client package</option>
-              <option value="executive">executive --- board summary</option>
-              <option value="compliance">compliance --- framework-first</option>
-              <option value="tracker">tracker --- remediation snapshot</option>
+              {(reportTypes.length
+                ? reportTypes
+                : [{ report_type: genForm.report_type, title: genForm.report_type, audience: "" } as ReportTypeEntry]
+              ).map((t) => (
+                <option key={t.report_type} value={t.report_type}>
+                  {t.title}
+                  {t.audience ? ` --- ${t.audience.toLowerCase()}` : ""}
+                </option>
+              ))}
             </select>
+            {(() => {
+              const chosen = reportTypes.find((t) => t.report_type === genForm.report_type);
+              if (!chosen) return null;
+              return (
+                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                  {chosen.use_case}
+                  {!chosen.requires_campaign && " No campaign needed."}
+                </p>
+              );
+            })()}
           </div>
           <div>
             <label className="label">Campaign</label>

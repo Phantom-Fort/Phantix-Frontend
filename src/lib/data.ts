@@ -10,6 +10,7 @@ import type {
   AgentStreamEvent,
   AiStatus,
   AiUsage,
+  ReportTypeEntry,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -2844,4 +2845,44 @@ export function warRoomStreamUrl(): string {
 
 export function hubStreamUrl(): string {
   return `${API_BASE}/integrations/hooks/stream`;
+}
+
+/**
+ * Report types this org can generate — drives the Report Solutions page.
+ *
+ * Served rather than hard-coded so a new backend report type appears without a
+ * frontend release, and so the page can never advertise a chapter the assembler
+ * does not build (the catalog derives its section list from the assembler).
+ */
+export async function loadReportTypes(): Promise<ReportTypeEntry[]> {
+  if (isDemoMode()) { await delay(250); return demo.reportTypes; }
+  const raw = await softOne<any>("/reports/types");
+  const items = Array.isArray(raw?.items) ? raw.items : [];
+  return items.map((t: any) => ({
+    report_type: String(t.report_type ?? ""),
+    title: String(t.title ?? t.report_type ?? ""),
+    audience: String(t.audience ?? ""),
+    use_case: String(t.use_case ?? ""),
+    requires_campaign: Boolean(t.requires_campaign),
+    featured: Boolean(t.featured),
+    icon: t.icon ? String(t.icon) : undefined,
+    sections: Array.isArray(t.sections) ? t.sections.map(String) : [],
+    section_count: Number(t.section_count ?? 0),
+    formats: Array.isArray(t.formats) ? t.formats.map(String) : [],
+  })) as ReportTypeEntry[];
+}
+
+/**
+ * Standing finding counts for the dashboard charts.
+ *
+ * The reports bundle already fetches this alongside report rows; the dashboard
+ * wants it on its own, so it asks for one row and reads only the summary — the
+ * counts are computed server-side over the whole tracked population, not over
+ * the page of rows returned.
+ */
+export async function loadTrackerSummary(): Promise<TrackerSummary | null> {
+  if (isDemoMode()) { await delay(250); return demo.trackerSummary; }
+  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  const summary = raw && typeof raw === "object" ? raw.summary : null;
+  return summary && typeof summary === "object" ? (summary as TrackerSummary) : null;
 }

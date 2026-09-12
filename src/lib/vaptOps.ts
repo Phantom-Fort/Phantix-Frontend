@@ -373,3 +373,168 @@ export async function loadPostureDrift(projectId: number) {
   }
   return api.get<PostureDrift>(`/posture/drift?project_id=${projectId}`);
 }
+
+// ── Intelligent Orchestrator — plan generation & review ─────────────────────
+// `POST /vapt/plan` returns a *proposal*. Each scan step is decomposed into
+// substeps — one per vulnerability type it tests for, seeded from the scanner's
+// YAML check catalog — ranked by product context and prior results. Nothing runs
+// until `POST /vapt/plan/execute`, so the plan is reviewable and trimmable first.
+
+export type PlanSeverity = "critical" | "high" | "medium" | "low" | "info";
+
+export interface PlanSubstepCheck {
+  name: string;
+  display_name?: string;
+  severity?: PlanSeverity;
+}
+
+/** One vulnerability type under a scan step. */
+export interface PlanSubstep {
+  key: string;
+  label: string;
+  description?: string;
+  rank?: number;
+  check_count?: number;
+  worst_severity?: PlanSeverity;
+  severities?: Record<string, number>;
+  vuln_classes?: string[];
+  /** One sentence explaining why this type sits where it does. Always render it. */
+  why?: string;
+  /** A previously remediated weakness of this type is back — tested first. */
+  regression?: boolean;
+  /** Still tested, but findings are not re-raised as new. */
+  accepted_risk?: boolean;
+  max_duration_minutes?: number;
+  checks?: PlanSubstepCheck[];
+}
+
+/** A verification class the campaign is hunting. */
+export interface PlanVulnFocus {
+  vuln_class: string;
+  title?: string;
+  rank?: number;
+  verify_skill_id?: string;
+  requires_approval?: boolean;
+  signals_matched?: string[];
+  rationale?: string;
+}
+
+export interface PlanStep {
+  step_type: string;
+  step_name: string;
+  tool?: string | null;
+  target?: string;
+  config?: Record<string, unknown>;
+  substeps?: PlanSubstep[];
+  vuln_focus?: PlanVulnFocus[];
+}
+
+export interface PlanProductContext {
+  available?: boolean;
+  projects?: Array<{ id: number; name?: string; stage?: string | null }>;
+  components?: number;
+  boundaries?: number;
+  flows?: number;
+  cross_boundary_flows?: number;
+  external_components?: number;
+  roles?: string[];
+  data_classes?: string[];
+  stages?: string[];
+  role_expectations?: number;
+  target_kinds?: string[];
+}
+
+export interface PlanOrgIntelligence {
+  available?: boolean;
+  targets_considered?: number;
+  targets_with_history?: number;
+  prior_open_findings?: number;
+  regressions?: string[];
+  accepted_risks?: string[];
+  refuted?: string[];
+  changed_since_last?: number;
+}
+
+export interface VaptPlan {
+  plan_id: string;
+  organization_id?: number;
+  name?: string;
+  scan_types?: string[];
+  frameworks?: { required?: string[]; recommended?: string[] };
+  asset_count?: number;
+  estimated_duration?: string;
+  estimated_duration_minutes?: number;
+  /** Prose summary of the whole plan — use it for the confirm step. */
+  narrative?: string;
+  vuln_focus?: PlanVulnFocus[];
+  vuln_coverage?: {
+    total_types?: number;
+    checks_selected?: number;
+    catalog_total_checks?: number;
+    auto_seeded?: boolean;
+    source?: string;
+  };
+  based_on?: {
+    organization_profile?: Record<string, unknown>;
+    asset_inventory?: Record<string, unknown> & { total?: number };
+    detected_frameworks?: { required?: string[]; recommended?: string[] };
+    product_context?: PlanProductContext;
+    organization_intelligence?: PlanOrgIntelligence;
+    vulnerability_catalog?: Record<string, unknown>;
+  };
+  recommended_plan?: {
+    name?: string;
+    estimated_duration?: string;
+    estimated_duration_minutes?: number;
+    scan_types?: string[];
+    steps?: PlanStep[];
+    compliance_report?: string;
+    vulnerability_types?: number;
+    checks_selected?: number;
+  };
+}
+
+export interface PlanExecuteResult {
+  campaign_id?: number;
+  status?: string;
+  started?: boolean;
+  plan_id?: string;
+  start_error?: string;
+  next_steps?: string[];
+  message?: string;
+}
+
+export async function generateVaptPlan(params: { project_ids?: number[] } = {}) {
+  if (isDemoMode()) {
+    await delay();
+    return demo.vaptPlan;
+  }
+  return api.post<VaptPlan>("/vapt/plan", {
+    ...(params.project_ids?.length ? { project_ids: params.project_ids } : {}),
+  });
+}
+
+/**
+ * Create the campaign from a reviewed plan.
+ *
+ * `excludeVulnTypes` carries the substep keys the reviewer switched off: this
+ * drops those vulnerability types without cancelling the whole scan step, and
+ * the backend recomputes the scanner's check selection from what is left.
+ */
+export async function executeVaptPlan(
+  planId: string,
+  opts: { excludeVulnTypes?: string[]; excludeScanTypes?: string[]; start?: boolean } = {},
+) {
+  if (isDemoMode()) {
+    await delay();
+    return { campaign_id: 9100, status: "draft", started: false, plan_id: planId } as PlanExecuteResult;
+  }
+  const modifications: Record<string, unknown> = {};
+  if (opts.excludeVulnTypes?.length) modifications.exclude_vuln_types = opts.excludeVulnTypes;
+  if (opts.excludeScanTypes?.length) modifications.exclude_scan_types = opts.excludeScanTypes;
+  return api.post<PlanExecuteResult>("/vapt/plan/execute", {
+    plan_id: planId,
+    start: opts.start ?? false,
+    ...(Object.keys(modifications).length ? { modifications } : {}),
+  });
+}

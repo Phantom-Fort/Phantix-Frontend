@@ -1,4 +1,4 @@
-// Obsidian-style relational graph model for assets.
+// Relational graph model for assets.
 // Nodes = assets + their tags + their asset types; edges connect assets to the
 // groups they belong to (and to real backend relationships when available).
 

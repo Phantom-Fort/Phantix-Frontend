@@ -1,6 +1,9 @@
 import type {
   AgentSkill,
   AiStatus,
+  AiUsage,
+  ReportTypeEntry,
+  TrackerSummary,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -101,6 +104,7 @@ import type {
   RememberedModel,
   ThreatModelDetail,
 } from "./productContext";
+import type { VaptPlan } from "./vaptOps";
 import type {
   AutofixStatus,
   BranchReviewWallet,
@@ -275,7 +279,14 @@ export const vaptCampaigns: VaptCampaign[] = [
   { id: 13, name: "Q3 External Assessment", campaign_type: "external", procedure_key: "full_vapt", status: "active", phase: "Web application testing", progress: 58, asset_count: 9, findings_count: 17, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-14T10:00:00Z", started_at: "2026-07-14T10:30:00Z", finished_at: null, current_step_index: 2, current_phase: "Vulnerability templates", asset_scope: { asset_types: ["domain", "subdomain", "ip_address"] }, procedure_snapshot: { source: "full_vapt", steps: [
     { step_type: "recon", step_name: "Asset & DNS recon", step_description: "Enumerate subdomains and hosts", status: "completed", config: { tools: ["subfinder", "dnsx"], max_duration_minutes: 15 }, output_summary: { assets_resolved: 22, unique_hosts: 14, targets_scanned: ["acme.ng", "www.acme.ng", "app.acme.ng", "portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "172.67.131.182 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 2, time_budget_seconds: 900, elapsed_seconds: 540, results_written: 0, tools: ["subfinder", "dnsx"] } },
     { step_type: "scan", step_name: "Network surface (Nmap)", step_description: "Port and service discovery on live hosts", status: "completed", config: { tools: ["nmap"], max_duration_minutes: 20 }, output_summary: { assets_resolved: 9, unique_hosts: 9, targets_scanned: ["portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: [], skipped_count: 0, time_budget_seconds: 1200, elapsed_seconds: 1100, results_written: 41, tools: ["nmap"] } },
-    { step_type: "scan", step_name: "Vulnerability templates", step_description: "YAML vulnerability checks on unique hosts (domain IPs skipped)", status: "running", config: { tools: ["vuln_scan"], max_duration_minutes: 35, dedupe_hosts: true, target_types: ["domain", "subdomain", "web_app", "api"] }, output_summary: { assets_resolved: 18, assets_considered: 12, unique_hosts: 12, targets_scanned: ["portal.acme.ng", "api.acme.ng", "app.acme.ng", "www.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["41.58.130.44 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 4, time_budget_seconds: 2100, elapsed_seconds: 1320, results_written: 17, tools: ["vuln_scan"], partial: true } },
+    { step_type: "scan", step_name: "Vulnerability templates", step_description: "6 vulnerability types, 28 checks; types=['domain', 'subdomain', 'web_app', 'api']", status: "running", config: { tools: ["vuln_scan"], max_duration_minutes: 35, dedupe_hosts: true, target_types: ["domain", "subdomain", "web_app", "api"], substeps: [
+      { key: "transport_security", label: "Transport security", check_count: 4, enabled: true, regression: true, why: "A previously remediated weakness of this type has returned." },
+      { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", check_count: 8, enabled: true, regression: false, why: "The attack tree ranks its class #4 on this surface." },
+      { key: "known_cve", label: "Known CVE probes", check_count: 3, enabled: true, regression: false, why: "The attack tree ranks its class #9 on this surface." },
+      { key: "secret_exposure", label: "Exposed secrets & source control", check_count: 2, enabled: true, regression: false, why: "Standard coverage for this surface." },
+      { key: "security_headers", label: "Browser security headers", check_count: 4, enabled: true, regression: false, why: "A previous run disproved this class here." },
+      { key: "tech_disclosure", label: "Technology & version disclosure", check_count: 7, enabled: false, regression: false, why: "Switched off by the reviewer before the campaign was created." },
+    ] }, output_summary: { assets_resolved: 18, assets_considered: 12, unique_hosts: 12, targets_scanned: ["portal.acme.ng", "api.acme.ng", "app.acme.ng", "www.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["41.58.130.44 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 4, time_budget_seconds: 2100, elapsed_seconds: 1320, results_written: 17, tools: ["vuln_scan"], partial: true } },
     { step_type: "correlate", step_name: "Attack-path correlation", step_description: "Chain findings into attack paths", status: "pending", config: {}, output_summary: {} },
     { step_type: "analyze", step_name: "AI-assisted analysis", step_description: "Optional narrative enrichment", status: "pending", config: {}, output_summary: {} },
   ] } },
@@ -471,6 +482,18 @@ export const serviceKey: ServiceKeyMeta = {
   active: true,
   created_at: "2026-06-20T10:00:00Z",
   last_used_at: "2026-07-21T07:12:00Z",
+};
+
+/** Mid-month budget state: comfortably inside both ceilings. */
+export const aiUsage: AiUsage = {
+  organization_id: 11,
+  year_month: "2026-09",
+  tokens_used: 412880,
+  token_budget: 1000000,
+  cost_usd: 18.4,
+  spend_limit_usd: 50,
+  allowed: true,
+  mode: "balanced",
 };
 
 export const aiStatus: AiStatus = {
@@ -2704,3 +2727,187 @@ export function codeFindingExplanation(id: number): CodeAiExplanation {
     model_name: "demo-reasoner",
   };
 }
+
+// ── VAPT intelligent plan — steps decomposed into vulnerability types ───────
+// Mirrors POST /vapt/plan for a fintech tenant with product context and priors:
+// one regression (transport security), one accepted risk (tech disclosure).
+
+export const vaptPlan: VaptPlan = {
+  plan_id: "plan_demo5f3c1ab7",
+  organization_id: 11,
+  name: "Full Security Assessment",
+  scan_types: ["network_scan", "dns_scan", "web_scan", "vuln_scan", "api_scan", "secrets_scan"],
+  frameworks: { required: ["ndpr", "pci_dss"], recommended: ["iso27001", "soc2"] },
+  asset_count: 42,
+  estimated_duration: "~2.2 hours",
+  estimated_duration_minutes: 132,
+  vuln_coverage: {
+    total_types: 21,
+    checks_selected: 58,
+    catalog_total_checks: 90,
+    auto_seeded: true,
+    source: "scanner_engine/scans/<category>/*.yaml",
+  },
+  vuln_focus: [
+    { vuln_class: "improper_authentication", title: "Improper authentication", rank: 1, verify_skill_id: "securegraph-verify-improper_authentication", requires_approval: false, signals_matched: ["login", "oauth", "session"], rationale: "Surface signals present: login, oauth, session." },
+    { vuln_class: "missing_authz_check", title: "Missing authorization check", rank: 2, verify_skill_id: "securegraph-verify-missing_authz_check", requires_approval: false, signals_matched: ["api", "tenant", "record"], rationale: "Surface signals present: api, tenant, record." },
+    { vuln_class: "unsafe_file_upload", title: "Unsafe file upload", rank: 3, verify_skill_id: "securegraph-verify-unsafe_file_upload", requires_approval: true, signals_matched: ["upload", "document"], rationale: "Surface signals present: upload, document." },
+    { vuln_class: "ssrf", title: "Server-side request forgery", rank: 4, verify_skill_id: "securegraph-verify-ssrf", requires_approval: false, signals_matched: ["webhook", "pdf"], rationale: "Surface signals present: webhook, pdf." },
+    { vuln_class: "idor", title: "Insecure direct object reference", rank: 5, verify_skill_id: "securegraph-verify-idor", requires_approval: false, signals_matched: ["account", "document"], rationale: "Surface signals present: account, document." },
+  ],
+  based_on: {
+    asset_inventory: { total: 42 },
+    detected_frameworks: { required: ["ndpr", "pci_dss"], recommended: ["iso27001", "soc2"] },
+    product_context: {
+      available: true,
+      projects: [
+        { id: 51, name: "Customer payments portal", stage: "live" },
+        { id: 52, name: "Open banking API", stage: "in_build" },
+      ],
+      components: 17,
+      boundaries: 4,
+      flows: 13,
+      cross_boundary_flows: 5,
+      external_components: 3,
+      roles: ["admin", "customer", "support", "tpp"],
+      data_classes: ["payment_cards", "personal_data"],
+      stages: ["in_build", "live"],
+      role_expectations: 22,
+      target_kinds: ["api", "web"],
+    },
+    organization_intelligence: {
+      available: true,
+      targets_considered: 8,
+      targets_with_history: 6,
+      prior_open_findings: 11,
+      regressions: ["weak_crypto"],
+      accepted_risks: ["tech_disclosure"],
+      refuted: ["xss"],
+      changed_since_last: 3,
+    },
+  },
+  recommended_plan: {
+    name: "Full Security Assessment",
+    estimated_duration: "~2.2 hours",
+    estimated_duration_minutes: 132,
+    scan_types: ["network_scan", "dns_scan", "web_scan", "vuln_scan", "api_scan", "secrets_scan"],
+    compliance_report: "NDPR + PCI_DSS gap analysis; recommended: iso27001, soc2",
+    vulnerability_types: 21,
+    checks_selected: 58,
+    steps: [
+      {
+        step_type: "scan",
+        step_name: "Vulnerability templates",
+        tool: "vuln_scan",
+        target: "9 vulnerability types, 32 checks; types=['domain', 'subdomain', 'api']",
+        vuln_focus: [
+          { vuln_class: "improper_authentication", rank: 1, requires_approval: false },
+          { vuln_class: "ssrf", rank: 4, requires_approval: false },
+        ],
+        substeps: [
+          { key: "transport_security", label: "Transport security (TLS / certificates)", description: "Certificate validity and expiry, HTTPS reachability and TLS posture.", rank: 1, check_count: 4, worst_severity: "high", severities: { high: 1, medium: 2, info: 1 }, vuln_classes: ["weak_crypto"], regression: true, accepted_risk: false, max_duration_minutes: 3, why: "Prioritised because a previously remediated weakness of this type has returned; the attack tree ranks its class #11 on this surface.", checks: [ { name: "ssl_cert_expired", display_name: "TLS certificate expired", severity: "high" }, { name: "ssl_expiring_30d", display_name: "TLS certificate expiring within 30 days", severity: "medium" }, { name: "ssl_self_signed", display_name: "Self-signed TLS certificate", severity: "medium" }, { name: "ssl_https_reachable", display_name: "HTTPS reachable", severity: "info" } ] },
+          { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", description: "Dashboards, CI, metrics and debug endpoints answering without auth.", rank: 2, check_count: 8, worst_severity: "high", severities: { high: 5, medium: 3 }, vuln_classes: ["improper_access_control", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 6, why: "Prioritised because the attack tree ranks its class #4 on this surface; your product surface mentions admin, metrics.", checks: [ { name: "airflow_n8n_exposed", display_name: "Airflow / n8n exposed", severity: "high" }, { name: "grafana_anon", display_name: "Grafana anonymous access", severity: "high" }, { name: "jenkins_exposed", display_name: "Jenkins exposed", severity: "high" }, { name: "debug_info_endpoints", display_name: "Debug info endpoints", severity: "high" }, { name: "prometheus_metrics_exposed", display_name: "Prometheus metrics exposed", severity: "high" }, { name: "priority_admin_login_paths", display_name: "Admin login paths", severity: "medium" }, { name: "directory_listing", display_name: "Directory listing", severity: "medium" }, { name: "ollama_open_api", display_name: "Ollama open API", severity: "medium" } ] },
+          { key: "known_cve", label: "Known CVE probes", description: "Checks for specific published vulnerabilities in deployed software.", rank: 3, check_count: 3, worst_severity: "critical", severities: { critical: 1, high: 1, medium: 1 }, vuln_classes: ["vulnerable_dependency", "code_injection"], regression: false, accepted_risk: false, max_duration_minutes: 3, why: "Prioritised because the attack tree ranks its class #9 on this surface.", checks: [ { name: "spring_actuator_exposed", display_name: "Spring actuator exposed", severity: "critical" }, { name: "apache_struts_cve_2017_5638_probe", display_name: "Apache Struts CVE-2017-5638 probe", severity: "high" }, { name: "log4j_path_probe", display_name: "Log4j-related path probe", severity: "medium" } ] },
+          { key: "secret_exposure", label: "Exposed secrets & source control", description: "Credentials, environment files and repository metadata reachable over HTTP.", rank: 4, check_count: 2, worst_severity: "critical", severities: { critical: 2 }, vuln_classes: ["hardcoded_secret"], regression: false, accepted_risk: false, max_duration_minutes: 2, why: "Prioritised because the attack tree ranks its class #14 on this surface.", checks: [ { name: "backup_env_files", display_name: "Backup / .env files", severity: "critical" }, { name: "git_metadata_exposed", display_name: "Git metadata exposed", severity: "critical" } ] },
+          { key: "security_headers", label: "Browser security headers", description: "Response headers that constrain what a browser will do with the page.", rank: 5, check_count: 4, worst_severity: "medium", severities: { medium: 3, low: 1 }, vuln_classes: ["xss"], regression: false, accepted_risk: false, max_duration_minutes: 3, why: "Kept for coverage but deprioritised because a previous run disproved this class here.", checks: [ { name: "http_security_headers", display_name: "Security headers missing", severity: "medium" }, { name: "http_csp_missing", display_name: "CSP missing", severity: "medium" }, { name: "clickjacking_xfo_missing", display_name: "X-Frame-Options missing", severity: "medium" }, { name: "x_xss_protection_missing", display_name: "X-XSS-Protection missing", severity: "low" } ] },
+          { key: "tech_disclosure", label: "Technology & version disclosure", description: "Server, framework and CMS fingerprints that tell an attacker what to target.", rank: 6, check_count: 7, worst_severity: "medium", severities: { medium: 2, low: 4, info: 1 }, vuln_classes: ["vulnerable_dependency"], regression: false, accepted_risk: true, max_duration_minutes: 5, why: "Kept for coverage but deprioritised because the org accepted this risk — tested, but not re-raised as new.", checks: [ { name: "framework_wordpress_signals", display_name: "WordPress signals", severity: "medium" }, { name: "wordpress_users_api", display_name: "WordPress users API", severity: "medium" }, { name: "http_server_banner", display_name: "Server banner", severity: "low" }, { name: "server_apache_banner", display_name: "Apache banner", severity: "low" }, { name: "server_nginx_banner", display_name: "Nginx banner", severity: "low" }, { name: "wordpress_version", display_name: "WordPress version", severity: "low" }, { name: "framework_php_signals", display_name: "PHP signals", severity: "info" } ] },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "API security surface",
+        tool: "api_scan",
+        target: "3 vulnerability types, 7 checks; types=['api', 'domain', 'subdomain']",
+        vuln_focus: [
+          { vuln_class: "missing_authz_check", rank: 2, requires_approval: false },
+          { vuln_class: "idor", rank: 5, requires_approval: false },
+        ],
+        substeps: [
+          { key: "api_authz", label: "API authentication & authorization", description: "Endpoints answering unauthenticated, and cross-origin policy that undoes auth.", rank: 1, check_count: 3, worst_severity: "medium", severities: { medium: 2, low: 1 }, vuln_classes: ["missing_authz_check", "improper_authentication", "incorrect_authorization"], regression: false, accepted_risk: false, max_duration_minutes: 7, why: "Prioritised because the attack tree ranks its class #1 on this surface; your product surface mentions api, tenant.", checks: [ { name: "api_missing_auth", display_name: "Endpoint answers unauthenticated", severity: "medium" }, { name: "api_cors_wildcard", display_name: "CORS wildcard", severity: "medium" }, { name: "api_rate_limit_test", display_name: "Rate limit headers absent", severity: "low" } ] },
+          { key: "api_surface_discovery", label: "API surface discovery", description: "Schemas, specs and verbs that reveal the callable surface.", rank: 2, check_count: 3, worst_severity: "medium", severities: { medium: 2, info: 1 }, vuln_classes: ["idor", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 7, why: "Prioritised because the attack tree ranks its class #5 on this surface; your product surface mentions api, graphql.", checks: [ { name: "api_endpoint_discovery", display_name: "Swagger / OpenAPI discovery", severity: "medium" }, { name: "api_graphql_introspection", display_name: "GraphQL introspection enabled", severity: "medium" }, { name: "http_options_methods", display_name: "OPTIONS methods", severity: "info" } ] },
+          { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", description: "Dashboards, CI, metrics and debug endpoints answering without auth.", rank: 3, check_count: 1, worst_severity: "high", severities: { high: 1 }, vuln_classes: ["improper_access_control", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 2, why: "Prioritised because the attack tree ranks its class #4 on this surface.", checks: [ { name: "mailhog_messages_api", display_name: "MailHog messages API", severity: "high" } ] },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "Infrastructure / network scan",
+        tool: "network_scan",
+        target: "4 vulnerability types, 13 checks; types=['ip_address', 'domain', 'subdomain']",
+        vuln_focus: [{ vuln_class: "improper_access_control", rank: 7, requires_approval: false }],
+        substeps: [
+          { key: "datastore_exposure", label: "Datastore exposure", description: "Databases, caches and search engines reachable without authentication.", rank: 1, check_count: 5, worst_severity: "high", severities: { high: 2, medium: 3 }, vuln_classes: ["improper_access_control", "sql_injection"], regression: false, accepted_risk: false, max_duration_minutes: 8, why: "Prioritised because your product surface mentions database, cache.", checks: [ { name: "redis_accessible", display_name: "Redis reachable", severity: "high" }, { name: "nfs_port_open", display_name: "NFS port open", severity: "high" }, { name: "postgres_accessible", display_name: "Postgres reachable", severity: "medium" }, { name: "mysql_accessible", display_name: "MySQL reachable", severity: "medium" }, { name: "mssql_accessible", display_name: "MSSQL reachable", severity: "medium" } ] },
+          { key: "remote_access", label: "Remote access exposure", description: "Administrative remote-access services reachable from the scan origin.", rank: 2, check_count: 3, worst_severity: "high", severities: { high: 1, medium: 2 }, vuln_classes: ["improper_authentication", "improper_access_control"], regression: false, accepted_risk: false, max_duration_minutes: 5, why: "Prioritised because the attack tree ranks its class #1 on this surface.", checks: [ { name: "rdp_accessible", display_name: "RDP reachable", severity: "high" }, { name: "smb_port_open", display_name: "SMB port open", severity: "medium" }, { name: "snmp_port_open", display_name: "SNMP port open", severity: "medium" } ] },
+          { key: "port_exposure", label: "Open ports & service reachability", description: "Which ports answer, and which services sit behind them.", rank: 3, check_count: 4, worst_severity: "low", severities: { low: 2, info: 2 }, vuln_classes: ["improper_access_control"], regression: false, accepted_risk: false, max_duration_minutes: 6, why: "Standard coverage for this surface — no org-specific signal.", checks: [ { name: "port_scan_common", display_name: "Common port scan", severity: "low" }, { name: "tcp_port_common", display_name: "Common TCP ports", severity: "low" }, { name: "icmp_sweep", display_name: "ICMP sweep", severity: "info" }, { name: "dns_resolve", display_name: "DNS resolve", severity: "info" } ] },
+          { key: "tech_disclosure", label: "Technology & version disclosure", description: "Server, framework and CMS fingerprints that tell an attacker what to target.", rank: 4, check_count: 1, worst_severity: "info", severities: { info: 1 }, vuln_classes: ["vulnerable_dependency"], regression: false, accepted_risk: true, max_duration_minutes: 2, why: "Kept for coverage but deprioritised because the org accepted this risk — tested, but not re-raised as new.", checks: [ { name: "service_fingerprint", display_name: "Service fingerprint", severity: "info" } ] },
+        ],
+      },
+      {
+        step_type: "web_scan",
+        step_name: "Web application scan",
+        tool: "web_scan",
+        target: "Targets: domain, subdomain, api, web_app",
+        substeps: [],
+        vuln_focus: [
+          { vuln_class: "unsafe_file_upload", rank: 3, requires_approval: true },
+          { vuln_class: "ssrf", rank: 4, requires_approval: false },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "Secrets scan (repos)",
+        tool: "secrets_scan",
+        target: "1 vulnerability type, 3 checks; types=['github_repo']",
+        substeps: [
+          { key: "secret_exposure", label: "Exposed secrets & source control", description: "Credentials and repository metadata that should not be reachable.", rank: 1, check_count: 3, worst_severity: "critical", severities: { critical: 3 }, vuln_classes: ["hardcoded_secret"], regression: false, accepted_risk: false, max_duration_minutes: 10, why: "Prioritised because your product surface mentions repo, git.", checks: [ { name: "gitleaks_detect", display_name: "Gitleaks detection", severity: "critical" }, { name: "git_secrets_leaked", display_name: "Git secrets leaked", severity: "critical" }, { name: "exposed_env_file", display_name: "Exposed .env file", severity: "critical" } ] },
+        ],
+        vuln_focus: [{ vuln_class: "hardcoded_secret", rank: 14, requires_approval: false }],
+      },
+      { step_type: "correlate", step_name: "Cross-Scan Analysis", tool: "correlate", target: "Correlate findings across tools into attack paths", substeps: [], vuln_focus: [] },
+      { step_type: "analyze", step_name: "Intelligence Analysis", tool: "analyze", target: "Complexity scoring, compliance analysis, and verification of the vulnerability classes this surface makes plausible", substeps: [], vuln_focus: [] },
+    ],
+  },
+  narrative: [
+    "Based on your organization, we'll run a **Full Security Assessment** covering:",
+    "  ─ Infrastructure / network scan — 4 vulnerability types, 13 checks",
+    "  ─ Vulnerability templates — 9 vulnerability types, 32 checks",
+    "  ─ API security surface — 3 vulnerability types, 7 checks",
+    "  ─ Compliance context: NDPR, PCI_DSS",
+    "Coverage: 21 vulnerability types / 58 checks, seeded automatically from the scan catalog (90 checks available).",
+    "Hunting first: improper_authentication, missing_authz_check, unsafe_file_upload, ssrf, idor.",
+    "Product context applied: 17 components, 13 flows, 5 crossing a trust boundary, 4 roles.",
+    "Sensitive data in scope: payment_cards, personal_data — authorization failures here are reportable, not cosmetic.",
+    "Prior knowledge: 11 findings still open across 6 known targets.",
+    "Regressions tested first (1): a fix that did not hold is stronger evidence than a first sighting.",
+    "1 accepted risk still tested but not re-raised as new findings.",
+    "Estimated time: ~2.2 hours",
+    "Asset inventory considered: 42 active assets.",
+  ].join("\n"),
+};
+
+// ── Report Solutions — the catalog + standing finding counts ─────────────────
+// Mirrors GET /reports/types and the tracker summary the dashboard charts read.
+
+export const reportTypes: ReportTypeEntry[] = [
+  { report_type: "org_security_overview", title: "Organization security overview", audience: "Executive / board", use_case: "Where the organization stands across every attack surface, not one engagement: posture per surface, findings from all engines, what moved since the last report.", requires_campaign: false, featured: true, icon: "shield", sections: ["executive_summary", "posture_by_surface", "findings_lifecycle", "findings_register", "risk_register", "attack_paths", "compliance_mapping", "remediation_status", "asset_scope"], section_count: 9, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "vapt_campaign", title: "VAPT campaign report", audience: "Technical / client deliverable", use_case: "The full engagement write-up for one campaign: scope, findings register, attack paths, evidence and remediation.", requires_campaign: true, featured: true, icon: "crosshair", sections: ["scope_definition", "executive_summary", "campaign_overview", "cvss_scorecard", "findings_register", "attack_paths", "risk_register", "compliance_mapping", "technical_findings", "nmap_output", "asset_scope", "remediation_status", "tracker_snapshot", "audit_trail", "methodology"], section_count: 15, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "compliance", title: "Compliance report", audience: "Auditor / assessor", use_case: "Findings mapped to the frameworks in scope, with the control gaps and the evidence behind each mapping.", requires_campaign: false, featured: true, icon: "scale", sections: ["executive_summary", "compliance_mapping", "risk_register", "findings_register", "remediation_status", "audit_trail"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "performance_sla", title: "Performance & SLA", audience: "Security leadership", use_case: "Whether the programme is getting faster: mean time to remediate by severity, closure rate, regressions, and what the automation cost.", requires_campaign: false, featured: true, icon: "gauge", sections: ["executive_summary", "performance_metrics", "findings_lifecycle", "remediation_status", "engine_activity", "ai_usage"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "audit_activity", title: "Audit & user activity", audience: "Compliance / internal audit", use_case: "Who did what: sensitive actions, dual-control approvals and refusals, and per-user activity over the window.", requires_campaign: false, featured: false, icon: "clipboard", sections: ["executive_summary", "user_activity", "approvals_trail", "audit_trail"], section_count: 4, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "engine_output", title: "Engine output (technical)", audience: "Engineering", use_case: "The technical appendix: what each engine ran and produced — scanner results, campaign steps, code findings, repo analysis.", requires_campaign: false, featured: false, icon: "terminal", sections: ["engine_activity", "technical_findings", "findings_register", "attack_paths", "nmap_output", "asset_scope"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "executive", title: "Executive summary", audience: "Executive", use_case: "The short read: posture, top risks, attack paths and compliance standing.", requires_campaign: false, featured: false, icon: "file-text", sections: ["executive_summary", "cvss_scorecard", "attack_paths", "risk_register", "compliance_mapping"], section_count: 5, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "tracker", title: "Remediation tracker", audience: "Remediation owners", use_case: "The working board: every tracked finding, its owner, status and target date.", requires_campaign: false, featured: false, icon: "list-checks", sections: ["tracker_snapshot", "remediation_status"], section_count: 2, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+];
+
+/** Standing counts across the tracked population — drives the findings chart. */
+export const trackerSummary: TrackerSummary = {
+  total: 48,
+  open: 19,
+  in_progress: 7,
+  fixed: 15,
+  retest_failed: 2,
+  regressed: 3,
+  accepted: 2,
+  bySeverity: { critical: 4, high: 11, medium: 18, low: 12, info: 3 },
+  bySurface: { design: 5, code: 17, test: 6, cloud: 14, mobile: 6 },
+  unassigned: 6,
+};

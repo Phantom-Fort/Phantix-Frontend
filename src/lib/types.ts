@@ -423,6 +423,27 @@ export interface VaptCampaign {
   };
 }
 
+/** One vulnerability type under a campaign scan step. */
+export interface VaptStepSubstep {
+  key: string;
+  label: string;
+  description?: string;
+  rank?: number;
+  enabled?: boolean;
+  check_count?: number;
+  check_names?: string[];
+  worst_severity?: string;
+  severities?: Record<string, number>;
+  vuln_classes?: string[];
+  /** Why this type sits where it does in the order. */
+  why?: string;
+  /** A previously remediated weakness of this type has returned. */
+  regression?: boolean;
+  /** Tested, but findings are not re-raised as new. */
+  accepted_risk?: boolean;
+  max_duration_minutes?: number;
+}
+
 export interface VaptStep {
   step_type: string;
   step_name: string;
@@ -438,6 +459,14 @@ export interface VaptStep {
     caido_ai_enabled?: boolean;
     objectives?: string[];
     target_types?: string[];
+    /** Vulnerability types this step tests for (Intelligent Orchestrator).
+     *  `enabled: false` means a reviewer excluded the type before the campaign
+     *  was created — kept in the record rather than deleted. */
+    substeps?: VaptStepSubstep[];
+    /** Verification classes the step is hunting, ranked by the attack tree. */
+    vuln_focus?: Array<{ vuln_class: string; rank?: number; requires_approval?: boolean }>;
+    /** Scan catalog category the substeps were seeded from. */
+    yaml_category?: string;
   };
   output_summary?: {
     assets_resolved?: number;
@@ -675,6 +704,20 @@ export interface TrackerSummary {
   unassigned?: number;
 }
 
+/** One entry from GET /reports/types — the Report Solutions catalog. */
+export interface ReportTypeEntry {
+  report_type: string;
+  title: string;
+  audience: string;
+  use_case: string;
+  requires_campaign: boolean;
+  featured: boolean;
+  icon?: string;
+  sections: string[];
+  section_count: number;
+  formats: string[];
+}
+
 export interface OrgIdentity {
   id: number;
   name?: string | null;
@@ -864,6 +907,20 @@ export interface ServiceKeyMeta {
   active: boolean;
   created_at: string;
   last_used_at: string | null;
+}
+
+/** Org AI budget snapshot — GET /ai/usage. */
+export interface AiUsage {
+  organization_id?: number;
+  /** Billing window the counters belong to, e.g. "2026-09". */
+  year_month?: string;
+  tokens_used?: number;
+  token_budget?: number;
+  cost_usd?: number;
+  spend_limit_usd?: number;
+  /** False once a budget is exhausted — AI calls are refused, not degraded. */
+  allowed?: boolean;
+  mode?: string;
 }
 
 export interface AiStatus {
