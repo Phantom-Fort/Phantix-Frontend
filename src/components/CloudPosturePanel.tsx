@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity, Boxes, KeyRound, Lock, Network, ShieldCheck, ShieldAlert, Timer, XCircle } from "lucide-react";
+import { Activity, Boxes, KeyRound, Lock, Network, RefreshCw, ShieldCheck, ShieldAlert, Timer, XCircle } from "lucide-react";
 import { Card, CardHeader, StatCard } from "@/components/ui";
 import type { CloudPosture } from "@/lib/data";
 import { cx, timeAgo } from "@/lib/utils";
@@ -57,10 +57,16 @@ function PackRow({
 export default function CloudPosturePanel({
   posture,
   loading,
+  error,
+  onRetry,
 }: {
   posture: CloudPosture | null;
   loading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }) {
+  // Never render nothing: a panel the operator cannot see is a panel they cannot
+  // confirm. Loading, gated and error states all show the card with a reason.
   if (loading && !posture) {
     return (
       <Card className="mb-5">
@@ -71,7 +77,32 @@ export default function CloudPosturePanel({
       </Card>
     );
   }
-  if (!posture) return null;
+  if (!posture) {
+    const gated = (error || "").toLowerCase().match(/entitle|pack|plan|payment|402|scanner/);
+    return (
+      <Card className="mb-5">
+        <CardHeader title="Posture capabilities" subtitle="Packs, exposure, TLS, host baselines, execution" />
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-severity-medium/30 bg-severity-medium/10 p-3">
+          <ShieldAlert size={16} className="shrink-0 text-severity-medium" />
+          <p className="min-w-0 flex-1 text-[11px] leading-5 text-severity-medium">
+            {error
+              ? `Could not load posture capabilities: ${error}`
+              : "Posture capabilities are unavailable for this organization."}
+            {gated && (
+              <span className="mt-1 block text-slate-400">
+                Cloud and container posture need the scanner tool pack on this plan.
+              </span>
+            )}
+          </p>
+          {onRetry && (
+            <button onClick={onRetry} className="btn-secondary shrink-0 !px-3 !py-1.5 !text-xs">
+              <RefreshCw size={12} className="mr-1.5 inline" /> Retry
+            </button>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   const { packs, network_exposure, tls_posture, cis_host_targets, execution } = posture;
   const summary = network_exposure.summary || {};

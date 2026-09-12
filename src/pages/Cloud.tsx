@@ -166,7 +166,7 @@ export default function Cloud() {
         <StatCard label="Open detections" value={<span className="text-severity-critical tabular-nums">—</span>} icon={<ShieldAlert size={18} />} accent="red" />
       </div>
 
-      <CloudPosturePanel posture={posture.data} loading={posture.loading} />
+      <CloudPosturePanel posture={posture.data} loading={posture.loading} error={posture.error} onRetry={posture.reload} />
 
       <Tabs
         tabs={[

@@ -2384,6 +2384,65 @@ export interface CloudPosture {
 
 /** Cloud posture capabilities — packs, exposure, TLS, host baselines, execution. */
 export async function loadCloudPosture(): Promise<CloudPosture> {
+  if (isDemoMode()) {
+    await delay(220);
+    const now = Date.now();
+    return {
+      organization_id: 0,
+      packs: {
+        cloud: { enabled: true, providers_configured: ["aws", "azure"], reason: null, code: null },
+        container: { enabled: true, reason: null, code: null },
+      },
+      network_exposure: {
+        summary: { hosts_reachable: 3, open_now: 9, closed: 1, new_7d: 2, stale_30d: 0 },
+        items: [
+          {
+            host: "api.acme.ng",
+            port: 443,
+            protocol: "tcp",
+            service: "https",
+            tls: true,
+            state: "open",
+            first_seen_at: new Date(now - 86_400_000 * 12).toISOString(),
+            last_seen_at: new Date(now).toISOString(),
+          },
+          {
+            host: "api.acme.ng",
+            port: 22,
+            protocol: "tcp",
+            service: "ssh",
+            tls: false,
+            state: "open",
+            first_seen_at: new Date(now - 86_400_000 * 40).toISOString(),
+            last_seen_at: new Date(now).toISOString(),
+          },
+        ],
+        schema_upgrade_required: false,
+      },
+      tls_posture: {
+        findings: 3,
+        affected_hosts: 2,
+        by_issue: { legacy_protocol: 1, weak_cipher: 1, certificate_expiring_soon: 1 },
+        expiring_soon: [{ host: "legacy.acme.ng", days_remaining: 18 }],
+      },
+      cis_host_targets: {
+        available: [
+          { name: "cis_ssh_password_auth", display_name: "CIS — SSH password auth", severity: "medium", targets: ["ip_address", "domain"] },
+          { name: "cis_rdp_exposed", display_name: "CIS — RDP exposed", severity: "high", targets: ["ip_address"] },
+        ],
+        matched: 1,
+        by_pack: { cis_ssh_password_auth: 1 },
+      },
+      execution: {
+        docker_isolated: true,
+        global_scan_concurrency: 20,
+        tool_lock_redis_enabled: true,
+        tool_lock_fail_open: true,
+        one_active_scan_per_org: true,
+        active_scans: [],
+      },
+    };
+  }
   return api.get<CloudPosture>("/cloud-security/posture");
 }
 
