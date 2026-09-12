@@ -8,11 +8,12 @@ import {
   PageHeader, Card, CardHeader, SeverityBadge, EmptyState, Modal, Spinner, StatCard, Tabs, PageSkeleton, ErrorState,
 } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import CloudPosturePanel from "@/components/CloudPosturePanel";
 import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import {
   loadCloudProviders, loadCloudConnectors, createCloudConnector, patchCloudConnector,
-  rotateCloudSecret, deleteCloudConnector, cloudIngestUrl, loadIntelDashboard,
+  rotateCloudSecret, deleteCloudConnector, cloudIngestUrl, loadIntelDashboard, loadCloudPosture,
 } from "@/lib/data";
 import { useStore } from "@/lib/store";
 import { cx, timeAgo, titleCase } from "@/lib/utils";
@@ -32,6 +33,9 @@ export default function Cloud() {
     { matched: 0, unmatched: 0 },
     "cloud-intel-kpis",
   );
+
+  // Posture capabilities — packs, exposure, TLS, host baselines, execution.
+  const posture = useResource(() => loadCloudPosture(), null, "cloud-posture");
 
   // Add connector wizard
   const [addOpen, setAddOpen] = useState(false);
@@ -161,6 +165,8 @@ export default function Cloud() {
         <StatCard label="Events (24h)" value={<span className="text-white tabular-nums">{/* placeholder */}—</span>} icon={<Activity size={18} />} />
         <StatCard label="Open detections" value={<span className="text-severity-critical tabular-nums">—</span>} icon={<ShieldAlert size={18} />} accent="red" />
       </div>
+
+      <CloudPosturePanel posture={posture.data} loading={posture.loading} />
 
       <Tabs
         tabs={[

@@ -627,6 +627,52 @@ export async function decideAgiFindingVerification(
   }
 }
 
+/** Promote a session finding into the org risk register (dual-controlled). */
+export async function promoteAgiFinding(
+  sessionId: number,
+  findingId: string | number,
+  assetId?: number,
+): Promise<Record<string, unknown>> {
+  if (isDemoMode()) {
+    await delay(320);
+    return { ok: true, finding_id: findingId, promoted: true };
+  }
+  return api.post<Record<string, unknown>>(
+    `/agi/sessions/${sessionId}/findings/${encodeURIComponent(String(findingId))}/promote`,
+    assetId ? { asset_id: assetId } : {},
+    { dualControl: true },
+  );
+}
+
+/**
+ * The job snapshot: whether the agent claims the job is done, and what is left.
+ * ``confirm_required`` means a human must confirm before the session completes.
+ */
+export async function loadAgiJob(sessionId: number): Promise<Record<string, unknown>> {
+  if (isDemoMode()) {
+    await delay(200);
+    return {};
+  }
+  const res = await api.get<Record<string, unknown> | null>(`/agi/sessions/${sessionId}/job`);
+  return (res && typeof res === "object" ? res : {}) as Record<string, unknown>;
+}
+
+/** Confirm the agent's "job done" claim so the session can complete and tear down. */
+export async function confirmAgiJob(
+  sessionId: number,
+  note = "",
+): Promise<Record<string, unknown>> {
+  if (isDemoMode()) {
+    await delay(320);
+    return { ok: true, confirmed: true };
+  }
+  return api.post<Record<string, unknown>>(
+    `/agi/sessions/${sessionId}/job/confirm`,
+    { note },
+    { dualControl: true },
+  );
+}
+
 export async function loadAgiTranscript(sessionId: number, afterSeq: number): Promise<AgiTranscriptChunk[]> {
   if (isDemoMode()) { await delay(40); return demoTxTail(afterSeq); }
   const res = await api.get<AgiTranscriptChunk[]>(`/agi/sessions/${sessionId}/transcript?after_seq=${afterSeq}`);

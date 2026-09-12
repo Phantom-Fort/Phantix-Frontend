@@ -9,6 +9,7 @@ import type {
   AgentSkillStatusUpdate,
   AgentStreamEvent,
   AiStatus,
+  AiUsage,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -1434,6 +1435,30 @@ export async function requestAiSummary(id: number): Promise<{ postureSummary: st
   return api.post(`/assets/${id}/intelligence/ai-summary`);
 }
 
+/**
+ * Org AI budget snapshot. The backend has served this since the cost manager
+ * landed, but no page consumed it — an autonomous agent that can exhaust a
+ * budget mid-run is the surface that most needs it.
+ *
+ * `softOne` so a missing budget row degrades to nulls instead of failing the
+ * page: usage is context, never a gate.
+ */
+export async function loadAiUsage(): Promise<AiUsage | null> {
+  if (isDemoMode()) { await delay(250); return demo.aiUsage; }
+  const raw = await softOne<any>("/ai/usage");
+  if (!raw) return null;
+  return {
+    organization_id: raw.organization_id,
+    year_month: raw.year_month ?? undefined,
+    tokens_used: Number(raw.tokens_used ?? 0),
+    token_budget: Number(raw.token_budget ?? 0),
+    cost_usd: Number(raw.cost_usd ?? 0),
+    spend_limit_usd: Number(raw.spend_limit_usd ?? 0),
+    allowed: Boolean(raw.allowed ?? true),
+    mode: raw.mode ? String(raw.mode) : undefined,
+  };
+}
+
 export async function loadAiStatus(): Promise<AiStatus> {
   if (isDemoMode()) { await delay(300); return demo.aiStatus; }
   const raw = await softOne<any>("/ai/settings");
@@ -1747,6 +1772,31 @@ export async function getAgentRun(analysisId: string): Promise<AgentRun | null> 
 }
 
 // ── Agent skill library (PHANTIX_AGENT_FE.md A4/A5) ──────────────────────────
+export interface AgentDomainInfo {
+  domain: string;
+  agent_id: string;
+  display_name: string;
+  description?: string;
+  call_when?: string;
+  engines?: string[];
+  primary_skills?: string[];
+  engine_tools?: string[];
+}
+
+/**
+ * The specialist roster, straight from the domain-agent catalog.
+ *
+ * The Agent page must not keep its own copy of this list: a new domain agent
+ * (threat modelling, verification, code) ships in the backend and would otherwise
+ * be invisible until someone edited a constant. Falls back to the caller's
+ * static list when the catalog cannot be reached.
+ */
+export async function loadAgentDomains(): Promise<AgentDomainInfo[]> {
+  const res = await api.get<{ items?: AgentDomainInfo[] } | AgentDomainInfo[]>("/ai/agent/domains");
+  const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  return list.filter((d) => d && typeof d.domain === "string" && d.domain !== "meta");
+}
+
 export async function loadAgentSkills(): Promise<AgentSkill[]> {
   if (isDemoMode()) { await delay(300); return demo.agentSkills; }
   const raw = await softOne<any>("/ai/agent/skills");
@@ -2282,6 +2332,59 @@ export async function loadIntelDashboard(): Promise<IntelDashboard> {
   // The dashboard endpoint returns raw snake_case signals — normalize them so
   // camelCase consumers (e.g. ThreatIntel's matchedAssetIds reads) never crash.
   return { ...d, signals: normalizeIntelSignals(d.signals) };
+}
+
+export interface CloudPosturePack {
+  enabled: boolean;
+  reason?: string | null;
+  code?: string | null;
+  providers_configured?: string[];
+}
+
+export interface CloudPostureExposureItem {
+  host: string;
+  ip_address?: string | null;
+  port: number;
+  protocol?: string;
+  service?: string | null;
+  tls?: boolean;
+  state?: string;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+}
+
+export interface CloudPosture {
+  organization_id: number;
+  packs: { cloud: CloudPosturePack; container: CloudPosturePack };
+  network_exposure: {
+    summary: Record<string, number | null>;
+    items: CloudPostureExposureItem[];
+    schema_upgrade_required?: boolean;
+  };
+  tls_posture: {
+    findings: number;
+    affected_hosts: number;
+    by_issue: Record<string, number>;
+    expiring_soon: Array<{ host: string; days_remaining: number }>;
+  };
+  cis_host_targets: {
+    available: Array<{ name: string; display_name: string; severity: string; targets: string[] }>;
+    matched: number;
+    by_pack: Record<string, number>;
+  };
+  execution: {
+    docker_isolated: boolean;
+    global_scan_concurrency?: number | null;
+    tool_lock_redis_enabled?: boolean;
+    tool_lock_fail_open?: boolean;
+    one_active_scan_per_org?: boolean;
+    active_scans: Array<{ id: number; status: string; job_type?: string | null; created_at?: string | null }>;
+  };
+}
+
+/** Cloud posture capabilities — packs, exposure, TLS, host baselines, execution. */
+export async function loadCloudPosture(): Promise<CloudPosture> {
+  return api.get<CloudPosture>("/cloud-security/posture");
 }
 
 export async function loadIntelLookup(ioc?: string): Promise<IntelLookup> {

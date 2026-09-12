@@ -38,6 +38,7 @@ import SocCloudIntegration from "@/pages/SocCloudIntegration";
 import IntegrationsHub from "@/pages/IntegrationsHub";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
+import AgentActivity from "@/pages/AgentActivity";
 import Sandbox from "@/pages/Sandbox";
 import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
 import ThreatIntel from "@/pages/ThreatIntel";
@@ -145,6 +146,7 @@ export default function App() {
             <Route path="/threat-models" element={<RequireAuth><ThreatModels /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
             <Route path="/agent" element={<RequireAuth><Agent /></RequireAuth>} />
+            <Route path="/agent-activity" element={<RequireAuth><AgentActivity /></RequireAuth>} />
             <Route path="/sandbox" element={<RequireAuth><Sandbox /></RequireAuth>} />
             <Route path="/alerts" element={<RequireAuth><Alerts /></RequireAuth>} />
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />

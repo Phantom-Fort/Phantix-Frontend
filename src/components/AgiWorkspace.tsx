@@ -2,19 +2,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
-  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft,
+  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import MarkdownView from "@/components/MarkdownView";
 import AgiConsole from "@/components/AgiConsole";
 import PentestTodo from "@/components/PentestTodo";
+import AgiMetrics from "@/components/AgiMetrics";
 import { ApprovalNotice, ClarificationAsk, IssuesStrip, ToolGroupCard } from "@/components/AgiStream";
 import { PromptKitStream } from "@/components/agent/PromptKitStream";
 import { ThinkingBar } from "@/components/prompt-kit/thinking-bar";
 import { groupStreamRows, openClarificationFrom } from "@/lib/agiStreamGroup";
 import { activityFor } from "@/lib/agiGraph";
 import { AgentActivityLine, QueuedPromptStrip, type QueuedPrompt } from "@/components/AgiStream";
-import { loadAssetsBundle } from "@/lib/data";
+import { loadAssetsBundle, loadAiUsage } from "@/lib/data";
 import type { Asset } from "@/lib/types";
 import {
   loadAgiAccess,
@@ -33,9 +34,11 @@ import {
   loadActiveAgiSession,
   loadAgiSession,
   loadAgiFindings,
+  promoteAgiFinding,
+  confirmAgiJob,
   answerAgiClarification,
 } from "@/lib/agi";
-import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk } from "@/lib/types";
+import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk, AiUsage } from "@/lib/types";
 import { cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { useStickToBottom } from "@/lib/useStickToBottom";
@@ -453,6 +456,28 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   // Surface backend findings in the compact drawer so issues are visible
   // without opening the full console, and link out to the findings tracker.
   const [drawerFindings, setDrawerFindings] = useState<Array<Record<string, unknown>>>([]);
+  const [usage, setUsage] = useState<AiUsage | null>(null);
+  // Budget snapshot. Loaded once so the metrics read before any run starts, and
+  // refreshed during a live session because a budget can be exhausted mid-run.
+  useEffect(() => {
+    let cancelled = false;
+    const load = () =>
+      loadAiUsage()
+        .then((u) => {
+          if (!cancelled) setUsage(u);
+        })
+        .catch(() => {});
+    load();
+    if (!running) return () => {
+      cancelled = true;
+    };
+    const t = window.setInterval(load, 30000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+    };
+  }, [running]);
+
   useEffect(() => {
     if (!session || !running) return;
     let cancelled = false;
@@ -476,6 +501,40 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       })),
     [drawerFindings],
   );
+
+  // ── Promote a finding / confirm the job ───────────────────────────────────
+  const [promoting, setPromoting] = useState<string | null>(null);
+  const [jobBusy, setJobBusy] = useState(false);
+
+  const promoteFinding = async (findingId: unknown) => {
+    if (!session || findingId == null) return;
+    setPromoting(String(findingId));
+    try {
+      await promoteAgiFinding(session.id, String(findingId));
+      toast("success", "Promoted", "The finding is now in your risk register.");
+      const fs = await loadAgiFindings(session.id);
+      setDrawerFindings(Array.isArray(fs) ? fs : []);
+    } catch (e) {
+      toast("error", "Could not promote", e instanceof Error ? e.message : "");
+    } finally {
+      setPromoting(null);
+    }
+  };
+
+  const confirmJob = async () => {
+    if (!session) return;
+    setJobBusy(true);
+    try {
+      await confirmAgiJob(session.id);
+      toast("success", "Job confirmed", "The session can complete and tear down.");
+      const fresh = await loadAgiSession(session.id);
+      if (fresh) setSession(fresh);
+    } catch (e) {
+      toast("error", "Could not confirm the job", e instanceof Error ? e.message : "");
+    } finally {
+      setJobBusy(false);
+    }
+  };
   const drawerRows = useMemo(() => groupStreamRows(transcript), [transcript]);
 
   const decide = async (action: AgiAction, approve: boolean, overrideCmd?: string) => {
@@ -639,6 +698,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
   const canUse = Boolean(access?.agi.can_use);
   const agreementRequired = Boolean(access?.agi.agreement_required);
+  // The drawer is narrow; the metric groups stay identical and only reflow.
+  const COMPACT = variant !== "page";
   const selected = engagements.find((e) => e.id === selectedEng) ?? null;
 
   return (
@@ -699,6 +760,20 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
             The Autonomous Pentest Agent only runs against your approved engagement allowlist. State-changing steps pause for your approval.
           </p>
           <button onClick={() => void openAgreement()} className="btn-primary mt-4 !text-xs"><ShieldCheck size={13} /> Review & accept agreement</button>
+
+          {/* What is actually being agreed to. A gate that only says "accept"
+              asks for consent without stating the terms it governs. */}
+          <div className="mt-6 w-full max-w-lg rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-3 text-left">
+            <AgiMetrics
+              access={access}
+              session={null}
+              usage={usage}
+              findingCount={0}
+              pendingCount={0}
+              running={false}
+              compact={COMPACT}
+            />
+          </div>
         </div>
       )}
 
@@ -708,6 +783,20 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           {!session ? (
             /* No session — engagement picker / create */
             <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {/* Limits and budget belong here too: they decide whether a run is
+                  worth starting, which is a decision made before picking. */}
+              <div className="rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-3">
+                <AgiMetrics
+                  access={access}
+                  session={null}
+                  usage={usage}
+                  findingCount={0}
+                  pendingCount={0}
+                  running={false}
+                  compact={COMPACT}
+                />
+              </div>
+
               <div className="flex items-center justify-between">
                 <p className="wb-pane-title">1 · Choose an engagement</p>
                 <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 wb-xs"><Plus size={12} className="mr-1 inline" /> New</button>
@@ -895,12 +984,51 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 </button>
               </div>
 
+              {/* Standard metric strip — same three groups in every state of this
+                  module, so "how far in, will it finish, what may it touch" is
+                  answered without opening another surface. */}
+              <div className="border-b border-phantix-700/40 px-3 py-2.5">
+                <AgiMetrics
+                  access={access}
+                  session={session}
+                  usage={usage}
+                  findingCount={drawerFindings.length}
+                  pendingCount={actions.length}
+                  running={running}
+                  compact={COMPACT}
+                />
+              </div>
+
               {/* Live pentest to-do: the loop checklist, ticked off as the agent advances */}
               {session.job && (
                 <div className="border-b border-phantix-700/40 px-3 py-2">
                   <PentestTodo job={session.job as Parameters<typeof PentestTodo>[0]["job"]} running={running} />
                 </div>
               )}
+
+              {/* The agent claims the job is done — a human has to agree before the
+                  session completes. Confirming is dual-controlled server-side. */}
+              {(() => {
+                const job = (session.job ?? {}) as Record<string, unknown>;
+                const status = String(job.status ?? "");
+                const needsConfirm =
+                  Boolean(job.confirm_required ?? job.require_confirm) || status === "complete_pending_confirm";
+                if (!needsConfirm) return null;
+                return (
+                  <div className="border-b border-phantix-700/40 px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-gold-400/30 bg-gold-400/[0.08] px-3 py-2">
+                      <CheckCircle2 size={13} className="shrink-0 text-gold-300" />
+                      <p className="wb-xs flex-1 text-gold-100">
+                        The agent reports the job complete. Confirm to finish and tear down the container.
+                      </p>
+                      <button onClick={() => void confirmJob()} disabled={jobBusy} className="btn-primary !px-2.5 !py-1 wb-xs shrink-0">
+                        {jobBusy ? <Loader2 size={11} className="mr-1 inline animate-spin" /> : <CheckCircle2 size={11} className="mr-1 inline" />}
+                        Confirm job
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="relative min-h-0 flex-1">
                 <div ref={scrollRef} onScroll={onScroll} className="wb-scroll h-full space-y-2 overflow-y-auto p-3">
@@ -919,6 +1047,41 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     </div>
                   )}
                   <IssuesStrip findings={drawerIssueRows} href="/reports?tab=tracker" />
+                  {drawerFindings.length > 0 && (
+                    <div className="space-y-1.5">
+                      {drawerFindings.slice(0, 6).map((f, i) => {
+                        const fid = f.id ?? f.finding_id ?? f.finding_key ?? f.key ?? i;
+                        const promoted = Boolean(f.promoted ?? f.risk_id);
+                        return (
+                          <div
+                            key={`${String(fid)}-${i}`}
+                            className="flex items-center gap-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 px-3 py-2"
+                          >
+                            <p className="wb-xs min-w-0 flex-1 truncate text-slate-300">
+                              {String(f.title ?? "Finding")}
+                            </p>
+                            {promoted ? (
+                              <span className="chip shrink-0 border-emerald-400/30 text-emerald-400">in risk register</span>
+                            ) : (
+                              <button
+                                onClick={() => void promoteFinding(fid)}
+                                disabled={promoting === String(fid)}
+                                className="btn-ghost shrink-0 !px-2 !py-0.5 wb-xs disabled:opacity-50"
+                                title="Promote this session finding into the org risk register"
+                              >
+                                {promoting === String(fid) ? (
+                                  <Loader2 size={10} className="mr-1 inline animate-spin" />
+                                ) : (
+                                  <ShieldAlert size={10} className="mr-1 inline" />
+                                )}
+                                Promote
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {transcript.length === 0 && !connError && (
                     <div className="flex h-full flex-col items-center justify-center gap-2 py-10 text-center">
                       <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-phantix-700/40 bg-phantix-900/60 text-gold-400">

@@ -38,8 +38,10 @@ import {
   streamAgentChat,
   streamAgentRun,
   loadAgentSkills,
+  loadAgentDomains,
   setAgentSkillStatus,
   confirmAgentScope,
+  type AgentDomainInfo,
 } from "@/lib/data";
 import AgentScopeGate, { type AgentScopeSelection } from "@/components/AgentScopeGate";
 import AgentGuardPanel from "@/components/AgentGuardPanel";
@@ -331,12 +333,25 @@ function AgentChat({
   const [liveThinking, setLiveThinking] = useState("");
   const [liveRunId, setLiveRunId] = useState("");
   const [tools, setTools] = useState<{ tool: string; ok: boolean; error?: string }[]>([]);
+  // Specialist roster from the backend catalog — never a hardcoded copy.
+  const [domains, setDomains] = useState<AgentDomainInfo[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [scopeCard, setScopeCard] = useState<AgentScopeCard | null>(null);
   const [scopeBusy, setScopeBusy] = useState(false);
   const scopeResolver = useRef<((grant: AgentScopeGrant | null) => void) | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const chatSend = useChatSend();
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const list = await loadAgentDomains();
+        if (list.length) setDomains(list);
+      } catch {
+        /* keep the static roster */
+      }
+    })();
+  }, []);
 
   // Chat retention — the conversation persists so the user can continue it later.
   const { session } = useStore();
@@ -537,6 +552,20 @@ function AgentChat({
 
   const streaming = busy && (phase === "streaming" || phase === "synthesizing");
 
+  // Merge the backend catalog with per-domain icon/label metadata; fall back to
+  // the static roster only if the catalog could not be loaded at all.
+  const specialists = domains.length
+    ? domains.map((d) => {
+        const meta = DOMAINS.find((x) => x.id === d.domain);
+        return {
+          id: d.domain,
+          label: meta?.label ?? d.display_name,
+          icon: meta?.icon ?? <Sparkles size={14} />,
+          desc: d.call_when || d.description || meta?.desc || "",
+        };
+      })
+    : DOMAINS;
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="flex h-[66vh] flex-col !p-0 overflow-hidden">
@@ -560,10 +589,10 @@ function AgentChat({
           <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
-        {/* Domain specialists */}
+        {/* Domain specialists — driven by GET /ai/agent/domains */}
         <div className="flex flex-wrap items-center gap-1.5 border-b border-phantix-700/30 px-5 py-2">
           <span className="text-[10px] uppercase tracking-wider text-slate-600 mr-1">Specialists</span>
-          {DOMAINS.map((d) => (
+          {specialists.map((d) => (
             <button
               key={d.id}
               onClick={() => invokeDomain(d.id)}
