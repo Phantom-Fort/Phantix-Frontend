@@ -6,7 +6,8 @@ import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
-import { api } from "@/lib/api";
+import { api, delay, isDemoMode } from "@/lib/api";
+import * as demo from "@/lib/demo-data";
 import { cx } from "@/lib/utils";
 
 type InboxItem = {
@@ -44,14 +45,24 @@ export default function AuthorizerInbox() {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { data: inbox, loading, error, reload } = useResource(
-    () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
+    () => (isDemoMode()
+      ? delay().then(() => demo.authorizerInbox as InboxResponse)
+      : api.get<InboxResponse>("/authorizer/inbox", { dualControl: true })),
     emptyInbox,
   );
 
   // Current dual-control designation (GET /audit/control-roles) — read-only here;
   // assignment is managed in the platform portal.
   const { data: controlRoles } = useResource(
-    () => api.get<any>("/audit/control-roles", { dualControl: true }),
+    () => (isDemoMode()
+      ? delay().then(() => ({
+          configured: demo.dualControl.configured,
+          initiator_name: demo.dualControl.initiator?.full_name,
+          initiator_title: demo.dualControl.initiator?.title,
+          authorizer_name: demo.dualControl.authorizer?.full_name,
+          authorizer_title: demo.dualControl.authorizer?.title,
+        }))
+      : api.get<any>("/audit/control-roles", { dualControl: true })),
     null,
   );
 
@@ -101,7 +112,21 @@ export default function AuthorizerInbox() {
     }
 
     try {
-      await api.post(path, body);
+      if (isDemoMode()) {
+        await delay(320);
+        // Mutate the shared demo fixture so the next reload() reflects the
+        // decision — otherwise the item never leaves the inbox.
+        const idx = demo.authorizerInbox.items.findIndex((i) => i.inboxId === item.inboxId);
+        if (idx >= 0) {
+          demo.authorizerInbox.items.splice(idx, 1);
+          demo.authorizerInbox.total = demo.authorizerInbox.items.length;
+          if (item.channel === "vapt") demo.authorizerInbox.counts.vapt = Math.max(0, demo.authorizerInbox.counts.vapt - 1);
+          else if (item.channel === "risk") demo.authorizerInbox.counts.riskTreatments = Math.max(0, demo.authorizerInbox.counts.riskTreatments - 1);
+          else demo.authorizerInbox.counts.dualControl = Math.max(0, demo.authorizerInbox.counts.dualControl - 1);
+        }
+      } else {
+        await api.post(path, body);
+      }
       toast("success", approve ? "Approved" : "Rejected");
       reload();
     } catch (e: any) {

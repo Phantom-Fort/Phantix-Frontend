@@ -190,6 +190,38 @@ export const dualControl: DualControlState = {
   authorizer: { id: 2, full_name: "Chidi Eze", email: "chidi@acme.ng", title: "CISO" },
 };
 
+export const authorizerInbox = {
+  total: 2,
+  counts: { dualControl: 0, vapt: 1, riskTreatments: 1 },
+  authorizer: { userId: 2, email: "chidi@acme.ng", fullName: "Chidi Eze" },
+  items: [
+    {
+      inboxId: "vapt-13",
+      channel: "vapt",
+      kind: "campaign_phase_gate",
+      status: "pending",
+      title: "Exploitation phase — Q3 External Assessment",
+      summary: "full_vapt gate — requires the authorizer before exploitation steps run.",
+      campaignId: 13,
+      campaignName: "Q3 External Assessment",
+      requiredRole: "authorizer",
+      decidePaths: { approve: "/vapt/campaigns/13/gate/approve", reject: "/vapt/campaigns/13/gate/reject" },
+    },
+    {
+      inboxId: "risk-treatment-9",
+      channel: "risk",
+      kind: "treatment_approval",
+      status: "pending",
+      title: "Treatment: rotate exposed JWT signing key",
+      summary: "Proposed mitigation for risk #9 (JWT algorithm confusion) — submitted for approval.",
+      treatmentId: 9,
+      riskId: 9,
+      requiredRole: "authorizer",
+      decidePaths: { approve: "/risks/treatments/9/approve", reject: "/risks/treatments/9/reject" },
+    },
+  ],
+};
+
 export const dbConnections: DbConnection[] = [
   {
     id: 4,

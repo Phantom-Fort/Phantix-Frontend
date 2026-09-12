@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Loader2, Lock, Sparkles } from "lucide-react";
 import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState } from "@/components/ui";
+import DocLink from "@/components/DocLink";
 import { useStore } from "@/lib/store";
 import { loadPricing, pricingFootnote, type PricingTier } from "@/lib/pricing";
 import {
@@ -99,8 +100,11 @@ export default function Plans() {
         title="Plans & billing"
         description="One catalog, shared with the website. Plan limits bind to the company — every user and key shares the same bucket."
         actions={
-          <span className="chip border-phantix-700 text-slate-300">
-            Current plan: <span className="ml-1 font-semibold text-white">{planLabel(currentPlan)}</span>
+          <span className="flex items-center gap-2">
+            <DocLink docId="hc-plans-billing" label="Plans & billing guide" />
+            <span className="chip border-phantix-700 text-slate-300">
+              Current plan: <span className="ml-1 font-semibold text-white">{planLabel(currentPlan)}</span>
+            </span>
           </span>
         }
       />
