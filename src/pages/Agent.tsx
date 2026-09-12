@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Lock, ShieldCheck, Trash2, Loader2, Radar, ShieldAlert, Scale,
   Crosshair, Boxes, Globe2, Timer, Square, BrainCircuit, ChevronDown, ChevronRight,
-  ThumbsUp, AlertTriangle, RotateCcw, Cpu,
+  ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
@@ -42,6 +42,8 @@ import {
   confirmAgentScope,
 } from "@/lib/data";
 import AgentScopeGate, { type AgentScopeSelection } from "@/components/AgentScopeGate";
+import AgentGuardPanel from "@/components/AgentGuardPanel";
+import { isAuthorizationBlock, requestAgentApproval } from "@/lib/agentGuard";
 import { PLATFORM_AI_URL } from "@/lib/links";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
@@ -60,6 +62,7 @@ const DOMAINS = [
   { id: "vapt", label: "VAPT", icon: <Crosshair size={14} />, desc: "Campaign write-ups" },
   { id: "soc", label: "SOC", icon: <Radar size={14} />, desc: "Triage assist" },
   { id: "grc", label: "GRC", icon: <Scale size={14} />, desc: "Explain gaps" },
+  { id: "threat_model", label: "Threat model", icon: <ShieldCheck size={14} />, desc: "Model & explain design threats" },
   { id: "ti", label: "Threat Intel", icon: <Globe2 size={14} />, desc: "Correlate" },
   { id: "asset", label: "Asset", icon: <Boxes size={14} />, desc: "Exposure brief" },
   { id: "cross", label: "Cross", icon: <ShieldAlert size={14} />, desc: "Global ask" },
@@ -327,7 +330,7 @@ function AgentChat({
   const [liveAnswer, setLiveAnswer] = useState("");
   const [liveThinking, setLiveThinking] = useState("");
   const [liveRunId, setLiveRunId] = useState("");
-  const [tools, setTools] = useState<{ tool: string; ok: boolean }[]>([]);
+  const [tools, setTools] = useState<{ tool: string; ok: boolean; error?: string }[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [scopeCard, setScopeCard] = useState<AgentScopeCard | null>(null);
   const [scopeBusy, setScopeBusy] = useState(false);
@@ -360,6 +363,21 @@ function AgentChat({
     setLiveRunId("");
     setTools([]);
     setThinkingOpen(false);
+  };
+
+  // A blocked action is not a failure to hide — it is a decision to route to a
+  // human. The agent cannot approve itself, so this only *requests*.
+  const requestApproval = async (action: string) => {
+    try {
+      await requestAgentApproval(action, "Agent action requested during chat", liveRunId || undefined);
+      toast(
+        "info",
+        "Approval requested",
+        "An authorizer can allow it once in Agent guard — and only once; the authorization is then spent."
+      );
+    } catch (e) {
+      toast("error", "Could not request approval", e instanceof Error ? e.message : undefined);
+    }
   };
 
   // Org-data scope gate: the backend holds the model call and answers 409 with
@@ -489,7 +507,7 @@ function AgentChat({
         (event, data) => {
           if (event === "connected") setPhase("connecting");
           else if (event === "run_started") { setLiveRunId(String(data?.analysis_id ?? "")); }
-          else if (event === "tool") { setTools((t) => [...t, { tool: String(data?.tool ?? "tool"), ok: Boolean(data?.ok) }]); }
+          else if (event === "tool") { setTools((t) => [...t, { tool: String(data?.tool ?? "tool"), ok: Boolean(data?.ok), error: data?.error ? String(data.error) : undefined }]); }
           else if (event === "synthesis_start") setPhase("synthesizing");
           else if (event === "reasoning") { summary += data?.content ?? ""; setLiveThinking(summary); setThinkingOpen(true); }
           else if (event === "delta") { summary += data?.content ?? ""; setLiveAnswer(summary); }
@@ -556,6 +574,11 @@ function AgentChat({
               {d.icon} {d.label}
             </button>
           ))}
+        </div>
+
+        {/* Agent guard — who it acts as, and what still needs authorization */}
+        <div className="border-b border-phantix-700/30 px-5 py-3">
+          <AgentGuardPanel runId={liveRunId || undefined} className="!border-phantix-700/40" />
         </div>
 
         <ChatContainerRoot className="min-h-0 flex-1">
@@ -628,11 +651,26 @@ function AgentChat({
                 {tools.length > 0 && (
                   <div className="space-y-1.5">
                     {tools.map((t, idx) => (
-                      <Tool
-                        key={`${t.tool}-${idx}`}
-                        toolPart={{ type: t.tool, state: t.ok ? "output-available" : "output-error", toolCallId: `tool-${idx}` }}
-                        className="!mt-0 border-phantix-700/40"
-                      />
+                      <div key={`${t.tool}-${idx}`} className="space-y-1">
+                        <Tool
+                          toolPart={{ type: t.tool, state: t.ok ? "output-available" : "output-error", toolCallId: `tool-${idx}` }}
+                          className="!mt-0 border-phantix-700/40"
+                        />
+                        {!t.ok && t.error && (
+                          <div className="flex flex-wrap items-center gap-2 pl-1">
+                            <p className="text-[10px] leading-4 text-slate-500">{t.error}</p>
+                            {isAuthorizationBlock(t.error) && liveRunId && (
+                              <button
+                                onClick={() => void requestApproval(t.tool)}
+                                className="chip border-gold-400/30 text-gold-300 transition-colors hover:bg-gold-400/10"
+                                title="Ask an authorizer to allow this one action on this run"
+                              >
+                                <KeyRound size={10} className="mr-1 inline" /> Request approval
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
