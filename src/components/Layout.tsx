@@ -376,6 +376,22 @@ export default function Layout() {
     return () => window.removeEventListener("phantix:billing-required", handler);
   }, [toast, navigate]);
 
+  // Credits exhausted — the app user cannot renew; their organization admin can,
+  // on the platform. Say who to ask, not just that something failed.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = ((e as CustomEvent).detail as string) || "";
+      toast(
+        "warning",
+        "AI credits exhausted",
+        detail ||
+          "New AI work is paused until the balance is renewed. Ask your organization admin to renew the plan or buy a credit top-up on Platform Billing.",
+      );
+    };
+    window.addEventListener("phantix:credits-exhausted", handler);
+    return () => window.removeEventListener("phantix:credits-exhausted", handler);
+  }, [toast]);
+
   // Auto-logout after inactivity --- uses backend's inactivity_expires_at if set, else 20 min
   useEffect(() => {
     if (!session?.authenticated || demoActive) return;

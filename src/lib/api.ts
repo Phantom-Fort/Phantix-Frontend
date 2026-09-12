@@ -302,7 +302,30 @@ async function request<T>(
         window.location.assign("/login");
       }
     }
-    if (res.status === 402) {
+    // AI credits exhausted gets its own message. The person at the keyboard is
+    // usually not the one who can fix it: renewal and top-ups are an
+    // organization-admin action on the platform, not an app-user one.
+    const detailCode = String(
+      (typeof detail === "object" && detail
+        ? (detail as { code?: unknown; error?: unknown }).code ??
+          (detail as { error?: unknown }).error
+        : "") || "",
+    ).toLowerCase();
+    const detailMsg =
+      typeof detail === "string"
+        ? detail
+        : String((detail as { message?: unknown })?.message ?? "");
+    const creditText = `${detailCode} ${detailMsg}`.toLowerCase();
+    const creditExhausted =
+      /credit|budget|quota|allowance|top[-_ ]?up/.test(creditText) &&
+      /exhaust|depleted|insufficient|exceed|run out|out of credit|no credit|required|limit/.test(
+        creditText,
+      );
+    if (creditExhausted) {
+      window.dispatchEvent(
+        new CustomEvent("phantix:credits-exhausted", { detail: detailMsg || undefined }),
+      );
+    } else if (res.status === 402) {
       const upgradeMsg = typeof detail === "string" ? detail : "Upgrade required";
       window.dispatchEvent(new CustomEvent("phantix:billing-required", { detail: upgradeMsg }));
     }
