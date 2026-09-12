@@ -49,7 +49,7 @@ const starterFeatures = [
   "Context + threat modelling — more projects and monthly model refreshes",
   "Continuous PR/MR review across all enabled repos",
   "Higher volume — more assets, users and concurrent scans",
-  "AI credits — 3,000 onboarding allotment plus a recurring plan allowance (top up in-workspace)",
+  "AI credits — 5,000 onboarding allotment plus a 5,000/month recurring allowance (top up in-workspace)",
   "Standard support",
 ];
 
@@ -59,7 +59,7 @@ const growthFeatures = [
   "Higher allowances — projects, PR review, model refreshes, mobile volume",
   "Multi-cloud posture + attack paths (AWS +) and Kubernetes posture",
   "Blocking policies & path rules",
-  "AI credits — 10,000 onboarding allotment plus a larger recurring plan allowance",
+  "AI credits — 20,000 onboarding allotment plus a 20,000/month recurring allowance",
   "Guided onboarding",
 ];
 
