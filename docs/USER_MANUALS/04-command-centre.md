@@ -151,6 +151,21 @@ Typical panels:
 2. Review control pass/gap  
 3. Attach evidence  
 
+The framework catalog covers international (ISO 27001, SOC 2, PCI-DSS, NIST CSF,
+GDPR), application-security (OWASP ASVS / API Top 10, MASVS) and the Nigerian set
+(CBN Cybersecurity / AML / Consumer / e-Payments, NIBSS, NDPA / NDPR / NDPC,
+Cybercrimes Act, FCCPC, NITDA, SEC Digital Assets, Startup Act). Which frameworks
+apply is decided by your **Business profile** - see
+[Compliance frameworks](../user-docs/13-compliance-frameworks.md).
+
+| Page | Use it for |
+|------|------------|
+| **Frameworks** | Applicable frameworks and control coverage |
+| **Questionnaire** | The scoping questions, framework-tagged |
+| **Gap analysis** | Controls not yet demonstrated, with the mapping that proves it |
+| **Business profile** | Sector, jurisdictions, data handled |
+| **Evidence connectors** | Continuous evidence collection |
+
 ---
 
 ## 9. Reports & findings tracker
@@ -164,6 +179,14 @@ Typical panels:
 1. **Generate report** (type, campaign, formats: md/json/xlsx/pdf/docx/pptx/html)  
 2. Dual-control may be required  
 3. Download completed formats; open detail for AI narratives / sections  
+
+### Solutions tab
+
+**Report Solutions** lists the report types this organization can generate, read
+live from the backend catalog. Each entry shows the audience, when to use it, the
+chapters it will contain and the available formats - so a new report type appears
+without a frontend release, and the page never advertises a chapter the assembler
+does not build.
 
 ### Findings tracker tab (`?tab=tracker`)
 
@@ -185,6 +208,19 @@ Living remediation board (not a PDF):
 1. Chat / skills library (plan-gated)  
 2. Operate session required for actions that change org data  
 3. Distinct from staff AGI Management console  
+
+The specialist row is the live domain catalog - Chief, Threat model, SOC, GRC,
+VAPT, Threat intel, Asset. The agent acts **as you**: it can do only what your role
+allows, and every change needs a fresh single-use authorization.
+
+**Agent activity** (`/agent-activity`) is the record: run, domain, action, your
+intent, who asked, and whether it ran or was denied - a denial means a control
+held. See [Agent activity](../how-to/command-centre/20-agent-activity.md).
+
+**Autonomous Pentest Agent** (right-side drawer) runs governed sessions against
+your own assets. First use requires accepting the usage agreement; the agreement
+dialog links its guide below the accept button. See
+[Autonomous pentest agent](../how-to/command-centre/17-autonomous-pentest.md).
 
 ---
 
@@ -226,7 +262,19 @@ Staff push notes from **Staff portal â†’ Sandbox**.
 
 ---
 
-## 13. Suggested daily path
+## 13. Cloud posture, Code & Posture
+
+| Surface | Nav | What it is |
+|---------|-----|------------|
+| **Cloud posture** | `/cloud` | Connectors + the five capabilities: pack eligibility, network exposure with first/last-seen, TLS posture, CIS host baselines, execution isolation. [Guide](../how-to/command-centre/18-cloud-security.md) |
+| **Threat intel** | `/threat-intel` | IOC lookup, matched and unmatched against your inventory. [Guide](../how-to/command-centre/19-threat-intel.md) |
+| **Code** | `/code` | Repositories, PR/branch review, AutoFix, Continuous PR (draft only). [Guide](../how-to/command-centre/21-code-security.md) |
+| **Posture** | `/posture` | Continuous loop - reviews due, regressions, accepted-risk age. [Guide](../how-to/command-centre/22-posture.md) |
+| **Pentest scope** | `/pentest/external-scope` | External scope and rules of engagement. [Guide](../how-to/command-centre/26-pentest-scope.md) |
+
+---
+
+## 14. Suggested daily path
 
 1. **Dashboard** â€” posture + open SOC/risks  
 2. **SOC** â€” triage new detections  

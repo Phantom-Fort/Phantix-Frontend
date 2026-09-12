@@ -30,8 +30,12 @@ function fmtInt(n: number | undefined): string {
   return typeof n === "number" && Number.isFinite(n) ? n.toLocaleString() : "—";
 }
 
-function fmtUsd(n: number | undefined): string {
-  return typeof n === "number" && Number.isFinite(n) ? `$${n.toFixed(2)}` : "—";
+/** Naira, grouped. Provider spend is metered in USD but the product shows NGN,
+ *  so the server sends the converted figure and this only formats it. */
+function fmtNgn(n: number | undefined): string {
+  return typeof n === "number" && Number.isFinite(n)
+    ? `₦${Math.round(n).toLocaleString()}`
+    : "—";
 }
 
 /** Elapsed run time. Ends at `ended_at` so a finished run stops counting up. */
@@ -224,7 +228,12 @@ export default function AgiMetrics({
         {usage ? (
           <div className={cx("grid gap-3", compact ? "grid-cols-1" : "grid-cols-2")}>
             <Budget label="Tokens" used={usage.tokens_used} total={usage.token_budget} render={fmtInt} />
-            <Budget label="Spend" used={usage.cost_usd} total={usage.spend_limit_usd} render={fmtUsd} />
+            <Budget
+              label="Spend"
+              used={usage.cost_ngn ?? undefined}
+              total={usage.spend_limit_ngn ?? undefined}
+              render={fmtNgn}
+            />
           </div>
         ) : (
           <p className="text-[10.5px] text-slate-600">Budget snapshot unavailable.</p>

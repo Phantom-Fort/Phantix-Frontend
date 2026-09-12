@@ -916,8 +916,13 @@ export interface AiUsage {
   year_month?: string;
   tokens_used?: number;
   token_budget?: number;
+  /** Provider spend is metered in USD; the product shows Naira. */
   cost_usd?: number;
   spend_limit_usd?: number;
+  cost_ngn?: number;
+  spend_limit_ngn?: number;
+  currency?: string;
+  fx_ngn_per_usd?: number;
   /** False once a budget is exhausted — AI calls are refused, not degraded. */
   allowed?: boolean;
   mode?: string;

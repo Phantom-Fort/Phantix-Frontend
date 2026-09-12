@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
+  BarChart3,
   Boxes,
   Radar,
   Crosshair,
@@ -80,16 +81,16 @@ const socSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
 const complianceSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: "/compliance", label: "Frameworks", icon: <Scale size={17} /> },
   { to: "/compliance/questionnaire", label: "Questionnaire", icon: <ClipboardList size={17} /> },
-  { to: "/compliance/gaps", label: "Gap analysis", icon: <SearchCheck size={17} /> },
-  { to: "/compliance/profile", label: "Business profile", icon: <Building2 size={17} /> },
-  { to: "/compliance/connectors", label: "Evidence connectors", icon: <Plug size={17} /> },
+  { to: "/compliance/gaps", label: "Gap Analysis", icon: <SearchCheck size={17} /> },
+  { to: "/compliance/profile", label: "Business Profile", icon: <Building2 size={17} /> },
+  { to: "/compliance/connectors", label: "Evidence Connectors", icon: <Plug size={17} /> },
 ];
 
 const vaptSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: "/vapt", label: "Campaigns", icon: <Crosshair size={17} /> },
   { to: "/vapt/schedules", label: "Schedules", icon: <CalendarClock size={17} /> },
-  { to: "/vapt/procedures", label: "Procedures & rules", icon: <BookOpen size={17} /> },
-  { to: "/vapt/settings", label: "Engine settings", icon: <SlidersHorizontal size={17} /> },
+  { to: "/vapt/procedures", label: "Procedures & Rules", icon: <BookOpen size={17} /> },
+  { to: "/vapt/settings", label: "Engine Settings", icon: <SlidersHorizontal size={17} /> },
 ];
 
 type NavDropdownItem = {
@@ -109,6 +110,7 @@ const navSections: {
     label: "Overview",
     items: [
       { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={17} /> },
+      { to: "/analytics", label: "Analytics", icon: <BarChart3 size={17} /> },
     ],
   },
   {
@@ -122,7 +124,7 @@ const navSections: {
       { type: "dropdown", label: "VAPT", icon: <Crosshair size={17} />, basePath: "/vapt", items: vaptSubItems },
       { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
       { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
-      { to: "/pentest/external-scope", label: "Pentest scope", icon: <FileSignature size={17} /> },
+      { to: "/pentest/external-scope", label: "Pentest Scope", icon: <FileSignature size={17} /> },
     ],
   },
   {

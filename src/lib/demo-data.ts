@@ -492,6 +492,10 @@ export const aiUsage: AiUsage = {
   token_budget: 1000000,
   cost_usd: 18.4,
   spend_limit_usd: 50,
+  cost_ngn: 27600,
+  spend_limit_ngn: 75000,
+  currency: "NGN",
+  fx_ngn_per_usd: 1500,
   allowed: true,
   mode: "balanced",
 };

@@ -1455,6 +1455,16 @@ export async function loadAiUsage(): Promise<AiUsage | null> {
     token_budget: Number(raw.token_budget ?? 0),
     cost_usd: Number(raw.cost_usd ?? 0),
     spend_limit_usd: Number(raw.spend_limit_usd ?? 0),
+    cost_ngn:
+      raw.cost_ngn != null
+        ? Number(raw.cost_ngn)
+        : Number(raw.cost_usd ?? 0) * Number(raw.fx_ngn_per_usd ?? 0) || undefined,
+    spend_limit_ngn:
+      raw.spend_limit_ngn != null
+        ? Number(raw.spend_limit_ngn)
+        : Number(raw.spend_limit_usd ?? 0) * Number(raw.fx_ngn_per_usd ?? 0) || undefined,
+    currency: raw.currency ? String(raw.currency) : "NGN",
+    fx_ngn_per_usd: raw.fx_ngn_per_usd != null ? Number(raw.fx_ngn_per_usd) : undefined,
     allowed: Boolean(raw.allowed ?? true),
     mode: raw.mode ? String(raw.mode) : undefined,
   };
