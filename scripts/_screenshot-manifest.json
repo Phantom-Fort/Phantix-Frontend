@@ -1,6 +1,6 @@
 [
   { "name": "login", "path": "/login", "file": "app/login.png", "waitText": "Sign in" },
-  { "name": "dashboard", "path": "/dashboard?demo=1", "file": "app/dashboard.png", "waitText": "Posture score" },
+  { "name": "dashboard", "path": "/dashboard", "file": "app/dashboard.png", "waitText": "Posture score" },
   { "name": "assets", "path": "/assets", "file": "app/assets.png", "waitText": "Inventory" },
   { "name": "assets_add_modal", "path": "/assets", "file": "app/assets_add_modal.png", "waitText": "Inventory", "click": ["text=Add asset"] },
   { "name": "intelligence", "path": "/assets/intelligence", "file": "app/intelligence.png", "waitText": "Relationship Graph" },

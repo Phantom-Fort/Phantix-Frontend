@@ -232,6 +232,7 @@ export default function Reports() {
     requestedTab === "tracker" || requestedTab === "reports" ? requestedTab : "solutions";
   const [tab, setTab] = useState(initialTab);
   const [reportTypes, setReportTypes] = useState<ReportTypeEntry[]>([]);
+  const [retention, setRetention] = useState<{ max_versions_per_type?: number } | null>(null);
   const [typesLoading, setTypesLoading] = useState(true);
   const [genOpen, setGenOpen] = useState(false);
   const [reportsPage, setReportsPage] = useState(1);
@@ -253,8 +254,10 @@ export default function Reports() {
   useEffect(() => {
     let cancelled = false;
     loadReportTypes()
-      .then((items) => {
-        if (!cancelled) setReportTypes(items);
+      .then((res) => {
+        if (cancelled) return;
+        setReportTypes(res.items);
+        setRetention(res.retention);
       })
       .catch(() => {
         if (!cancelled) setReportTypes([]);
@@ -682,9 +685,11 @@ export default function Reports() {
           />
 
           <p className="text-xs text-slate-500">
-            Retention: REPORT_MAX_VERSIONS=3 per type --- oldest archives automatically with a ReportArchived
-            alert. Prefer run_inline=false for large campaigns to avoid gateway timeouts; poll GET /reports/{"{id}"}
-            until status=complete.
+            Retention is <strong className="text-slate-400">per report type</strong>: each type keeps
+            its own {retention?.max_versions_per_type ?? 3} most recent versions and archives its own
+            oldest with a ReportArchived alert — generating an overview never displaces a VAPT report.
+            Prefer run_inline=false for large campaigns to avoid gateway timeouts; poll GET
+            /reports/{"{id}"} until status=complete.
           </p>
         </motion.div>
       )}
@@ -888,17 +893,35 @@ export default function Reports() {
               );
             })()}
           </div>
-          <div>
-            <label className="label">Campaign</label>
-            <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
-              <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
-              {campaigns.map((c: any) => (
-                <option key={c.id} value={c.id}>
-                  #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
-                </option>
-              ))}
-            </select>
-          </div>
+          {(() => {
+            const chosen = reportTypes.find((t) => t.report_type === genForm.report_type);
+            // Unknown type (catalog unavailable) keeps the picker rather than
+            // hiding a field the request might need.
+            const needsCampaign = chosen ? chosen.requires_campaign : true;
+            if (!needsCampaign) {
+              return (
+                <div className="rounded-lg border border-phantix-700/40 bg-phantix-950/40 px-3 py-2">
+                  <p className="text-[11.5px] leading-5 text-slate-500">
+                    Organization-scoped — this report reads every engine for the whole org, so there
+                    is no campaign to pick.
+                  </p>
+                </div>
+              );
+            }
+            return (
+              <div>
+                <label className="label">Campaign</label>
+                <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
+                  <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
+                  {campaigns.map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })()}
 
           {/* Verification gate preview --- counts before generate */}
           {!fromAgi && (

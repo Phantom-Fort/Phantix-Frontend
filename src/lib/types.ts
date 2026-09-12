@@ -686,6 +686,8 @@ export interface TrackerFinding {
   assigned_owner?: string | null;
   assigned_owner_email?: string | null;
   target_fix_date?: string | null;
+  /** When the finding was first seen — the clock aging measures from. */
+  first_detected_at?: string | null;
   detection_count?: number;
   retest_status?: string | null;
   description?: string | null;

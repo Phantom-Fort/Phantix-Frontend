@@ -19,6 +19,10 @@ const ONLY = process.argv[5] ? process.argv[5].split(",") : null;
   await page.goto(`${BASE}/?demo=1`, { waitUntil: "networkidle" });
   await page.waitForURL(`${BASE}/dashboard`, { timeout: 10000 }).catch(() => {});
   await page.waitForTimeout(800);
+  await page
+    .locator('[aria-label="Dismiss critical alert"]')
+    .click({ timeout: 3000 })
+    .catch(() => {});
 
   const results = [];
   for (const item of MANIFEST) {
@@ -30,6 +34,13 @@ const ONLY = process.argv[5] ? process.argv[5].split(",") : null;
         await page.waitForSelector(`text=${item.waitText}`, { timeout: 10000 }).catch(() => {});
       }
       await page.waitForTimeout(500);
+      // Demo mode scripts a full-screen "critical alert" takeover on a timer,
+      // independent of which page is open — clear it before it ruins the shot.
+      const blocker = page.locator('[aria-label="Dismiss critical alert"]');
+      if (await blocker.count()) {
+        await blocker.click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(300);
+      }
       if (item.scrollToText) {
         const loc = page.locator(`text=${item.scrollToText}`).first();
         if (await loc.count()) await loc.scrollIntoViewIfNeeded().catch(() => {});
@@ -45,6 +56,10 @@ const ONLY = process.argv[5] ? process.argv[5].split(",") : null;
             results.push({ name: item.name, warn: `click target not found: ${sel}` });
           }
         }
+      }
+      if (await blocker.count()) {
+        await blocker.click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(300);
       }
       fs.mkdirSync(path.dirname(outPath), { recursive: true });
       await page.screenshot({ path: outPath });

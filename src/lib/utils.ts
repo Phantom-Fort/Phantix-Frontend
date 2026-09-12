@@ -285,6 +285,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
   asset_id?: number | null;
   assigned_owner?: string | null;
   target_fix_date?: string | null;
+  first_detected_at?: string | null;
   detection_count?: number;
   retest_status?: string | null;
   description?: string | null;
@@ -329,6 +330,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
     priority: raw?.priority != null ? String(raw.priority) : undefined,
     asset_id: raw?.asset_id != null ? Number(raw.asset_id) : assetObj?.id != null ? Number(assetObj.id) : null,
     target_fix_date: raw?.target_fix_date ?? null,
+    first_detected_at: raw?.first_detected_at ?? raw?.created_at ?? null,
     detection_count: raw?.detection_count != null ? Number(raw.detection_count) : undefined,
     retest_status: raw?.retest_status ?? null,
     description: raw?.description ?? null,

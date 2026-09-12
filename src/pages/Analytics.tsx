@@ -133,7 +133,7 @@ export default function Analytics() {
         description="Live analysis of your organization's security data across every surface and engine — no report generation required."
         actions={
           <span className="flex items-center gap-2">
-            <DocLink docId="howto-app-11" label="Analytics how-to" />
+            <DocLink docId="howto-app-28" label="Analytics how-to" />
             <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>

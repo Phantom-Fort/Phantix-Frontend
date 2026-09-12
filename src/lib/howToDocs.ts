@@ -45,6 +45,7 @@ import app24 from "@docs/docs/how-to/command-centre/24-compliance-review.md?raw"
 import app25 from "@docs/docs/how-to/command-centre/25-soc-operations.md?raw";
 import app26 from "@docs/docs/how-to/command-centre/26-pentest-scope.md?raw";
 import app27 from "@docs/docs/how-to/command-centre/27-admin-and-audit.md?raw";
+import app28 from "@docs/docs/how-to/command-centre/28-analytics.md?raw";
 
 function toWeb(md: string): string {
   return md.replace(/\.\.\/\.\.\/screenshots\//g, "/screenshots/").replace(/\.\.\/screenshots\//g, "/screenshots/");
@@ -102,4 +103,5 @@ export const howToDocs: Entry[] = [
   e("howto-app-25", "App: SOC operations", "Triage, war room, playbooks, advisor and logs.", "how-to-app", app25),
   e("howto-app-26", "App: Pentest scope", "External scope and rules of engagement.", "how-to-app", app26),
   e("howto-app-27", "App: Audit, people & integrations", "Trail, users, delivery and sandbox.", "how-to-app", app27),
+  e("howto-app-28", "App: Analytics", "Live posture, findings and comparative analysis without a report.", "how-to-app", app28),
 ];

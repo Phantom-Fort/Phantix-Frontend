@@ -283,6 +283,13 @@ export interface ContinuousReassessmentEnable {
 }
 
 export async function listContinuousReassessment(projectId?: number) {
+  if (isDemoMode()) {
+    await delay();
+    const schedules = projectId
+      ? demo.continuousReassessment.filter((s) => s.project_id === projectId)
+      : demo.continuousReassessment;
+    return { organization_id: demo.organization.id, schedules: schedules as ContinuousReassessmentSchedule[] };
+  }
   const qs = projectId ? `?project_id=${projectId}` : "";
   return api.get<{ organization_id: number; schedules: ContinuousReassessmentSchedule[] }>(
     `/vapt/continuous-reassessment${qs}`,
@@ -290,6 +297,10 @@ export async function listContinuousReassessment(projectId?: number) {
 }
 
 export async function enableContinuousReassessment(body: ContinuousReassessmentEnable) {
+  if (isDemoMode()) {
+    await delay(420);
+    return { id: Date.now(), organization_id: demo.organization.id, is_active: true, debounce_hours: 24, cadence: "7d", ...body } as ContinuousReassessmentSchedule;
+  }
   return api.post<ContinuousReassessmentSchedule>("/vapt/continuous-reassessment", {
     debounce_hours: 24,
     cadence: "7d",
@@ -303,6 +314,10 @@ export async function proposeContinuousReassessment(body: {
   asset_ids?: number[];
   reason?: string;
 }) {
+  if (isDemoMode()) {
+    await delay(320);
+    return { ok: true, reason: "manual", ...body };
+  }
   return api.post<{ ok: boolean; [k: string]: unknown }>("/vapt/continuous-reassessment/propose", {
     reason: "manual",
     ...body,

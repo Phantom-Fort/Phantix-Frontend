@@ -2864,11 +2864,20 @@ export function hubStreamUrl(): string {
  * frontend release, and so the page can never advertise a chapter the assembler
  * does not build (the catalog derives its section list from the assembler).
  */
-export async function loadReportTypes(): Promise<ReportTypeEntry[]> {
-  if (isDemoMode()) { await delay(250); return demo.reportTypes; }
+export interface ReportCatalog {
+  items: ReportTypeEntry[];
+  /** Retention is per report type — each keeps its own versions. */
+  retention: { max_versions_per_type?: number; scope?: string; archive_grace_days?: number } | null;
+}
+
+export async function loadReportTypes(): Promise<ReportCatalog> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { items: demo.reportTypes, retention: { max_versions_per_type: 3, scope: "per_report_type", archive_grace_days: 7 } };
+  }
   const raw = await softOne<any>("/reports/types");
   const items = Array.isArray(raw?.items) ? raw.items : [];
-  return items.map((t: any) => ({
+  const mapped = items.map((t: any) => ({
     report_type: String(t.report_type ?? ""),
     title: String(t.title ?? t.report_type ?? ""),
     audience: String(t.audience ?? ""),
@@ -2880,6 +2889,10 @@ export async function loadReportTypes(): Promise<ReportTypeEntry[]> {
     section_count: Number(t.section_count ?? 0),
     formats: Array.isArray(t.formats) ? t.formats.map(String) : [],
   })) as ReportTypeEntry[];
+  return {
+    items: mapped,
+    retention: raw?.retention && typeof raw.retention === "object" ? raw.retention : null,
+  };
 }
 
 /**
@@ -2895,4 +2908,67 @@ export async function loadTrackerSummary(): Promise<TrackerSummary | null> {
   const raw = await softOne<any>("/reports/tracker?limit=1000");
   const summary = raw && typeof raw === "object" ? raw.summary : null;
   return summary && typeof summary === "object" ? (summary as TrackerSummary) : null;
+}
+
+export interface TrackerTimelinePoint {
+  day: string;
+  detected: number;
+  fixed: number;
+  accepted: number;
+  regressed: number;
+  cumulative_open: number;
+}
+
+export interface TrackerTimeline {
+  days: number;
+  prior_open: number;
+  series: TrackerTimelinePoint[];
+  totals: { detected: number; fixed: number; accepted: number; regressed: number };
+  net_change: number;
+}
+
+/**
+ * Daily findings movement. Standing counts say how much is open; only dated
+ * movement says whether it is getting better.
+ */
+export async function loadTrackerTimeline(days = 90): Promise<TrackerTimeline | null> {
+  if (isDemoMode()) { await delay(250); return demo.trackerTimeline; }
+  const raw = await softOne<any>(`/reports/tracker/analytics/timeline?days=${days}`);
+  if (!raw || !Array.isArray(raw.series)) return null;
+  return {
+    days: Number(raw.days ?? days),
+    prior_open: Number(raw.prior_open ?? 0),
+    series: raw.series.map((p: any) => ({
+      day: String(p.day ?? ""),
+      detected: Number(p.detected ?? 0),
+      fixed: Number(p.fixed ?? 0),
+      accepted: Number(p.accepted ?? 0),
+      regressed: Number(p.regressed ?? 0),
+      cumulative_open: Number(p.cumulative_open ?? 0),
+    })),
+    totals: {
+      detected: Number(raw.totals?.detected ?? 0),
+      fixed: Number(raw.totals?.fixed ?? 0),
+      accepted: Number(raw.totals?.accepted ?? 0),
+      regressed: Number(raw.totals?.regressed ?? 0),
+    },
+    net_change: Number(raw.net_change ?? 0),
+  };
+}
+
+/** Tracker rows plus the server-computed summary — aging and SLA need the rows. */
+export async function loadTrackerAnalytics(): Promise<{
+  rows: TrackerFinding[];
+  summary: TrackerSummary | null;
+}> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { rows: demo.trackerFindings as TrackerFinding[], summary: demo.trackerSummary };
+  }
+  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  const items = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
+  return {
+    rows: items.map((t: any) => normalizeTrackerFinding(t) as TrackerFinding),
+    summary: raw?.summary && typeof raw.summary === "object" ? (raw.summary as TrackerSummary) : null,
+  };
 }

@@ -37,6 +37,7 @@ Platform must have setup complete + security DB bootstrapped first.
 | 25 | SOC operations | [25-soc-operations.md](./25-soc-operations.md) |
 | 26 | Pentest scope | [26-pentest-scope.md](./26-pentest-scope.md) |
 | 27 | Audit, people & integrations | [27-admin-and-audit.md](./27-admin-and-audit.md) |
+| 28 | Analytics | [28-analytics.md](./28-analytics.md) |
 
 ## Typical weekly operating flow
 

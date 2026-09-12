@@ -167,6 +167,7 @@ const DOC_ID_BY_FILE: Record<string, string> = {
   "25-soc-operations.md": "howto-app-25",
   "26-pentest-scope.md": "howto-app-26",
   "27-admin-and-audit.md": "howto-app-27",
+  "28-analytics.md": "howto-app-28",
 };
 
 /**

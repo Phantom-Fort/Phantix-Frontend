@@ -270,6 +270,7 @@ Staff push notes from **Staff portal â†’ Sandbox**.
 | **Threat intel** | `/threat-intel` | IOC lookup, matched and unmatched against your inventory. [Guide](../how-to/command-centre/19-threat-intel.md) |
 | **Code** | `/code` | Repositories, PR/branch review, AutoFix, Continuous PR (draft only). [Guide](../how-to/command-centre/21-code-security.md) |
 | **Posture** | `/posture` | Continuous loop - reviews due, regressions, accepted-risk age. [Guide](../how-to/command-centre/22-posture.md) |
+| **Analytics** | `/analytics` | Live posture, findings, comparative and automation panels - no report to generate. [Guide](../how-to/command-centre/28-analytics.md) |
 | **Pentest scope** | `/pentest/external-scope` | External scope and rules of engagement. [Guide](../how-to/command-centre/26-pentest-scope.md) |
 
 ---
