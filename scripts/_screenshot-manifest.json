@@ -20,7 +20,7 @@
 
   { "name": "operate_unlock", "path": "/assets", "file": "app/operate_unlock.png", "waitText": "Inventory", "click": ["text=Unlock operate"] },
   { "name": "discovery", "path": "/assets", "file": "app/discovery.png", "waitText": "Inventory", "click": ["text=Discovery jobs"] },
-  { "name": "availability", "path": "/soc", "file": "app/availability.png", "waitText": "Availability", "scrollToText": "Availability" },
+  { "name": "availability", "path": "/soc", "file": "app/availability.png", "waitText": "Availability", "click": ["button:has-text(\"Availability\")"] },
   { "name": "tracker", "path": "/reports?tab=tracker", "file": "app/tracker.png", "waitText": "tracker" },
   { "name": "autonomous_pentest", "path": "/agent", "file": "app/autonomous_pentest.png", "waitText": "Agent", "click": ["text=Autonomous Pentest Agent"] },
   { "name": "cloud", "path": "/cloud", "file": "app/cloud.png", "waitText": "Cloud" },

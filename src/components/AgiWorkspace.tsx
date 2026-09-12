@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
-  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
+  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert, Sparkles,
 } from "lucide-react";
 import { Modal, Spinner } from "@/components/ui";
 import DocLink from "@/components/DocLink";
@@ -749,6 +749,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               </li>
             ))}
           </ul>
+          {/* When the blocker is entitlement, the way out is payment — send them
+              there instead of leaving a list of reasons with no action. */}
+          {access?.agi.blockers.some((b) => /entitle|plan|payment|subscri|premium/i.test(`${b.code} ${b.message}`)) && (
+            <button
+              onClick={() => navigate("/plans?feature=ai_pentest_agent")}
+              className="btn-primary mt-4 !text-xs"
+            >
+              <Sparkles size={12} className="mr-1 inline" /> See plans &amp; upgrade
+            </button>
+          )}
         </div>
       )}
 

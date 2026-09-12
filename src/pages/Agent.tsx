@@ -605,10 +605,9 @@ function AgentChat({
           ))}
         </div>
 
-        {/* Agent guard — who it acts as, and what still needs authorization */}
-        <div className="border-b border-phantix-700/30 px-5 py-3">
-          <AgentGuardPanel runId={liveRunId || undefined} className="!border-phantix-700/40" />
-        </div>
+        {/* Agent guard — appears only while something needs authorization, so
+            it never sits here empty, taking up room above the chat. */}
+        <AgentGuardPanel runId={liveRunId || undefined} className="!border-phantix-700/40 mx-5 mt-3" />
 
         <ChatContainerRoot className="min-h-0 flex-1">
           <ChatContainerContent className="space-y-5 px-5 py-4">

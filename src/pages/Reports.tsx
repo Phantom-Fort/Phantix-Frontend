@@ -577,6 +577,17 @@ export default function Reports() {
           types={reportTypes}
           loading={typesLoading}
           busyType={genSubmitting ? genForm.report_type : null}
+          /* Newest complete report per type — the set worth a single click. */
+          recent={Object.values(
+            reports.reduce((acc: Record<string, any>, r: any) => {
+              const key = String(r.report_type ?? "");
+              if (!acc[key] || Number(r.report_version ?? 0) > Number(acc[key].report_version ?? 0)) {
+                acc[key] = r;
+              }
+              return acc;
+            }, {}),
+          ).slice(0, 8)}
+          onView={(r) => void openDetail(r)}
           onGenerate={(entry) => {
             setGenForm((prev) => ({
               ...prev,

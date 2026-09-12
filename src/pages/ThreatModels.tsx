@@ -144,9 +144,11 @@ export default function ThreatModels() {
         <div className="space-y-5">
           <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[11px] leading-5 text-gold-200">
             <Info size={12} className="mt-0.5 shrink-0" />
-            A model comes from a product's information. Add <strong className="font-semibold">product information</strong>, an architecture diagram
-            or requirements under <span className="mx-1 font-mono">Inputs</span>, then generate. Models load from the
-            project-scoped index (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>).
+            <span>
+              A model comes from a product's information. Add <strong className="font-semibold">product information</strong>, an architecture diagram
+              or requirements under <span className="mx-1 font-mono">Inputs</span>, then generate. Models load from the
+              project-scoped index (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>).
+            </span>
           </p>
 
           {!projects.length ? (

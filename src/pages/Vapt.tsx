@@ -14,6 +14,7 @@ import { useStore } from "@/lib/store";
 import { executeVaptPlan, generateVaptPlan } from "@/lib/vaptOps";
 import type { VaptPlan } from "@/lib/vaptOps";
 import type { VaptCampaign, VaptFinding } from "@/lib/types";
+import { UpsellBanner } from "@/components/UpgradeGate";
 
 /** Multi-tool correlation chips from a web step's output_summary.multi_tool_correlation. */
 function CorrelationChips({ correlation }: { correlation: any }) {
@@ -396,6 +397,8 @@ export default function Vapt() {
           </>
         }
       />
+
+      <UpsellBanner feature="continuous_pentest" />
 
       {/* Pending approvals strip */}
       {pending.length > 0 && (

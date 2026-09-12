@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Check, KeyRound, Loader2, RefreshCw, ShieldCheck, UserRound, X } from "lucide-react";
-import { Card, CardHeader, EmptyState } from "@/components/ui";
+import { Card, CardHeader } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import {
   decideAgentApproval,
@@ -77,6 +77,12 @@ export default function AgentGuardPanel({
   const pending = rows.filter((r) => r.status === "pending");
   const decided = rows.filter((r) => r.status !== "pending").slice(0, 5);
 
+  // Nothing needs a human right now — get out of the chat's way rather than
+  // lingering with a stale "approved"/"rejected" row. The decide() toast
+  // already told the operator what happened; a future request re-populates
+  // `rows` (via the `runId` reload) and the panel reappears on its own.
+  if (!loading && pending.length === 0) return null;
+
   return (
     <Card className={className}>
       <CardHeader
@@ -104,12 +110,6 @@ export default function AgentGuardPanel({
           <div className="space-y-2">
             {[0, 1].map((i) => <div key={i} className="skeleton h-9 w-full rounded-md" />)}
           </div>
-        ) : !pending.length && !decided.length ? (
-          <EmptyState
-            icon={<ShieldCheck size={18} />}
-            title="Nothing waiting"
-            body="When the agent needs to change something, the request appears here for an authorizer."
-          />
         ) : (
           <>
             {pending.map((row) => (

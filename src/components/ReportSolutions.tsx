@@ -1,6 +1,6 @@
 import React from "react";
 import {
-  Clipboard, Crosshair, FileText, Gauge, ListChecks, Scale, Shield, Terminal, Loader2, Play,
+  Clipboard, Crosshair, Eye, FileText, Gauge, ListChecks, Scale, Shield, Terminal, Loader2, Play,
 } from "lucide-react";
 import { Card, EmptyState, Spinner } from "@/components/ui";
 import type { ReportTypeEntry } from "@/lib/types";
@@ -99,16 +99,30 @@ function TypeCard({
   );
 }
 
+export interface RecentReport {
+  id: number;
+  title?: string;
+  report_type?: string;
+  report_version?: number;
+  status?: string;
+  created_at?: string;
+}
+
 export default function ReportSolutions({
   types,
   loading,
   busyType,
   onGenerate,
+  recent = [],
+  onView,
 }: {
   types: ReportTypeEntry[];
   loading?: boolean;
   busyType?: string | null;
   onGenerate: (entry: ReportTypeEntry) => void;
+  /** Latest generated report per type — the readily-viewable set. */
+  recent?: RecentReport[];
+  onView?: (report: RecentReport) => void;
 }) {
   if (loading) {
     return (
@@ -133,9 +147,42 @@ export default function ReportSolutions({
 
   const featured = types.filter((t) => t.featured);
   const rest = types.filter((t) => !t.featured);
+  const titleFor = (rtype?: string) =>
+    types.find((t) => t.report_type === rtype)?.title ?? rtype ?? "Report";
 
   return (
     <div className="space-y-5">
+      {/* Ready to read. Generating is the slow path; the newest of each type is
+          one click from here so the common case never runs a report at all. */}
+      {recent.length > 0 && (
+        <section>
+          <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Ready to view
+          </h2>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {recent.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => onView?.(r)}
+                className="card flex items-center gap-2.5 p-3 text-left transition-colors hover:border-phantix-600/60"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-phantix-800/70 text-slate-400">
+                  <Eye size={13} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12px] font-medium text-slate-200">
+                    {titleFor(r.report_type)}
+                  </span>
+                  <span className="block truncate text-[10.5px] text-slate-500">
+                    v{r.report_version ?? 1}
+                    {r.status && r.status !== "complete" ? ` · ${r.status}` : ""}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
       <section>
         <div className="mb-2.5 flex items-baseline justify-between gap-2">
           <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">

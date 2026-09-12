@@ -18,6 +18,7 @@ import {
 import { useStore } from "@/lib/store";
 import { cx, timeAgo, titleCase } from "@/lib/utils";
 import type { CloudProvider, CloudConnector } from "@/lib/types";
+import { UpsellBanner } from "@/components/UpgradeGate";
 
 export default function Cloud() {
   const { toast, requireDualControl } = useStore();
@@ -146,6 +147,8 @@ export default function Cloud() {
           </div>
         }
       />
+
+      <UpsellBanner feature="cloud_security_scan" />
 
       {emptyState && (
         <Card className="mb-5">

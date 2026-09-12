@@ -16,6 +16,7 @@ import {
 import { useStore } from "@/lib/store";
 import { cx, timeAgo } from "@/lib/utils";
 import DocLink from "@/components/DocLink";
+import { UpsellBanner } from "@/components/UpgradeGate";
 
 // ── Code — AutoFix, Continuous PR, GitHub repositories & review runs ─────────
 // One place for everything code: connected repos, branch-review runs (the PR
@@ -118,6 +119,8 @@ export default function Code() {
           </button>
         </>}
       />
+
+      <UpsellBanner feature="continuous_pr" />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className={cx("chip text-xs", connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 text-slate-400")}>

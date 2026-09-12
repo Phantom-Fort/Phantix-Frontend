@@ -10,13 +10,17 @@ import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
 import PostureDonut from "@/components/charts/PostureDonut";
 import SurfaceScoreRow from "@/components/charts/SurfaceScoreRow";
 import {
-  SEVERITY_COLORS, SEVERITY_ORDER, SURFACES, SURFACE_LABELS,
-  lifecycleColor, surfaceColor, type ChartTheme,
+  LIFECYCLE_COLORS, SEVERITY_COLORS, SEVERITY_ORDER, SURFACES, SURFACE_LABELS,
+  surfaceColor, type ChartTheme,
 } from "@/components/charts/palette";
-import { loadAiUsage, loadPostureTrend, loadTrackerSummary } from "@/lib/data";
+import MovementTimeline from "@/components/charts/MovementTimeline";
+import {
+  loadAiUsage, loadComplianceBundle, loadPostureTrend, loadTrackerAnalytics, loadTrackerTimeline,
+} from "@/lib/data";
+import type { TrackerTimeline } from "@/lib/data";
 import { loadPostureSnapshot } from "@/lib/vaptOps";
 import type { PostureSnapshot } from "@/lib/vaptOps";
-import type { AiUsage, TrackerSummary } from "@/lib/types";
+import type { AiUsage, ComplianceAssessment, TrackerFinding, TrackerSummary } from "@/lib/types";
 import { useTheme } from "@/lib/theme";
 import { cx } from "@/lib/utils";
 
@@ -41,22 +45,30 @@ export default function Analytics() {
   const [tracker, setTracker] = useState<TrackerSummary | null>(null);
   const [trend, setTrend] = useState<Array<{ day: string; score: number; findings: number }>>([]);
   const [usage, setUsage] = useState<AiUsage | null>(null);
+  const [rows, setRows] = useState<TrackerFinding[]>([]);
+  const [timeline, setTimeline] = useState<TrackerTimeline | null>(null);
+  const [assessments, setAssessments] = useState<ComplianceAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [surface, setSurface] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     // Each source is independent: one unavailable engine must not blank the page.
-    const [p, t, tr, u] = await Promise.all([
+    const [p, ta, tr, u, tl, comp] = await Promise.all([
       loadPostureSnapshot().catch(() => null),
-      loadTrackerSummary().catch(() => null),
+      loadTrackerAnalytics().catch(() => ({ rows: [], summary: null })),
       loadPostureTrend().catch(() => []),
       loadAiUsage().catch(() => null),
+      loadTrackerTimeline(90).catch(() => null),
+      loadComplianceBundle().catch(() => null),
     ]);
     setPosture(p as PostureSnapshot | null);
-    setTracker(t);
+    setTracker(ta.summary);
+    setRows(ta.rows);
     setTrend(Array.isArray(tr) ? tr : []);
     setUsage(u);
+    setTimeline(tl);
+    setAssessments(((comp as any)?.assessments ?? []) as ComplianceAssessment[]);
     setLoading(false);
   }, []);
 
@@ -105,6 +117,68 @@ export default function Analytics() {
         tracked: Number(value) || 0,
       }));
   }, [tracker]);
+
+  /* Aging: how long open work has been sitting. Buckets rather than a raw day
+     axis — "37 days" is noise; "older than a month" is a decision. */
+  const aging = useMemo(() => {
+    const buckets = [
+      { name: "0–7d", min: 0, max: 7, count: 0 },
+      { name: "8–30d", min: 8, max: 30, count: 0 },
+      { name: "31–90d", min: 31, max: 90, count: 0 },
+      { name: "90d+", min: 91, max: Infinity, count: 0 },
+    ];
+    const now = Date.now();
+    let undated = 0;
+    for (const row of rows) {
+      const status = String(row.status ?? "").toLowerCase();
+      // Closed work has stopped aging; including it would flatter the picture.
+      if (status === "fixed" || status === "accepted") continue;
+      const seen = row.first_detected_at ?? row.updated_at;
+      const ts = seen ? new Date(seen).getTime() : NaN;
+      if (!Number.isFinite(ts)) {
+        undated += 1;
+        continue;
+      }
+      const days = Math.max(0, Math.floor((now - ts) / 86400000));
+      const bucket = buckets.find((b) => days >= b.min && days <= b.max);
+      if (bucket) bucket.count += 1;
+    }
+    return { buckets, undated };
+  }, [rows]);
+
+  /* SLA: open work already past the date someone committed to. */
+  const slaBreaches = useMemo(() => {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const bySeverity: Record<string, number> = {};
+    for (const row of rows) {
+      const status = String(row.status ?? "").toLowerCase();
+      if (status === "fixed" || status === "accepted") continue;
+      if (!row.target_fix_date) continue;
+      const due = new Date(row.target_fix_date).setHours(0, 0, 0, 0);
+      if (!Number.isFinite(due) || due >= today) continue;
+      const sev = String(row.severity ?? "unknown").toLowerCase();
+      bySeverity[sev] = (bySeverity[sev] ?? 0) + 1;
+    }
+    return SEVERITY_ORDER.filter((s) => bySeverity[s] > 0).map((s) => ({
+      name: s[0].toUpperCase() + s.slice(1),
+      breached: bySeverity[s],
+    }));
+  }, [rows]);
+
+  /* Compliance: score per framework, plus how the controls actually landed. */
+  const complianceRows = useMemo(
+    () =>
+      assessments
+        .filter((a) => a.framework_name)
+        .slice(0, 8)
+        .map((a) => ({
+          name: a.framework_name,
+          passed: Number(a.controls_passed ?? 0),
+          gap: Number(a.controls_gap ?? 0),
+          unknown: Number(a.controls_unknown ?? 0),
+        })),
+    [assessments],
+  );
 
   const totals = useMemo(() => {
     const open = Number(tracker?.open ?? 0) + Number(tracker?.in_progress ?? 0);
@@ -213,6 +287,62 @@ export default function Analytics() {
               }}
             />
           </section>
+
+          {/* Direction over time — the question standing counts cannot answer. */}
+          {timeline && timeline.series.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Direction
+              </h2>
+              <MovementTimeline timeline={timeline} />
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <ComparativeBars
+                  title="How long open work has been sitting"
+                  subtitle={
+                    aging.undated
+                      ? `${aging.undated} without a detection date are excluded`
+                      : "Open and in-progress findings only — closed work stops aging"
+                  }
+                  rows={aging.buckets.filter((b) => b.count > 0).map((b) => ({ name: b.name, count: b.count }))}
+                  series={[{ key: "count", label: "Findings", color: LIFECYCLE_COLORS.open }]}
+                  stacked={false}
+                />
+                <ComparativeBars
+                  title="Past their fix date"
+                  subtitle={
+                    slaBreaches.length
+                      ? "Open findings already past a committed date"
+                      : "Nothing is overdue"
+                  }
+                  rows={slaBreaches}
+                  series={[{ key: "breached", label: "Overdue", color: SEVERITY_COLORS.critical }]}
+                  stacked={false}
+                  valueLabel="overdue"
+                />
+              </div>
+            </section>
+          )}
+
+          {/* Compliance standing, framework by framework. */}
+          {complianceRows.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                Compliance
+              </h2>
+              <ComparativeBars
+                title="Control outcomes by framework"
+                subtitle="Where each framework actually stands, control by control"
+                rows={complianceRows}
+                series={[
+                  { key: "passed", label: "Passed", color: SEVERITY_COLORS.low },
+                  { key: "gap", label: "Gap", color: SEVERITY_COLORS.critical },
+                  { key: "unknown", label: "Unknown", color: "#52525B" },
+                ]}
+                stacked
+                valueLabel="controls"
+              />
+            </section>
+          )}
 
           {/* Comparative analysis — surfaces measured against each other. */}
           <section className="space-y-3">

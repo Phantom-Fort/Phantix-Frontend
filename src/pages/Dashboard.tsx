@@ -8,6 +8,14 @@ import {
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import TrendChart from "@/components/TrendChart";
+import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
+import PostureDonut from "@/components/charts/PostureDonut";
+import SurfaceScoreRow from "@/components/charts/SurfaceScoreRow";
+import { SURFACES } from "@/components/charts/palette";
+import { loadTrackerSummary } from "@/lib/data";
+import { loadPostureSnapshot } from "@/lib/vaptOps";
+import type { PostureSnapshot } from "@/lib/vaptOps";
+import type { TrackerSummary } from "@/lib/types";
 import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useSmartPoll } from "@/lib/usePolling";
@@ -35,6 +43,41 @@ function str(v: unknown, fallback = "—"): string {
 export default function Dashboard() {
   const { org: storeOrg, operate, requireDualControl } = useStore();
   const { data, loading, error, reload, setData } = useResource(loadCommandCenter, emptyDash, "command-center");
+
+  /* Posture and findings for the chart row. Loaded alongside the command centre
+     rather than folded into it: either can be unavailable without blanking the
+     page, and the charts are additive to what was already here. */
+  const [posture, setPosture] = React.useState<PostureSnapshot | null>(null);
+  const [tracker, setTracker] = React.useState<TrackerSummary | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      loadPostureSnapshot().catch(() => null),
+      loadTrackerSummary().catch(() => null),
+    ]).then(([p, t]) => {
+      if (cancelled) return;
+      setPosture(p as PostureSnapshot | null);
+      setTracker(t);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const surfaceRows = React.useMemo(() => {
+    const surfaces = (posture?.surfaces ?? {}) as Record<string, any>;
+    return SURFACES.map((name) => {
+      const s = surfaces[name] ?? {};
+      return {
+        surface: name,
+        score: Number(s.score ?? 100),
+        total: Number(s.total ?? 0),
+        reportable: Number(s.reportable ?? 0),
+        critical: Number(s.critical ?? 0),
+        high: Number(s.high ?? 0),
+      };
+    });
+  }, [posture]);
   const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
   const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
   const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
@@ -303,6 +346,41 @@ export default function Dashboard() {
             </p>
           )}
         </Card>
+      </motion.div>
+
+      {/* Posture and findings — the same charts the Analytics page opens on, so
+          the dashboard and the deep dive never disagree. */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mt-5 space-y-4"
+      >
+        <SurfaceScoreRow surfaces={surfaceRows} />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <PostureDonut surfaces={surfaceRows} overallScore={posture?.overall_score ?? null} />
+          <FindingsBreakdown
+            counts={{
+              byStatus: {
+                open: Number(tracker?.open ?? 0),
+                in_progress: Number(tracker?.in_progress ?? 0),
+                fixed: Number(tracker?.fixed ?? 0),
+                retest_failed: Number(tracker?.retest_failed ?? 0),
+                regressed: Number(tracker?.regressed ?? 0),
+                accepted: Number(tracker?.accepted ?? 0),
+              },
+              bySeverity: tracker?.bySeverity ?? {},
+              bySurface: tracker?.bySurface ?? {},
+            }}
+          />
+        </div>
+        <p className="text-[11px] text-slate-600">
+          More cuts of this data —  movement over time, aging, SLA breaches, compliance —  on{" "}
+          <a href="/analytics" className="text-gold-300 underline-offset-2 hover:underline">
+            Analytics
+          </a>
+          .
+        </p>
       </motion.div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">

@@ -55,7 +55,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
-import { cx, timeAgo } from "@/lib/utils";
+import { cx, shortName, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
 import AgentAssistant from "@/components/AgentAssistant";
@@ -142,6 +142,7 @@ const navSections: {
       { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
       { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },
       { to: "/reports", label: "Report Solutions", icon: <FileText size={17} /> },
+      { to: "/plans", label: "Plans & billing", icon: <Sparkles size={17} /> },
     ],
   },
   {
@@ -363,15 +364,17 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Catch billing-required 402 responses and show upgrade prompt
+  // Catch billing-required 402 responses and send the user to payment — a toast
+  // they can miss is not an upgrade path.
   useEffect(() => {
     const handler = (e: Event) => {
-      const msg = (e as CustomEvent).detail as string;
-      toast("warning", "Upgrade required", `${msg} --- visit Platform Billing to subscribe.`);
+      const msg = ((e as CustomEvent).detail as string) || "This action needs a higher plan.";
+      toast("warning", "Upgrade required", msg);
+      navigate(`/plans?reason=${encodeURIComponent(msg)}`);
     };
     window.addEventListener("phantix:billing-required", handler);
     return () => window.removeEventListener("phantix:billing-required", handler);
-  }, [toast]);
+  }, [toast, navigate]);
 
   // Auto-logout after inactivity --- uses backend's inactivity_expires_at if set, else 20 min
   useEffect(() => {
@@ -492,7 +495,9 @@ export default function Layout() {
             </div>
             {operate.unlocked ? (
               <div className="mt-1 space-y-1">
-                <p className="text-xs font-medium text-emerald-300">Operating as {operate.actingUser}</p>
+                <p className="truncate text-xs font-medium text-emerald-300" title={operate.actingUser ?? undefined}>
+                  Operating as {shortName(operate.actingUser)}
+                </p>
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] capitalize text-slate-500">{operate.actingRole}</span>
                   {operate.expiresAt && <OperateCountdown expiresAt={operate.expiresAt} />}

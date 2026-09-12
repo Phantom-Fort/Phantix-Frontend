@@ -124,6 +124,18 @@ export function titleCase(s: string | null | undefined): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** First name + last-initial ("Ada Okonkwo" -> "Ada O.") — for name display in
+ *  narrow, fixed-width chrome (sidebar widgets, chips) where a full name can
+ *  overflow or wrap. Single-word names pass through unchanged. */
+export function shortName(name: string | null | undefined): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return name.trim();
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1][0];
+  return lastInitial ? `${first} ${lastInitial.toUpperCase()}.` : first;
+}
+
 export const assetTypeIcon: Record<string, string> = {
   domain: "🌐",
   subdomain: "🔗",

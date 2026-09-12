@@ -188,8 +188,10 @@ export default function VaptProcedures() {
             <div className="space-y-3">
               <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[11px] leading-5 text-gold-200">
                 <Lightbulb size={12} className="mt-0.5 shrink-0" />
-                {candidateNote ?? "Candidates require human review before activation as correlation rules."}
-                {" "}Promotion is handled by staff — nothing here is active.
+                <span>
+                  {candidateNote ?? "Candidates require human review before activation as correlation rules."}
+                  {" "}Promotion is handled by staff — nothing here is active.
+                </span>
               </p>
               {!candidates.length ? (
                 <Card><EmptyState icon={<Lightbulb size={22} />} title="No candidates mined" body="Either mining consent is off, or no pattern has met the frequency threshold yet." /></Card>

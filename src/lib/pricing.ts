@@ -32,43 +32,46 @@ interface BillingPricingResponse {
   plans?: Array<Partial<PricingTier> & { id: string; monthly_ngn: number | null }>;
 }
 
+// NOTE: feature copy is shared verbatim with the landing pricing page
+// (landing/src/lib/pricing.ts). Change one, change both.
 const freeFeatures = [
   "Asset inventory + discovery (domain, nmap, GitHub, OpenAPI)",
-  "VAPT campaigns + vulnerability scanner — one active job per org",
+  "VAPT campaigns + vulnerability / web / API scanner",
   "1 threat-modelling project from your product context",
-  "PR/MR review and channel alerts (WhatsApp/Telegram) — metered by AI credits",
-  "All report types & formats — PDF / DOCX / XLSX / HTML / PPTX / MD / JSON / CSV (free on every plan)",
+  "PR / branch review and channel alerts (WhatsApp / Telegram) — metered by AI credits",
+  "Every report type and format — free on every plan",
   "500 one-time AI credits, then free open-source models (admin opt-in)",
-  "Dual control, MFA, immutable audit + evidence redaction — free on every plan",
+  "Dual control, MFA, immutable audit, evidence redaction — free on every plan",
   "Community support",
 ];
 
 const starterFeatures = [
   "Everything in Free",
-  "Full engine — mobile, cloud, supply-chain and advanced scanners",
-  "Context + threat modelling — more projects and monthly model refreshes",
-  "Continuous PR/MR review across all enabled repos",
-  "Higher volume — more assets, users and concurrent scans",
-  "AI credits — 5,000 onboarding allotment plus a 5,000/month recurring allowance (top up in-workspace)",
-  "Standard support",
+  "Full engine — six-layer code security, mobile, cloud & supply-chain scanners",
+  "Threat modelling & product context — more projects and monthly model refreshes",
+  "10 PR / MR security reviews / mo",
+  "3 on-demand assessments / mo · 1 model refresh / mo",
+  "5,000 AI credits / mo + 5,000 onboarding allotment",
+  "AI AutoFix (credit-metered) · email support",
 ];
 
 const growthFeatures = [
   "Everything in Starter",
-  "Continuous security — all enabled repos reviewed, recurring authenticated web / API tests",
-  "Higher allowances — projects, PR review, model refreshes, mobile volume",
-  "Multi-cloud posture + attack paths (AWS +) and Kubernetes posture",
-  "Blocking policies & path rules",
-  "AI credits — 20,000 onboarding allotment plus a 20,000/month recurring allowance",
+  "Continuous PR / MR review and continuous / recurring pentest",
+  "5 projects · 20 on-demand assessments / mo · 10 model refreshes / mo",
+  "Multi-cloud + Kubernetes posture · blocking policies & path rules",
+  "Compliance workbench · SOC alert console",
+  "20,000 AI credits / mo + 20,000 onboarding allotment",
   "Guided onboarding",
 ];
 
 const enterpriseFeatures = [
-  "Everything in Growth",
-  "Custom volume & concurrency — assessments, repos, projects",
+  "Everything in Growth, at custom volume",
+  "Unlimited / negotiated projects & assessments",
   "Org-wide governance & audit views",
   "Multi-company groups, custom branding & report retention",
-  "Dedicated success engineer — custom quote (annual preferred)",
+  "Priority support · dedicated success (deal-dependent)",
+  "Partner / white-label reports + custom SLA (deal-dependent)",
 ];
 
 function yearsNote(monthly: number): string {
@@ -80,10 +83,10 @@ export function buildPricingTiers(raw: BillingPricingResponse | null): PricingTi
   // Fallback numbers are pricing-v3 §7 placeholders, used ONLY when the billing
   // API is unreachable. The app must prefer live `/billing/pricing`.
   const fallback = raw ?? {
-    monthly_list_price_ngn: 9_900, // Starter (Premium carried over)
-    first_month_price_ngn: 4_900,
-    yearly_price_ngn: 99_000,
-    growth_monthly_price_ngn: 19_900,
+    monthly_list_price_ngn: 19_900, // Starter (Premium carried over)
+    first_month_price_ngn: 9_900,
+    yearly_price_ngn: 199_000,
+    growth_monthly_price_ngn: 49_900,
     first_month_discount_percent: 50,
   };
 
@@ -154,7 +157,7 @@ let _cachedTiers: PricingTier[] | null = null;
 export async function loadPricing(): Promise<PricingTier[]> {
   if (_cachedTiers) return _cachedTiers;
   if (isDemoMode()) {
-    _cachedTiers = buildPricingTiers({ monthly_list_price_ngn: 9_900, first_month_price_ngn: 4_900, yearly_price_ngn: 99_000, growth_monthly_price_ngn: 19_900, first_month_discount_percent: 50 });
+    _cachedTiers = buildPricingTiers({ monthly_list_price_ngn: 19_900, first_month_price_ngn: 9_900, yearly_price_ngn: 199_000, growth_monthly_price_ngn: 49_900, first_month_discount_percent: 50 });
     return _cachedTiers;
   }
   try {

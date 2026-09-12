@@ -8,6 +8,7 @@ import { loadComplianceBundle, runComplianceAssessment, addComplianceEvidence } 
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { UpsellBanner } from "@/components/UpgradeGate";
 
 const statusIcon = { pass: CheckCircle2, gap: XCircle, unknown: HelpCircle };
 
@@ -128,6 +129,8 @@ export default function Compliance() {
           </>
         }
       />
+
+      <UpsellBanner feature="compliance_workbench" />
 
       <Tabs
         tabs={[
