@@ -4,6 +4,7 @@ import { Activity, Bot, ChevronLeft, ChevronRight, KeyRound, RefreshCw, ShieldCh
 import { PageHeader, Card, TableCardSkeleton, ErrorState, EmptyState } from "@/components/ui";
 import { isDenied, loadAgentActivity, type AgentAction } from "@/lib/agentActivity";
 import { cx, timeAgo, formatDateTime } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Agent activity ───────────────────────────────────────────────────────────
 // The agent acts as the signed-in user and inherits no authority. Every tool call
@@ -84,11 +85,12 @@ export default function AgentActivity() {
       <PageHeader
         title="Agent activity"
         description="What the agent did for your organization — run, domain, intent, authorization and outcome for every action."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-20" label="Agent activity how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
             <RefreshCw size={14} className={cx("inline", loading && "animate-spin")} />
           </button>
-        }
+        </>}
       />
 
       <p className="mb-4 flex items-start gap-2.5 rounded-md border border-gold-400/25 bg-gold-400/[0.06] p-3 text-[11px] leading-5 text-gold-200">

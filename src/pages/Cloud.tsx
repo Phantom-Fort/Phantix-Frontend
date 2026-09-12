@@ -139,7 +139,7 @@ export default function Cloud() {
         description="Cloud, VPS, and PaaS connectors, log drains, and org-scoped threat intel."
         actions={
           <div className="flex items-center gap-2">
-            <DocLink docId="hc-alert-channels" label="Integrations how-to" />
+            <DocLink docId="howto-app-18" label="Cloud posture how-to" />
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={() => { connectors.reload(); intel.reload(); providers.reload(); }} title="Refresh"><RefreshCw size={14} /></button>
             <a href="/threat-intel" className="btn-secondary text-sm px-3 py-1.5"><Radar size={14} /> Open Threat Intel</a>
             <button type="button" className="btn-primary text-sm px-3 py-1.5" onClick={() => { setAddOpen(true); setSelectedProvider(null); setCreatedResult(null); }}><Plus size={14} /> Add connector</button>

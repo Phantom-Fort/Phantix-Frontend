@@ -11,6 +11,7 @@ import {
   type BusinessProfileUpdate,
 } from "@/lib/complianceGrc";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Business profile ─────────────────────────────────────────────────────────
 // The profile is what drives GET /compliance/recommendations: which frameworks
@@ -105,12 +106,13 @@ export default function ComplianceProfile() {
       <PageHeader
         title="Business profile"
         description="What your organization does, where it operates and what data it touches. This is the input that decides which compliance frameworks apply to you."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <button onClick={() => void persist()} disabled={saving} className="btn-primary text-xs !py-2">
             {saving ? <Loader2 size={13} className="mr-1.5 inline animate-spin" /> : <Save size={13} className="mr-1.5 inline" />}
             Save profile
           </button>
-        }
+        </>}
       />
 
       {loading ? (

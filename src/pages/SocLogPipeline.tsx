@@ -6,6 +6,7 @@ import { searchSocLogs, loadLogPipelineStats } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import type { SocLogEntry, SocLogSearchResponse, SocLogPipelineStats } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocLogPipeline() {
   const [tab, setTab] = useState("search");
@@ -28,7 +29,7 @@ export default function SocLogPipeline() {
       <PageHeader
         title="Log Pipeline"
         description="Search and monitor security log ingestion from deployed agents and cloud integrations."
-      />
+       actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
 
       <Tabs
         tabs={[

@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { emptyDualControl } from "@/lib/data";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import DocLink from "@/components/DocLink";
 
 export default function People() {
   const { toast, requireDualControl, dualControl: storeDc } = useStore();
@@ -34,7 +35,8 @@ export default function People() {
       <PageHeader
         title="People & dual control"
         description="Named org users with domain-email OTP identity. Writes require the initiator or authorizer slot plus a 3-minute idle operate session --- roles alone grant no writes."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-27" label="Admin how-to" />
           <button
             className="btn-primary"
             onClick={() =>
@@ -47,7 +49,7 @@ export default function People() {
           >
             <UserPlus size={15} /> Add user
           </button>
-        }
+        </>}
       />
 
       {/* Dual-control assignment */}

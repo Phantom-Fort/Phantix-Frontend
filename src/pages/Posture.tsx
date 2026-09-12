@@ -6,6 +6,7 @@ import { loadPostureSnapshot, loadPostureReviewsDue, loadPostureDrift } from "@/
 import { listProjects } from "@/lib/productContext";
 import { useStore } from "@/lib/store";
 import { cx, timeAgo } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Posture — continuous loop (W7 LOOP-01/02/03) ─────────────────────────────
 // Per-surface posture snapshot, product-context drift, and accepted risks due
@@ -133,11 +134,12 @@ export default function Posture() {
       <PageHeader
         title="Posture"
         description="Per-surface posture, product-context drift and accepted risks due for re-review (continuous loop)."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-22" label="Posture how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
             <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
           </button>
-        }
+        </>}
       />
 
       {loading && !snapshot ? (

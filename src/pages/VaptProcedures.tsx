@@ -8,6 +8,7 @@ import {
 } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
 import type { Severity } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 // ── Procedure catalogue, correlation rules and mined candidates ──────────────
 // Read-only reference for what the testing engine can run and how it correlates
@@ -87,7 +88,8 @@ export default function VaptProcedures() {
       <PageHeader
         title="Procedures & correlation"
         description="What the testing engine can run, how it correlates findings, and which new rules it has mined from observed patterns."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-23" label="VAPT scheduling how-to" />
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search size={13} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -103,7 +105,7 @@ export default function VaptProcedures() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !procedures.length ? (

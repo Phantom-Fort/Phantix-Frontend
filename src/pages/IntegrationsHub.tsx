@@ -8,6 +8,7 @@ import { isPendingApproval } from "@/lib/api";
 import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@/lib/data";
 import { timeAgo, cx } from "@/lib/utils";
 import type { IntegrationConnector, IntegrationInstallation } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 const connectorIcons: Record<string, React.ReactNode> = {
   slack: <MessageSquare size={16} />,
@@ -39,7 +40,7 @@ export default function IntegrationsHub() {
       <PageHeader
         title="Integrations Hub"
         description="Connect your tools and services: alert channels, SSO providers, webhooks, and SCIM provisioning."
-      />
+       actions={<DocLink docId="howto-app-27" label="Integrations how-to" />} />
 
       <Tabs
         tabs={[

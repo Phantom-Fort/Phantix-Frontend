@@ -11,6 +11,7 @@ import {
 } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
 import ContinuousReassessmentCard from "@/components/ContinuousReassessmentCard";
+import DocLink from "@/components/DocLink";
 
 // ── Recurring VAPT schedules ─────────────────────────────────────────────────
 // A schedule runs a procedure against a scope on a cadence. Blackout windows
@@ -61,7 +62,8 @@ export default function VaptSchedules() {
       <PageHeader
         title="VAPT schedules"
         description="Recurring authorized testing. Each schedule runs one procedure against a scope on a cadence, with blackout windows to keep it away from your busy hours."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-23" label="VAPT scheduling how-to" />
           <div className="flex items-center gap-2">
             <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
               <Plus size={13} className="mr-1.5 inline" /> New schedule
@@ -70,7 +72,7 @@ export default function VaptSchedules() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !rows.length ? (

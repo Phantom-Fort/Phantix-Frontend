@@ -12,6 +12,7 @@ import {
   type EvidenceConnector,
 } from "@/lib/complianceGrc";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Evidence connectors ──────────────────────────────────────────────────────
 // Connectors pull control evidence automatically. Readiness comes from
@@ -76,7 +77,8 @@ export default function ComplianceConnectors() {
       <PageHeader
         title="Evidence connectors"
         description="Automated control evidence. Configure a connector once and each collection run stores fresh evidence against the controls it covers."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
             <button onClick={() => void runCollection()} disabled={collecting} className="btn-primary text-xs !py-2">
               {collecting ? <Loader2 size={13} className="mr-1.5 inline animate-spin" /> : <Download size={13} className="mr-1.5 inline" />}
@@ -86,7 +88,7 @@ export default function ComplianceConnectors() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !connectors.length ? (

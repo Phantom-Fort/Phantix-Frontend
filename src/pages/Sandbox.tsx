@@ -17,6 +17,7 @@ import {
   type SandboxUpdate,
   type SandboxRating,
 } from "@/lib/sandbox";
+import DocLink from "@/components/DocLink";
 
 function severityChip(sev: string) {
   const s = (sev || "info").toLowerCase();
@@ -133,7 +134,8 @@ if (loading) {
       <PageHeader
         title="BETA sandbox"
         description={`${me.program?.name ?? "Launch cohort"} · Command Centre tools + Platform org admin`}
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-27" label="Admin how-to" />
           <div className="flex flex-wrap gap-2">
             <a href={`${PLATFORM_URL}/sandbox`} className="btn-secondary !text-xs" target="_blank" rel="noreferrer">
               <ExternalLink size={14} /> Platform sandbox
@@ -145,7 +147,7 @@ if (loading) {
               <Star size={14} /> Rate this build
             </button>
           </div>
-        }
+        </>}
       />
 
       <div className="mb-5 rounded-2xl border border-phantix-700/40 bg-phantix-900/40 px-4 py-3 text-xs leading-5 text-slate-400">

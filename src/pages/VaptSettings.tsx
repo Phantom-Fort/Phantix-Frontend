@@ -4,6 +4,7 @@ import { Card, CardHeader, ErrorState, PageHeader, Spinner, SettingsSkeleton } f
 import { useStore } from "@/lib/store";
 import { AI_THRESHOLDS, loadVaptSettings, saveVaptSettings, type VaptSettings as Settings } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── VAPT engine settings ─────────────────────────────────────────────────────
 // Two org-level switches: whether your engagement data may feed correlation-rule
@@ -68,7 +69,7 @@ export default function VaptSettings() {
       <PageHeader
         title="VAPT settings"
         description="How the testing engine behaves for your organization — data-mining consent and the severity floor at which the AI planner gets involved."
-      />
+       actions={<DocLink docId="howto-app-23" label="VAPT scheduling how-to" />} />
 
       {loading && !settings ? (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">

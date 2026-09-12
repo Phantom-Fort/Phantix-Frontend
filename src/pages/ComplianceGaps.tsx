@@ -5,6 +5,7 @@ import { api, ApiError } from "@/lib/api";
 import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@/lib/complianceGrc";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Compliance gap analysis ──────────────────────────────────────────────────
 // GET /compliance/gaps maps the org's current findings onto framework controls
@@ -102,7 +103,8 @@ export default function ComplianceGaps() {
       <PageHeader
         title="Compliance gaps"
         description="Your live findings mapped onto framework controls. What is left is the set of controls nothing in your current security posture demonstrates."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
             <input
               value={campaignId}
@@ -121,7 +123,7 @@ export default function ComplianceGaps() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !data.gaps.length ? (

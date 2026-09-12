@@ -15,6 +15,7 @@ import {
 } from "@/lib/codeOps";
 import { useStore } from "@/lib/store";
 import { cx, timeAgo } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Code — AutoFix, Continuous PR, GitHub repositories & review runs ─────────
 // One place for everything code: connected repos, branch-review runs (the PR
@@ -110,11 +111,12 @@ export default function Code() {
       <PageHeader
         title="Code"
         description="AutoFix, Continuous PR, connected repositories and branch-review runs."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-21" label="Code security how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">
             <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
           </button>
-        }
+        </>}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">

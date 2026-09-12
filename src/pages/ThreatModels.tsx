@@ -12,6 +12,7 @@ import {
   type ProductContextSummary, type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
 } from "@/lib/productContext";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Threat models ────────────────────────────────────────────────────────────
 // Generated from a product project's parsed context. Threats are graded by how
@@ -122,7 +123,8 @@ export default function ThreatModels() {
       <PageHeader
         title="Threat models"
         description="STRIDE-style threats derived from a product's real components, data flows and product information, graded by how well the evidence supports them."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-16" label="Threat modelling how-to" />
           <div className="flex items-center gap-2">
             <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
               <Plus size={13} className="mr-1.5 inline" /> New product
@@ -131,7 +133,7 @@ export default function ThreatModels() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !projects.length ? (

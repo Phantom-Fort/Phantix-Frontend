@@ -16,6 +16,7 @@ import {
   type QuestionnaireQuestion,
 } from "@/lib/complianceGrc";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Compliance questionnaire (self-attestation) ──────────────────────────────
 // The merged GRC question set for whichever frameworks apply to this org.
@@ -166,7 +167,8 @@ export default function ComplianceQuestionnaire() {
       <PageHeader
         title="Compliance questionnaire"
         description="Self-attestation across every control that applies to your organization. Answers are attributed to the person and the role they declared, so the trail stands up in an audit."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
             <button
               onClick={() => setRoleOpen(true)}
@@ -180,7 +182,7 @@ export default function ComplianceQuestionnaire() {
               Rebuild
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !data.items.length ? (

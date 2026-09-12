@@ -152,6 +152,18 @@ const DOC_ID_BY_FILE: Record<string, string> = {
   "13-use-phantix-agent.md": "howto-app-13",
   "14-authorizer-approvals.md": "howto-app-14",
   "15-support-ticket.md": "howto-app-15",
+  "16-threat-models.md": "howto-app-16",
+  "17-autonomous-pentest.md": "howto-app-17",
+  "18-cloud-security.md": "howto-app-18",
+  "19-threat-intel.md": "howto-app-19",
+  "20-agent-activity.md": "howto-app-20",
+  "21-code-security.md": "howto-app-21",
+  "22-posture.md": "howto-app-22",
+  "23-vapt-schedules.md": "howto-app-23",
+  "24-compliance-review.md": "howto-app-24",
+  "25-soc-operations.md": "howto-app-25",
+  "26-pentest-scope.md": "howto-app-26",
+  "27-admin-and-audit.md": "howto-app-27",
 };
 
 /**

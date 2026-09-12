@@ -11,6 +11,7 @@ import { useResource } from "@/lib/useResource";
 import { cx, titleCase, timeAgo } from "@/lib/utils";
 import { RISK_COLORS, buildAssetGraph } from "@/lib/assetGraphData";
 import type { AssetGraphNode, GraphNodeKind } from "@/lib/assetGraphData";
+import DocLink from "@/components/DocLink";
 
 const RISK_FILTERS = ["all", "critical", "high", "medium", "low"] as const;
 
@@ -92,11 +93,12 @@ export default function AssetGraph() {
       <PageHeader
         title="Asset Relationship Graph"
         description="Force-directed map of your attack surface — grouped by tags and asset types, like a vault of linked notes"
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-04" label="Discovery how-to" />
           <Link to="/assets/intelligence" className="btn-secondary text-sm px-3 py-1.5">
             <ArrowLeft size={14} /> Intelligence
           </Link>
-        }
+        </>}
       />
 
       {bundle.data.securityDbBlocked && <SecurityDbBanner message={bundle.data.error} />}

@@ -33,6 +33,18 @@ import app12 from "@docs/docs/how-to/command-centre/12-findings-tracker.md?raw";
 import app13 from "@docs/docs/how-to/command-centre/13-use-phantix-agent.md?raw";
 import app14 from "@docs/docs/how-to/command-centre/14-authorizer-approvals.md?raw";
 import app15 from "@docs/docs/how-to/command-centre/15-support-ticket.md?raw";
+import app16 from "@docs/docs/how-to/command-centre/16-threat-models.md?raw";
+import app17 from "@docs/docs/how-to/command-centre/17-autonomous-pentest.md?raw";
+import app18 from "@docs/docs/how-to/command-centre/18-cloud-security.md?raw";
+import app19 from "@docs/docs/how-to/command-centre/19-threat-intel.md?raw";
+import app20 from "@docs/docs/how-to/command-centre/20-agent-activity.md?raw";
+import app21 from "@docs/docs/how-to/command-centre/21-code-security.md?raw";
+import app22 from "@docs/docs/how-to/command-centre/22-posture.md?raw";
+import app23 from "@docs/docs/how-to/command-centre/23-vapt-schedules.md?raw";
+import app24 from "@docs/docs/how-to/command-centre/24-compliance-review.md?raw";
+import app25 from "@docs/docs/how-to/command-centre/25-soc-operations.md?raw";
+import app26 from "@docs/docs/how-to/command-centre/26-pentest-scope.md?raw";
+import app27 from "@docs/docs/how-to/command-centre/27-admin-and-audit.md?raw";
 
 function toWeb(md: string): string {
   return md.replace(/\.\.\/\.\.\/screenshots\//g, "/screenshots/").replace(/\.\.\/screenshots\//g, "/screenshots/");
@@ -78,4 +90,16 @@ export const howToDocs: Entry[] = [
   e("howto-app-13", "App: SecureGraph Agent", "Chat and skills.", "how-to-app", app13),
   e("howto-app-14", "App: Authorizer approvals", "Approve protected actions.", "how-to-app", app14),
   e("howto-app-15", "App: Support ticket", "Contact SecureGraph support.", "how-to-app", app15),
+  e("howto-app-16", "App: Threat models", "Evidence-graded threats from your product context.", "how-to-app", app16),
+  e("howto-app-17", "App: Autonomous pentest agent", "Governed agent sessions against your own assets.", "how-to-app", app17),
+  e("howto-app-18", "App: Cloud posture", "Connectors, exposure timelines, TLS and host baselines.", "how-to-app", app18),
+  e("howto-app-19", "App: Threat intelligence", "IOC lookup and correlation to your inventory.", "how-to-app", app19),
+  e("howto-app-20", "App: Agent activity", "Every agent action with its intent, actor and outcome.", "how-to-app", app20),
+  e("howto-app-21", "App: Code security", "PR review, AutoFix and Continuous PR.", "how-to-app", app21),
+  e("howto-app-22", "App: Posture", "Reviews due, regressions and accepted-risk age.", "how-to-app", app22),
+  e("howto-app-23", "App: VAPT schedules & settings", "Cadence, rules of engagement, engine settings.", "how-to-app", app23),
+  e("howto-app-24", "App: Compliance review", "Frameworks, questionnaire, gaps and evidence.", "how-to-app", app24),
+  e("howto-app-25", "App: SOC operations", "Triage, war room, playbooks, advisor and logs.", "how-to-app", app25),
+  e("howto-app-26", "App: Pentest scope", "External scope and rules of engagement.", "how-to-app", app26),
+  e("howto-app-27", "App: Audit, people & integrations", "Trail, users, delivery and sandbox.", "how-to-app", app27),
 ];

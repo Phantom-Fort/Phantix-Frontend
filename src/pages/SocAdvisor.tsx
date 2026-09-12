@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx } from "@/lib/utils";
 import type { SocAdvisorDashboard, SocAdvisorRecommendation, SocAdvisorReport } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocAdvisor() {
   const [tab, setTab] = useState("dashboard");
@@ -23,7 +24,7 @@ export default function SocAdvisor() {
       <PageHeader
         title="SOC Advisor"
         description="Posture score trends, benchmarks, readiness assessments, and automated recommendations."
-      />
+       actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
 
       <Tabs
         tabs={[
