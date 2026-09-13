@@ -739,6 +739,29 @@ export const socAdapters: SocAdapter[] = [
 ];
 
 // ── Orchestration: Cloud Security connectors (cloud.md) ─────────────────────
+// Demo providers mirror the backend registry (app/shared/cloud/providers.py) so
+// the picker looks the same offline. Kept as one-liners; capability flags drive
+// the Account/Webhook badge and the credential form.
+function demoCloudProvider(
+  id: string,
+  name: string,
+  category: string,
+  description: string,
+  opts: { credentialKeys?: string[]; engines?: string[]; africa?: boolean } = {},
+): CloudProvider {
+  return {
+    id,
+    name,
+    description,
+    kind: category,
+    category,
+    accountCapable: (opts.credentialKeys?.length ?? 0) > 0,
+    credentialKeys: opts.credentialKeys,
+    engines: opts.engines ?? ["soc", "asset"],
+    africa: opts.africa,
+  };
+}
+
 export const cloudProviders: CloudProvider[] = [
   { id: "vercel", name: "Vercel", description: "Log drains + deployment telemetry", kind: "paas", webhook: { label: "Log drain / webhook", ingestUrlHint: "Vercel → Project → Integrations → Log Drains", signatureHeader: "x-vercel-signature" } },
   { id: "aws", name: "AWS", description: "CloudTrail / EventBridge events", kind: "cloud", webhook: { label: "EventBridge target", ingestUrlHint: "AWS console → EventBridge → Rule target", signatureHeader: "X-SecureGraph-Signature" } },
@@ -756,6 +779,69 @@ export const cloudProviders: CloudProvider[] = [
   { id: "oracle", name: "Oracle Cloud Infrastructure", description: "OCI audit + Cloud Guard events (API signing key), or Audit webhook.", kind: "cloud", category: "cloud", accountCapable: true, credentialKeys: ["tenancy_ocid", "user_ocid", "fingerprint", "private_key"], engines: ["soc", "asset", "compliance"] },
   { id: "github", name: "GitHub", description: "Audit log + security alerts", kind: "code", webhook: { label: "Repository webhook", ingestUrlHint: "GitHub → Settings → Webhooks", signatureHeader: "X-Hub-Signature-256" } },
   { id: "uptimekuma", name: "Uptime Kuma", description: "Availability notification webhooks", kind: "monitoring", webhook: { label: "Notification webhook URL", ingestUrlHint: "Uptime Kuma → Settings → Notifications", signatureHeader: "X-SecureGraph-Signature" } },
+  // ── Hyperscaler siblings ──────────────────────────────────────────────────
+  demoCloudProvider("alibaba", "Alibaba Cloud", "cloud", "ActionTrail + Security Center events (RAM access key), or webhook.", { credentialKeys: ["access_key_id", "access_key_secret"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("huawei", "Huawei Cloud", "cloud", "CTS audit + HSS alerts (AK/SK), or webhook.", { credentialKeys: ["access_key", "secret_key"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("tencent", "Tencent Cloud", "cloud", "CloudAudit events (SecretId/SecretKey), or webhook.", { credentialKeys: ["secret_id", "secret_key"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("ibm", "IBM Cloud", "cloud", "Activity Tracker + Security Advisor events (API key), or webhook.", { credentialKeys: ["api_key"], engines: ["soc", "asset", "compliance"] }),
+  // ── Global VPS / cloud compute ────────────────────────────────────────────
+  demoCloudProvider("vultr", "Vultr", "vps", "Vultr instance/monitor events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("linode", "Akamai Linode", "vps", "Linode / Akamai Cloud events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("upcloud", "UpCloud", "vps", "UpCloud monitoring events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("ionos", "IONOS Cloud", "vps", "IONOS monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("netcup", "Netcup", "vps", "Netcup monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("racknerd", "RackNerd", "vps", "RackNerd monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("ssdnodes", "SSD Nodes", "vps", "SSD Nodes monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("kamatera", "Kamatera", "vps", "Kamatera monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("exoscale", "Exoscale", "vps", "Exoscale monitoring events (API key), or webhook.", { credentialKeys: ["api_key", "api_secret"] }),
+  demoCloudProvider("aruba", "Aruba Cloud", "vps", "Aruba Cloud monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("leaseweb", "Leaseweb", "vps", "Leaseweb monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("melbicom", "Melbicom", "vps", "Melbicom monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("servers_com", "Servers.com", "vps", "Servers.com monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostwinds", "Hostwinds", "vps", "Hostwinds monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("interserver", "InterServer", "vps", "InterServer monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostpapa", "HostPapa", "vps", "HostPapa monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostinger", "Hostinger", "vps", "Hostinger monitoring events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  // ── Africa-local hosts ────────────────────────────────────────────────────
+  demoCloudProvider("whoogohost", "WhoGoHost", "africa", "WhoGoHost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("qservers", "Qservers", "africa", "Qservers access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("truehost", "Truehost", "africa", "Truehost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("xneelo", "Xneelo", "africa", "Xneelo access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("afrihost", "Afrihost", "africa", "Afrihost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("gridhost", "GridHost", "africa", "GridHost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("rsaweb", "RSAWEB", "africa", "RSAWEB access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("hostnownow", "HostNowNow", "africa", "HostNowNow access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("smartweb", "SmartWeb", "africa", "SmartWeb access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("domains_co_za", "Domains.co.za", "africa", "Domains.co.za access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("iway", "iWay Africa", "africa", "iWay Africa access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("mainone", "MainOne (Equinix West Africa)", "africa", "MainOne access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("liquid", "Liquid Intelligent Technologies", "africa", "Liquid access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("galaxybackbone", "Galaxy Backbone", "africa", "Galaxy Backbone access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("safaricom", "Safaricom Cloud", "africa", "Safaricom Cloud access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("mtn_business", "MTN Business", "africa", "MTN Business access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  // ── Managed / shared hosting ──────────────────────────────────────────────
+  demoCloudProvider("kinsta", "Kinsta", "managed_hosting", "Kinsta monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("wpengine", "WP Engine", "managed_hosting", "WP Engine monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("siteground", "SiteGround", "managed_hosting", "SiteGround monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("bluehost", "Bluehost", "managed_hosting", "Bluehost monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("godaddy", "GoDaddy", "managed_hosting", "GoDaddy monitoring events (API secret), or webhook.", { credentialKeys: ["api_secret"], africa: true }),
+  demoCloudProvider("namecheap", "Namecheap", "managed_hosting", "Namecheap monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("dreamhost", "DreamHost", "managed_hosting", "DreamHost monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("a2hosting", "A2 Hosting", "managed_hosting", "A2 Hosting monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("greengeeks", "GreenGeeks", "managed_hosting", "GreenGeeks monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("inmotion", "InMotion Hosting", "managed_hosting", "InMotion monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("liquidweb", "Liquid Web", "managed_hosting", "Liquid Web monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostgator", "HostGator", "managed_hosting", "HostGator monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  // ── PaaS / CDN / storage ──────────────────────────────────────────────────
+  demoCloudProvider("netlify", "Netlify", "paas", "Netlify deploy notifications or a read-only API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("render", "Render", "paas", "Render deploy/service webhook or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("railway", "Railway", "paas", "Railway deployment/log-drain JSON or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("fly_io", "Fly.io", "paas", "Fly.io machine/health webhook or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("heroku", "Heroku", "paas", "Heroku log drain or Platform API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("fastly", "Fastly", "cdn", "Fastly audit/monitoring events (API token), or webhook.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("bunny", "Bunny.net", "cdn", "Bunny.net monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("backblaze", "Backblaze B2", "cloud", "Backblaze B2 event notifications (key ID + application key).", { credentialKeys: ["key_id", "application_key"] }),
+  demoCloudProvider("wasabi", "Wasabi Hot Cloud Storage", "cloud", "Wasabi audit logs (access key), or webhook.", { credentialKeys: ["access_key", "secret_key"] }),
 ];
 
 export const cloudConnectors: CloudConnector[] = [
@@ -1339,6 +1425,17 @@ export const socCloudProviderCatalog: SocCloudProviderCatalog = {
     { id: "azure", name: "Microsoft Azure", description: "Microsoft Sentinel / Activity log events.", integration_types: ["log_ingestion", "sentinel"], setup_templates: {} },
     { id: "gcp", name: "Google Cloud", description: "Cloud Logging + Security Command Center.", integration_types: ["log_ingestion", "scc"], setup_templates: {} },
     { id: "aws_eventbridge", name: "AWS EventBridge (direct)", description: "Push provider-native events via EventBridge rule.", integration_types: ["webhook"], setup_templates: {} },
+    // Mirror the shared provider registry so the demo connection catalog shows
+    // the same breadth as /soc/provisioning/cloud/catalog.
+    ...cloudProviders
+      .filter((p) => !["aws", "azure", "gcp"].includes(p.id))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description ?? "",
+        integration_types: p.accountCapable ? ["api_token", "webhook"] : ["webhook"],
+        setup_templates: {},
+      })),
   ],
 };
 
