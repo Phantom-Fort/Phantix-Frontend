@@ -117,13 +117,17 @@ export async function loadApplications(): Promise<ApplicationsSnapshot> {
     await delay(150);
     return demoSnapshot();
   }
-  try {
-    const snap = await api.get<ApplicationsSnapshot>("/organizations/me/applications");
-    if (snap && Array.isArray(snap.applications) && snap.applications.length > 0) {
-      return snap;
+  // Application realm first (app_session + device token); the org endpoint is the
+  // same card shape for company/org-JWT callers.
+  for (const path of ["/app/auth/applications", "/organizations/me/applications"]) {
+    try {
+      const snap = await api.get<ApplicationsSnapshot>(path);
+      if (snap && Array.isArray(snap.applications) && snap.applications.length > 0) {
+        return snap;
+      }
+    } catch {
+      /* try the next endpoint */
     }
-  } catch {
-    /* fall through to Core-only */
   }
   return {
     default: "core",
