@@ -18,11 +18,28 @@ export interface AiModel {
   label?: string;
   surfaces?: AiSurface[];
   tier?: string;
+  capabilities?: string[];
+  audience?: string;
+  free?: boolean;
   notes?: string | null;
   available?: boolean;
   unavailable_reason?: string | null;
   pentest_eligible?: boolean;
   selected?: boolean;
+}
+
+export type AiCapability = "text" | "vision" | "reasoning" | "tools" | "json";
+
+export const CAPABILITY_LABELS: Record<string, string> = {
+  text: "Text",
+  vision: "Vision",
+  reasoning: "Reasoning",
+  tools: "Tools",
+  json: "JSON",
+};
+
+export function capabilityLabel(cap: string): string {
+  return CAPABILITY_LABELS[cap] ?? cap;
 }
 
 export interface AiSurfaceView {
@@ -31,6 +48,20 @@ export interface AiSurfaceView {
   default: string | null;
   settingsField?: string;
   restrictedBecause?: string | null;
+  freeAgreementAccepted?: boolean;
+  freePlan?: boolean;
+  freeModelsEnabled?: boolean;
+}
+
+export interface FreeModelAgreement {
+  version: string;
+  title: string;
+  summary: string;
+  acceptance_required_copy: string;
+  sections: { id: string; title: string; body: string }[];
+  required: boolean;
+  accepted: boolean;
+  accepted_at?: string | null;
 }
 
 type ModelsPayload =
@@ -65,6 +96,9 @@ function normalizeModel(raw: Record<string, unknown>): AiModel {
     label: raw.label != null ? String(raw.label) : undefined,
     surfaces: Array.isArray(raw.surfaces) ? raw.surfaces.map((s) => String(s) as AiSurface) : undefined,
     tier: raw.tier != null ? String(raw.tier) : undefined,
+    capabilities: Array.isArray(raw.capabilities) ? raw.capabilities.map((c) => String(c)) : undefined,
+    audience: raw.audience != null ? String(raw.audience) : undefined,
+    free: typeof raw.free === "boolean" ? raw.free : undefined,
     notes: raw.notes != null ? String(raw.notes) : undefined,
     available: typeof raw.available === "boolean" ? raw.available : undefined,
     unavailable_reason: raw.unavailable_reason != null ? String(raw.unavailable_reason) : undefined,
@@ -92,14 +126,28 @@ export async function loadModels(surface: AiSurface): Promise<AiSurfaceView> {
       const p = payload as { models?: unknown[] };
       if (p.models) return flat(p.models);
     }
-    const nested = (payload as { surfaces?: Partial<Record<AiSurface, { models?: AiModel[]; selected?: string | null; default?: string | null; settings_field?: string; restricted_because?: string | null }>> }).surfaces?.[surface];
-    if (!nested) return empty;
+    const nested = (payload as { surfaces?: Partial<Record<AiSurface, { models?: AiModel[]; selected?: string | null; default?: string | null; settings_field?: string; restricted_because?: string | null }>>; free_model_agreement?: { accepted?: boolean }; free_plan?: boolean; free_models_enabled?: boolean }).surfaces?.[surface];
+    const meta = payload as {
+      free_model_agreement?: { accepted?: boolean };
+      free_plan?: boolean;
+      free_models_enabled?: boolean;
+    };
+    if (!nested)
+      return {
+        ...empty,
+        freeAgreementAccepted: meta.free_model_agreement?.accepted,
+        freePlan: meta.free_plan,
+        freeModelsEnabled: meta.free_models_enabled,
+      };
     return {
       models: (nested.models ?? []).map((m) => ({ ...m, selected: m.id === (nested.selected ?? nested.default) })),
       selected: nested.selected ?? nested.default ?? null,
       default: nested.default ?? null,
       settingsField: nested.settings_field,
       restrictedBecause: nested.restricted_because ?? null,
+      freeAgreementAccepted: meta.free_model_agreement?.accepted,
+      freePlan: meta.free_plan,
+      freeModelsEnabled: meta.free_models_enabled,
     };
   } catch {
     return { models: [], selected: null, default: null };
@@ -110,6 +158,20 @@ export async function loadModels(surface: AiSurface): Promise<AiSurfaceView> {
 export async function selectModel(surface: AiSurface, modelId: string, settingsField?: string): Promise<void> {
   const field = settingsField ?? (surface === "pentest" ? "pentest_model" : "preferred_model");
   await api.put("/ai/settings", { [field]: modelId });
+}
+
+/** The free-tier open-source-models agreement (current text + acceptance). */
+export async function loadFreeModelAgreement(): Promise<FreeModelAgreement | null> {
+  try {
+    return await api.get<FreeModelAgreement>("/ai/free-model-agreement");
+  } catch {
+    return null;
+  }
+}
+
+/** Record acceptance so free-plan orgs can switch onto the free pools. */
+export async function acceptFreeModelAgreement(): Promise<void> {
+  await api.post("/ai/free-model-agreement/accept", {});
 }
 
 /** The id tail, e.g. "deepseek:deepseek-v4-flash" → "deepseek-v4-flash". */

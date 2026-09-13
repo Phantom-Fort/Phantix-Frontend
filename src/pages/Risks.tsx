@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import { loadRisksBundle } from "@/lib/data";
@@ -20,6 +21,8 @@ export default function Risks() {
   const [tab, setTab] = useState("priority");
   const [band, setBand] = useState("all");
   const [selected, setSelected] = useState<Risk | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   // Submitting state for buttons
   const [treating, setTreating] = useState(false);
@@ -38,6 +41,15 @@ export default function Risks() {
         .sort((a, b) => (tab === "priority" ? b.priority_score - a.priority_score : b.inherent_score - a.inherent_score)),
     [risks, band, tab],
   );
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => sorted.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [sorted, safePage, pageSize],
+  );
+
+  useEffect(() => { setPage(1); }, [band, tab, pageSize]);
 
   const handleProposeTreatment = async () => {
     if (!selected) return;
@@ -168,7 +180,7 @@ export default function Risks() {
       </div>
 
       <div className="space-y-2.5">
-        {sorted.map((r, i) => {
+        {paginated.map((r, i) => {
           const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "---", className: "text-slate-400" };
           const color = riskLevelHex[r.level] ?? "#64748b";
           return (
@@ -208,6 +220,15 @@ export default function Risks() {
           );
         })}
       </div>
+
+      <Pagination
+        totalItems={sorted.length}
+        page={safePage}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        className="mt-2"
+      />
 
       {/* Detail modal */}
       <Modal open={!!selected} onClose={() => { setSelected(null); setAssignedOwner(""); }} title={selected?.title ?? ""} wide>

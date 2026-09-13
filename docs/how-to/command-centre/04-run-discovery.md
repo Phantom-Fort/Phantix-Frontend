@@ -2,6 +2,8 @@
 
 **Where:** **Assets** (discovery actions / jobs)
 
+![Discovery jobs](../../screenshots/app/discovery.png)
+
 ---
 
 ## Process flow

@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx } from "@/lib/utils";
 import type { Severity, SocWarRoomCase, SocWarRoomResponse, SocPlaybook } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocWarRoom() {
   const { toast } = useStore();
@@ -31,11 +32,12 @@ export default function SocWarRoom() {
       <PageHeader
         title="War Room"
         description="Incident case management with playbook-driven checklists, evidence timelines, and SLA tracking."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-25" label="SOC operations how-to" />
           <button className="btn-primary" onClick={() => setShowOpenModal(true)}>
             <Plus size={15} /> Open case
           </button>
-        }
+        </>}
       />
 
       {selectedCase ? (

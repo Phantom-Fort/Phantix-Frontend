@@ -18,6 +18,7 @@ import {
   StepsContent,
 } from "@/components/prompt-kit/steps";
 import { PaneHeader, ResizeHandle } from "@/components/workbench";
+import PentestTodo from "@/components/PentestTodo";
 import { useDragResize } from "@/lib/useDragResize";
 import { loadAgiFindings, decideAgiFindingVerification } from "@/lib/agi";
 import {
@@ -481,9 +482,9 @@ export default function AgiConsole({
 
         <div className="flex shrink-0 items-center gap-1.5">
           <SessionClock since={session.started_at} live={running && !paused} />
-          <span className={cx("chip !px-2 !py-0.5 wb-2xs", running && !paused ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : paused ? "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" : "border-phantix-600/40 text-slate-400")}>
-            {running && !paused && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />}
-            {paused ? "paused" : running ? "live" : session.status}
+          <span className={cx("chip !px-2 !py-0.5 wb-2xs", running && !paused ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : paused ? "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" : "border-phantix-600/40 text-slate-400")}>
+            {running && !paused && <span className="h-1.5 w-1.5 rounded-full bg-gold-400" />}
+            {paused ? "paused" : running ? "running" : session.status}
           </span>
           <span className="chip !px-2 !py-0.5 wb-2xs font-mono text-slate-500">#{session.id}</span>
           {onExit && (
@@ -595,8 +596,9 @@ export default function AgiConsole({
                   })}
                 </div>
               </div>
-              <div className="wb-scroll min-h-0 flex-1 overflow-y-auto wb-pad">
-                {selected ? <NodeInspector node={selected} /> : <p className="wb-xs text-slate-500">Select a node.</p>}
+              <div className="wb-scroll min-h-0 flex-1 space-y-2 overflow-y-auto wb-pad">
+                <PentestTodo job={session.job as Parameters<typeof PentestTodo>[0]["job"]} running={running && !paused} />
+                {selected ? <NodeInspector node={selected} /> : <p className="wb-xs text-slate-500">Select a node for step details.</p>}
               </div>
             </aside>
             <ResizeHandle onMouseDown={left.onHandleMouseDown} dragging={left.dragging} label="Resize attack tree pane" onDoubleClick={() => left.setSize(LEFT.reset)} />

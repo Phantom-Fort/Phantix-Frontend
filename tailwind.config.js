@@ -42,6 +42,8 @@ export default {
           100: "rgb(var(--phantix-100) / <alpha-value>)",
         },
         gold: {
+          100: "rgb(var(--gold-100) / <alpha-value>)",
+          200: "rgb(var(--gold-200) / <alpha-value>)",
           300: "rgb(var(--gold-300) / <alpha-value>)",
           400: "rgb(var(--gold-400) / <alpha-value>)",
           500: "rgb(var(--gold-500) / <alpha-value>)",

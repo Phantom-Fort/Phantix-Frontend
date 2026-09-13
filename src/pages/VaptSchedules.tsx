@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  CalendarClock, CalendarOff, CheckCircle2, Loader2, Moon, PauseCircle, Plus, RefreshCw, Timer,
+  CalendarClock, CalendarOff, CheckCircle2, Loader2, Moon, PauseCircle, Plus, RefreshCw,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
@@ -10,6 +10,8 @@ import {
   type VaptProcedure, type VaptSchedule,
 } from "@/lib/vaptOps";
 import { cx } from "@/lib/utils";
+import ContinuousReassessmentCard from "@/components/ContinuousReassessmentCard";
+import DocLink from "@/components/DocLink";
 
 // ── Recurring VAPT schedules ─────────────────────────────────────────────────
 // A schedule runs a procedure against a scope on a cadence. Blackout windows
@@ -56,11 +58,12 @@ export default function VaptSchedules() {
   const failures = rows.reduce((n, r) => n + (r.total_failures ?? 0), 0);
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="VAPT schedules"
         description="Recurring authorized testing. Each schedule runs one procedure against a scope on a cadence, with blackout windows to keep it away from your busy hours."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-23" label="VAPT scheduling how-to" />
           <div className="flex items-center gap-2">
             <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">
               <Plus size={13} className="mr-1.5 inline" /> New schedule
@@ -69,7 +72,7 @@ export default function VaptSchedules() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !rows.length ? (
@@ -79,16 +82,17 @@ export default function VaptSchedules() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Schedules" value={String(rows.length)} icon={<CalendarClock size={18} />} hint={`${active} active`} />
-            <StatCard label="Total runs" value={String(rows.reduce((n, r) => n + (r.total_runs ?? 0), 0))} icon={<Timer size={18} />} hint="across all schedules" />
-            <StatCard label="Failures" value={String(failures)} icon={<PauseCircle size={18} />} hint="cumulative" />
+            <StatCard label="Schedules" value={String(rows.length)} hint={`${active} active`} />
+            <StatCard label="Total runs" value={String(rows.reduce((n, r) => n + (r.total_runs ?? 0), 0))} hint="across all schedules" />
+            <StatCard label="Failures" value={String(failures)} hint="cumulative" />
             <StatCard
               label="Next run"
               value={rows.map((r) => r.next_run_at).filter(Boolean).sort()[0]?.slice(0, 10) ?? "—"}
-              icon={<CalendarClock size={18} />}
               hint="soonest scheduled"
             />
           </div>
+
+          <ContinuousReassessmentCard />
 
           {!rows.length ? (
             <Card>

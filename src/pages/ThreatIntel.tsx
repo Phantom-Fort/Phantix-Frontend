@@ -147,7 +147,7 @@ export default function ThreatIntel() {
         description="Matches connector IOCs and scan reputation against this org’s assets."
         actions={
           <div className="flex items-center gap-2">
-            <DocLink docId="howto-app-07" label="SOC / TI how-to" />
+            <DocLink docId="howto-app-19" label="Threat intel how-to" />
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={() => { dash.reload(); intel.reload(); events.reload(); }} title="Refresh">
               <RefreshCw size={14} />
             </button>

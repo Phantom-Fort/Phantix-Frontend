@@ -1,12 +1,14 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState, TableSkeleton } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
+import MobileHandoffCard from "@/components/MobileHandoffCard";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
-import { timeAgo, titleCase, cx } from "@/lib/utils";
+import { timeAgo, titleCase, cx, severityMeta } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { api, tokens, API_BASE, ApiError } from "@/lib/api";
 import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@/lib/assetTags";
@@ -55,10 +57,18 @@ export default function Assets() {
     securityDbBlocked: false,
     error: null,
   }, "assets");
-  const { data: prioritized } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
+  const { data: prioritized, loading: prioritizedLoading } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
   const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [invPage, setInvPage] = useState(1);
+  const [invPageSize, setInvPageSize] = useState(DEFAULT_PAGE_SIZE);
+  useEffect(() => { setInvPage(1); }, [q, typeFilter, invPageSize]);
+  const [prioPage, setPrioPage] = useState(1);
+  const [prioPageSize, setPrioPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const prioTotalPages = Math.max(1, Math.ceil((prioritized?.length ?? 0) / prioPageSize));
+  const prioSafePage = Math.min(prioPage, prioTotalPages);
+  const prioPageItems = (prioritized ?? []).slice((prioSafePage - 1) * prioPageSize, prioSafePage * prioPageSize);
   const [tab, setTab] = useState("inventory");
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
@@ -447,6 +457,9 @@ export default function Assets() {
       {tab === "prioritized" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="!p-0 overflow-hidden">
+            {prioritizedLoading && !(prioritized ?? []).length ? (
+              <div className="p-4"><TableSkeleton rows={6} /></div>
+            ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-phantix-700/40 text-left text-[11px] uppercase tracking-wider text-slate-500">
@@ -459,7 +472,7 @@ export default function Assets() {
                 </tr>
               </thead>
               <tbody>
-                {(prioritized ?? []).map((a: any, i: number) => {
+                {prioPageItems.map((a: any, i: number) => {
                   const score = a.riskScore ?? a.risk_score ?? 0;
                   const level = (a.riskLevel ?? a.risk_level ?? "low").toLowerCase();
                   const findings = a.openFindingsCount ?? a.open_findings ?? 0;
@@ -493,6 +506,14 @@ export default function Assets() {
                 )}
               </tbody>
             </table>
+            )}
+            <Pagination
+              totalItems={prioritized?.length ?? 0}
+              page={prioSafePage}
+              pageSize={prioPageSize}
+              onPageChange={setPrioPage}
+              onPageSizeChange={setPrioPageSize}
+            />
           </Card>
         </motion.div>
       )}
@@ -538,6 +559,9 @@ export default function Assets() {
                 else filtered.forEach((a) => s.delete(a.id));
                 setChecked(s);
               };
+              const invTotalPages = Math.max(1, Math.ceil(filtered.length / invPageSize));
+              const invSafePage = Math.min(invPage, invTotalPages);
+              const pageItems = filtered.slice((invSafePage - 1) * invPageSize, invSafePage * invPageSize);
               return (
                 <>
                   {checked.size > 0 && (
@@ -565,7 +589,7 @@ export default function Assets() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((a, i) => (
+                      {pageItems.map((a, i) => (
                         <motion.tr
                           key={a.id}
                           initial={{ opacity: 0 }}
@@ -631,6 +655,13 @@ export default function Assets() {
                       ))}
                     </tbody>
                   </table>
+                  <Pagination
+                    totalItems={filtered.length}
+                    page={invSafePage}
+                    pageSize={invPageSize}
+                    onPageChange={setInvPage}
+                    onPageSizeChange={setInvPageSize}
+                  />
                 </>
               );
             })()}
@@ -856,6 +887,8 @@ export default function Assets() {
             </button>
             <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/upload/apk</p>
           </Card>
+
+          <MobileHandoffCard />
         </motion.div>
       )}
 
@@ -871,7 +904,11 @@ export default function Assets() {
               })()}
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">{titleCase(selected.asset_type)}</span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300 capitalize">{selected.environment}</span>
-              <span className="chip border-severity-high/30 bg-severity-high/10 text-severity-high capitalize">{selected.criticality} criticality</span>
+              {(() => {
+                const key = String(selected.criticality ?? "").toLowerCase() as keyof typeof severityMeta;
+                const m = severityMeta[key] ?? severityMeta.medium;
+                return <span className={cx("chip capitalize", m.bg, m.color, m.border)}>{selected.criticality} criticality</span>;
+              })()}
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
               {[

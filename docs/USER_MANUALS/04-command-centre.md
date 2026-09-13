@@ -2,7 +2,7 @@
 
 **URL:** https://app.phantixlabs.com  
 **Audience:** Security operators (after Platform setup)  
-**Purpose:** Day-to-day security work â€” assets, SOC, scans, VAPT, risks, reports, agent.
+**Purpose:** Day-to-day security work — assets, SOC, scans, VAPT, risks, reports, agent.
 
 ---
 
@@ -19,27 +19,23 @@ Lab org example: **Phantix Vulnerable Organization** (slug from invite links in 
 
 ## 1. Sign in
 
-### Option A â€” Email + password + OTP
+### Option A — Email + password + OTP
 
 1. Open https://app.phantixlabs.com/login  
 
 ![App login](../screenshots/app/login.png)
 
-2. Enter **work email** and **password** â†’ **Continue**  
+2. Enter **work email** and **password** → **Continue**  
 3. Enter **application login code** from email  
 4. Complete **device confirmation** if prompted (new browser/device)  
 
-![After MFA](../screenshots/app/after_mfa_step1.png)
+### Option B — Invite / login link (preferred for operators)
 
-### Option B â€” Invite / login link (preferred for operators)
-
-1. Admin generates a link on **Platform â†’ People**  
-2. Open the link â†’ set password (first time) or continue  
+1. Admin generates a link on **Platform → People**  
+2. Open the link → set password (first time) or continue  
 3. Complete OTP / device steps  
 
-![Invite challenge](../screenshots/app/invite_challenge.png)
-
-### Option C â€” Live demo (no real org)
+### Option C — Live demo (no real org)
 
 1. From landing: **Live demo**, or open https://app.phantixlabs.com/demo  
 2. Explores a simulated tenant (read-mostly guided demo)  
@@ -56,7 +52,7 @@ Typical panels:
 
 - Posture / open findings / open risks / SOC queue / tracker  
 - Critical assets, top risks, SOC detections  
-- Tracker critical items â†’ Reports tracker  
+- Tracker critical items → Reports tracker  
 - Recent reports library  
 - Live event rail (SSE) when connected  
 
@@ -66,12 +62,12 @@ Typical panels:
 
 ## 3. Assets
 
-**Nav â†’ Assets**
+**Nav → Assets**
 
 ![Assets](../screenshots/app/assets.png)
 
 1. Browse inventory (type, criticality, verification)  
-2. **Add asset** (domain, host, URL, â€¦) â€” dual-control may be required  
+2. **Add asset** (domain, host, URL, â€¦) — dual-control may be required  
 
 ![Add asset](../screenshots/app/assets_add_modal.png)
 
@@ -80,7 +76,7 @@ Typical panels:
 
 ### Asset intelligence
 
-**Nav â†’ Intelligence**
+**Nav → Intelligence**
 
 ![Intelligence](../screenshots/app/intelligence.png)
 
@@ -91,12 +87,12 @@ Typical panels:
 
 ## 4. SOC Monitor
 
-**Nav â†’ SOC Monitor**
+**Nav → SOC Monitor**
 
 ![SOC](../screenshots/app/soc.png)
 
 1. Review **detection queue** (severity, status)  
-2. Open a detection â†’ triage / assign / escalate  
+2. Open a detection → triage / assign / escalate  
 3. Manage **cases** and notes  
 4. **Availability** tab: HTTP/TCP checks, incidents, heartbeat **agent downloads** (Linux / macOS / Windows / Python)  
 5. Agent auth uses **org API key** (`X-Org-Api-Key`), never a user JWT  
@@ -105,12 +101,12 @@ Typical panels:
 
 ## 5. Scans
 
-**Nav â†’ Scans**
+**Nav → Scans**
 
 ![Scans](../screenshots/app/scans.png)
 
 1. Unlock operate if needed  
-2. **Launch scan** (tools + target filter) â€” one active job per org  
+2. **Launch scan** (tools + target filter) — one active job per org  
 3. Watch progress; cancel only with operate rights  
 4. Open **results** for verified vs unverified findings  
 
@@ -118,7 +114,7 @@ Typical panels:
 
 ## 6. VAPT campaigns
 
-**Nav â†’ VAPT Campaigns**
+**Nav → VAPT Campaigns**
 
 ![VAPT](../screenshots/app/vapt.png)
 
@@ -131,19 +127,19 @@ Typical panels:
 
 ## 7. Risks
 
-**Nav â†’ Risks**
+**Nav → Risks**
 
 ![Risks](../screenshots/app/risks.png)
 
-1. Sort by priority band (P1â€“P5)  
-2. Open risk â†’ propose treatment / assign owner (dual-control)  
+1. Sort by priority band (P1–P5)  
+2. Open risk → propose treatment / assign owner (dual-control)  
 3. Export when needed  
 
 ---
 
 ## 8. Compliance
 
-**Nav â†’ Compliance**
+**Nav → Compliance**
 
 ![Compliance](../screenshots/app/compliance.png)
 
@@ -151,11 +147,26 @@ Typical panels:
 2. Review control pass/gap  
 3. Attach evidence  
 
+The framework catalog covers international (ISO 27001, SOC 2, PCI-DSS, NIST CSF,
+GDPR), application-security (OWASP ASVS / API Top 10, MASVS) and the Nigerian set
+(CBN Cybersecurity / AML / Consumer / e-Payments, NIBSS, NDPA / NDPR / NDPC,
+Cybercrimes Act, FCCPC, NITDA, SEC Digital Assets, Startup Act). Which frameworks
+apply is decided by your **Business profile** - see
+[Compliance frameworks](../user-docs/13-compliance-frameworks.md).
+
+| Page | Use it for |
+|------|------------|
+| **Frameworks** | Applicable frameworks and control coverage |
+| **Questionnaire** | The scoping questions, framework-tagged |
+| **Gap analysis** | Controls not yet demonstrated, with the mapping that proves it |
+| **Business profile** | Sector, jurisdictions, data handled |
+| **Evidence connectors** | Continuous evidence collection |
+
 ---
 
 ## 9. Reports & findings tracker
 
-**Nav â†’ Reports**
+**Nav → Reports**
 
 ![Reports](../screenshots/app/reports.png)
 
@@ -165,12 +176,20 @@ Typical panels:
 2. Dual-control may be required  
 3. Download completed formats; open detail for AI narratives / sections  
 
+### Solutions tab
+
+**Report Solutions** lists the report types this organization can generate, read
+live from the backend catalog. Each entry shows the audience, when to use it, the
+chapters it will contain and the available formats - so a new report type appears
+without a frontend release, and the page never advertises a chapter the assembler
+does not build.
+
 ### Findings tracker tab (`?tab=tracker`)
 
 Living remediation board (not a PDF):
 
 1. Filter by status / severity  
-2. Change status: `open` â†’ `in_progress` â†’ `fixed` / `accepted`  
+2. Change status: `open` → `in_progress` → `fixed` / `accepted`  
 3. `regressed` is set by the backend when a fixed issue returns  
 4. Deep links: `/reports?tab=tracker&key=â€¦`  
 
@@ -178,13 +197,26 @@ Living remediation board (not a PDF):
 
 ## 10. Phantix Agent
 
-**Nav â†’ Phantix Agent**
+**Nav → Phantix Agent**
 
 ![Agent](../screenshots/app/agent.png)
 
 1. Chat / skills library (plan-gated)  
 2. Operate session required for actions that change org data  
 3. Distinct from staff AGI Management console  
+
+The specialist row is the live domain catalog - Chief, Threat model, SOC, GRC,
+VAPT, Threat intel, Asset. The agent acts **as you**: it can do only what your role
+allows, and every change needs a fresh single-use authorization.
+
+**Agent activity** (`/agent-activity`) is the record: run, domain, action, your
+intent, who asked, and whether it ran or was denied - a denial means a control
+held. See [Agent activity](../how-to/command-centre/20-agent-activity.md).
+
+**Autonomous Pentest Agent** (right-side drawer) runs governed sessions against
+your own assets. First use requires accepting the usage agreement; the agreement
+dialog links its guide below the accept button. See
+[Autonomous pentest agent](../how-to/command-centre/17-autonomous-pentest.md).
 
 ---
 
@@ -222,18 +254,31 @@ If enrolled:
 3. **Rate this build** (score, NPS, area, what broke)  
 4. Cross-link to Platform sandbox for org-admin feedback  
 
-Staff push notes from **Staff portal â†’ Sandbox**.
+Staff push notes from **Staff portal → Sandbox**.
 
 ---
 
-## 13. Suggested daily path
+## 13. Cloud posture, Code & Posture
 
-1. **Dashboard** â€” posture + open SOC/risks  
-2. **SOC** â€” triage new detections  
-3. **Scans / VAPT** â€” run or review jobs  
-4. **Risks** â€” advance P1 treatments  
-5. **Reports / tracker** â€” update remediation status  
-6. **Support** â€” anything blocked  
+| Surface | Nav | What it is |
+|---------|-----|------------|
+| **Cloud posture** | `/cloud` | Connectors + the five capabilities: pack eligibility, network exposure with first/last-seen, TLS posture, CIS host baselines, execution isolation. [Guide](../how-to/command-centre/18-cloud-security.md) |
+| **Threat intel** | `/threat-intel` | IOC lookup, matched and unmatched against your inventory. [Guide](../how-to/command-centre/19-threat-intel.md) |
+| **Code** | `/code` | Repositories, PR/branch review, AutoFix, Continuous PR (draft only). [Guide](../how-to/command-centre/21-code-security.md) |
+| **Posture** | `/posture` | Continuous loop - reviews due, regressions, accepted-risk age. [Guide](../how-to/command-centre/22-posture.md) |
+| **Analytics** | `/analytics` | Live posture, findings, comparative and automation panels - no report to generate. [Guide](../how-to/command-centre/28-analytics.md) |
+| **Pentest scope** | `/pentest/external-scope` | External scope and rules of engagement. [Guide](../how-to/command-centre/26-pentest-scope.md) |
+
+---
+
+## 14. Suggested daily path
+
+1. **Dashboard** — posture + open SOC/risks  
+2. **SOC** — triage new detections  
+3. **Scans / VAPT** — run or review jobs  
+4. **Risks** — advance P1 treatments  
+5. **Reports / tracker** — update remediation status  
+6. **Support** — anything blocked  
 
 ---
 
@@ -244,6 +289,6 @@ Staff push notes from **Staff portal â†’ Sandbox**.
 | Stuck on login / device | Complete device email link; clear old device bind on Platform if needed |
 | 409 security DB | Bootstrap security DB on Platform Connections |
 | Mutations fail 403 | Unlock dual-control operate session |
-| 402 | Billing entitlement â€” upgrade on Platform |
+| 402 | Billing entitlement — upgrade on Platform |
 | Empty tracker | Generate reports / wait for AGI-seeded findings; check `/reports/tracker` |
-| Network shows only `/api/v1` | Expected â€” API is same-origin proxied |
+| Network shows only `/api/v1` | Expected — API is same-origin proxied |

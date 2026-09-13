@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx } from "@/lib/utils";
 import type { SocAdvisorDashboard, SocAdvisorRecommendation, SocAdvisorReport } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocAdvisor() {
   const [tab, setTab] = useState("dashboard");
@@ -23,7 +24,7 @@ export default function SocAdvisor() {
       <PageHeader
         title="SOC Advisor"
         description="Posture score trends, benchmarks, readiness assessments, and automated recommendations."
-      />
+       actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
 
       <Tabs
         tabs={[
@@ -115,7 +116,7 @@ export default function SocAdvisor() {
             >
               <Card className="!p-4">
                 <div className="flex items-start gap-3">
-                  <div className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", rec.priority === "critical" ? "bg-severity-critical" : rec.priority === "high" ? "bg-severity-high" : "bg-slate-500")} />
+                  <div className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", rec.priority === "critical" ? "bg-severity-critical" : rec.priority === "high" ? "bg-severity-high" : rec.priority === "medium" ? "bg-severity-medium" : rec.priority === "low" ? "bg-severity-low" : "bg-slate-500")} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-200">{rec.title}</p>
                     {rec.description && <p className="mt-1 text-xs text-slate-400">{rec.description}</p>}

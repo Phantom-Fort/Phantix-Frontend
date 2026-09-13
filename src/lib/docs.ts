@@ -30,6 +30,7 @@ import hcUsers from "@docs/docs/user-docs/09-users-and-approvals.md?raw";
 import hcAiAgent from "@docs/docs/user-docs/10-ai-agent-api.md?raw";
 import hcPrivacy from "@docs/docs/user-docs/11-privacy-and-security.md?raw";
 import hcTroubleshoot from "@docs/docs/user-docs/12-troubleshooting.md?raw";
+import hcComplianceFrameworks from "@docs/docs/user-docs/13-compliance-frameworks.md?raw";
 
 // In-app user manuals + task how-tos (Command Centre help centre)
 import { manualDocs } from "@/lib/manualDocs";
@@ -67,6 +68,7 @@ export const docs: DocEntry[] = [
   { id: "hc-ai-agent", title: "AI Agent API", description: "Use the public SecureGraph Agent API for programmatic security investigations.", category: "help", content: hcAiAgent },
   { id: "hc-privacy", title: "Privacy & security", description: "How your security data stays under your keys with the hybrid database model.", category: "help", content: hcPrivacy },
   { id: "hc-troubleshooting", title: "Troubleshooting", description: "Common setup and connection issues and how to fix them.", category: "help", content: hcTroubleshoot },
+  { id: "hc-compliance-frameworks", title: "Compliance frameworks", description: "The framework catalog — international, application-security, and the Nigerian fintech set.", category: "help", content: hcComplianceFrameworks },
 
   // Public guides
   { id: "what-is-securegraph", title: "What is SecureGraph", description: "The one-liner, positioning, and value for organizations.", category: "guides", content: whatIsSecureGraph },
@@ -121,6 +123,7 @@ const DOC_ID_BY_FILE: Record<string, string> = {
   "10-ai-agent-api.md": "hc-ai-agent",
   "11-privacy-and-security.md": "hc-privacy",
   "12-troubleshooting.md": "hc-troubleshooting",
+  "13-compliance-frameworks.md": "hc-compliance-frameworks",
   // Platform how-tos (docs/how-to/platform)
   "README.md": "howto-platform-index",
   "01-register-and-sign-in.md": "howto-platform-01",
@@ -152,6 +155,19 @@ const DOC_ID_BY_FILE: Record<string, string> = {
   "13-use-phantix-agent.md": "howto-app-13",
   "14-authorizer-approvals.md": "howto-app-14",
   "15-support-ticket.md": "howto-app-15",
+  "16-threat-models.md": "howto-app-16",
+  "17-autonomous-pentest.md": "howto-app-17",
+  "18-cloud-security.md": "howto-app-18",
+  "19-threat-intel.md": "howto-app-19",
+  "20-agent-activity.md": "howto-app-20",
+  "21-code-security.md": "howto-app-21",
+  "22-posture.md": "howto-app-22",
+  "23-vapt-schedules.md": "howto-app-23",
+  "24-compliance-review.md": "howto-app-24",
+  "25-soc-operations.md": "howto-app-25",
+  "26-pentest-scope.md": "howto-app-26",
+  "27-admin-and-audit.md": "howto-app-27",
+  "28-analytics.md": "howto-app-28",
 };
 
 /**

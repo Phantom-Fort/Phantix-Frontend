@@ -4,14 +4,18 @@ import { StoreProvider, ToastViewport, useStore } from "@/lib/store";
 import { OperationsProvider } from "@/lib/operations";
 import Layout from "@/components/Layout";
 import DualControlOverlay from "@/components/DualControlOverlay";
+import CookieConsent from "@/components/CookieConsent";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import DeviceConfirm from "@/pages/DeviceConfirm";
 import GithubCallback from "@/pages/GithubCallback";
+import IntegrationOAuthCallback from "@/pages/IntegrationOAuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
 import Vapt from "@/pages/Vapt";
+import Code from "@/pages/Code";
+import Posture from "@/pages/Posture";
 import Risks from "@/pages/Risks";
 import Compliance from "@/pages/Compliance";
 import Reports from "@/pages/Reports";
@@ -19,6 +23,7 @@ import Alerts from "@/pages/Alerts";
 import Audit from "@/pages/Audit";
 import People from "@/pages/People";
 import Privacy from "@/pages/Privacy";
+import Cookies from "@/pages/Cookies";
 import Support from "@/pages/Support";
 import Docs from "@/pages/Docs";
 import DocPage from "@/pages/DocPage";
@@ -34,6 +39,7 @@ import SocCloudIntegration from "@/pages/SocCloudIntegration";
 import IntegrationsHub from "@/pages/IntegrationsHub";
 import AuthorizerInbox from "@/pages/AuthorizerInbox";
 import Agent from "@/pages/Agent";
+import AgentActivity from "@/pages/AgentActivity";
 import Sandbox from "@/pages/Sandbox";
 import SandboxApplyPublic from "@/pages/SandboxApplyPublic";
 import ThreatIntel from "@/pages/ThreatIntel";
@@ -43,6 +49,7 @@ import ComplianceQuestionnaire from "@/pages/ComplianceQuestionnaire";
 import ComplianceGaps from "@/pages/ComplianceGaps";
 import ComplianceProfile from "@/pages/ComplianceProfile";
 import ComplianceConnectors from "@/pages/ComplianceConnectors";
+import Analytics from "@/pages/Analytics";
 import VaptSchedules from "@/pages/VaptSchedules";
 import VaptSettings from "@/pages/VaptSettings";
 import VaptProcedures from "@/pages/VaptProcedures";
@@ -102,7 +109,9 @@ export default function App() {
           <Route path="/password-reset" element={<PasswordResetRequest />} />
           <Route path="/reset-password" element={<PasswordResetComplete />} />
           <Route path="/device-confirm" element={<DeviceConfirm />} />
+          <Route path="/cookies" element={<Cookies />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
+          <Route path="/integrations/oauth/:connectorId/callback" element={<IntegrationOAuthCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
           {/* Public sandbox application — no auth (entry from phantixlabs.com) */}
           <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
@@ -121,6 +130,9 @@ export default function App() {
             <Route path="/soc/cloud" element={<RequireAuth><SocCloudIntegration /></RequireAuth>} />
             <Route path="/integrations" element={<RequireAuth><IntegrationsHub /></RequireAuth>} />
             <Route path="/scans" element={<RequireAuth><Scans /></RequireAuth>} />
+            <Route path="/code" element={<RequireAuth><Code /></RequireAuth>} />
+            <Route path="/posture" element={<RequireAuth><Posture /></RequireAuth>} />
+            <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/vapt/schedules" element={<RequireAuth><VaptSchedules /></RequireAuth>} />
             <Route path="/vapt/settings" element={<RequireAuth><VaptSettings /></RequireAuth>} />
@@ -138,6 +150,7 @@ export default function App() {
             <Route path="/threat-models" element={<RequireAuth><ThreatModels /></RequireAuth>} />
             <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
             <Route path="/agent" element={<RequireAuth><Agent /></RequireAuth>} />
+            <Route path="/agent-activity" element={<RequireAuth><AgentActivity /></RequireAuth>} />
             <Route path="/sandbox" element={<RequireAuth><Sandbox /></RequireAuth>} />
             <Route path="/alerts" element={<RequireAuth><Alerts /></RequireAuth>} />
             <Route path="/audit" element={<RequireAuth><Audit /></RequireAuth>} />
@@ -152,6 +165,7 @@ export default function App() {
           </Route>
         </Routes>
         <DualControlOverlay />
+        <CookieConsent />
         <ToastViewport />
         </BrowserRouter>
       </OperationsProvider>

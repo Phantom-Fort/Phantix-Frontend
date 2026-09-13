@@ -6,6 +6,7 @@ import { loadAgentFleet, loadSocAgentInstall, downloadSocAgent } from "@/lib/dat
 import { useResource } from "@/lib/useResource";
 import { timeAgo, cx } from "@/lib/utils";
 import type { SocAgentFleet, SocAgentInstallCatalog } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocAgentManager() {
   const { data: fleet, loading: fl } = useResource<SocAgentFleet | null>(() => loadAgentFleet(), null, "agent-fleet");
@@ -18,7 +19,7 @@ export default function SocAgentManager() {
       <PageHeader
         title="Agents"
         description="Unified SecureGraph agent fleet: register, monitor, and deploy log-shipping agents."
-      />
+       actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
 
       {fleet && (
         <div className="grid grid-cols-3 gap-3 mb-6">

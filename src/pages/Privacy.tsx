@@ -35,7 +35,8 @@ interface PrivacyNotice {
   version?: string;
   title?: string;
   summary?: string;
-  highlights?: string[];
+  /** Documented as string[], but rendered defensively — see highlightText(). */
+  highlights?: unknown[];
   [k: string]: unknown;
 }
 
@@ -48,6 +49,19 @@ const STATUS_COLORS: Record<string, string> = {
 
 function typeLabel(t: RequestType): string {
   return REQUEST_TYPES.find((r) => r.id === t)?.label ?? t;
+}
+
+/** Highlights are documented as string[], but tolerate a backend returning
+ *  objects ({ text/label/title }) — render safely instead of crashing on a
+ *  raw object child. */
+function highlightText(h: unknown): string {
+  if (typeof h === "string") return h;
+  if (h && typeof h === "object") {
+    const o = h as Record<string, unknown>;
+    const v = o.text ?? o.label ?? o.title ?? o.summary;
+    if (typeof v === "string") return v;
+  }
+  return String(h ?? "");
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
@@ -140,7 +154,7 @@ export default function Privacy() {
                 {notice.highlights.slice(0, 8).map((h, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-slate-500">
                     <ShieldCheck size={13} className="mt-0.5 shrink-0 text-gold-400" />
-                    <span>{h}</span>
+                    <span>{highlightText(h)}</span>
                   </li>
                 ))}
               </ul>

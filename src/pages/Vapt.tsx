@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import VaptPlanReview from "@/components/VaptPlanReview";
 import DocLink from "@/components/DocLink";
 import { loadVaptBundle } from "@/lib/data";
 import { api, isDemoMode, isPendingApproval } from "@/lib/api";
@@ -10,7 +11,10 @@ import { useResource } from "@/lib/useResource";
 import { useOperations } from "@/lib/operations";
 import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import { executeVaptPlan, generateVaptPlan } from "@/lib/vaptOps";
+import type { VaptPlan } from "@/lib/vaptOps";
 import type { VaptCampaign, VaptFinding } from "@/lib/types";
+import { UpsellBanner } from "@/components/UpgradeGate";
 
 /** Multi-tool correlation chips from a web step's output_summary.multi_tool_correlation. */
 function CorrelationChips({ correlation }: { correlation: any }) {
@@ -95,8 +99,12 @@ export default function Vapt() {
   const [tab, setTab] = useState("campaigns");
   const [selected, setSelected] = useState<VaptCampaign | null>(null);
   const [findingSelected, setFindingSelected] = useState<VaptFinding | null>(null);
+  const [retesting, setRetesting] = useState(false);
+  const [retestResult, setRetestResult] = useState<{ outcome: string; engine: string; verdict: string; reason: string } | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [planning, setPlanning] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<VaptPlan | null>(null);
+  const [executingPlan, setExecutingPlan] = useState(false);
   const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard" as "standard" | "poc", bruteforceAcked: false });
   const [bfConfirmOpen, setBfConfirmOpen] = useState(false);
   const [bfConfirmText, setBfConfirmText] = useState("");
@@ -141,6 +149,30 @@ export default function Vapt() {
   const pending = vaptApprovals.filter((a) => a.status === "pending");
   const selectedFinding = findingSelected;
   const selectedSteps = selectedFinding?.attack_path_object?.steps;
+
+  // Retest a finding after remediation: deterministic engine first, AI fallback.
+  const handleRetest = async (f: VaptFinding) => {
+    setRetesting(true);
+    setRetestResult(null);
+    try {
+      const res = await api.post<{ outcome: string; engine: string; verdict: string; reason: string }>(
+        `/vapt/campaigns/${f.campaign_id}/findings/${f.id}/retest`,
+      );
+      setRetestResult(res);
+      const label =
+        res.outcome === "resolved" ? "Resolved" : res.outcome === "still_present" ? "Still present" : "Inconclusive";
+      toast(
+        res.outcome === "resolved" ? "success" : res.outcome === "still_present" ? "warning" : "info",
+        `Retest: ${label}`,
+        `Decided by the ${res.engine === "ai" ? "AI" : "deterministic"} engine`,
+      );
+      void reload?.();
+    } catch (e: any) {
+      toast("error", "Retest failed", e?.message || "");
+    } finally {
+      setRetesting(false);
+    }
+  };
 
   // Campaign action handlers
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
@@ -212,25 +244,55 @@ export default function Vapt() {
     }
   };
 
+  // The plan is a proposal, so it is shown before anything is created: the
+  // reviewer sees the vulnerability types each step will test for and can switch
+  // individual types off. Only then is the campaign created, as a draft.
   const handlePlan = async () => {
     if (!(await requireDualControl("Intelligent plan requires a dual-control operate session."))) return;
     setPlanning(true);
     try {
-      const plan = await api.post<{ plan_id: string; recommended_scans?: string[] }>("/vapt/plan", {});
-      if (plan.plan_id) {
-        // Execute but do NOT auto-start --- let the initiator review the draft first
-        await api.post("/vapt/plan/execute", { plan_id: plan.plan_id, start: false }).catch((e: any) => {
-          if (e.status === 400) toast("warning", "Draft created", "Review the plan and start when ready.");
-          else throw e;
-        });
-        toast("success", "Plan generated", "Review the draft and submit for approval or start");
-        reload();
+      const plan = await generateVaptPlan();
+      if (!plan?.plan_id) {
+        toast("warning", "No plan returned", "Add inventory or product context and try again.");
+        return;
       }
+      setPendingPlan(plan);
     } catch (e: any) {
       if (e.status === 409) toast("warning", "Another campaign is already running", "Pause or cancel it first.");
       else toast("error", "Plan failed", e.message || "");
     }
     finally { setPlanning(false); }
+  };
+
+  const handlePlanConfirm = async (excludeVulnTypes: string[]) => {
+    if (!pendingPlan) return;
+    setExecutingPlan(true);
+    try {
+      await executeVaptPlan(pendingPlan.plan_id, { excludeVulnTypes, start: false });
+      toast(
+        "success",
+        "Draft campaign created",
+        excludeVulnTypes.length
+          ? `${excludeVulnTypes.length} vulnerability type(s) excluded. Start it when ready.`
+          : "Review the draft and start when ready.",
+      );
+      setPendingPlan(null);
+      reload();
+    } catch (e: any) {
+      // A draft that could not auto-start is the documented outcome when the
+      // inventory is empty, not a failure of the plan itself.
+      if (e.status === 400) {
+        toast("warning", "Draft created", e.detail?.message || "Review the plan and start when ready.");
+        setPendingPlan(null);
+        reload();
+      } else if (e.status === 409) {
+        toast("warning", "Another campaign is already running", "Pause or cancel it first.");
+      } else {
+        toast("error", "Could not create campaign", e.message || "");
+      }
+    } finally {
+      setExecutingPlan(false);
+    }
   };
 
   // Poll when campaigns are live --- follows same pattern as Assets discovery polling
@@ -335,6 +397,8 @@ export default function Vapt() {
           </>
         }
       />
+
+      <UpsellBanner feature="continuous_pentest" />
 
       {/* Pending approvals strip */}
       {pending.length > 0 && (
@@ -505,6 +569,35 @@ export default function Vapt() {
                                 {isCompleted && <span className="text-[10px] text-emerald-400 font-normal">complete</span>}
                               </p>
                               <p className={cx("text-[11px] leading-relaxed", isCurrent ? "text-slate-400" : "text-slate-500")}>{step.step_description}</p>
+                              {/* Vulnerability types this step tests for (planner substeps).
+                                  Disabled types are kept visible but struck through: what was
+                                  deliberately excluded is part of the record. */}
+                              {Array.isArray(step.config?.substeps) && step.config.substeps.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {(step.config.substeps as any[]).slice(0, 6).map((sub: any) => (
+                                    <span
+                                      key={sub.key}
+                                      title={sub.why || undefined}
+                                      className={cx(
+                                        "chip text-[9px]",
+                                        sub.enabled === false
+                                          ? "border-phantix-700/40 text-slate-600 line-through"
+                                          : sub.regression
+                                            ? "border-severity-critical/30 bg-severity-critical/10 text-severity-critical"
+                                            : "border-phantix-600/40 bg-phantix-800/50 text-slate-400",
+                                      )}
+                                    >
+                                      {sub.regression && sub.enabled !== false && "↻ "}
+                                      {sub.label} · {sub.check_count}
+                                    </span>
+                                  ))}
+                                  {(step.config.substeps as any[]).length > 6 && (
+                                    <span className="chip border-phantix-700/40 text-[9px] text-slate-600">
+                                      +{(step.config.substeps as any[]).length - 6} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -773,7 +866,7 @@ export default function Vapt() {
       )}
 
       {/* Finding detail modal */}
-      <Modal open={!!findingSelected} onClose={() => setFindingSelected(null)} title={findingSelected?.title ?? "Finding"} wide>
+      <Modal open={!!findingSelected} onClose={() => { setFindingSelected(null); setRetestResult(null); }} title={findingSelected?.title ?? "Finding"} wide>
         {findingSelected && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -871,6 +964,50 @@ export default function Vapt() {
                 </p>
               </div>
             )}
+
+            {/* Retest after remediation: deterministic findings unit test first, AI engine on fallback */}
+            <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Retest after remediation</p>
+                  <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                    Re-runs the deterministic findings check; if it can’t decide, the AI engine judges the finding data.
+                  </p>
+                </div>
+                <button
+                  className="btn-secondary shrink-0 !px-2.5 !py-1 text-xs"
+                  disabled={retesting}
+                  onClick={() => void handleRetest(findingSelected)}
+                >
+                  {retesting ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : <Radar size={12} className="mr-1 inline" />}
+                  {retesting ? "Retesting…" : "Retest"}
+                </button>
+              </div>
+              {retestResult && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span
+                    className={cx(
+                      "chip text-[10px]",
+                      retestResult.outcome === "resolved"
+                        ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                        : retestResult.outcome === "still_present"
+                          ? "border-severity-high/30 bg-severity-high/10 text-severity-high"
+                          : "border-slate-500/30 bg-slate-500/10 text-slate-400",
+                    )}
+                  >
+                    {retestResult.outcome === "resolved"
+                      ? "Resolved"
+                      : retestResult.outcome === "still_present"
+                        ? "Still present"
+                        : "Inconclusive"}
+                  </span>
+                  <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">
+                    {retestResult.engine === "ai" ? "AI engine" : "deterministic engine"}
+                  </span>
+                  {retestResult.reason && <span className="text-[10px] text-slate-500">{retestResult.reason}</span>}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Modal>
@@ -993,6 +1130,17 @@ export default function Vapt() {
           </div>
         </div>
       </Modal>
+
+      {/* Plan review — the proposal, before any campaign exists */}
+      {pendingPlan && (
+        <VaptPlanReview
+          plan={pendingPlan}
+          open={!!pendingPlan}
+          busy={executingPlan}
+          onClose={() => setPendingPlan(null)}
+          onConfirm={handlePlanConfirm}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Shield, Crosshair, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import { CheckCircle2, XCircle, Shield, ShieldCheck, Crosshair, AlertTriangle } from "lucide-react";
+import { PageHeader, Card, CardHeader, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import DocLink from "@/components/DocLink";
 import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
-import { api } from "@/lib/api";
+import { api, delay, isDemoMode } from "@/lib/api";
+import * as demo from "@/lib/demo-data";
 import { cx } from "@/lib/utils";
 
 type InboxItem = {
@@ -39,10 +41,29 @@ export default function AuthorizerInbox() {
   const { toast } = useStore();
   const [filter, setFilter] = useState<string>("all");
   const [acting, setActing] = useState<number | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { data: inbox, loading, error, reload } = useResource(
-    () => api.get<InboxResponse>("/authorizer/inbox", { dualControl: true }),
+    () => (isDemoMode()
+      ? delay().then(() => demo.authorizerInbox as InboxResponse)
+      : api.get<InboxResponse>("/authorizer/inbox", { dualControl: true })),
     emptyInbox,
+  );
+
+  // Current dual-control designation (GET /audit/control-roles) — read-only here;
+  // assignment is managed in the platform portal.
+  const { data: controlRoles } = useResource(
+    () => (isDemoMode()
+      ? delay().then(() => ({
+          configured: demo.dualControl.configured,
+          initiator_name: demo.dualControl.initiator?.full_name,
+          initiator_title: demo.dualControl.initiator?.title,
+          authorizer_name: demo.dualControl.authorizer?.full_name,
+          authorizer_title: demo.dualControl.authorizer?.title,
+        }))
+      : api.get<any>("/audit/control-roles", { dualControl: true })),
+    null,
   );
 
   const items = inbox?.items || [];
@@ -52,6 +73,11 @@ export default function AuthorizerInbox() {
     if (filter === "risk") return i.channel === "risk";
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  useEffect(() => { setPage(1); }, [filter, pageSize]);
 
   const handleDecide = async (item: InboxItem, approve: boolean) => {
     const dp = (item as any).decidePaths ?? (item as any).decide_paths ?? {};
@@ -86,7 +112,21 @@ export default function AuthorizerInbox() {
     }
 
     try {
-      await api.post(path, body);
+      if (isDemoMode()) {
+        await delay(320);
+        // Mutate the shared demo fixture so the next reload() reflects the
+        // decision — otherwise the item never leaves the inbox.
+        const idx = demo.authorizerInbox.items.findIndex((i) => i.inboxId === item.inboxId);
+        if (idx >= 0) {
+          demo.authorizerInbox.items.splice(idx, 1);
+          demo.authorizerInbox.total = demo.authorizerInbox.items.length;
+          if (item.channel === "vapt") demo.authorizerInbox.counts.vapt = Math.max(0, demo.authorizerInbox.counts.vapt - 1);
+          else if (item.channel === "risk") demo.authorizerInbox.counts.riskTreatments = Math.max(0, demo.authorizerInbox.counts.riskTreatments - 1);
+          else demo.authorizerInbox.counts.dualControl = Math.max(0, demo.authorizerInbox.counts.dualControl - 1);
+        }
+      } else {
+        await api.post(path, body);
+      }
       toast("success", approve ? "Approved" : "Rejected");
       reload();
     } catch (e: any) {
@@ -126,6 +166,30 @@ export default function AuthorizerInbox() {
         }
       />
 
+      {controlRoles?.configured && (
+        <Card className="mb-4">
+          <CardHeader
+            title="Control roles"
+            subtitle="Who proposes and who approves under dual control"
+            action={<ShieldCheck size={16} className="text-gold-400" />}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">Initiator</p>
+              <p className="mt-1 text-sm text-slate-200">
+                {controlRoles.initiator_name || controlRoles.initiator_title || "—"}
+              </p>
+            </div>
+            <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-slate-500">Authorizer</p>
+              <p className="mt-1 text-sm text-slate-200">
+                {controlRoles.authorizer_name || controlRoles.authorizer_title || "—"}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="flex flex-wrap items-center gap-1.5 mb-4">
         {[
           { id: "all", label: "All", count: inbox?.total },
@@ -155,7 +219,7 @@ export default function AuthorizerInbox() {
         <EmptyState icon={<CheckCircle2 size={24} />} title="All clear" body="No pending approvals --- everything is authorized." />
       ) : (
         <div className="space-y-3">
-          {filtered.map((item) => {
+          {paginated.map((item) => {
             const busy = acting === (item.pendingId || item.requestId || item.treatmentId || null);
             const channelIcon = item.channel === "dual_control" ? <Shield size={16} className="text-gold-400" />
               : item.channel === "vapt" ? <Crosshair size={16} className="text-severity-medium" />
@@ -196,6 +260,13 @@ export default function AuthorizerInbox() {
               </motion.div>
             );
           })}
+          <Pagination
+            totalItems={filtered.length}
+            page={safePage}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
         </div>
       )}
 

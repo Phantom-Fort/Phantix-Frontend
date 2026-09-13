@@ -23,6 +23,7 @@ This is **product documentation** â€” setup, day-to-day use, and integrations â€
 | Use the public AI Agent API | [10-ai-agent-api.md](./10-ai-agent-api.md) |
 | Privacy & trust | [11-privacy-and-security.md](./11-privacy-and-security.md) |
 | Troubleshoot common issues | [12-troubleshooting.md](./12-troubleshooting.md) |
+| See which compliance frameworks apply | [13-compliance-frameworks.md](./13-compliance-frameworks.md) |
 
 **Marketing overview** (positioning, investors): parent folder [`../README.md`](../README.md).
 

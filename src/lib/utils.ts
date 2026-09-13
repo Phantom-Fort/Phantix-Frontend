@@ -124,6 +124,18 @@ export function titleCase(s: string | null | undefined): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** First name + last-initial ("Ada Okonkwo" -> "Ada O.") — for name display in
+ *  narrow, fixed-width chrome (sidebar widgets, chips) where a full name can
+ *  overflow or wrap. Single-word names pass through unchanged. */
+export function shortName(name: string | null | undefined): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return name.trim();
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1][0];
+  return lastInitial ? `${first} ${lastInitial.toUpperCase()}.` : first;
+}
+
 export const assetTypeIcon: Record<string, string> = {
   domain: "🌐",
   subdomain: "🔗",
@@ -285,6 +297,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
   asset_id?: number | null;
   assigned_owner?: string | null;
   target_fix_date?: string | null;
+  first_detected_at?: string | null;
   detection_count?: number;
   retest_status?: string | null;
   description?: string | null;
@@ -329,6 +342,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
     priority: raw?.priority != null ? String(raw.priority) : undefined,
     asset_id: raw?.asset_id != null ? Number(raw.asset_id) : assetObj?.id != null ? Number(assetObj.id) : null,
     target_fix_date: raw?.target_fix_date ?? null,
+    first_detected_at: raw?.first_detected_at ?? raw?.created_at ?? null,
     detection_count: raw?.detection_count != null ? Number(raw.detection_count) : undefined,
     retest_status: raw?.retest_status ?? null,
     description: raw?.description ?? null,

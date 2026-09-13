@@ -1,6 +1,9 @@
 import type {
   AgentSkill,
   AiStatus,
+  AiUsage,
+  ReportTypeEntry,
+  TrackerSummary,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -86,6 +89,9 @@ import type {
 } from "./complianceGrc";
 import type {
   CorrelationRule,
+  PostureDrift,
+  PostureDueRisk,
+  PostureSnapshot,
   RuleCandidate,
   VaptProcedure,
   VaptSchedule,
@@ -98,6 +104,21 @@ import type {
   RememberedModel,
   ThreatModelDetail,
 } from "./productContext";
+import type { TrackerTimeline } from "./data";
+import type { VaptPlan } from "./vaptOps";
+import type {
+  AutofixStatus,
+  BranchReviewWallet,
+  CodeAiExplanation,
+  CodeBlob,
+  CodeFinding,
+  CodeFindingFile,
+  CodeSeverityCounts,
+  GithubInstallation,
+  Repo as GithubRepo,
+  ReviewEvent,
+  ReviewSetting,
+} from "./codeOps";
 
 // Demo tenant ONLY --- consumed via src/lib/data.ts when isDemoMode() is true
 // (/demo or demo session flag). Live mode must never import this
@@ -167,6 +188,38 @@ export const dualControl: DualControlState = {
   require_dual_control: true,
   initiator: { id: 1, full_name: "Ada Okonkwo", email: "ada@acme.ng", title: "IT Admin" },
   authorizer: { id: 2, full_name: "Chidi Eze", email: "chidi@acme.ng", title: "CISO" },
+};
+
+export const authorizerInbox = {
+  total: 2,
+  counts: { dualControl: 0, vapt: 1, riskTreatments: 1 },
+  authorizer: { userId: 2, email: "chidi@acme.ng", fullName: "Chidi Eze" },
+  items: [
+    {
+      inboxId: "vapt-13",
+      channel: "vapt",
+      kind: "campaign_phase_gate",
+      status: "pending",
+      title: "Exploitation phase — Q3 External Assessment",
+      summary: "full_vapt gate — requires the authorizer before exploitation steps run.",
+      campaignId: 13,
+      campaignName: "Q3 External Assessment",
+      requiredRole: "authorizer",
+      decidePaths: { approve: "/vapt/campaigns/13/gate/approve", reject: "/vapt/campaigns/13/gate/reject" },
+    },
+    {
+      inboxId: "risk-treatment-9",
+      channel: "risk",
+      kind: "treatment_approval",
+      status: "pending",
+      title: "Treatment: rotate exposed JWT signing key",
+      summary: "Proposed mitigation for risk #9 (JWT algorithm confusion) — submitted for approval.",
+      treatmentId: 9,
+      riskId: 9,
+      requiredRole: "authorizer",
+      decidePaths: { approve: "/risks/treatments/9/approve", reject: "/risks/treatments/9/reject" },
+    },
+  ],
 };
 
 export const dbConnections: DbConnection[] = [
@@ -259,7 +312,14 @@ export const vaptCampaigns: VaptCampaign[] = [
   { id: 13, name: "Q3 External Assessment", campaign_type: "external", procedure_key: "full_vapt", status: "active", phase: "Web application testing", progress: 58, asset_count: 9, findings_count: 17, requires_approval: true, created_by: "Ada Okonkwo", created_at: "2026-07-14T10:00:00Z", started_at: "2026-07-14T10:30:00Z", finished_at: null, current_step_index: 2, current_phase: "Vulnerability templates", asset_scope: { asset_types: ["domain", "subdomain", "ip_address"] }, procedure_snapshot: { source: "full_vapt", steps: [
     { step_type: "recon", step_name: "Asset & DNS recon", step_description: "Enumerate subdomains and hosts", status: "completed", config: { tools: ["subfinder", "dnsx"], max_duration_minutes: 15 }, output_summary: { assets_resolved: 22, unique_hosts: 14, targets_scanned: ["acme.ng", "www.acme.ng", "app.acme.ng", "portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "172.67.131.182 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 2, time_budget_seconds: 900, elapsed_seconds: 540, results_written: 0, tools: ["subfinder", "dnsx"] } },
     { step_type: "scan", step_name: "Network surface (Nmap)", step_description: "Port and service discovery on live hosts", status: "completed", config: { tools: ["nmap"], max_duration_minutes: 20 }, output_summary: { assets_resolved: 9, unique_hosts: 9, targets_scanned: ["portal.acme.ng", "api.acme.ng", "staging.acme.ng"], skipped_already_scanned: [], skipped_count: 0, time_budget_seconds: 1200, elapsed_seconds: 1100, results_written: 41, tools: ["nmap"] } },
-    { step_type: "scan", step_name: "Vulnerability templates", step_description: "YAML vulnerability checks on unique hosts (domain IPs skipped)", status: "running", config: { tools: ["vuln_scan"], max_duration_minutes: 35, dedupe_hosts: true, target_types: ["domain", "subdomain", "web_app", "api"] }, output_summary: { assets_resolved: 18, assets_considered: 12, unique_hosts: 12, targets_scanned: ["portal.acme.ng", "api.acme.ng", "app.acme.ng", "www.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["41.58.130.44 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 4, time_budget_seconds: 2100, elapsed_seconds: 1320, results_written: 17, tools: ["vuln_scan"], partial: true } },
+    { step_type: "scan", step_name: "Vulnerability templates", step_description: "6 vulnerability types, 28 checks; types=['domain', 'subdomain', 'web_app', 'api']", status: "running", config: { tools: ["vuln_scan"], max_duration_minutes: 35, dedupe_hosts: true, target_types: ["domain", "subdomain", "web_app", "api"], substeps: [
+      { key: "transport_security", label: "Transport security", check_count: 4, enabled: true, regression: true, why: "A previously remediated weakness of this type has returned." },
+      { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", check_count: 8, enabled: true, regression: false, why: "The attack tree ranks its class #4 on this surface." },
+      { key: "known_cve", label: "Known CVE probes", check_count: 3, enabled: true, regression: false, why: "The attack tree ranks its class #9 on this surface." },
+      { key: "secret_exposure", label: "Exposed secrets & source control", check_count: 2, enabled: true, regression: false, why: "Standard coverage for this surface." },
+      { key: "security_headers", label: "Browser security headers", check_count: 4, enabled: true, regression: false, why: "A previous run disproved this class here." },
+      { key: "tech_disclosure", label: "Technology & version disclosure", check_count: 7, enabled: false, regression: false, why: "Switched off by the reviewer before the campaign was created." },
+    ] }, output_summary: { assets_resolved: 18, assets_considered: 12, unique_hosts: 12, targets_scanned: ["portal.acme.ng", "api.acme.ng", "app.acme.ng", "www.acme.ng", "staging.acme.ng"], skipped_already_scanned: ["41.58.130.44 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)", "104.21.10.198 (IP skipped — domain/subdomain already in job; not re-scanned after hostname)"], skipped_count: 4, time_budget_seconds: 2100, elapsed_seconds: 1320, results_written: 17, tools: ["vuln_scan"], partial: true } },
     { step_type: "correlate", step_name: "Attack-path correlation", step_description: "Chain findings into attack paths", status: "pending", config: {}, output_summary: {} },
     { step_type: "analyze", step_name: "AI-assisted analysis", step_description: "Optional narrative enrichment", status: "pending", config: {}, output_summary: {} },
   ] } },
@@ -455,6 +515,22 @@ export const serviceKey: ServiceKeyMeta = {
   active: true,
   created_at: "2026-06-20T10:00:00Z",
   last_used_at: "2026-07-21T07:12:00Z",
+};
+
+/** Mid-month budget state: comfortably inside both ceilings. */
+export const aiUsage: AiUsage = {
+  organization_id: 11,
+  year_month: "2026-09",
+  tokens_used: 412880,
+  token_budget: 1000000,
+  cost_usd: 18.4,
+  spend_limit_usd: 50,
+  cost_ngn: 27600,
+  spend_limit_ngn: 75000,
+  currency: "NGN",
+  fx_ngn_per_usd: 1500,
+  allowed: true,
+  mode: "balanced",
 };
 
 export const aiStatus: AiStatus = {
@@ -663,15 +739,109 @@ export const socAdapters: SocAdapter[] = [
 ];
 
 // ── Orchestration: Cloud Security connectors (cloud.md) ─────────────────────
+// Demo providers mirror the backend registry (app/shared/cloud/providers.py) so
+// the picker looks the same offline. Kept as one-liners; capability flags drive
+// the Account/Webhook badge and the credential form.
+function demoCloudProvider(
+  id: string,
+  name: string,
+  category: string,
+  description: string,
+  opts: { credentialKeys?: string[]; engines?: string[]; africa?: boolean } = {},
+): CloudProvider {
+  return {
+    id,
+    name,
+    description,
+    kind: category,
+    category,
+    accountCapable: (opts.credentialKeys?.length ?? 0) > 0,
+    credentialKeys: opts.credentialKeys,
+    engines: opts.engines ?? ["soc", "asset"],
+    africa: opts.africa,
+  };
+}
+
 export const cloudProviders: CloudProvider[] = [
   { id: "vercel", name: "Vercel", description: "Log drains + deployment telemetry", kind: "paas", webhook: { label: "Log drain / webhook", ingestUrlHint: "Vercel → Project → Integrations → Log Drains", signatureHeader: "x-vercel-signature" } },
   { id: "aws", name: "AWS", description: "CloudTrail / EventBridge events", kind: "cloud", webhook: { label: "EventBridge target", ingestUrlHint: "AWS console → EventBridge → Rule target", signatureHeader: "X-SecureGraph-Signature" } },
   { id: "azure", name: "Azure", description: "Azure Monitor / Sentinel log analytics", kind: "cloud", webhook: { label: "Log Analytics workspace", ingestUrlHint: "Azure → Log Analytics → Custom log", signatureHeader: "X-SecureGraph-Signature" } },
   { id: "gcp", name: "Google Cloud", description: "Cloud logging sinks", kind: "cloud", webhook: { label: "Pub/Sub push subscription", ingestUrlHint: "GCP → Logging → Sink → Pub/Sub", signatureHeader: "X-SecureGraph-Signature" } },
-  { id: "hetzner", name: "Hetzner", description: "VPS / server events", kind: "vps", webhook: { label: "Webhook notification", ingestUrlHint: "Hetzner Cloud → Project → Webhooks", signatureHeader: "X-SecureGraph-Signature" } },
-  { id: "digitalocean", name: "DigitalOcean", description: "Droplet / alert webhooks", kind: "vps", webhook: { label: "Alert webhook", ingestUrlHint: "DO → Monitoring → Alerts → Notification channel", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "hetzner", name: "Hetzner Cloud", description: "Hetzner Cloud API token (read-only) or Robot/monitoring webhook.", kind: "vps", category: "vps", accountCapable: true, credentialKeys: ["api_token"], engines: ["soc", "asset"], webhook: { label: "Webhook notification", ingestUrlHint: "Hetzner Cloud → Project → Webhooks", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "digitalocean", name: "DigitalOcean", description: "Droplet / alert webhooks or a read-only API token.", kind: "vps", category: "vps", accountCapable: true, credentialKeys: ["api_token"], engines: ["soc", "asset"], africa: true, webhook: { label: "Alert webhook", ingestUrlHint: "DO → Monitoring → Alerts → Notification channel", signatureHeader: "X-SecureGraph-Signature" } },
+  { id: "contabo", name: "Contabo", description: "Contabo OAuth2 API credentials (read-only) or VPS monitoring webhook.", kind: "vps", category: "vps", accountCapable: true, africa: true, credentialKeys: ["client_id", "client_secret", "api_user", "api_password"], engines: ["soc", "asset"] },
+  { id: "ovh", name: "OVHcloud", description: "OVH API application key + consumer key, or monitoring webhook.", kind: "vps", category: "vps", accountCapable: true, africa: true, credentialKeys: ["app_secret", "consumer_key"], engines: ["soc", "asset"] },
+  { id: "sshnodes", name: "SSH Nodes", description: "Connect SSH Nodes with a read-only API key, or point its monitoring webhook at SecureGraph.", kind: "vps", category: "vps", accountCapable: true, africa: true, credentialKeys: ["api_key"], engines: ["soc", "asset"] },
+  { id: "scaleway", name: "Scaleway", description: "Connect Scaleway with a read-only API token, or its monitoring webhook.", kind: "vps", category: "vps", accountCapable: true, africa: true, credentialKeys: ["api_token"], engines: ["soc", "asset"] },
+  { id: "hostafrica", name: "HostAfrica", description: "Connect HostAfrica with an API key, or send access/monitoring events to the webhook.", kind: "africa", category: "africa", accountCapable: true, africa: true, credentialKeys: ["api_key"], engines: ["soc", "asset"] },
+  { id: "web4africa", name: "Web4Africa", description: "Connect Web4Africa with an API key, or send access/monitoring events to the webhook.", kind: "africa", category: "africa", accountCapable: true, africa: true, credentialKeys: ["api_key"], engines: ["soc", "asset"] },
+  { id: "cloudways", name: "Cloudways", description: "Cloudways API key + account email (read-only), or webhook.", kind: "managed_hosting", category: "managed_hosting", accountCapable: true, africa: true, credentialKeys: ["email", "api_key"], engines: ["soc", "asset"] },
+  { id: "oracle", name: "Oracle Cloud Infrastructure", description: "OCI audit + Cloud Guard events (API signing key), or Audit webhook.", kind: "cloud", category: "cloud", accountCapable: true, credentialKeys: ["tenancy_ocid", "user_ocid", "fingerprint", "private_key"], engines: ["soc", "asset", "compliance"] },
   { id: "github", name: "GitHub", description: "Audit log + security alerts", kind: "code", webhook: { label: "Repository webhook", ingestUrlHint: "GitHub → Settings → Webhooks", signatureHeader: "X-Hub-Signature-256" } },
   { id: "uptimekuma", name: "Uptime Kuma", description: "Availability notification webhooks", kind: "monitoring", webhook: { label: "Notification webhook URL", ingestUrlHint: "Uptime Kuma → Settings → Notifications", signatureHeader: "X-SecureGraph-Signature" } },
+  // ── Hyperscaler siblings ──────────────────────────────────────────────────
+  demoCloudProvider("alibaba", "Alibaba Cloud", "cloud", "ActionTrail + Security Center events (RAM access key), or webhook.", { credentialKeys: ["access_key_id", "access_key_secret"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("huawei", "Huawei Cloud", "cloud", "CTS audit + HSS alerts (AK/SK), or webhook.", { credentialKeys: ["access_key", "secret_key"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("tencent", "Tencent Cloud", "cloud", "CloudAudit events (SecretId/SecretKey), or webhook.", { credentialKeys: ["secret_id", "secret_key"], engines: ["soc", "asset", "compliance"] }),
+  demoCloudProvider("ibm", "IBM Cloud", "cloud", "Activity Tracker + Security Advisor events (API key), or webhook.", { credentialKeys: ["api_key"], engines: ["soc", "asset", "compliance"] }),
+  // ── Global VPS / cloud compute ────────────────────────────────────────────
+  demoCloudProvider("vultr", "Vultr", "vps", "Vultr instance/monitor events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("linode", "Akamai Linode", "vps", "Linode / Akamai Cloud events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("upcloud", "UpCloud", "vps", "UpCloud monitoring events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  demoCloudProvider("ionos", "IONOS Cloud", "vps", "IONOS monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("netcup", "Netcup", "vps", "Netcup monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("racknerd", "RackNerd", "vps", "RackNerd monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("ssdnodes", "SSD Nodes", "vps", "SSD Nodes monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("kamatera", "Kamatera", "vps", "Kamatera monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("exoscale", "Exoscale", "vps", "Exoscale monitoring events (API key), or webhook.", { credentialKeys: ["api_key", "api_secret"] }),
+  demoCloudProvider("aruba", "Aruba Cloud", "vps", "Aruba Cloud monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("leaseweb", "Leaseweb", "vps", "Leaseweb monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("melbicom", "Melbicom", "vps", "Melbicom monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("servers_com", "Servers.com", "vps", "Servers.com monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostwinds", "Hostwinds", "vps", "Hostwinds monitoring events or a read-only API key.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("interserver", "InterServer", "vps", "InterServer monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostpapa", "HostPapa", "vps", "HostPapa monitoring events or a read-only API key.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostinger", "Hostinger", "vps", "Hostinger monitoring events or a read-only API token.", { credentialKeys: ["api_token"], africa: true }),
+  // ── Africa-local hosts ────────────────────────────────────────────────────
+  demoCloudProvider("whoogohost", "WhoGoHost", "africa", "WhoGoHost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("qservers", "Qservers", "africa", "Qservers access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("truehost", "Truehost", "africa", "Truehost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("xneelo", "Xneelo", "africa", "Xneelo access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("afrihost", "Afrihost", "africa", "Afrihost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("gridhost", "GridHost", "africa", "GridHost access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("rsaweb", "RSAWEB", "africa", "RSAWEB access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("hostnownow", "HostNowNow", "africa", "HostNowNow access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("smartweb", "SmartWeb", "africa", "SmartWeb access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("domains_co_za", "Domains.co.za", "africa", "Domains.co.za access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("iway", "iWay Africa", "africa", "iWay Africa access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("mainone", "MainOne (Equinix West Africa)", "africa", "MainOne access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("liquid", "Liquid Intelligent Technologies", "africa", "Liquid access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("galaxybackbone", "Galaxy Backbone", "africa", "Galaxy Backbone access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("safaricom", "Safaricom Cloud", "africa", "Safaricom Cloud access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("mtn_business", "MTN Business", "africa", "MTN Business access/monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  // ── Managed / shared hosting ──────────────────────────────────────────────
+  demoCloudProvider("kinsta", "Kinsta", "managed_hosting", "Kinsta monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("wpengine", "WP Engine", "managed_hosting", "WP Engine monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("siteground", "SiteGround", "managed_hosting", "SiteGround monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("bluehost", "Bluehost", "managed_hosting", "Bluehost monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("godaddy", "GoDaddy", "managed_hosting", "GoDaddy monitoring events (API secret), or webhook.", { credentialKeys: ["api_secret"], africa: true }),
+  demoCloudProvider("namecheap", "Namecheap", "managed_hosting", "Namecheap monitoring events (API key), or webhook.", { credentialKeys: ["api_key"], africa: true }),
+  demoCloudProvider("dreamhost", "DreamHost", "managed_hosting", "DreamHost monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("a2hosting", "A2 Hosting", "managed_hosting", "A2 Hosting monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("greengeeks", "GreenGeeks", "managed_hosting", "GreenGeeks monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("inmotion", "InMotion Hosting", "managed_hosting", "InMotion monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("liquidweb", "Liquid Web", "managed_hosting", "Liquid Web monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("hostgator", "HostGator", "managed_hosting", "HostGator monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  // ── PaaS / CDN / storage ──────────────────────────────────────────────────
+  demoCloudProvider("netlify", "Netlify", "paas", "Netlify deploy notifications or a read-only API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("render", "Render", "paas", "Render deploy/service webhook or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("railway", "Railway", "paas", "Railway deployment/log-drain JSON or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("fly_io", "Fly.io", "paas", "Fly.io machine/health webhook or API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("heroku", "Heroku", "paas", "Heroku log drain or Platform API token.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("fastly", "Fastly", "cdn", "Fastly audit/monitoring events (API token), or webhook.", { credentialKeys: ["api_token"] }),
+  demoCloudProvider("bunny", "Bunny.net", "cdn", "Bunny.net monitoring events (API key), or webhook.", { credentialKeys: ["api_key"] }),
+  demoCloudProvider("backblaze", "Backblaze B2", "cloud", "Backblaze B2 event notifications (key ID + application key).", { credentialKeys: ["key_id", "application_key"] }),
+  demoCloudProvider("wasabi", "Wasabi Hot Cloud Storage", "cloud", "Wasabi audit logs (access key), or webhook.", { credentialKeys: ["access_key", "secret_key"] }),
 ];
 
 export const cloudConnectors: CloudConnector[] = [
@@ -1255,6 +1425,17 @@ export const socCloudProviderCatalog: SocCloudProviderCatalog = {
     { id: "azure", name: "Microsoft Azure", description: "Microsoft Sentinel / Activity log events.", integration_types: ["log_ingestion", "sentinel"], setup_templates: {} },
     { id: "gcp", name: "Google Cloud", description: "Cloud Logging + Security Command Center.", integration_types: ["log_ingestion", "scc"], setup_templates: {} },
     { id: "aws_eventbridge", name: "AWS EventBridge (direct)", description: "Push provider-native events via EventBridge rule.", integration_types: ["webhook"], setup_templates: {} },
+    // Mirror the shared provider registry so the demo connection catalog shows
+    // the same breadth as /soc/provisioning/cloud/catalog.
+    ...cloudProviders
+      .filter((p) => !["aws", "azure", "gcp"].includes(p.id))
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description ?? "",
+        integration_types: p.accountCapable ? ["api_token", "webhook"] : ["webhook"],
+        setup_templates: {},
+      })),
   ],
 };
 
@@ -2111,6 +2292,22 @@ export const vaptSchedules: VaptSchedule[] = [
   },
 ];
 
+export const continuousReassessment: Array<Record<string, unknown>> = [
+  {
+    id: 501,
+    organization_id: organization.id,
+    project_id: 1,
+    target_key: "tk_payments_api",
+    schedule_name: "Continuous reassessment · Payments API",
+    cadence: "7d",
+    debounce_hours: 24,
+    is_active: true,
+    last_run_at: "2026-09-05T09:00:00Z",
+    next_run_at: hoursFromNow(96),
+    created_at: "2026-06-01T08:00:00Z",
+  },
+];
+
 export const vaptSettings: VaptSettings = {
   organization_id: organization.id,
   mining_consent_enabled: true,
@@ -2353,3 +2550,623 @@ export const rememberedThreatModels: RememberedModel[] = [
   { modelId: 9001, projectId: 51, projectName: "Customer payments portal", seenAt: Date.parse("2026-09-01T10:15:00Z") },
   { modelId: 9002, projectId: 52, projectName: "Open banking API", seenAt: Date.parse("2026-08-27T16:40:00Z") },
 ];
+
+// ── Code — GitHub App, branch-review wallet/settings/events, AutoFix ─────────
+
+export const githubInstallation: GithubInstallation = {
+  connected: true,
+  status: "active",
+  installation_id: 58214930,
+  account_login: "acme-financial",
+};
+
+export const branchReviewWallet: BranchReviewWallet = {
+  balance_ngn: 42500,
+  currency: "NGN",
+  updated_at: "2026-09-10T08:00:00Z",
+};
+
+export const githubRepositories: GithubRepo[] = [
+  { id: 401, name: "core-ledger", full_name: "acme-financial/core-ledger", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/core-ledger", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 402, name: "payments-api", full_name: "acme-financial/payments-api", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/payments-api", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 403, name: "portal-web", full_name: "acme-financial/portal-web", private: true, default_branch: "main", html_url: "https://github.com/acme-financial/portal-web", can_analyze: true, analyze_blocked_reason: null, requires_premium: false },
+  { id: 404, name: "mobile-android", full_name: "acme-financial/mobile-android", private: true, default_branch: "develop", html_url: "https://github.com/acme-financial/mobile-android", can_analyze: false, analyze_blocked_reason: "Android source review requires the premium AutoFix add-on.", requires_premium: true },
+];
+
+export const branchReviewSettings: ReviewSetting[] = [
+  { github_repository_id: 401, enabled: true, watched_branch: "main", post_github_comment: true },
+  { github_repository_id: 402, enabled: true, watched_branch: "main", post_github_comment: true },
+  { github_repository_id: 403, enabled: false, watched_branch: "main", post_github_comment: false },
+];
+
+export const branchReviewEvents: ReviewEvent[] = [
+  { id: 9501, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger", sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", size_tier: "M", status: "charged", amount_ngn: 350, created_at: "2026-09-10T14:22:00Z" },
+  { id: 9502, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api", sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", size_tier: "L", status: "reviewed", amount_ngn: 620, created_at: "2026-09-09T10:05:00Z" },
+  { id: 9503, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger", sha: "998877665544a1b2", ref: "refs/heads/main", size_tier: "S", status: "reserved", amount_ngn: 150, created_at: "2026-09-10T16:40:00Z" },
+  { id: 9504, repo: "acme-financial/portal-web", repo_url: "https://github.com/acme-financial/portal-web", sha: "112233445566c3d4", ref: "refs/heads/hotfix/csp-header", size_tier: "S", status: "failed", created_at: "2026-09-08T07:12:00Z" },
+];
+
+export const autofixStatus: AutofixStatus = {
+  continuous_pr: { opens_pr: true, signed_commits: true },
+  queue: "2 queued",
+};
+
+// ── Posture — continuous loop surfaces, drift, accepted risks due ───────────
+
+export const postureSnapshot: PostureSnapshot = {
+  organization_id: 11,
+  surfaces: {
+    external: { score: 78, total: 42, reportable: 9, critical: 1, high: 3 },
+    internal: { score: 64, total: 18, reportable: 6, critical: 0, high: 2 },
+    cloud: { score: 71, total: 25, reportable: 5, critical: 1, high: 1 },
+    code: { score: 58, total: 12, reportable: 4, critical: 1, high: 2 },
+  },
+  overall_score: 68,
+  surfaces_covered: 4,
+  generated_at: "2026-09-11T06:00:00Z",
+};
+
+export const postureReviewsDue: PostureDueRisk[] = [
+  { id: 515, title: "Excessive IAM permissions on CI deploy role", risk_level: "critical", residual_risk_score: 58, residual_risk_level: "high", accepted_at: "2026-06-01T12:00:00Z", next_review_at: "2026-09-01T12:00:00Z", review_interval_days: 90, asset_id: null, vulnerability_key: "ci-deploy-role-overpermissioned", treatment_plan: "Scoped down pending Terraform module review; compensating CloudTrail alerting in place." },
+  { id: 507, title: "OpenSSH backports missing", risk_level: "medium", residual_risk_score: 41, residual_risk_level: "medium", accepted_at: "2026-06-20T10:00:00Z", next_review_at: "2026-09-05T10:00:00Z", review_interval_days: 90, asset_id: 105, vulnerability_key: "openssh-8.9p1", treatment_plan: "Patch window scheduled with infra during the next maintenance cycle." },
+  { id: 512, title: "Self-signed certificate on staging load balancer", risk_level: "low", residual_risk_score: 22, residual_risk_level: "low", accepted_at: "2026-05-15T09:30:00Z", next_review_at: "2026-08-15T09:30:00Z", review_interval_days: 90, asset_id: 111, vulnerability_key: "staging-selfsigned-cert", treatment_plan: "Accepted — staging is not internet-reachable outside the VPN." },
+];
+
+/** Keyed by product-context project id (see `productProjects`). */
+export const postureDrift: Record<number, PostureDrift> = {
+  51: { drift_count: 0, drift: [], projects: 1 },
+  52: {
+    drift_count: 1,
+    drift: [{ project_name: "Open banking API", project_id: 52, reason: "New third-party consent flow added", detail: "2 components and 3 flows added since the last threat model; TPP token exchange now crosses a new trust boundary." }],
+    projects: 1,
+  },
+  53: { drift_count: 0, drift: [], projects: 1 },
+  54: {
+    drift_count: 1,
+    drift: [{ project_name: "Internal reconciliation tooling", project_id: 54, reason: "Data flow reclassified", detail: "Reconciliation export now includes customer PII that was not present in the last product-context snapshot." }],
+    projects: 1,
+  },
+};
+
+// ── Code review — the GitHub-style finding view (block · why · fix · PR) ─────
+// Line content here stands in for what the live page reads from GitHub at the
+// reviewed SHA; the platform never stores customer source, so in demo mode the
+// "blob" is fixture text rather than a cached copy of anything real.
+
+export const codeFindingCounts: CodeSeverityCounts = {
+  critical: 1,
+  high: 3,
+  medium: 2,
+  low: 0,
+  info: 0,
+  total: 6,
+};
+
+export const codeFindingFiles: CodeFindingFile[] = [
+  { github_repository_id: 402, repo: "acme-financial/payments-api", path: "app/api/transfers.py", language: "python", findings: 2, worst_severity: "critical", layers: ["sast"], autofix_pr_url: null, sha: "f6e5d4c3b2a19087" },
+  { github_repository_id: 401, repo: "acme-financial/core-ledger", path: ".github/workflows/release.yml", language: "yaml", findings: 2, worst_severity: "high", layers: ["pipeline"], autofix_pr_url: "https://github.com/acme-financial/core-ledger/pull/128", sha: "a1b2c3d4e5f60718" },
+  { github_repository_id: 401, repo: "acme-financial/core-ledger", path: "infra/k8s/ledger-deployment.yaml", language: "yaml", findings: 1, worst_severity: "high", layers: ["iac"], autofix_pr_url: null, sha: "a1b2c3d4e5f60718" },
+  { github_repository_id: 402, repo: "acme-financial/payments-api", path: "requirements.txt", language: "text", findings: 1, worst_severity: "medium", layers: ["sca"], autofix_pr_url: null, sha: "f6e5d4c3b2a19087" },
+];
+
+export const codeFindings: CodeFinding[] = [
+  {
+    id: 7101, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "sast", tool: "code_graph", rule_id: "sql-orm-execution-sinks", severity: "critical",
+    title: "SQL / ORM execution sinks", path: "app/api/transfers.py", language: "python",
+    start_line: 88, end_line: 91, cwe: "CWE-89", status: "open", reportable: true,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 3,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/app/api/transfers.py#L88-L91",
+    autofix: { state: "none" }, why: "Query execution is where a string built from request data becomes database instructions.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+  {
+    id: 7102, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "secrets", tool: "github_analysis", rule_id: "hardcoded-api-key-pattern", severity: "high",
+    title: "Hardcoded API key pattern", path: "app/api/transfers.py", language: "python",
+    start_line: 14, end_line: 14, cwe: "CWE-798", status: "open", reportable: false,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 1,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/app/api/transfers.py#L14",
+    autofix: { state: "none" }, why: "An API key literal in source is readable by everyone with repository access.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+  {
+    id: 7103, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "pipeline", tool: "code_layer_pipeline", rule_id: "workflow-uses-pull-request-target", severity: "high",
+    title: "Workflow uses pull_request_target", path: ".github/workflows/release.yml", language: "yaml",
+    start_line: 5, end_line: 5, cwe: "CWE-94", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 2,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/.github/workflows/release.yml#L5",
+    autofix: { state: "pr_open", pr_number: 128, pr_url: "https://github.com/acme-financial/core-ledger/pull/128", branch: "securegraph/autofix/workflow-uses-pull-request-target-7103-a1b2c3", commit_sha: "cc11dd22ee33ff44", signed: true, detail: "Draft PR open — a developer must review and merge it.", updated_at: "2026-09-10T15:02:00Z" },
+    why: "pull_request_target runs the workflow with a read/write token and access to repository secrets.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7104, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "pipeline", tool: "code_layer_pipeline", rule_id: "action-pinned-to-a-moving-reference", severity: "medium",
+    title: "Action pinned to a moving reference", path: ".github/workflows/release.yml", language: "yaml",
+    start_line: 22, end_line: 22, cwe: "CWE-829", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 2,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/.github/workflows/release.yml#L22",
+    autofix: { state: "none" }, why: "A tag or branch is a pointer the action's owner can repoint at any time.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7105, github_repository_id: 401, repo: "acme-financial/core-ledger", repo_url: "https://github.com/acme-financial/core-ledger",
+    layer: "iac", tool: "code_layer_iac", rule_id: "privileged-container", severity: "high",
+    title: "Privileged container", path: "infra/k8s/ledger-deployment.yaml", language: "yaml",
+    start_line: 31, end_line: 31, cwe: "CWE-250", status: "open", reportable: true,
+    sha: "a1b2c3d4e5f60718", ref: "refs/heads/main", occurrences: 1,
+    permalink: "https://github.com/acme-financial/core-ledger/blob/a1b2c3d4e5f60718/infra/k8s/ledger-deployment.yaml#L31",
+    autofix: { state: "permission_required", detail: "GitHub App write access required: https://github.com/apps/securegraph/installations/new", updated_at: "2026-09-11T09:14:00Z" },
+    why: "A privileged container runs with the host's full capability set and device access.",
+    last_seen_at: "2026-09-10T14:22:00Z",
+  },
+  {
+    id: 7106, github_repository_id: 402, repo: "acme-financial/payments-api", repo_url: "https://github.com/acme-financial/payments-api",
+    layer: "sca", tool: "dependency_intel", rule_id: "vulnerable-dependency-cryptography-41-0-1-ghsa-jfhm-5ghh-2f97", severity: "medium",
+    title: "Vulnerable dependency cryptography@41.0.1 (GHSA-jfhm-5ghh-2f97)", path: "requirements.txt", language: "text",
+    start_line: null, end_line: null, cwe: "CWE-1395", status: "open", reportable: false,
+    sha: "f6e5d4c3b2a19087", ref: "refs/heads/feature/idempotency-keys", occurrences: 4,
+    permalink: "https://github.com/acme-financial/payments-api/blob/f6e5d4c3b2a19087/requirements.txt",
+    autofix: { state: "none" }, why: "A dependency resolved here has a published advisory.",
+    last_seen_at: "2026-09-09T10:05:00Z",
+  },
+];
+
+const DEMO_WHY: Record<number, string> = {
+  7101: "Query execution is where a string built from request data becomes database instructions. If any part of the statement is concatenated or interpolated rather than bound, an attacker controls the query's structure and can read or modify data the endpoint never intended to expose.",
+  7102: "An API key literal in source is readable by everyone with repository access, survives in history after deletion, and is copied into every build artifact and container image. It also cannot be rotated without a code change and a deploy, so in practice it never gets rotated.",
+  7103: "pull_request_target runs the workflow with a read/write token and access to repository secrets, in the context of the base repository — while the pull request's code comes from a fork anyone can open. If the job checks out or executes the head ref, attacker code runs with your secrets and can push to the repository.",
+  7104: "A tag or branch is a pointer the action's owner can repoint at any time, and tags can be force-moved silently. Your pipeline therefore executes whatever that name means at run time — the supply-chain equivalent of `latest` — with your token and secrets in scope.",
+  7105: "A privileged container runs with the host's full capability set and device access, so the kernel boundary that makes containers a security feature is gone. Any code execution inside this workload is effectively code execution on the node, and from there on every other pod scheduled there.",
+  7106: "A dependency resolved here has a published advisory, so the vulnerable code is part of your build whether or not you call the affected function. Exploitation needs no access to your source — the advisory and often a proof of concept are public.",
+};
+
+const DEMO_FIX: Record<number, string> = {
+  7101: "Use parameter binding for every value — placeholders with a params argument, or the ORM's expression language — and never f-strings, % , + or .format() in SQL. Identifiers that genuinely must be dynamic belong in a hard-coded allowlist, not in interpolation.",
+  7102: "Treat the credential as compromised: rotate it at the provider first, because git history and every fork, clone and CI cache still hold the old value even after you delete the line. Then move the value to the platform's secret store and read it from the environment at run time.",
+  7103: "Use the pull_request trigger for anything that touches PR code; it runs without secrets by design. If you need pull_request_target for labelling or commenting, never check out the head SHA in that job, and move any build step into a separate workflow_run job gated behind an environment approval.",
+  7104: "Pin every third-party action to a full 40-character commit SHA with the version in a trailing comment, and let Dependabot raise the bumps so upgrades are reviewed diffs rather than silent changes.",
+  7105: "Remove privileged: true and grant only the specific capabilities the process needs via securityContext.capabilities.add. Workloads that genuinely need host access belong in a separate, tightly reviewed DaemonSet, not in an application deployment.",
+  7106: "Upgrade to the fixed version named in the advisory and keep the lockfile pinned so the resolution is reproducible. When no fix is released, remove or replace the package, or document the compensating control.",
+};
+
+const DEMO_BLOB_LINES: Record<number, { first: number; text: string }> = {
+  7101: {
+    first: 82,
+    text: [
+      "@router.get(\"/transfers/{account_id}\")",
+      "async def list_transfers(account_id: str, db: AsyncSession = Depends(get_db)):",
+      "    \"\"\"Recent transfers for one account.\"\"\"",
+      "    if not account_id:",
+      "        raise HTTPException(422, detail=\"account_id required\")",
+      "",
+      "    query = (",
+      "        \"SELECT id, amount, created_at FROM transfers \"",
+      "        \"WHERE account_id = '\" + account_id + \"' ORDER BY created_at DESC\"",
+      "    )",
+      "    rows = (await db.execute(text(query))).all()",
+      "    return {\"items\": [dict(r._mapping) for r in rows]}",
+    ].join("\n"),
+  },
+  7102: {
+    first: 8,
+    text: [
+      "from fastapi import APIRouter, Depends, HTTPException",
+      "from sqlalchemy import text",
+      "",
+      "from app.db.session import get_db",
+      "",
+      "router = APIRouter()",
+      "",
+      "PROVIDER_API_KEY = \"sk**********\"",
+      "SETTLEMENT_WINDOW_HOURS = 24",
+      "",
+      "",
+    ].join("\n"),
+  },
+  7103: {
+    first: 1,
+    text: [
+      "name: release",
+      "",
+      "on:",
+      "  workflow_dispatch:",
+      "  pull_request_target:",
+      "    types: [opened, synchronize]",
+      "",
+      "permissions:",
+      "  contents: write",
+      "",
+    ].join("\n"),
+  },
+  7104: {
+    first: 16,
+    text: [
+      "jobs:",
+      "  build:",
+      "    runs-on: ubuntu-latest",
+      "    steps:",
+      "      - uses: actions/checkout@v4",
+      "        with:",
+      "          ref: ${{ github.event.pull_request.head.sha }}",
+      "      - uses: actions/setup-python@main",
+      "      - run: make release",
+      "",
+    ].join("\n"),
+  },
+  7105: {
+    first: 25,
+    text: [
+      "    spec:",
+      "      containers:",
+      "        - name: ledger",
+      "          image: ghcr.io/acme-financial/ledger:2.14.0",
+      "          ports:",
+      "            - containerPort: 8080",
+      "          securityContext:",
+      "            privileged: true",
+      "            runAsNonRoot: false",
+      "          resources:",
+      "            limits:",
+      "              memory: 1Gi",
+    ].join("\n"),
+  },
+  7106: {
+    first: 1,
+    text: [
+      "fastapi==0.115.0",
+      "sqlalchemy==2.0.34",
+      "cryptography==41.0.1",
+      "httpx==0.27.2",
+      "pydantic==2.9.2",
+    ].join("\n"),
+  },
+};
+
+export function codeFindingDetail(id: number): CodeFinding {
+  const base = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  return {
+    ...base,
+    description: `${base.title} matched in ${base.path}`,
+    why: DEMO_WHY[base.id] ?? base.why ?? null,
+    fix: DEMO_FIX[base.id] ?? null,
+    reference_url: "https://cheatsheetseries.owasp.org/",
+    guidance_specific: true,
+    detail: { rule_id: base.rule_id, layer: base.layer },
+    ai_explanation: null,
+    ai_explained_at: null,
+  };
+}
+
+export function codeFindingBlob(id: number): CodeBlob {
+  const finding = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  const fixture = DEMO_BLOB_LINES[finding.id] ?? { first: 1, text: "" };
+  const rows = fixture.text.split("\n");
+  const start = finding.start_line ?? null;
+  const end = finding.end_line ?? start;
+  return {
+    ok: true,
+    path: finding.path,
+    language: finding.language,
+    sha: finding.sha,
+    repo: finding.repo,
+    start_line: start,
+    end_line: end,
+    first_line: fixture.first,
+    last_line: fixture.first + rows.length - 1,
+    total_lines: fixture.first + rows.length + 40,
+    anchored: start != null,
+    redacted: finding.layer === "secrets",
+    permalink: finding.permalink,
+    lines: rows.map((content, i) => {
+      const number = fixture.first + i;
+      return {
+        number,
+        content,
+        highlight: start != null && number >= start && number <= (end ?? start),
+      };
+    }),
+  };
+}
+
+export function codeFindingExplanation(id: number): CodeAiExplanation {
+  const finding = codeFindings.find((f) => f.id === id) ?? codeFindings[0];
+  return {
+    explanation: `In this repository the weakness is reachable from an authenticated but unprivileged caller: ${finding.path} is imported by the request path that serves customer-facing traffic, so the matched line runs on data that crosses the trust boundary.`,
+    impact: "An attacker with a low-privilege account could read or modify records belonging to other tenants.",
+    remediation: DEMO_FIX[finding.id] ?? "Apply the rule guidance above.",
+    root_cause: "Input from the request is carried to the sink without passing through the validation layer the rest of the module uses.",
+    confidence: 0.82,
+    requires_human_review: false,
+    hallucination_flagged: false,
+    model_provider: "demo",
+    model_name: "demo-reasoner",
+  };
+}
+
+// ── VAPT intelligent plan — steps decomposed into vulnerability types ───────
+// Mirrors POST /vapt/plan for a fintech tenant with product context and priors:
+// one regression (transport security), one accepted risk (tech disclosure).
+
+export const vaptPlan: VaptPlan = {
+  plan_id: "plan_demo5f3c1ab7",
+  organization_id: 11,
+  name: "Full Security Assessment",
+  scan_types: ["network_scan", "dns_scan", "web_scan", "vuln_scan", "api_scan", "secrets_scan"],
+  frameworks: { required: ["ndpr", "pci_dss"], recommended: ["iso27001", "soc2"] },
+  asset_count: 42,
+  estimated_duration: "~2.2 hours",
+  estimated_duration_minutes: 132,
+  vuln_coverage: {
+    total_types: 21,
+    checks_selected: 58,
+    catalog_total_checks: 90,
+    auto_seeded: true,
+    source: "scanner_engine/scans/<category>/*.yaml",
+  },
+  vuln_focus: [
+    { vuln_class: "improper_authentication", title: "Improper authentication", rank: 1, verify_skill_id: "securegraph-verify-improper_authentication", requires_approval: false, signals_matched: ["login", "oauth", "session"], rationale: "Surface signals present: login, oauth, session." },
+    { vuln_class: "missing_authz_check", title: "Missing authorization check", rank: 2, verify_skill_id: "securegraph-verify-missing_authz_check", requires_approval: false, signals_matched: ["api", "tenant", "record"], rationale: "Surface signals present: api, tenant, record." },
+    { vuln_class: "unsafe_file_upload", title: "Unsafe file upload", rank: 3, verify_skill_id: "securegraph-verify-unsafe_file_upload", requires_approval: true, signals_matched: ["upload", "document"], rationale: "Surface signals present: upload, document." },
+    { vuln_class: "ssrf", title: "Server-side request forgery", rank: 4, verify_skill_id: "securegraph-verify-ssrf", requires_approval: false, signals_matched: ["webhook", "pdf"], rationale: "Surface signals present: webhook, pdf." },
+    { vuln_class: "idor", title: "Insecure direct object reference", rank: 5, verify_skill_id: "securegraph-verify-idor", requires_approval: false, signals_matched: ["account", "document"], rationale: "Surface signals present: account, document." },
+  ],
+  based_on: {
+    asset_inventory: { total: 42 },
+    detected_frameworks: { required: ["ndpr", "pci_dss"], recommended: ["iso27001", "soc2"] },
+    product_context: {
+      available: true,
+      projects: [
+        { id: 51, name: "Customer payments portal", stage: "live" },
+        { id: 52, name: "Open banking API", stage: "in_build" },
+      ],
+      components: 17,
+      boundaries: 4,
+      flows: 13,
+      cross_boundary_flows: 5,
+      external_components: 3,
+      roles: ["admin", "customer", "support", "tpp"],
+      data_classes: ["payment_cards", "personal_data"],
+      stages: ["in_build", "live"],
+      role_expectations: 22,
+      target_kinds: ["api", "web"],
+    },
+    organization_intelligence: {
+      available: true,
+      targets_considered: 8,
+      targets_with_history: 6,
+      prior_open_findings: 11,
+      regressions: ["weak_crypto"],
+      accepted_risks: ["tech_disclosure"],
+      refuted: ["xss"],
+      changed_since_last: 3,
+    },
+  },
+  recommended_plan: {
+    name: "Full Security Assessment",
+    estimated_duration: "~2.2 hours",
+    estimated_duration_minutes: 132,
+    scan_types: ["network_scan", "dns_scan", "web_scan", "vuln_scan", "api_scan", "secrets_scan"],
+    compliance_report: "NDPR + PCI_DSS gap analysis; recommended: iso27001, soc2",
+    vulnerability_types: 21,
+    checks_selected: 58,
+    steps: [
+      {
+        step_type: "scan",
+        step_name: "Vulnerability templates",
+        tool: "vuln_scan",
+        target: "9 vulnerability types, 32 checks; types=['domain', 'subdomain', 'api']",
+        vuln_focus: [
+          { vuln_class: "improper_authentication", rank: 1, requires_approval: false },
+          { vuln_class: "ssrf", rank: 4, requires_approval: false },
+        ],
+        substeps: [
+          { key: "transport_security", label: "Transport security (TLS / certificates)", description: "Certificate validity and expiry, HTTPS reachability and TLS posture.", rank: 1, check_count: 4, worst_severity: "high", severities: { high: 1, medium: 2, info: 1 }, vuln_classes: ["weak_crypto"], regression: true, accepted_risk: false, max_duration_minutes: 3, why: "Prioritised because a previously remediated weakness of this type has returned; the attack tree ranks its class #11 on this surface.", checks: [ { name: "ssl_cert_expired", display_name: "TLS certificate expired", severity: "high" }, { name: "ssl_expiring_30d", display_name: "TLS certificate expiring within 30 days", severity: "medium" }, { name: "ssl_self_signed", display_name: "Self-signed TLS certificate", severity: "medium" }, { name: "ssl_https_reachable", display_name: "HTTPS reachable", severity: "info" } ] },
+          { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", description: "Dashboards, CI, metrics and debug endpoints answering without auth.", rank: 2, check_count: 8, worst_severity: "high", severities: { high: 5, medium: 3 }, vuln_classes: ["improper_access_control", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 6, why: "Prioritised because the attack tree ranks its class #4 on this surface; your product surface mentions admin, metrics.", checks: [ { name: "airflow_n8n_exposed", display_name: "Airflow / n8n exposed", severity: "high" }, { name: "grafana_anon", display_name: "Grafana anonymous access", severity: "high" }, { name: "jenkins_exposed", display_name: "Jenkins exposed", severity: "high" }, { name: "debug_info_endpoints", display_name: "Debug info endpoints", severity: "high" }, { name: "prometheus_metrics_exposed", display_name: "Prometheus metrics exposed", severity: "high" }, { name: "priority_admin_login_paths", display_name: "Admin login paths", severity: "medium" }, { name: "directory_listing", display_name: "Directory listing", severity: "medium" }, { name: "ollama_open_api", display_name: "Ollama open API", severity: "medium" } ] },
+          { key: "known_cve", label: "Known CVE probes", description: "Checks for specific published vulnerabilities in deployed software.", rank: 3, check_count: 3, worst_severity: "critical", severities: { critical: 1, high: 1, medium: 1 }, vuln_classes: ["vulnerable_dependency", "code_injection"], regression: false, accepted_risk: false, max_duration_minutes: 3, why: "Prioritised because the attack tree ranks its class #9 on this surface.", checks: [ { name: "spring_actuator_exposed", display_name: "Spring actuator exposed", severity: "critical" }, { name: "apache_struts_cve_2017_5638_probe", display_name: "Apache Struts CVE-2017-5638 probe", severity: "high" }, { name: "log4j_path_probe", display_name: "Log4j-related path probe", severity: "medium" } ] },
+          { key: "secret_exposure", label: "Exposed secrets & source control", description: "Credentials, environment files and repository metadata reachable over HTTP.", rank: 4, check_count: 2, worst_severity: "critical", severities: { critical: 2 }, vuln_classes: ["hardcoded_secret"], regression: false, accepted_risk: false, max_duration_minutes: 2, why: "Prioritised because the attack tree ranks its class #14 on this surface.", checks: [ { name: "backup_env_files", display_name: "Backup / .env files", severity: "critical" }, { name: "git_metadata_exposed", display_name: "Git metadata exposed", severity: "critical" } ] },
+          { key: "security_headers", label: "Browser security headers", description: "Response headers that constrain what a browser will do with the page.", rank: 5, check_count: 4, worst_severity: "medium", severities: { medium: 3, low: 1 }, vuln_classes: ["xss"], regression: false, accepted_risk: false, max_duration_minutes: 3, why: "Kept for coverage but deprioritised because a previous run disproved this class here.", checks: [ { name: "http_security_headers", display_name: "Security headers missing", severity: "medium" }, { name: "http_csp_missing", display_name: "CSP missing", severity: "medium" }, { name: "clickjacking_xfo_missing", display_name: "X-Frame-Options missing", severity: "medium" }, { name: "x_xss_protection_missing", display_name: "X-XSS-Protection missing", severity: "low" } ] },
+          { key: "tech_disclosure", label: "Technology & version disclosure", description: "Server, framework and CMS fingerprints that tell an attacker what to target.", rank: 6, check_count: 7, worst_severity: "medium", severities: { medium: 2, low: 4, info: 1 }, vuln_classes: ["vulnerable_dependency"], regression: false, accepted_risk: true, max_duration_minutes: 5, why: "Kept for coverage but deprioritised because the org accepted this risk — tested, but not re-raised as new.", checks: [ { name: "framework_wordpress_signals", display_name: "WordPress signals", severity: "medium" }, { name: "wordpress_users_api", display_name: "WordPress users API", severity: "medium" }, { name: "http_server_banner", display_name: "Server banner", severity: "low" }, { name: "server_apache_banner", display_name: "Apache banner", severity: "low" }, { name: "server_nginx_banner", display_name: "Nginx banner", severity: "low" }, { name: "wordpress_version", display_name: "WordPress version", severity: "low" }, { name: "framework_php_signals", display_name: "PHP signals", severity: "info" } ] },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "API security surface",
+        tool: "api_scan",
+        target: "3 vulnerability types, 7 checks; types=['api', 'domain', 'subdomain']",
+        vuln_focus: [
+          { vuln_class: "missing_authz_check", rank: 2, requires_approval: false },
+          { vuln_class: "idor", rank: 5, requires_approval: false },
+        ],
+        substeps: [
+          { key: "api_authz", label: "API authentication & authorization", description: "Endpoints answering unauthenticated, and cross-origin policy that undoes auth.", rank: 1, check_count: 3, worst_severity: "medium", severities: { medium: 2, low: 1 }, vuln_classes: ["missing_authz_check", "improper_authentication", "incorrect_authorization"], regression: false, accepted_risk: false, max_duration_minutes: 7, why: "Prioritised because the attack tree ranks its class #1 on this surface; your product surface mentions api, tenant.", checks: [ { name: "api_missing_auth", display_name: "Endpoint answers unauthenticated", severity: "medium" }, { name: "api_cors_wildcard", display_name: "CORS wildcard", severity: "medium" }, { name: "api_rate_limit_test", display_name: "Rate limit headers absent", severity: "low" } ] },
+          { key: "api_surface_discovery", label: "API surface discovery", description: "Schemas, specs and verbs that reveal the callable surface.", rank: 2, check_count: 3, worst_severity: "medium", severities: { medium: 2, info: 1 }, vuln_classes: ["idor", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 7, why: "Prioritised because the attack tree ranks its class #5 on this surface; your product surface mentions api, graphql.", checks: [ { name: "api_endpoint_discovery", display_name: "Swagger / OpenAPI discovery", severity: "medium" }, { name: "api_graphql_introspection", display_name: "GraphQL introspection enabled", severity: "medium" }, { name: "http_options_methods", display_name: "OPTIONS methods", severity: "info" } ] },
+          { key: "exposed_admin_surface", label: "Exposed admin & debug surfaces", description: "Dashboards, CI, metrics and debug endpoints answering without auth.", rank: 3, check_count: 1, worst_severity: "high", severities: { high: 1 }, vuln_classes: ["improper_access_control", "missing_authz_check"], regression: false, accepted_risk: false, max_duration_minutes: 2, why: "Prioritised because the attack tree ranks its class #4 on this surface.", checks: [ { name: "mailhog_messages_api", display_name: "MailHog messages API", severity: "high" } ] },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "Infrastructure / network scan",
+        tool: "network_scan",
+        target: "4 vulnerability types, 13 checks; types=['ip_address', 'domain', 'subdomain']",
+        vuln_focus: [{ vuln_class: "improper_access_control", rank: 7, requires_approval: false }],
+        substeps: [
+          { key: "datastore_exposure", label: "Datastore exposure", description: "Databases, caches and search engines reachable without authentication.", rank: 1, check_count: 5, worst_severity: "high", severities: { high: 2, medium: 3 }, vuln_classes: ["improper_access_control", "sql_injection"], regression: false, accepted_risk: false, max_duration_minutes: 8, why: "Prioritised because your product surface mentions database, cache.", checks: [ { name: "redis_accessible", display_name: "Redis reachable", severity: "high" }, { name: "nfs_port_open", display_name: "NFS port open", severity: "high" }, { name: "postgres_accessible", display_name: "Postgres reachable", severity: "medium" }, { name: "mysql_accessible", display_name: "MySQL reachable", severity: "medium" }, { name: "mssql_accessible", display_name: "MSSQL reachable", severity: "medium" } ] },
+          { key: "remote_access", label: "Remote access exposure", description: "Administrative remote-access services reachable from the scan origin.", rank: 2, check_count: 3, worst_severity: "high", severities: { high: 1, medium: 2 }, vuln_classes: ["improper_authentication", "improper_access_control"], regression: false, accepted_risk: false, max_duration_minutes: 5, why: "Prioritised because the attack tree ranks its class #1 on this surface.", checks: [ { name: "rdp_accessible", display_name: "RDP reachable", severity: "high" }, { name: "smb_port_open", display_name: "SMB port open", severity: "medium" }, { name: "snmp_port_open", display_name: "SNMP port open", severity: "medium" } ] },
+          { key: "port_exposure", label: "Open ports & service reachability", description: "Which ports answer, and which services sit behind them.", rank: 3, check_count: 4, worst_severity: "low", severities: { low: 2, info: 2 }, vuln_classes: ["improper_access_control"], regression: false, accepted_risk: false, max_duration_minutes: 6, why: "Standard coverage for this surface — no org-specific signal.", checks: [ { name: "port_scan_common", display_name: "Common port scan", severity: "low" }, { name: "tcp_port_common", display_name: "Common TCP ports", severity: "low" }, { name: "icmp_sweep", display_name: "ICMP sweep", severity: "info" }, { name: "dns_resolve", display_name: "DNS resolve", severity: "info" } ] },
+          { key: "tech_disclosure", label: "Technology & version disclosure", description: "Server, framework and CMS fingerprints that tell an attacker what to target.", rank: 4, check_count: 1, worst_severity: "info", severities: { info: 1 }, vuln_classes: ["vulnerable_dependency"], regression: false, accepted_risk: true, max_duration_minutes: 2, why: "Kept for coverage but deprioritised because the org accepted this risk — tested, but not re-raised as new.", checks: [ { name: "service_fingerprint", display_name: "Service fingerprint", severity: "info" } ] },
+        ],
+      },
+      {
+        step_type: "web_scan",
+        step_name: "Web application scan",
+        tool: "web_scan",
+        target: "Targets: domain, subdomain, api, web_app",
+        substeps: [],
+        vuln_focus: [
+          { vuln_class: "unsafe_file_upload", rank: 3, requires_approval: true },
+          { vuln_class: "ssrf", rank: 4, requires_approval: false },
+        ],
+      },
+      {
+        step_type: "scan",
+        step_name: "Secrets scan (repos)",
+        tool: "secrets_scan",
+        target: "1 vulnerability type, 3 checks; types=['github_repo']",
+        substeps: [
+          { key: "secret_exposure", label: "Exposed secrets & source control", description: "Credentials and repository metadata that should not be reachable.", rank: 1, check_count: 3, worst_severity: "critical", severities: { critical: 3 }, vuln_classes: ["hardcoded_secret"], regression: false, accepted_risk: false, max_duration_minutes: 10, why: "Prioritised because your product surface mentions repo, git.", checks: [ { name: "gitleaks_detect", display_name: "Gitleaks detection", severity: "critical" }, { name: "git_secrets_leaked", display_name: "Git secrets leaked", severity: "critical" }, { name: "exposed_env_file", display_name: "Exposed .env file", severity: "critical" } ] },
+        ],
+        vuln_focus: [{ vuln_class: "hardcoded_secret", rank: 14, requires_approval: false }],
+      },
+      { step_type: "correlate", step_name: "Cross-Scan Analysis", tool: "correlate", target: "Correlate findings across tools into attack paths", substeps: [], vuln_focus: [] },
+      { step_type: "analyze", step_name: "Intelligence Analysis", tool: "analyze", target: "Complexity scoring, compliance analysis, and verification of the vulnerability classes this surface makes plausible", substeps: [], vuln_focus: [] },
+    ],
+  },
+  narrative: [
+    "Based on your organization, we'll run a **Full Security Assessment** covering:",
+    "  ─ Infrastructure / network scan — 4 vulnerability types, 13 checks",
+    "  ─ Vulnerability templates — 9 vulnerability types, 32 checks",
+    "  ─ API security surface — 3 vulnerability types, 7 checks",
+    "  ─ Compliance context: NDPR, PCI_DSS",
+    "Coverage: 21 vulnerability types / 58 checks, seeded automatically from the scan catalog (90 checks available).",
+    "Hunting first: improper_authentication, missing_authz_check, unsafe_file_upload, ssrf, idor.",
+    "Product context applied: 17 components, 13 flows, 5 crossing a trust boundary, 4 roles.",
+    "Sensitive data in scope: payment_cards, personal_data — authorization failures here are reportable, not cosmetic.",
+    "Prior knowledge: 11 findings still open across 6 known targets.",
+    "Regressions tested first (1): a fix that did not hold is stronger evidence than a first sighting.",
+    "1 accepted risk still tested but not re-raised as new findings.",
+    "Estimated time: ~2.2 hours",
+    "Asset inventory considered: 42 active assets.",
+  ].join("\n"),
+};
+
+// ── Report Solutions — the catalog + standing finding counts ─────────────────
+// Mirrors GET /reports/types and the tracker summary the dashboard charts read.
+
+export const reportTypes: ReportTypeEntry[] = [
+  { report_type: "org_security_overview", title: "Organization security overview", audience: "Executive / board", use_case: "Where the organization stands across every attack surface, not one engagement: posture per surface, findings from all engines, what moved since the last report.", requires_campaign: false, featured: true, icon: "shield", sections: ["executive_summary", "posture_by_surface", "findings_lifecycle", "findings_register", "risk_register", "attack_paths", "compliance_mapping", "remediation_status", "asset_scope"], section_count: 9, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "vapt_campaign", title: "VAPT campaign report", audience: "Technical / client deliverable", use_case: "The full engagement write-up for one campaign: scope, findings register, attack paths, evidence and remediation.", requires_campaign: true, featured: true, icon: "crosshair", sections: ["scope_definition", "executive_summary", "campaign_overview", "cvss_scorecard", "findings_register", "attack_paths", "risk_register", "compliance_mapping", "technical_findings", "nmap_output", "asset_scope", "remediation_status", "tracker_snapshot", "audit_trail", "methodology"], section_count: 15, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "compliance", title: "Compliance report", audience: "Auditor / assessor", use_case: "Findings mapped to the frameworks in scope, with the control gaps and the evidence behind each mapping.", requires_campaign: false, featured: true, icon: "scale", sections: ["executive_summary", "compliance_mapping", "risk_register", "findings_register", "remediation_status", "audit_trail"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "performance_sla", title: "Performance & SLA", audience: "Security leadership", use_case: "Whether the programme is getting faster: mean time to remediate by severity, closure rate, regressions, and what the automation cost.", requires_campaign: false, featured: true, icon: "gauge", sections: ["executive_summary", "performance_metrics", "findings_lifecycle", "remediation_status", "engine_activity", "ai_usage"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "audit_activity", title: "Audit & user activity", audience: "Compliance / internal audit", use_case: "Who did what: sensitive actions, dual-control approvals and refusals, and per-user activity over the window.", requires_campaign: false, featured: false, icon: "clipboard", sections: ["executive_summary", "user_activity", "approvals_trail", "audit_trail"], section_count: 4, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "engine_output", title: "Engine output (technical)", audience: "Engineering", use_case: "The technical appendix: what each engine ran and produced — scanner results, campaign steps, code findings, repo analysis.", requires_campaign: false, featured: false, icon: "terminal", sections: ["engine_activity", "technical_findings", "findings_register", "attack_paths", "nmap_output", "asset_scope"], section_count: 6, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "executive", title: "Executive summary", audience: "Executive", use_case: "The short read: posture, top risks, attack paths and compliance standing.", requires_campaign: false, featured: false, icon: "file-text", sections: ["executive_summary", "cvss_scorecard", "attack_paths", "risk_register", "compliance_mapping"], section_count: 5, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+  { report_type: "tracker", title: "Remediation tracker", audience: "Remediation owners", use_case: "The working board: every tracked finding, its owner, status and target date.", requires_campaign: false, featured: false, icon: "list-checks", sections: ["tracker_snapshot", "remediation_status"], section_count: 2, formats: ["markdown", "json", "csv", "xlsx", "pdf", "docx", "pptx", "html"] },
+];
+
+/** Standing counts across the tracked population — drives the findings chart. */
+export const trackerSummary: TrackerSummary = {
+  total: 48,
+  open: 19,
+  in_progress: 7,
+  fixed: 15,
+  retest_failed: 2,
+  regressed: 3,
+  accepted: 2,
+  bySeverity: { critical: 4, high: 11, medium: 18, low: 12, info: 3 },
+  bySurface: { design: 5, code: 17, test: 6, cloud: 14, mobile: 6 },
+  unassigned: 6,
+};
+
+
+/** 90 days of findings movement — a backlog that grows, then falls as fixes land. */
+export const trackerTimeline: TrackerTimeline = {
+  days: 90,
+  prior_open: 12,
+  series: [
+    { day: "2026-06-15", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 13 },
+    { day: "2026-06-16", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 13 },
+    { day: "2026-06-17", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 13 },
+    { day: "2026-06-18", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-06-19", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-06-20", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 14 },
+    { day: "2026-06-21", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 14 },
+    { day: "2026-06-22", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 14 },
+    { day: "2026-06-23", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-06-24", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-06-25", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 17 },
+    { day: "2026-06-26", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 16 },
+    { day: "2026-06-27", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 16 },
+    { day: "2026-06-28", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 18 },
+    { day: "2026-06-29", detected: 2, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 19 },
+    { day: "2026-06-30", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 20 },
+    { day: "2026-07-01", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 20 },
+    { day: "2026-07-02", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-07-03", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 23 },
+    { day: "2026-07-04", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-07-05", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-07-06", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-07-07", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-07-08", detected: 2, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-07-09", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-07-10", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-07-11", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 20 },
+    { day: "2026-07-12", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 19 },
+    { day: "2026-07-13", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 19 },
+    { day: "2026-07-14", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-07-15", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-07-16", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 24 },
+    { day: "2026-07-17", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 25 },
+    { day: "2026-07-18", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 25 },
+    { day: "2026-07-19", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 25 },
+    { day: "2026-07-20", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 27 },
+    { day: "2026-07-21", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 29 },
+    { day: "2026-07-22", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 29 },
+    { day: "2026-07-23", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 30 },
+    { day: "2026-07-24", detected: 2, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 32 },
+    { day: "2026-07-25", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 31 },
+    { day: "2026-07-26", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 32 },
+    { day: "2026-07-27", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-07-28", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 34 },
+    { day: "2026-07-29", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 34 },
+    { day: "2026-07-30", detected: 2, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 35 },
+    { day: "2026-07-31", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 35 },
+    { day: "2026-08-01", detected: 2, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 35 },
+    { day: "2026-08-02", detected: 2, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 35 },
+    { day: "2026-08-03", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 35 },
+    { day: "2026-08-04", detected: 1, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 34 },
+    { day: "2026-08-05", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 34 },
+    { day: "2026-08-06", detected: 1, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-08-07", detected: 1, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 32 },
+    { day: "2026-08-08", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-08-09", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-08-10", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-08-11", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 34 },
+    { day: "2026-08-12", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 33 },
+    { day: "2026-08-13", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 32 },
+    { day: "2026-08-14", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 30 },
+    { day: "2026-08-15", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 30 },
+    { day: "2026-08-16", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 28 },
+    { day: "2026-08-17", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 27 },
+    { day: "2026-08-18", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 25 },
+    { day: "2026-08-19", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 25 },
+    { day: "2026-08-20", detected: 1, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 24 },
+    { day: "2026-08-21", detected: 0, fixed: 2, accepted: 0, regressed: 1, cumulative_open: 23 },
+    { day: "2026-08-22", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 22 },
+    { day: "2026-08-23", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 21 },
+    { day: "2026-08-24", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 20 },
+    { day: "2026-08-25", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 20 },
+    { day: "2026-08-26", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 18 },
+    { day: "2026-08-27", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 18 },
+    { day: "2026-08-28", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 17 },
+    { day: "2026-08-29", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 16 },
+    { day: "2026-08-30", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-08-31", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-09-01", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 15 },
+    { day: "2026-09-02", detected: 0, fixed: 2, accepted: 1, regressed: 0, cumulative_open: 12 },
+    { day: "2026-09-03", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 10 },
+    { day: "2026-09-04", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 10 },
+    { day: "2026-09-05", detected: 0, fixed: 2, accepted: 0, regressed: 0, cumulative_open: 8 },
+    { day: "2026-09-06", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 7 },
+    { day: "2026-09-07", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 6 },
+    { day: "2026-09-08", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 5 },
+    { day: "2026-09-09", detected: 0, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 4 },
+    { day: "2026-09-10", detected: 1, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 5 },
+    { day: "2026-09-11", detected: 0, fixed: 0, accepted: 0, regressed: 0, cumulative_open: 5 },
+    { day: "2026-09-12", detected: 1, fixed: 1, accepted: 0, regressed: 0, cumulative_open: 5 },
+  ],
+  totals: { detected: 56, fixed: 63, accepted: 1, regressed: 1 },
+  net_change: -7,
+};

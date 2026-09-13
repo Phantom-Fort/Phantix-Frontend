@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { useStore } from "@/lib/store";
 import { timeAgo, cx } from "@/lib/utils";
 import type { SocCloudConnection, SocCloudProviderCatalog } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocCloudIntegration() {
   const { toast } = useStore();
@@ -21,11 +22,12 @@ export default function SocCloudIntegration() {
       <PageHeader
         title="Cloud Integrations"
         description="Connect cloud providers for log ingestion, event monitoring, and security posture visibility."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-25" label="SOC operations how-to" />
           <button className="btn-primary" onClick={() => setShowConnect(true)}>
             <Plus size={15} /> Connect provider
           </button>
-        }
+        </>}
       />
 
       <div className="space-y-3">

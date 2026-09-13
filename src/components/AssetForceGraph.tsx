@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import type { AssetGraphModel, AssetGraphNode } from "@/lib/assetGraphData";
+import { useTheme } from "@/lib/theme";
 
-// Obsidian-inspired relational force graph rendered on canvas.
-// Nodes drift apart via repulsion, cluster via link springs, and settle —
-// then the simulation sleeps so idle frames are free.
+// Relational force graph rendered on canvas. Nodes drift apart via repulsion,
+// cluster via link springs, and settle — then the simulation sleeps so idle
+// frames are free.
 
 interface P {
   x: number;
@@ -44,6 +45,7 @@ export default function AssetForceGraph({
   className,
   interactive = true,
 }: Props) {
+  const { theme } = useTheme();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 640, h: 360 });
@@ -323,14 +325,16 @@ export default function AssetForceGraph({
       if (drawLabels || hot || neighborLit) {
         const fontSize = 11;
         ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, monospace`;
-        ctx.fillStyle = hot ? "#F8FAFC" : "rgba(203,213,225,0.82)";
+        ctx.fillStyle = theme === "light"
+          ? (hot ? "#0F172A" : "rgba(51,65,85,0.85)")
+          : (hot ? "#F8FAFC" : "rgba(203,213,225,0.82)");
         ctx.globalAlpha = hot ? 1 : alpha * (neighborLit ? 1.05 : 0.95);
         ctx.fillText(n.label, p.x, p.y + r + fontSize + 1);
       }
     }
     ctx.restore();
     ctx.globalAlpha = 1;
-  }, [size, hoverId, selectedId, query]);
+  }, [size, hoverId, selectedId, query, theme]);
 
   useEffect(() => {
     const loop = () => {

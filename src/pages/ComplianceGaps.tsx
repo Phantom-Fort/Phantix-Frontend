@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
+import { RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { ApiError } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@/lib/complianceGrc";
+import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Compliance gap analysis ──────────────────────────────────────────────────
 // GET /compliance/gaps maps the org's current findings onto framework controls
@@ -27,6 +29,9 @@ export default function ComplianceGaps() {
   const [error, setError] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState("");
   const [framework, setFramework] = useState("all");
+  const { toast } = useStore();
+  const [mapping, setMapping] = useState<any>(null);
+  const [mappingBusy, setMappingBusy] = useState(false);
 
   const load = useCallback(async (campaign?: string) => {
     setLoading(true);
@@ -69,12 +74,37 @@ export default function ComplianceGaps() {
     return out;
   }, [data.gaps]);
 
+  // Explicit findings→controls mapping (POST /compliance/map). The gaps view
+  // already maps implicitly; this records/returns the mapping the org asked for.
+  const runMapping = async () => {
+    setMappingBusy(true);
+    try {
+      const id = Number(campaignId);
+      const res = await api.post<any>("/compliance/map", {
+        use_org_findings: true,
+        campaign_id: Number.isFinite(id) && id > 0 ? id : undefined,
+        frameworks: framework !== "all" ? [framework] : undefined,
+      });
+      setMapping(res);
+      toast(
+        "success",
+        "Findings mapped",
+        `${res?.findings_in ?? 0} finding(s) mapped across ${(res?.frameworks || []).length || 0} framework(s).`,
+      );
+    } catch (e: any) {
+      toast("error", "Mapping failed", e?.message || "");
+    } finally {
+      setMappingBusy(false);
+    }
+  };
+
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Compliance gaps"
         description="Your live findings mapped onto framework controls. What is left is the set of controls nothing in your current security posture demonstrates."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
             <input
               value={campaignId}
@@ -86,11 +116,14 @@ export default function ComplianceGaps() {
             <button onClick={() => void load(campaignId)} className="btn-secondary text-xs !py-2">
               <ScanLine size={13} className="mr-1.5 inline" /> Run
             </button>
+            <button onClick={() => void runMapping()} disabled={mappingBusy} className="btn-ghost text-xs !py-2" title="Map findings to controls (POST /compliance/map)">
+              {mappingBusy ? <RefreshCw size={13} className="mr-1.5 inline animate-spin" /> : <Target size={13} className="mr-1.5 inline" />} Map findings
+            </button>
             <button onClick={() => void load(campaignId)} className="btn-ghost text-xs !py-2" title="Refresh">
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !data.gaps.length ? (
@@ -100,11 +133,22 @@ export default function ComplianceGaps() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Open gaps" value={String(data.gaps.length)} icon={<AlertTriangle size={18} />} hint="controls not demonstrated" />
-            <StatCard label="Controls touched" value={String(data.controls_touched.length)} icon={<ShieldCheck size={18} />} hint="covered by findings" />
-            <StatCard label="Findings mapped" value={String(data.findings_in)} icon={<Target size={18} />} hint="fed into the mapping" />
-            <StatCard label="Frameworks" value={String(data.frameworks.length)} icon={<ShieldCheck size={18} />} hint={data.frameworks.join(", ") || "none resolved"} />
+            <StatCard label="Open gaps" value={String(data.gaps.length)} hint="controls not demonstrated" />
+            <StatCard label="Controls touched" value={String(data.controls_touched.length)} hint="covered by findings" />
+            <StatCard label="Findings mapped" value={String(data.findings_in)} hint="fed into the mapping" />
+            <StatCard label="Frameworks" value={String(data.frameworks.length)} hint={data.frameworks.join(", ") || "none resolved"} />
           </div>
+
+          {mapping && (
+            <div className="rounded-md border border-gold-400/30 bg-gold-400/10 px-3 py-2 text-xs text-gold-200">
+              Mapped <strong>{mapping.findings_in ?? 0}</strong> finding(s) →{" "}
+              <strong>{mapping.mappings?.length ?? mapping.summary?.mapping_rows ?? 0}</strong> control mapping(s)
+              {Array.isArray(mapping.frameworks) && mapping.frameworks.length > 0
+                ? ` across ${mapping.frameworks.join(", ")}`
+                : ""}
+              .
+            </div>
+          )}
 
           {Object.keys(byRisk).length > 0 && (
             <Card>

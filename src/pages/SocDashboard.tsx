@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, Gauge, Shield, Wifi, Monitor, Clock, AlertTriangle, Crosshair,
+  Gauge, Shield, Wifi, Monitor, Clock, Crosshair, Boxes,
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
   ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio, HeartPulse,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState, CardListSkeleton } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
 import SocAvailability from "@/components/SocAvailability";
@@ -374,17 +374,6 @@ export default function SocDashboard() {
         actions={
           <div className="flex items-center gap-2">
             <DocLink docId="howto-app-07" label="SOC how-to" />
-            <span
-              className={cx(
-                "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
-                liveConnected
-                  ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300"
-                  : "border-phantix-700/50 bg-phantix-950/60 text-slate-500",
-              )}
-            >
-              <span className={cx("h-1.5 w-1.5 rounded-full", liveConnected ? "bg-emerald-400 animate-pulse" : "bg-slate-600")} />
-              {liveConnected ? "Live" : "Offline"}
-            </span>
             <button type="button" className="btn-ghost text-sm px-3 py-1.5" onClick={reloadQueue} title="Refresh">
               <RefreshCw size={14} />
             </button>
@@ -399,11 +388,10 @@ export default function SocDashboard() {
         </div>
       )}
 
-      <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Engine" value={<span className={cx("capitalize", status.data?.status === "implemented" ? "text-emerald-400" : "text-slate-300")}>{status.data?.status === "implemented" ? "Online" : status.data?.status ?? "loading"}</span>} icon={<Gauge size={18} />} />
-        <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} icon={<Crosshair size={18} />} />
-        <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} icon={<AlertTriangle size={18} />} accent="red" />
-        <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} icon={<Activity size={18} />} />
+      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard label="Open queue" value={<span className="text-white tabular-nums">{openCount}</span>} />
+        <StatCard label="Critical open" value={<span className="text-severity-critical tabular-nums">{(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {})["critical"] ?? 0}</span>} />
+        <StatCard label="Posture" value={<span className="text-gold-400 tabular-nums">{score}</span>} />
       </div>
 
       <Tabs
@@ -505,7 +493,7 @@ export default function SocDashboard() {
               <div className="flex items-center justify-between gap-2 border-b border-phantix-800/50 px-4 py-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-sm font-semibold text-slate-100">
-                    <Radio size={14} className={cx(liveConnected ? "text-emerald-400" : "text-slate-500")} />
+                    <Radio size={14} className={cx(liveConnected ? "text-gold-400" : "text-slate-500")} />
                     Live feed
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-500 truncate">
@@ -516,9 +504,8 @@ export default function SocDashboard() {
               </div>
               {/* Heartbeat status strip */}
               <div className="flex items-center gap-2.5 border-b border-phantix-700/30 bg-phantix-950/40 px-3 py-2.5">
-                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+                <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gold-400/25 bg-gold-400/10 text-gold-400">
                   <HeartPulse size={14} />
-                  {liveConnected && <span className="ecg-ping absolute inset-0 rounded-lg border border-emerald-400/40" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-slate-100">{liveConnected ? "Server responsive" : "Waiting for heartbeat"}</p>
@@ -532,7 +519,7 @@ export default function SocDashboard() {
                   <polyline
                     points="0,12 8,12 11,12 13,6 15,18 17,10 19,12 32,12 36,12 39,7 41,17 43,11 45,12 64,12"
                     fill="none"
-                    stroke="#34D399"
+                    stroke="#E8B54D"
                     strokeWidth="2"
                     strokeLinejoin="round"
                     strokeLinecap="round"
@@ -553,7 +540,7 @@ export default function SocDashboard() {
                     >
                       <span className={cx(
                         "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                        hot ? "bg-severity-critical" : isSoc ? "bg-gold-400" : "bg-emerald-400/80",
+                        hot ? "bg-severity-critical" : isSoc ? "bg-gold-400" : "bg-slate-400",
                       )} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -566,7 +553,7 @@ export default function SocDashboard() {
                   );
                 }) : (
                   <div className="flex h-full min-h-[12rem] flex-col items-center justify-center gap-1 px-4 text-center text-xs text-slate-500">
-                    <Wifi size={16} className={cx(liveConnected ? "text-emerald-500/50" : "text-slate-600")} />
+                    <Wifi size={16} className={cx(liveConnected ? "text-gold-400/60" : "text-slate-600")} />
                     {liveConnected ? "Connected — waiting for events" : "Stream offline"}
                   </div>
                 )}
@@ -648,7 +635,9 @@ export default function SocDashboard() {
             <button className="btn-primary !py-2 text-sm" onClick={() => setCaseOpen(true)}><Plus size={14} /> Open case</button>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {(casesRes.data?.items ?? []).length === 0 ? (
+            {casesRes.loading && !(casesRes.data?.items ?? []).length ? (
+              <div className="md:col-span-2"><CardListSkeleton rows={4} /></div>
+            ) : (casesRes.data?.items ?? []).length === 0 ? (
               <div className="md:col-span-2"><EmptyState icon={<BellRing size={24} />} title="No cases" body="Escalate a detection to open an incident case" /></div>
             ) : (casesRes.data?.items ?? []).map((c) => (
               <button key={c.id} type="button" className="text-left" onClick={() => void openCaseDetail(c)}>
@@ -685,7 +674,9 @@ export default function SocDashboard() {
             <button className="btn-primary !py-2 text-sm" onClick={() => setRuleOpen(true)}><Plus size={14} /> New rule</button>
           </div>
           <Card className="!p-0 overflow-hidden">
-            {(rulesRes.data ?? []).length === 0 ? (
+            {rulesRes.loading && !(rulesRes.data ?? []).length ? (
+              <div className="p-4"><TableSkeleton rows={5} /></div>
+            ) : (rulesRes.data ?? []).length === 0 ? (
               <EmptyState icon={<FileText size={24} />} title="No rules" body="Create a detection rule or seed the templates" />
             ) : (
               <div className="overflow-x-auto">
@@ -733,20 +724,36 @@ export default function SocDashboard() {
         <div className="space-y-4">
           <Card>
             <CardHeader title="Enrichment adapters" subtitle="Optional external enrichment only — SOC operates fully on internal SecureGraph signals" />
-            <div className="grid gap-3 md:grid-cols-2">
-              {(adaptersRes.data ?? []).map((a) => (
-                <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-100">{a.displayName ?? a.id ?? a.vendor}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">{a.vendor}</p>
-                    {a.detail && <p className="mt-1 text-xs text-slate-500">{a.detail}</p>}
+            {adaptersRes.loading && !(adaptersRes.data ?? []).length ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4" style={{ opacity: 1 - i * 0.12 }}>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="skeleton h-4 w-2/3 rounded" />
+                      <div className="skeleton h-3 w-1/3 rounded" />
+                    </div>
+                    <div className="skeleton h-5 w-20 shrink-0 rounded-md" />
                   </div>
-                  <span className={cx("chip text-[10px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
-                    {a.configured ? <><CheckCircle2 size={10} /> Connected</> : <><XCircle size={10} /> Not connected</>}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (adaptersRes.data ?? []).length === 0 ? (
+              <EmptyState icon={<Boxes size={24} />} title="No adapters" body="No enrichment adapters are configured for this org" />
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {(adaptersRes.data ?? []).map((a) => (
+                  <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-100">{a.displayName ?? a.id ?? a.vendor}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">{a.vendor}</p>
+                      {a.detail && <p className="mt-1 text-xs text-slate-500">{a.detail}</p>}
+                    </div>
+                    <span className={cx("chip text-[10px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
+                      {a.configured ? <><CheckCircle2 size={10} /> Connected</> : <><XCircle size={10} /> Not connected</>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-3.5 text-xs leading-5 text-slate-500">
               <strong className="text-slate-300">Note:</strong> adapters are optional enrichment only. SOC operates fully on internal SecureGraph
               signals without external SIEM/SOAR. <span className="font-mono">siem_connectors_live: false</span>

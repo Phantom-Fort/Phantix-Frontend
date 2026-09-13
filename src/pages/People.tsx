@@ -7,6 +7,7 @@ import { useResource } from "@/lib/useResource";
 import { emptyDualControl } from "@/lib/data";
 import { timeAgo, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
+import DocLink from "@/components/DocLink";
 
 export default function People() {
   const { toast, requireDualControl, dualControl: storeDc } = useStore();
@@ -34,7 +35,8 @@ export default function People() {
       <PageHeader
         title="People & dual control"
         description="Named org users with domain-email OTP identity. Writes require the initiator or authorizer slot plus a 3-minute idle operate session --- roles alone grant no writes."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-27" label="Admin how-to" />
           <button
             className="btn-primary"
             onClick={() =>
@@ -47,7 +49,7 @@ export default function People() {
           >
             <UserPlus size={15} /> Add user
           </button>
-        }
+        </>}
       />
 
       {/* Dual-control assignment */}
@@ -72,7 +74,7 @@ export default function People() {
                     <p className="font-semibold text-slate-100">{s.user?.full_name}</p>
                     <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{s.slot}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{s.user?.title} ï¿½ {s.user?.email}</p>
+                  <p className="text-xs text-slate-500">{s.user?.title} · {s.user?.email}</p>
                   <p className="mt-1 text-[11px] text-slate-600">{s.desc}</p>
                 </div>
               </div>
@@ -113,7 +115,7 @@ export default function People() {
                       </span>
                       <div>
                         <p className="font-medium text-slate-200">{u.full_name}</p>
-                        <p className="text-xs text-slate-500">{u.email} ï¿½ {u.title}</p>
+                        <p className="text-xs text-slate-500">{u.email} · {u.title}</p>
                       </div>
                     </div>
                   </td>

@@ -2,7 +2,7 @@
 
 **App:** https://platform.phantixlabs.com  
 **Who:** Company / security admins  
-**Does:** Tenant setup â€” identity, people, databases, billing. Not day-to-day scanning (that is Command Centre).
+**Does:** Tenant setup — identity, people, databases, billing. Not day-to-day scanning (that is Command Centre).
 
 ## Index
 
@@ -26,7 +26,7 @@
 
 ```mermaid
 flowchart TD
-  A[Register org] --> B[Accept privacy + verify email Â· setup wizard]
+  A[Register org] --> B[Accept privacy + verify email · setup wizard]
   B --> C[Complete company profile]
   C --> D[Add â‰¥ 2 people]
   D --> E[Assign initiator + authorizer]

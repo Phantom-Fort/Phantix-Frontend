@@ -9,6 +9,7 @@ import { timeAgo, titleCase, cx } from "@/lib/utils";
 import { useStore } from "@/lib/store";
 import { api } from "@/lib/api";
 import type { AuditEvent } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 const ENGINE_MAP: Record<string, { label: string; color: string }> = {
   assets: { label: "Asset Engine", color: "text-blue-400" },
@@ -114,11 +115,12 @@ export default function Audit() {
       <PageHeader
         title="Audit trail"
         description="Immutable dual-control trail --- every action carries initiator and authorizer snapshots, IP, and token type. Grouped by engine for compliance export."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-27" label="Audit how-to" />
           <button className="btn-secondary" onClick={() => void handleExport()} disabled={exporting}>
             {exporting ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Export CSV
           </button>
-        }
+        </>}
       />
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>

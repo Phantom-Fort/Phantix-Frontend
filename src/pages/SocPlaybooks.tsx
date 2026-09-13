@@ -5,6 +5,7 @@ import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyStat
 import { loadPlaybooks, loadMitreMatrix, loadMitreStats } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import type { SocPlaybook, MitreMatrix, MitreStats } from "@/lib/types";
+import DocLink from "@/components/DocLink";
 
 export default function SocPlaybooks() {
   const [tab, setTab] = useState("playbooks");
@@ -19,7 +20,7 @@ export default function SocPlaybooks() {
       <PageHeader
         title="Playbooks & MITRE"
         description="Response playbooks, runbooks, and MITRE ATT&CK coverage mapping."
-      />
+       actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
       <Tabs
         tabs={[
           { id: "playbooks", label: "Playbooks", count: playbooks.length },

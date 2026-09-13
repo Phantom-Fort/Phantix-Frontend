@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Lock, ShieldCheck, Trash2, Loader2, Radar, ShieldAlert, Scale,
   Crosshair, Boxes, Globe2, Timer, Square, BrainCircuit, ChevronDown, ChevronRight,
-  ThumbsUp, AlertTriangle, RotateCcw, Cpu,
+  ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound,
 } from "lucide-react";
 import { PageHeader, Card } from "@/components/ui";
 import LottiePlayer from "@/components/LottiePlayer";
@@ -38,10 +38,14 @@ import {
   streamAgentChat,
   streamAgentRun,
   loadAgentSkills,
+  loadAgentDomains,
   setAgentSkillStatus,
   confirmAgentScope,
+  type AgentDomainInfo,
 } from "@/lib/data";
 import AgentScopeGate, { type AgentScopeSelection } from "@/components/AgentScopeGate";
+import AgentGuardPanel from "@/components/AgentGuardPanel";
+import { isAuthorizationBlock, requestAgentApproval } from "@/lib/agentGuard";
 import { PLATFORM_AI_URL } from "@/lib/links";
 import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
@@ -60,6 +64,7 @@ const DOMAINS = [
   { id: "vapt", label: "VAPT", icon: <Crosshair size={14} />, desc: "Campaign write-ups" },
   { id: "soc", label: "SOC", icon: <Radar size={14} />, desc: "Triage assist" },
   { id: "grc", label: "GRC", icon: <Scale size={14} />, desc: "Explain gaps" },
+  { id: "threat_model", label: "Threat model", icon: <ShieldCheck size={14} />, desc: "Model & explain design threats" },
   { id: "ti", label: "Threat Intel", icon: <Globe2 size={14} />, desc: "Correlate" },
   { id: "asset", label: "Asset", icon: <Boxes size={14} />, desc: "Exposure brief" },
   { id: "cross", label: "Cross", icon: <ShieldAlert size={14} />, desc: "Global ask" },
@@ -327,13 +332,26 @@ function AgentChat({
   const [liveAnswer, setLiveAnswer] = useState("");
   const [liveThinking, setLiveThinking] = useState("");
   const [liveRunId, setLiveRunId] = useState("");
-  const [tools, setTools] = useState<{ tool: string; ok: boolean }[]>([]);
+  const [tools, setTools] = useState<{ tool: string; ok: boolean; error?: string }[]>([]);
+  // Specialist roster from the backend catalog — never a hardcoded copy.
+  const [domains, setDomains] = useState<AgentDomainInfo[]>([]);
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const [scopeCard, setScopeCard] = useState<AgentScopeCard | null>(null);
   const [scopeBusy, setScopeBusy] = useState(false);
   const scopeResolver = useRef<((grant: AgentScopeGrant | null) => void) | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const chatSend = useChatSend();
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const list = await loadAgentDomains();
+        if (list.length) setDomains(list);
+      } catch {
+        /* keep the static roster */
+      }
+    })();
+  }, []);
 
   // Chat retention — the conversation persists so the user can continue it later.
   const { session } = useStore();
@@ -360,6 +378,21 @@ function AgentChat({
     setLiveRunId("");
     setTools([]);
     setThinkingOpen(false);
+  };
+
+  // A blocked action is not a failure to hide — it is a decision to route to a
+  // human. The agent cannot approve itself, so this only *requests*.
+  const requestApproval = async (action: string) => {
+    try {
+      await requestAgentApproval(action, "Agent action requested during chat", liveRunId || undefined);
+      toast(
+        "info",
+        "Approval requested",
+        "An authorizer can allow it once in Agent guard — and only once; the authorization is then spent."
+      );
+    } catch (e) {
+      toast("error", "Could not request approval", e instanceof Error ? e.message : undefined);
+    }
   };
 
   // Org-data scope gate: the backend holds the model call and answers 409 with
@@ -489,7 +522,7 @@ function AgentChat({
         (event, data) => {
           if (event === "connected") setPhase("connecting");
           else if (event === "run_started") { setLiveRunId(String(data?.analysis_id ?? "")); }
-          else if (event === "tool") { setTools((t) => [...t, { tool: String(data?.tool ?? "tool"), ok: Boolean(data?.ok) }]); }
+          else if (event === "tool") { setTools((t) => [...t, { tool: String(data?.tool ?? "tool"), ok: Boolean(data?.ok), error: data?.error ? String(data.error) : undefined }]); }
           else if (event === "synthesis_start") setPhase("synthesizing");
           else if (event === "reasoning") { summary += data?.content ?? ""; setLiveThinking(summary); setThinkingOpen(true); }
           else if (event === "delta") { summary += data?.content ?? ""; setLiveAnswer(summary); }
@@ -519,11 +552,25 @@ function AgentChat({
 
   const streaming = busy && (phase === "streaming" || phase === "synthesizing");
 
+  // Merge the backend catalog with per-domain icon/label metadata; fall back to
+  // the static roster only if the catalog could not be loaded at all.
+  const specialists = domains.length
+    ? domains.map((d) => {
+        const meta = DOMAINS.find((x) => x.id === d.domain);
+        return {
+          id: d.domain,
+          label: meta?.label ?? d.display_name,
+          icon: meta?.icon ?? <Sparkles size={14} />,
+          desc: d.call_when || d.description || meta?.desc || "",
+        };
+      })
+    : DOMAINS;
+
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
       <Card className="flex h-[66vh] flex-col !p-0 overflow-hidden">
         <div className="flex items-center gap-3 border-b border-phantix-700/40 px-5 py-3.5">
-          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
+          <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
             <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
             <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -542,10 +589,10 @@ function AgentChat({
           <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
-        {/* Domain specialists */}
+        {/* Domain specialists — driven by GET /ai/agent/domains */}
         <div className="flex flex-wrap items-center gap-1.5 border-b border-phantix-700/30 px-5 py-2">
           <span className="text-[10px] uppercase tracking-wider text-slate-600 mr-1">Specialists</span>
-          {DOMAINS.map((d) => (
+          {specialists.map((d) => (
             <button
               key={d.id}
               onClick={() => invokeDomain(d.id)}
@@ -557,6 +604,10 @@ function AgentChat({
             </button>
           ))}
         </div>
+
+        {/* Agent guard — appears only while something needs authorization, so
+            it never sits here empty, taking up room above the chat. */}
+        <AgentGuardPanel runId={liveRunId || undefined} className="!border-phantix-700/40 mx-5 mt-3" />
 
         <ChatContainerRoot className="min-h-0 flex-1">
           <ChatContainerContent className="space-y-5 px-5 py-4">
@@ -578,7 +629,7 @@ function AgentChat({
               </div>
             ) : (
               <div key={i} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
                 <div className="min-w-0 max-w-[88%] space-y-2">
                   {m.runId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
                   {m.thinking && (
@@ -591,7 +642,7 @@ function AgentChat({
                       </StepsItem>
                     </Steps>
                   )}
-                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
+                  <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
                   {m.skills && m.skills.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-[10px] text-slate-500">Skills:</span>
@@ -623,16 +674,31 @@ function AgentChat({
           {/* Live streaming turn — Tool calls, Steps thinking, streamed Markdown */}
           {busy && (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-gold-400 to-gold-600"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
               <div className="min-w-0 max-w-[88%] space-y-2">
                 {tools.length > 0 && (
                   <div className="space-y-1.5">
                     {tools.map((t, idx) => (
-                      <Tool
-                        key={`${t.tool}-${idx}`}
-                        toolPart={{ type: t.tool, state: t.ok ? "output-available" : "output-error", toolCallId: `tool-${idx}` }}
-                        className="!mt-0 border-phantix-700/40"
-                      />
+                      <div key={`${t.tool}-${idx}`} className="space-y-1">
+                        <Tool
+                          toolPart={{ type: t.tool, state: t.ok ? "output-available" : "output-error", toolCallId: `tool-${idx}` }}
+                          className="!mt-0 border-phantix-700/40"
+                        />
+                        {!t.ok && t.error && (
+                          <div className="flex flex-wrap items-center gap-2 pl-1">
+                            <p className="text-[10px] leading-4 text-slate-500">{t.error}</p>
+                            {isAuthorizationBlock(t.error) && liveRunId && (
+                              <button
+                                onClick={() => void requestApproval(t.tool)}
+                                className="chip border-gold-400/30 text-gold-300 transition-colors hover:bg-gold-400/10"
+                                title="Ask an authorizer to allow this one action on this run"
+                              >
+                                <KeyRound size={10} className="mr-1 inline" /> Request approval
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -653,7 +719,7 @@ function AgentChat({
                 )}
                 {liveRunId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveAnswer && (
-                  <Markdown className="prose prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
+                  <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
                 )}
               </div>
             </div>

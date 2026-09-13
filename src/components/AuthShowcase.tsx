@@ -163,7 +163,7 @@ function IncidentScene() {
         </div>
         <p className="mt-2.5 text-sm leading-6 text-slate-200">
           <span className="font-semibold text-white">Lateral movement</span> detected on api.acme.ng — playbook
-          <span className="text-gold-400"> IR-03</span> invoked, scope auto-contained.
+          <span style={{ color: GOLD }}> IR-03</span> invoked, scope auto-contained.
         </p>
         <div className="mt-3 grid grid-cols-4 gap-2">
           {["8.4K", "23", "4", "0"].map((v, i) => (
@@ -521,7 +521,7 @@ export default function AuthShowcase() {
       ref={wrapRef}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
-      className="relative hidden overflow-hidden bg-phantix-950 text-slate-200 lg:flex lg:min-h-screen lg:flex-col"
+      className="auth-showcase-dark relative hidden overflow-hidden bg-phantix-950 text-slate-200 lg:flex lg:min-h-screen lg:flex-col"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-grid-faint bg-grid opacity-30 [mask-image:radial-gradient(ellipse_90%_80%_at_20%_10%,black,transparent)]" />
@@ -530,7 +530,7 @@ export default function AuthShowcase() {
       </div>
 
       <header className="relative z-10 flex items-center gap-3 p-10 pb-6">
-        <BrandLogo className="h-9 w-9 object-contain [filter:brightness(0)_invert(1)]" />
+        <BrandLogo lightSrc="/logo-white.png" darkSrc="/logo-white.png" className="h-9 w-9 object-contain" />
         <span className="font-display text-lg font-semibold text-white">SecureGraph</span>
       </header>
 

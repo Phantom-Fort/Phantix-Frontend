@@ -2,12 +2,20 @@ import React, { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Boxes, ShieldAlert, Radar, Crosshair, ArrowRight, BellRing,
-  ShieldCheck, Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
+  Boxes, ShieldAlert, ArrowRight, BellRing,
+  Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import TrendChart from "@/components/TrendChart";
+import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
+import PostureDonut from "@/components/charts/PostureDonut";
+import SurfaceScoreRow from "@/components/charts/SurfaceScoreRow";
+import { SURFACES } from "@/components/charts/palette";
+import { loadTrackerSummary } from "@/lib/data";
+import { loadPostureSnapshot } from "@/lib/vaptOps";
+import type { PostureSnapshot } from "@/lib/vaptOps";
+import type { TrackerSummary } from "@/lib/types";
 import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@/lib/data";
 import { useResource } from "@/lib/useResource";
 import { useSmartPoll } from "@/lib/usePolling";
@@ -35,6 +43,41 @@ function str(v: unknown, fallback = "—"): string {
 export default function Dashboard() {
   const { org: storeOrg, operate, requireDualControl } = useStore();
   const { data, loading, error, reload, setData } = useResource(loadCommandCenter, emptyDash, "command-center");
+
+  /* Posture and findings for the chart row. Loaded alongside the command centre
+     rather than folded into it: either can be unavailable without blanking the
+     page, and the charts are additive to what was already here. */
+  const [posture, setPosture] = React.useState<PostureSnapshot | null>(null);
+  const [tracker, setTracker] = React.useState<TrackerSummary | null>(null);
+  React.useEffect(() => {
+    let cancelled = false;
+    void Promise.all([
+      loadPostureSnapshot().catch(() => null),
+      loadTrackerSummary().catch(() => null),
+    ]).then(([p, t]) => {
+      if (cancelled) return;
+      setPosture(p as PostureSnapshot | null);
+      setTracker(t);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const surfaceRows = React.useMemo(() => {
+    const surfaces = (posture?.surfaces ?? {}) as Record<string, any>;
+    return SURFACES.map((name) => {
+      const s = surfaces[name] ?? {};
+      return {
+        surface: name,
+        score: Number(s.score ?? 100),
+        total: Number(s.total ?? 0),
+        reportable: Number(s.reportable ?? 0),
+        critical: Number(s.critical ?? 0),
+        high: Number(s.high ?? 0),
+      };
+    });
+  }, [posture]);
   const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
   const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
   const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
@@ -202,17 +245,6 @@ export default function Dashboard() {
                 <FlaskConical size={11} className="mr-1 inline" /> Lab
               </span>
             )}
-            <span
-              className={cx(
-                "chip text-[10px]",
-                connected
-                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                  : "border-slate-500/40 bg-slate-500/10 text-slate-400",
-              )}
-            >
-              <span className={cx("mr-1 inline-block h-1.5 w-1.5 rounded-full", connected ? "bg-emerald-400 animate-pulse-soft" : "bg-slate-500")} />
-              {connected ? "Live" : "Offline"}
-            </span>
           </div>
           <h1 className="mt-1 font-display text-[26px] font-bold tracking-tight text-white">Command center</h1>
           {lab?.surfaces && lab.surfaces.length > 0 && (
@@ -246,24 +278,18 @@ export default function Dashboard() {
         <StatCard
           label="Posture"
           value={<AnimatedNumber value={postureScore} />}
-          icon={<ShieldCheck size={17} />}
-          accent="gold"
           delay={0}
           hint={<span>{activeAssets} active assets</span>}
         />
         <StatCard
           label="Open findings"
           value={<AnimatedNumber value={openFindings} />}
-          icon={<Crosshair size={17} />}
-          accent="red"
           delay={0.04}
           hint={<span>From intelligence / tracker</span>}
         />
         <StatCard
           label="Open risks"
           value={<AnimatedNumber value={openRisks} />}
-          icon={<ShieldAlert size={17} />}
-          accent="red"
           delay={0.08}
           hint={
             <span>
@@ -274,16 +300,12 @@ export default function Dashboard() {
         <StatCard
           label="SOC open"
           value={<AnimatedNumber value={socOpen} />}
-          icon={<Radar size={17} />}
-          accent="blue"
           delay={0.12}
           hint={<span>{cc?.soc?.available === false ? "SOC offline" : "Detection queue"}</span>}
         />
         <StatCard
           label="Tracker open"
           value={<AnimatedNumber value={trackerOpen} />}
-          icon={<KanbanSquare size={17} />}
-          accent="green"
           delay={0.16}
           hint={
             <span>
@@ -305,7 +327,7 @@ export default function Dashboard() {
                   className={cx(
                     "chip text-xs",
                     trendDelta > 0
-                      ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                      ? "border-gold-400/30 bg-gold-400/10 text-gold-300"
                       : trendDelta < 0
                         ? "border-severity-critical/30 bg-severity-critical/10 text-severity-critical"
                         : "text-slate-400",
@@ -316,7 +338,13 @@ export default function Dashboard() {
               ) : undefined
             }
           />
-          {trendPoints.length > 1 ? (
+          {trendRes.loading && trendPoints.length <= 1 ? (
+            <div className="mt-2 flex h-[190px] items-end gap-2">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} className="skeleton flex-1 rounded-sm" style={{ height: `${30 + ((i * 37) % 60)}%` }} />
+              ))}
+            </div>
+          ) : trendPoints.length > 1 ? (
             <TrendChart points={trendPoints} color="#E8B54D" height={190} />
           ) : (
             <p className="py-10 text-center text-xs text-slate-500">
@@ -324,6 +352,41 @@ export default function Dashboard() {
             </p>
           )}
         </Card>
+      </motion.div>
+
+      {/* Posture and findings — the same charts the Analytics page opens on, so
+          the dashboard and the deep dive never disagree. */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mt-5 space-y-4"
+      >
+        <SurfaceScoreRow surfaces={surfaceRows} />
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <PostureDonut surfaces={surfaceRows} overallScore={posture?.overall_score ?? null} />
+          <FindingsBreakdown
+            counts={{
+              byStatus: {
+                open: Number(tracker?.open ?? 0),
+                in_progress: Number(tracker?.in_progress ?? 0),
+                fixed: Number(tracker?.fixed ?? 0),
+                retest_failed: Number(tracker?.retest_failed ?? 0),
+                regressed: Number(tracker?.regressed ?? 0),
+                accepted: Number(tracker?.accepted ?? 0),
+              },
+              bySeverity: tracker?.bySeverity ?? {},
+              bySurface: tracker?.bySurface ?? {},
+            }}
+          />
+        </div>
+        <p className="text-[11px] text-slate-600">
+          More cuts of this data —  movement over time, aging, SLA breaches, compliance —  on{" "}
+          <a href="/analytics" className="text-gold-300 underline-offset-2 hover:underline">
+            Analytics
+          </a>
+          .
+        </p>
       </motion.div>
 
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-3">
@@ -560,28 +623,24 @@ export default function Dashboard() {
                 action={
                   <span className={cx(
                     "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-medium",
-                    connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+                    connected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
                   )}>
-                    <span className="relative flex h-2 w-2">
-                      {connected && <span className="ecg-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400" />}
-                      <span className={cx("relative inline-flex h-2 w-2 rounded-full", connected ? "bg-emerald-400" : "bg-severity-medium")} />
-                    </span>
-                    {connected ? "Live · heartbeat OK" : "Reconnecting…"}
+                    <span className={cx("inline-flex h-2 w-2 rounded-full", connected ? "bg-gold-400" : "bg-severity-medium")} />
+                    {connected ? "Stream connected" : "Reconnecting…"}
                   </span>
                 }
               />
             </div>
             {/* Heartbeat status strip */}
             <div className="flex items-center gap-3 border-y border-phantix-700 bg-phantix-950/60 px-5 py-3">
-              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-emerald-400/25 bg-emerald-400/10 text-emerald-400">
+              <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gold-400/25 bg-gold-400/10 text-gold-400">
                 <HeartPulse size={16} />
-                {connected && <span className="ecg-ping absolute inset-0 rounded-md border border-emerald-400/40" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-100">{connected ? "Server responsive" : "Waiting for heartbeat"}</p>
                 <p className="text-xs text-slate-500">
                   {lastHeartbeatAt
-                    ? <>Last heartbeat ping <span className="font-mono text-emerald-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
+                    ? <>Last heartbeat ping <span className="font-mono text-gold-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
                     : connected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the command-centre stream…"}
                 </p>
               </div>
@@ -589,7 +648,7 @@ export default function Dashboard() {
                 <polyline
                   points="0,15 10,15 15,15 18,7 21,23 24,13 27,15 44,15 49,15 54,9 57,21 60,13 63,15 90,15"
                   fill="none"
-                  stroke="#34D399"
+                  stroke="#E8B54D"
                   strokeWidth="2"
                   strokeLinejoin="round"
                   strokeLinecap="round"

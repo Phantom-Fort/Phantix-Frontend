@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Database, Download, Loader2, Plug, RefreshCw, Save, XCircle } from "lucide-react";
+import { CheckCircle2, Download, Loader2, Plug, RefreshCw, Save, XCircle } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
 import { useStore } from "@/lib/store";
 import {
@@ -12,6 +12,7 @@ import {
   type EvidenceConnector,
 } from "@/lib/complianceGrc";
 import { cx } from "@/lib/utils";
+import DocLink from "@/components/DocLink";
 
 // ── Evidence connectors ──────────────────────────────────────────────────────
 // Connectors pull control evidence automatically. Readiness comes from
@@ -72,11 +73,12 @@ export default function ComplianceConnectors() {
   const ready = connectors.filter((c) => c.ready ?? c.configured).length;
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Evidence connectors"
         description="Automated control evidence. Configure a connector once and each collection run stores fresh evidence against the controls it covers."
-        actions={
+        actions={<>
+            <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
             <button onClick={() => void runCollection()} disabled={collecting} className="btn-primary text-xs !py-2">
               {collecting ? <Loader2 size={13} className="mr-1.5 inline animate-spin" /> : <Download size={13} className="mr-1.5 inline" />}
@@ -86,7 +88,7 @@ export default function ComplianceConnectors() {
               <RefreshCw size={13} className={cx("inline", loading && "animate-spin")} />
             </button>
           </div>
-        }
+        </>}
       />
 
       {loading && !connectors.length ? (
@@ -96,10 +98,10 @@ export default function ComplianceConnectors() {
       ) : (
         <div className="space-y-5">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard label="Connectors" value={String(connectors.length)} icon={<Plug size={18} />} hint="available adapters" />
-            <StatCard label="Ready" value={String(ready)} icon={<CheckCircle2 size={18} />} hint="configured and usable" />
-            <StatCard label="Evidence items" value={String(num(summary?.total ?? summary?.total_evidence))} icon={<Database size={18} />} hint="stored in security DB" />
-            <StatCard label="Controls covered" value={String(num(summary?.controls ?? summary?.controls_covered))} icon={<CheckCircle2 size={18} />} hint="with at least one item" />
+            <StatCard label="Connectors" value={String(connectors.length)} hint="available adapters" />
+            <StatCard label="Ready" value={String(ready)} hint="configured and usable" />
+            <StatCard label="Evidence items" value={String(num(summary?.total ?? summary?.total_evidence))} hint="stored in security DB" />
+            <StatCard label="Controls covered" value={String(num(summary?.controls ?? summary?.controls_covered))} hint="with at least one item" />
           </div>
 
           <Card>

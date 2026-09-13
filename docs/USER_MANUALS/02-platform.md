@@ -9,11 +9,11 @@
 ## 1. Sign in
 
 1. Open https://platform.phantixlabs.com/login  
-2. Enter **company email** and **password** â†’ **Continue**  
+2. Enter **company email** and **password** → **Continue**  
 
 ![Platform login](../screenshots/platform/login.png)
 
-3. Enter the **email OTP** â†’ **Verify & sign in**  
+3. Enter the **email OTP** → **Verify & sign in**  
 4. You land on the tenant **Dashboard**
 
 ![Platform dashboard](../screenshots/platform/dashboard.png)
@@ -40,7 +40,7 @@ Confirm:
 
 ## 3. Identity & service keys
 
-**Nav â†’ Identity & Keys**
+**Nav → Identity & Keys**
 
 ![Identity](../screenshots/platform/identity.png)
 
@@ -52,7 +52,7 @@ Confirm:
 
 ## 4. People & dual control
 
-**Nav â†’ People & Control**
+**Nav → People & Control**
 
 ![Users](../screenshots/platform/users.png)
 
@@ -65,7 +65,7 @@ Confirm:
 
 ## 5. Security database (Connections)
 
-**Nav â†’ Security Database**
+**Nav → Security Database**
 
 ![Connections](../screenshots/platform/connections.png)
 
@@ -78,7 +78,7 @@ Confirm:
 
 ## 6. Companies (groups)
 
-**Nav â†’ Companies**
+**Nav → Companies**
 
 ![Companies](../screenshots/platform/companies.png)
 
@@ -88,7 +88,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 7. GitHub
 
-**Nav â†’ GitHub**
+**Nav → GitHub**
 
 ![GitHub](../screenshots/platform/github.png)
 
@@ -99,7 +99,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 8. Tool catalog & billing
 
-**Nav â†’ Tool Catalog** Â· **Billing**
+**Nav → Tool Catalog** · **Billing**
 
 ![Tools](../screenshots/platform/tools.png)
 
@@ -113,7 +113,7 @@ For multi-company groups: each child company keeps its own keys, users, DB, and 
 
 ## 9. AI & Autonomous Agent settings
 
-**Nav â†’ AI settings** Â· **Autonomous Agent**
+**Nav → AI settings** · **Autonomous Agent**
 
 ![AI](../screenshots/platform/ai-settings.png)
 

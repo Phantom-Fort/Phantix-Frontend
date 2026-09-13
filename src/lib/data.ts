@@ -9,6 +9,8 @@ import type {
   AgentSkillStatusUpdate,
   AgentStreamEvent,
   AiStatus,
+  AiUsage,
+  ReportTypeEntry,
   AlertEvent,
   AlertSettings,
   Asset,
@@ -1434,6 +1436,40 @@ export async function requestAiSummary(id: number): Promise<{ postureSummary: st
   return api.post(`/assets/${id}/intelligence/ai-summary`);
 }
 
+/**
+ * Org AI budget snapshot. The backend has served this since the cost manager
+ * landed, but no page consumed it — an autonomous agent that can exhaust a
+ * budget mid-run is the surface that most needs it.
+ *
+ * `softOne` so a missing budget row degrades to nulls instead of failing the
+ * page: usage is context, never a gate.
+ */
+export async function loadAiUsage(): Promise<AiUsage | null> {
+  if (isDemoMode()) { await delay(250); return demo.aiUsage; }
+  const raw = await softOne<any>("/ai/usage");
+  if (!raw) return null;
+  return {
+    organization_id: raw.organization_id,
+    year_month: raw.year_month ?? undefined,
+    tokens_used: Number(raw.tokens_used ?? 0),
+    token_budget: Number(raw.token_budget ?? 0),
+    cost_usd: Number(raw.cost_usd ?? 0),
+    spend_limit_usd: Number(raw.spend_limit_usd ?? 0),
+    cost_ngn:
+      raw.cost_ngn != null
+        ? Number(raw.cost_ngn)
+        : Number(raw.cost_usd ?? 0) * Number(raw.fx_ngn_per_usd ?? 0) || undefined,
+    spend_limit_ngn:
+      raw.spend_limit_ngn != null
+        ? Number(raw.spend_limit_ngn)
+        : Number(raw.spend_limit_usd ?? 0) * Number(raw.fx_ngn_per_usd ?? 0) || undefined,
+    currency: raw.currency ? String(raw.currency) : "NGN",
+    fx_ngn_per_usd: raw.fx_ngn_per_usd != null ? Number(raw.fx_ngn_per_usd) : undefined,
+    allowed: Boolean(raw.allowed ?? true),
+    mode: raw.mode ? String(raw.mode) : undefined,
+  };
+}
+
 export async function loadAiStatus(): Promise<AiStatus> {
   if (isDemoMode()) { await delay(300); return demo.aiStatus; }
   const raw = await softOne<any>("/ai/settings");
@@ -1747,6 +1783,31 @@ export async function getAgentRun(analysisId: string): Promise<AgentRun | null> 
 }
 
 // ── Agent skill library (PHANTIX_AGENT_FE.md A4/A5) ──────────────────────────
+export interface AgentDomainInfo {
+  domain: string;
+  agent_id: string;
+  display_name: string;
+  description?: string;
+  call_when?: string;
+  engines?: string[];
+  primary_skills?: string[];
+  engine_tools?: string[];
+}
+
+/**
+ * The specialist roster, straight from the domain-agent catalog.
+ *
+ * The Agent page must not keep its own copy of this list: a new domain agent
+ * (threat modelling, verification, code) ships in the backend and would otherwise
+ * be invisible until someone edited a constant. Falls back to the caller's
+ * static list when the catalog cannot be reached.
+ */
+export async function loadAgentDomains(): Promise<AgentDomainInfo[]> {
+  const res = await api.get<{ items?: AgentDomainInfo[] } | AgentDomainInfo[]>("/ai/agent/domains");
+  const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  return list.filter((d) => d && typeof d.domain === "string" && d.domain !== "meta");
+}
+
 export async function loadAgentSkills(): Promise<AgentSkill[]> {
   if (isDemoMode()) { await delay(300); return demo.agentSkills; }
   const raw = await softOne<any>("/ai/agent/skills");
@@ -2245,9 +2306,49 @@ export function normalizeIntelSignals(raw: unknown): TiSignal[] {
   });
 }
 
-export function loadCloudProviders(): Promise<CloudProvider[]> {
+// The provider endpoint returns `{ providers: [...] }` in camelCase
+// (displayName/help/authModes). Normalize it into the CloudProvider shape the
+// pages consume so the picker never silently renders an empty catalog.
+function normalizeCloudProviders(raw: unknown): CloudProvider[] {
+  const list: unknown[] = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).providers)
+      ? ((raw as Record<string, unknown>).providers as unknown[])
+      : asList<unknown>(raw);
+  return (list as Array<Record<string, unknown> | null | undefined>)
+    .map((p): CloudProvider => {
+      const r = (p ?? {}) as Record<string, unknown>;
+      const category = typeof r.category === "string" ? r.category : typeof r.kind === "string" ? r.kind : "";
+      const help = typeof r.help === "string" ? r.help : typeof r.description === "string" ? r.description : "";
+      const strArr = (v: unknown): string[] | undefined =>
+        Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : undefined;
+      return {
+        id: String(r.id ?? r.provider ?? ""),
+        name: String(r.displayName ?? r.name ?? r.id ?? ""),
+        description: help || undefined,
+        help: help || undefined,
+        kind: category || undefined,
+        category: category || undefined,
+        auth: typeof r.auth === "string" ? r.auth : undefined,
+        authModes: strArr(r.authModes),
+        engines: strArr(r.engines),
+        credentialKeys: strArr(r.credentialKeys),
+        accountCapable: typeof r.accountCapable === "boolean" ? r.accountCapable : undefined,
+        africa: typeof r.africa === "boolean" ? r.africa : undefined,
+        webhook: (r.webhook as CloudProvider["webhook"]) ?? undefined,
+        fields: Array.isArray(r.fields) ? (r.fields as CloudProvider["fields"]) : undefined,
+      };
+    })
+    .filter((p) => p.id);
+}
+
+export async function loadCloudProviders(): Promise<CloudProvider[]> {
   if (isDemoMode()) { return delay(150).then(() => demo.cloudProviders); }
-  return softList<CloudProvider>("/cloud-security/providers");
+  try {
+    return normalizeCloudProviders(await api.get<unknown>("/cloud-security/providers"));
+  } catch {
+    return [];
+  }
 }
 
 export async function loadCloudConnectors(meta?: LoadMeta): Promise<CloudConnector[]> {
@@ -2282,6 +2383,118 @@ export async function loadIntelDashboard(): Promise<IntelDashboard> {
   // The dashboard endpoint returns raw snake_case signals — normalize them so
   // camelCase consumers (e.g. ThreatIntel's matchedAssetIds reads) never crash.
   return { ...d, signals: normalizeIntelSignals(d.signals) };
+}
+
+export interface CloudPosturePack {
+  enabled: boolean;
+  reason?: string | null;
+  code?: string | null;
+  providers_configured?: string[];
+}
+
+export interface CloudPostureExposureItem {
+  host: string;
+  ip_address?: string | null;
+  port: number;
+  protocol?: string;
+  service?: string | null;
+  tls?: boolean;
+  state?: string;
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+}
+
+export interface CloudPosture {
+  organization_id: number;
+  packs: { cloud: CloudPosturePack; container: CloudPosturePack };
+  network_exposure: {
+    summary: Record<string, number | null>;
+    items: CloudPostureExposureItem[];
+    schema_upgrade_required?: boolean;
+  };
+  tls_posture: {
+    findings: number;
+    affected_hosts: number;
+    by_issue: Record<string, number>;
+    expiring_soon: Array<{ host: string; days_remaining: number }>;
+  };
+  cis_host_targets: {
+    available: Array<{ name: string; display_name: string; severity: string; targets: string[] }>;
+    matched: number;
+    by_pack: Record<string, number>;
+  };
+  execution: {
+    docker_isolated: boolean;
+    global_scan_concurrency?: number | null;
+    tool_lock_redis_enabled?: boolean;
+    tool_lock_fail_open?: boolean;
+    one_active_scan_per_org?: boolean;
+    active_scans: Array<{ id: number; status: string; job_type?: string | null; created_at?: string | null }>;
+  };
+}
+
+/** Cloud posture capabilities — packs, exposure, TLS, host baselines, execution. */
+export async function loadCloudPosture(): Promise<CloudPosture> {
+  if (isDemoMode()) {
+    await delay(220);
+    const now = Date.now();
+    return {
+      organization_id: 0,
+      packs: {
+        cloud: { enabled: true, providers_configured: ["aws", "azure"], reason: null, code: null },
+        container: { enabled: true, reason: null, code: null },
+      },
+      network_exposure: {
+        summary: { hosts_reachable: 3, open_now: 9, closed: 1, new_7d: 2, stale_30d: 0 },
+        items: [
+          {
+            host: "api.acme.ng",
+            port: 443,
+            protocol: "tcp",
+            service: "https",
+            tls: true,
+            state: "open",
+            first_seen_at: new Date(now - 86_400_000 * 12).toISOString(),
+            last_seen_at: new Date(now).toISOString(),
+          },
+          {
+            host: "api.acme.ng",
+            port: 22,
+            protocol: "tcp",
+            service: "ssh",
+            tls: false,
+            state: "open",
+            first_seen_at: new Date(now - 86_400_000 * 40).toISOString(),
+            last_seen_at: new Date(now).toISOString(),
+          },
+        ],
+        schema_upgrade_required: false,
+      },
+      tls_posture: {
+        findings: 3,
+        affected_hosts: 2,
+        by_issue: { legacy_protocol: 1, weak_cipher: 1, certificate_expiring_soon: 1 },
+        expiring_soon: [{ host: "legacy.acme.ng", days_remaining: 18 }],
+      },
+      cis_host_targets: {
+        available: [
+          { name: "cis_ssh_password_auth", display_name: "CIS — SSH password auth", severity: "medium", targets: ["ip_address", "domain"] },
+          { name: "cis_rdp_exposed", display_name: "CIS — RDP exposed", severity: "high", targets: ["ip_address"] },
+        ],
+        matched: 1,
+        by_pack: { cis_ssh_password_auth: 1 },
+      },
+      execution: {
+        docker_isolated: true,
+        global_scan_concurrency: 20,
+        tool_lock_redis_enabled: true,
+        tool_lock_fail_open: true,
+        one_active_scan_per_org: true,
+        active_scans: [],
+      },
+    };
+  }
+  return api.get<CloudPosture>("/cloud-security/posture");
 }
 
 export async function loadIntelLookup(ioc?: string): Promise<IntelLookup> {
@@ -2682,4 +2895,120 @@ export function warRoomStreamUrl(): string {
 
 export function hubStreamUrl(): string {
   return `${API_BASE}/integrations/hooks/stream`;
+}
+
+/**
+ * Report types this org can generate — drives the Report Solutions page.
+ *
+ * Served rather than hard-coded so a new backend report type appears without a
+ * frontend release, and so the page can never advertise a chapter the assembler
+ * does not build (the catalog derives its section list from the assembler).
+ */
+export interface ReportCatalog {
+  items: ReportTypeEntry[];
+  /** Retention is per report type — each keeps its own versions. */
+  retention: { max_versions_per_type?: number; scope?: string; archive_grace_days?: number } | null;
+}
+
+export async function loadReportTypes(): Promise<ReportCatalog> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { items: demo.reportTypes, retention: { max_versions_per_type: 3, scope: "per_report_type", archive_grace_days: 7 } };
+  }
+  const raw = await softOne<any>("/reports/types");
+  const items = Array.isArray(raw?.items) ? raw.items : [];
+  const mapped = items.map((t: any) => ({
+    report_type: String(t.report_type ?? ""),
+    title: String(t.title ?? t.report_type ?? ""),
+    audience: String(t.audience ?? ""),
+    use_case: String(t.use_case ?? ""),
+    requires_campaign: Boolean(t.requires_campaign),
+    featured: Boolean(t.featured),
+    icon: t.icon ? String(t.icon) : undefined,
+    sections: Array.isArray(t.sections) ? t.sections.map(String) : [],
+    section_count: Number(t.section_count ?? 0),
+    formats: Array.isArray(t.formats) ? t.formats.map(String) : [],
+  })) as ReportTypeEntry[];
+  return {
+    items: mapped,
+    retention: raw?.retention && typeof raw.retention === "object" ? raw.retention : null,
+  };
+}
+
+/**
+ * Standing finding counts for the dashboard charts.
+ *
+ * The reports bundle already fetches this alongside report rows; the dashboard
+ * wants it on its own, so it asks for one row and reads only the summary — the
+ * counts are computed server-side over the whole tracked population, not over
+ * the page of rows returned.
+ */
+export async function loadTrackerSummary(): Promise<TrackerSummary | null> {
+  if (isDemoMode()) { await delay(250); return demo.trackerSummary; }
+  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  const summary = raw && typeof raw === "object" ? raw.summary : null;
+  return summary && typeof summary === "object" ? (summary as TrackerSummary) : null;
+}
+
+export interface TrackerTimelinePoint {
+  day: string;
+  detected: number;
+  fixed: number;
+  accepted: number;
+  regressed: number;
+  cumulative_open: number;
+}
+
+export interface TrackerTimeline {
+  days: number;
+  prior_open: number;
+  series: TrackerTimelinePoint[];
+  totals: { detected: number; fixed: number; accepted: number; regressed: number };
+  net_change: number;
+}
+
+/**
+ * Daily findings movement. Standing counts say how much is open; only dated
+ * movement says whether it is getting better.
+ */
+export async function loadTrackerTimeline(days = 90): Promise<TrackerTimeline | null> {
+  if (isDemoMode()) { await delay(250); return demo.trackerTimeline; }
+  const raw = await softOne<any>(`/reports/tracker/analytics/timeline?days=${days}`);
+  if (!raw || !Array.isArray(raw.series)) return null;
+  return {
+    days: Number(raw.days ?? days),
+    prior_open: Number(raw.prior_open ?? 0),
+    series: raw.series.map((p: any) => ({
+      day: String(p.day ?? ""),
+      detected: Number(p.detected ?? 0),
+      fixed: Number(p.fixed ?? 0),
+      accepted: Number(p.accepted ?? 0),
+      regressed: Number(p.regressed ?? 0),
+      cumulative_open: Number(p.cumulative_open ?? 0),
+    })),
+    totals: {
+      detected: Number(raw.totals?.detected ?? 0),
+      fixed: Number(raw.totals?.fixed ?? 0),
+      accepted: Number(raw.totals?.accepted ?? 0),
+      regressed: Number(raw.totals?.regressed ?? 0),
+    },
+    net_change: Number(raw.net_change ?? 0),
+  };
+}
+
+/** Tracker rows plus the server-computed summary — aging and SLA need the rows. */
+export async function loadTrackerAnalytics(): Promise<{
+  rows: TrackerFinding[];
+  summary: TrackerSummary | null;
+}> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { rows: demo.trackerFindings as TrackerFinding[], summary: demo.trackerSummary };
+  }
+  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  const items = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
+  return {
+    rows: items.map((t: any) => normalizeTrackerFinding(t) as TrackerFinding),
+    summary: raw?.summary && typeof raw.summary === "object" ? (raw.summary as TrackerSummary) : null,
+  };
 }

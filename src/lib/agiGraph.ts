@@ -109,6 +109,8 @@ export const PHASE_ACTIVITY_BY_ID: Record<string, string> = {
   disc_cors: "Checking CORS & cookies",
   disc_email: "Testing email security",
   disc_cloud: "Enumerating cloud exposure",
+  disc_trust_boundaries: "Identifying trust boundaries",
+  disc_auth_matrix: "Building auth/access matrix",
   // Vulnerabilities
   vuln_sig: "Running signature scans",
   vuln_inject: "Testing injection flaws",
