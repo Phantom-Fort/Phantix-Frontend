@@ -21,6 +21,7 @@ import {
   Database,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Command,
   KeyRound,
   Sparkles,
@@ -55,6 +56,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useSidebarCollapsed } from "@sg/useSidebarCollapsed";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 import { cx, shortName, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -174,7 +176,7 @@ const navSections: {
  * Collapsible nav group. Opens itself whenever the current route is inside the
  * group, so deep-linking to a sub-page still shows where you are.
  */
-function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
+function NavDropdown({ label, icon, basePath, items, collapsed }: NavDropdownItem & { collapsed?: boolean }) {
   const location = useLocation();
   const groupActive = basePath
     ? location.pathname.startsWith(basePath)
@@ -190,15 +192,16 @@ function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
+        title={label}
         className={cx("nav-item w-full justify-between", groupActive && "active")}
       >
         <span className="flex items-center gap-3">
           {icon}
-          {label}
+          <span className="sg-hide-collapsed">{label}</span>
         </span>
         <ChevronDown
           size={14}
-          className={cx("text-slate-500 transition-transform duration-200", open && "rotate-180")}
+          className={cx("sg-hide-collapsed text-slate-500 transition-transform duration-200", open && "rotate-180")}
         />
       </button>
       <AnimatePresence initial={false}>
@@ -222,7 +225,7 @@ function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
                   className={({ isActive }) => cx("nav-item !py-2", isActive && "active")}
                 >
                   {sub.icon}
-                  {sub.label}
+                  <span className="sg-hide-collapsed">{sub.label}</span>
                 </NavLink>
               ))}
             </div>
@@ -336,6 +339,7 @@ export default function Layout() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [userMenu, setUserMenu] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed();
   const location = useLocation();
   const navigate = useNavigate();
   const sections = navSections;
@@ -441,10 +445,16 @@ export default function Layout() {
     <NotificationProvider>
     <div className="flex min-h-screen">
       {/* ── Sidebar ─────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-phantix-700/60 bg-[rgb(var(--surface-sidebar))] lg:flex">
-        <NavLink to="/" className="flex items-center gap-3 px-4 pb-3 pt-4">
-          <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
-          <div>
+      <aside
+        data-collapsed={collapsed ? "" : undefined}
+        className={cx(
+          "sg-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-phantix-700/60 bg-[rgb(var(--surface-sidebar))] lg:flex",
+          collapsed ? "w-[72px]" : "w-[248px]",
+        )}
+      >
+        <NavLink to="/" className="flex items-center gap-3 px-4 pb-3 pt-4" title="SecureGraph">
+          <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 shrink-0 object-contain" />
+          <div className="sg-hide-collapsed">
             <p className="font-display text-[15px] font-bold leading-tight text-white">SecureGraph</p>
             <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
@@ -453,13 +463,13 @@ export default function Layout() {
         <nav className="flex-1 space-y-1.5 overflow-y-auto px-2.5 pb-3">
           {sections.map((section) => (
             <div key={section.label}>
-              <p className="nav-section-label">
+              <p className="nav-section-label sg-hide-collapsed">
                 {section.label}
               </p>
 <div className="space-y-0.5">
                     {section.items.map((item) => {
                       if ("type" in item && item.type === "dropdown") {
-                        return <NavDropdown key={item.label} {...item} />;
+                        return <NavDropdown key={item.label} {...item} collapsed={collapsed} />;
                       }
                       const navItem = item as NavItem;
                       return (
@@ -467,10 +477,11 @@ export default function Layout() {
                           key={navItem.to}
                           to={navItem.to}
                           end={navItem.to === "/"}
+                          title={navItem.label}
                           className={({ isActive }) => cx("nav-item", isActive && "active")}
                         >
                           {navItem.icon}
-                          {navItem.label}
+                          <span className="sg-hide-collapsed">{navItem.label}</span>
                         </NavLink>
                       );
                     })}
@@ -479,19 +490,19 @@ export default function Layout() {
           ))}
           {session?.isAuthorizer && (
             <div>
-              <p className="nav-section-label text-gold-400">
+              <p className="nav-section-label sg-hide-collapsed text-gold-400">
                 Authorizer
               </p>
-              <NavLink to="/authorizations" end className={({ isActive }) => cx("nav-item", isActive && "active")}>
+              <NavLink to="/authorizations" end title="Approvals" className={({ isActive }) => cx("nav-item", isActive && "active")}>
                 <UserCheck size={17} />
-                Approvals
+                <span className="sg-hide-collapsed">Approvals</span>
               </NavLink>
             </div>
           )}
         </nav>
 
         {/* Dual-control widget */}
-        <div className="border-t border-phantix-700/60 p-2">
+        <div className="sg-hide-collapsed border-t border-phantix-700/60 p-2">
           <div className="rounded-md bg-phantix-900 border border-phantix-700 p-2">
             <div className="flex items-center justify-between">
               <p className="text-[11px] font-semibold text-slate-500">Dual control</p>
@@ -555,7 +566,7 @@ export default function Layout() {
       </aside>
 
       {/* ── Main ────────────────────────────────────────────── */}
-      <div className="flex min-h-screen flex-1 flex-col lg:ml-[248px]">
+      <div className={cx("flex min-h-screen flex-1 flex-col", collapsed ? "lg:ml-[72px]" : "lg:ml-[248px]")}>
         {/* Topbar */}
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-4 py-3 sm:px-6">
           <button
@@ -563,6 +574,15 @@ export default function Layout() {
             className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white lg:hidden"
           >
             {mobileNavOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
+          <button
+            onClick={toggleSidebar}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white lg:inline-flex"
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
 
           <button

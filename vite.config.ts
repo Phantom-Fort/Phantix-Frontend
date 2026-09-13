@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
         "@docs": path.resolve(__dirname, "."),
+        "@sg": path.resolve(__dirname, "./packages/sg-shared/src"),
       },
     },
     server: {

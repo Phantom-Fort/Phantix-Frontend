@@ -913,3 +913,19 @@ p {
     opacity: 0;
   }
 }
+
+/* ── Collapsible application sidebar ─────────────────────────────────────────
+   The shell toggles `data-collapsed` on the sidebar; labels/echo widgets carry
+   `sg-hide-collapsed` and vanish, leaving an icon rail. Shared across the four
+   SecureGraph applications. */
+.sg-sidebar[data-collapsed] .sg-hide-collapsed {
+  display: none !important;
+}
+.sg-sidebar[data-collapsed] .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.sg-sidebar[data-collapsed] nav {
+  overflow-x: hidden;
+}
