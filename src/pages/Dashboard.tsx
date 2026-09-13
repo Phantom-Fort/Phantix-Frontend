@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
+import AppSwitcher from "@/components/AppSwitcher";
 import TrendChart from "@/components/TrendChart";
 import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
 import PostureDonut from "@/components/charts/PostureDonut";
@@ -262,6 +263,7 @@ export default function Dashboard() {
           )}
         </motion.div>
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }} className="flex gap-2.5">
+          <AppSwitcher current="core" />
           <Link to={href("risks", "/risks")} className="btn-secondary">
             <ShieldAlert size={15} /> Risks
           </Link>

@@ -240,7 +240,7 @@ function ReturningLogin({
     const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
     completeAppLogin(emailAddr, name, isInit, isAuth);
     toast("success", rotated ? "Device confirmed" : "Signed in", rotated ? "Welcome" + (name ? " " + name : "") + " — this browser is now your primary device." : "Welcome" + (name ? " " + name : " back"));
-    navigate("/dashboard");
+    navigate("/choose-app");
   };
 
   const verify = async () => {
@@ -494,10 +494,10 @@ function AppLoginFlow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Step B1 — first visit: set a new password (min 8)
+  // Step B1 — first visit: set a new password (min 12)
   const handleSetPassword = async () => {
     if (retryIn > 0) return;
-    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password.length < 12) { setError("Password must be at least 12 characters"); return; }
     if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     setBusy(true);
     setError(null);
@@ -614,7 +614,7 @@ function AppLoginFlow({
       const canOperate = res.can_operate === true || res.dual_control?.can_operate === true;
       const dcInfo = canOperate && isInit && !isAuth ? " · operate as initiator" : canOperate && isAuth && !isInit ? " · operate as authorizer" : "";
       toast("success", "Signed in", "Welcome" + (name ? " " + name : " back") + dcInfo);
-      navigate("/dashboard");
+      navigate("/choose-app");
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
@@ -645,7 +645,7 @@ function AppLoginFlow({
       const isAuth = res.dual_control?.is_authorizer === true;
       completeAppLogin(email, name, isInit, isAuth);
       toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
-      navigate("/dashboard");
+      navigate("/choose-app");
       return true;
     } catch {
       return false;
@@ -772,7 +772,7 @@ function AppLoginFlow({
                   <label className="label">New password</label>
                   <div className="relative">
                     <KeyRound size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 8 characters" autoFocus autoComplete="new-password" />
+                    <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Min 12 characters" autoFocus autoComplete="new-password" />
                   </div>
                 </div>
                 <div>

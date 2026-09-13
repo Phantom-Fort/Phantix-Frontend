@@ -57,6 +57,7 @@ import ContextProjects from "@/pages/ContextProjects";
 import ThreatModels from "@/pages/ThreatModels";
 import PasswordResetRequest from "@/pages/auth/PasswordResetRequest";
 import PasswordResetComplete from "@/pages/auth/PasswordResetComplete";
+import ChooseApp from "@/pages/ChooseApp";
 import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -106,6 +107,7 @@ export default function App() {
           <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/choose-app" element={<ChooseApp />} />
           <Route path="/password-reset" element={<PasswordResetRequest />} />
           <Route path="/reset-password" element={<PasswordResetComplete />} />
           <Route path="/device-confirm" element={<DeviceConfirm />} />
