@@ -9,6 +9,7 @@ import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import DeviceConfirm from "@/pages/DeviceConfirm";
 import GithubCallback from "@/pages/GithubCallback";
+import IntegrationOAuthCallback from "@/pages/IntegrationOAuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import Assets from "@/pages/Assets";
 import Scans from "@/pages/Scans";
@@ -110,6 +111,7 @@ export default function App() {
           <Route path="/device-confirm" element={<DeviceConfirm />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/integrations/github/callback" element={<GithubCallback />} />
+          <Route path="/integrations/oauth/:connectorId/callback" element={<IntegrationOAuthCallback />} />
           <Route path="/demo" element={<DemoEntry />} />
           {/* Public sandbox application — no auth (entry from phantixlabs.com) */}
           <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
