@@ -2,6 +2,8 @@
 
 **Where:** **SOC Monitor** → Availability  
 
+![Availability](../../screenshots/app/availability.png)
+
 ---
 
 ## Process flow — outbound checks

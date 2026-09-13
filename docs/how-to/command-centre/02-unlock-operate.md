@@ -2,6 +2,8 @@
 
 **Why:** Scans, campaigns, tracker updates, report generate, many writes need dual-control.
 
+![Unlock operate](../../screenshots/app/operate_unlock.png)
+
 ---
 
 ## Process flow

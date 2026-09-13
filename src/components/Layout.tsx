@@ -52,9 +52,10 @@ import {
   SlidersHorizontal,
   ShieldQuestion,
   Workflow,
+  MoreHorizontal,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { PLATFORM_IDENTITY_URL, PLATFORM_URL } from "@/lib/links";
+import { PLATFORM_IDENTITY_URL } from "@/lib/links";
 import { cx, shortName, timeAgo } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import AgiDrawer from "@/components/AgiDrawer";
@@ -93,12 +94,28 @@ const vaptSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
   { to: "/vapt/settings", label: "Engine Settings", icon: <SlidersHorizontal size={17} /> },
 ];
 
+const moreSurfacesSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
+  { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
+  { to: "/code", label: "Code", icon: <GitBranch size={17} /> },
+  { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
+  { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
+  { to: "/pentest/external-scope", label: "Pentest Scope", icon: <FileSignature size={17} /> },
+];
+
+const moreGovernanceSubItems: { to: string; label: string; icon: React.ReactNode }[] = [
+  { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
+  { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },
+  { to: "/reports", label: "Report Solutions", icon: <FileText size={17} /> },
+];
+
 type NavDropdownItem = {
   type: "dropdown";
   label: string;
   icon: React.ReactNode;
-  /** Route prefix that marks this group active. */
-  basePath: string;
+  /** Route prefix that marks this group active. Omit for a group of otherwise
+   *  unrelated leaf routes — active state then falls back to an exact match
+   *  against one of the group's own items. */
+  basePath?: string;
   items: { to: string; label: string; icon: React.ReactNode }[];
 };
 
@@ -117,14 +134,10 @@ const navSections: {
     label: "Attack Surface",
     items: [
       { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
-      { to: "/assets/intelligence", label: "Intelligence", icon: <Shield size={17} /> },
-      { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, basePath: "/soc", items: socSubItems },
       { to: "/scans", label: "Scans", icon: <Radar size={17} /> },
-      { to: "/code", label: "Code", icon: <GitBranch size={17} /> },
+      { type: "dropdown", label: "SOC Monitor", icon: <Activity size={17} />, basePath: "/soc", items: socSubItems },
       { type: "dropdown", label: "VAPT", icon: <Crosshair size={17} />, basePath: "/vapt", items: vaptSubItems },
-      { to: "/cloud", label: "Cloud Posture", icon: <Cloud size={17} /> },
-      { to: "/threat-intel", label: "Threat Intel", icon: <Fingerprint size={17} /> },
-      { to: "/pentest/external-scope", label: "Pentest Scope", icon: <FileSignature size={17} /> },
+      { type: "dropdown", label: "More Surfaces", icon: <MoreHorizontal size={17} />, items: moreSurfacesSubItems },
     ],
   },
   {
@@ -139,10 +152,7 @@ const navSections: {
       { to: "/risks", label: "Risks", icon: <ShieldAlert size={17} /> },
       { to: "/posture", label: "Posture", icon: <Activity size={17} /> },
       { type: "dropdown", label: "Compliance", icon: <Scale size={17} />, basePath: "/compliance", items: complianceSubItems },
-      { to: "/threat-models", label: "Threat Models", icon: <ShieldQuestion size={17} /> },
-      { to: "/context", label: "Product Context", icon: <Workflow size={17} /> },
-      { to: "/reports", label: "Report Solutions", icon: <FileText size={17} /> },
-      { to: "/plans", label: "Plans & billing", icon: <Sparkles size={17} /> },
+      { type: "dropdown", label: "More Governance", icon: <MoreHorizontal size={17} />, items: moreGovernanceSubItems },
     ],
   },
   {
@@ -166,11 +176,14 @@ const navSections: {
  */
 function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
   const location = useLocation();
-  const groupActive = location.pathname.startsWith(basePath);
+  const groupActive = basePath
+    ? location.pathname.startsWith(basePath)
+    : items.some((i) => location.pathname === i.to);
   const [open, setOpen] = useState(groupActive);
 
   useEffect(() => {
-    if (location.pathname.startsWith(basePath)) setOpen(true);
+    if (groupActive) setOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, basePath]);
 
   return (
@@ -203,8 +216,9 @@ function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
                   key={sub.to}
                   to={sub.to}
                   // The group's own landing route must match exactly, or it would
-                  // stay highlighted on every sub-page.
-                  end={sub.to === basePath}
+                  // stay highlighted on every sub-page. Groups with no basePath
+                  // are unrelated leaf routes, so every item matches exactly.
+                  end={basePath ? sub.to === basePath : true}
                   className={({ isActive }) => cx("nav-item !py-2", isActive && "active")}
                 >
                   {sub.icon}
@@ -221,24 +235,14 @@ function NavDropdown({ label, icon, basePath, items }: NavDropdownItem) {
 
 type NavItem = { to: string; label: string; icon: React.ReactNode; badge?: string };
 
-function useNavSections() {
+/** BETA sandbox now lives in the topbar (icon beside the theme toggle) — the
+ *  sidebar just needs to know whether the org is enrolled. */
+function useSandboxEnrolled() {
   const [sandboxEnrolled, setSandboxEnrolled] = useState(false);
   useEffect(() => {
     void loadSandboxMe().then((m) => setSandboxEnrolled(!!m?.enrolled));
   }, []);
-  return useMemo(() => {
-    if (!sandboxEnrolled) return navSections;
-    return navSections.map((section) => {
-      if (section.label !== "Overview") return section;
-      return {
-        ...section,
-        items: [
-          ...section.items,
-          { to: "/sandbox", label: "BETA sandbox", icon: <FlaskNav size={17} />, badge: "β" },
-        ],
-      };
-    });
-  }, [sandboxEnrolled]);
+  return sandboxEnrolled;
 }
 
 function OperateCountdown({ expiresAt }: { expiresAt: number }) {
@@ -334,13 +338,14 @@ export default function Layout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const sections = useNavSections();
+  const sections = navSections;
+  const sandboxEnrolled = useSandboxEnrolled();
   const searchIndex = useMemo(() => {
     const flat: { to: string; label: string; icon: React.ReactNode }[] = [];
     for (const s of sections) {
       for (const item of s.items) {
         if ("type" in item && item.type === "dropdown") {
-          for (const sub of socSubItems) flat.push(sub);
+          for (const sub of item.items) flat.push(sub);
         } else {
           flat.push(item as NavItem);
         }
@@ -364,17 +369,18 @@ export default function Layout() {
     return () => window.removeEventListener("keydown", fn);
   }, []);
 
-  // Catch billing-required 402 responses and send the user to payment — a toast
-  // they can miss is not an upgrade path.
+  // Catch billing-required 402 responses. Operators sign in with a login link,
+  // not a company password, so they have no way to reach the Platform's
+  // billing page themselves — point them at their admin instead of a redirect
+  // they can't complete.
   useEffect(() => {
     const handler = (e: Event) => {
       const msg = ((e as CustomEvent).detail as string) || "This action needs a higher plan.";
-      toast("warning", "Upgrade required", msg);
-      navigate(`/plans?reason=${encodeURIComponent(msg)}`);
+      toast("warning", "Upgrade required", `${msg} Ask your organization admin to upgrade the plan on the Platform.`);
     };
     window.addEventListener("phantix:billing-required", handler);
     return () => window.removeEventListener("phantix:billing-required", handler);
-  }, [toast, navigate]);
+  }, [toast]);
 
   // Credits exhausted — the app user cannot renew; their organization admin can,
   // on the platform. Say who to ask, not just that something failed.
@@ -482,20 +488,6 @@ export default function Layout() {
               </NavLink>
             </div>
           )}
-          <div>
-            <p className="nav-section-label">
-              Tenant admin
-            </p>
-            <a
-              href={PLATFORM_IDENTITY_URL}
-              className="nav-item"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <ExternalLink size={17} />
-              Platform settings
-            </a>
-          </div>
         </nav>
 
         {/* Dual-control widget */}
@@ -591,6 +583,23 @@ export default function Layout() {
           </button>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
+            {sandboxEnrolled && (
+              <NavLink
+                to="/sandbox"
+                title="BETA sandbox"
+                className={({ isActive }) =>
+                  cx(
+                    "relative rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white",
+                    isActive && "border-gold-400/50 text-gold-300",
+                  )
+                }
+              >
+                <FlaskNav size={16} />
+                <span className="absolute -right-1 -top-1 rounded-full bg-gold-400 px-1 font-mono text-[8px] font-bold leading-[1.2] text-phantix-950">
+                  β
+                </span>
+              </NavLink>
+            )}
             <ThemeToggle />
             <NotificationBell />
             <span className={cx(
@@ -730,15 +739,6 @@ export default function Layout() {
                     </NavLink>
                   </div>
                 )}
-                <div>
-                  <p className="nav-section-label">
-                    Tenant admin
-                  </p>
-                  <a href={PLATFORM_IDENTITY_URL} className="nav-item" target="_blank" rel="noreferrer">
-                    <ExternalLink size={17} />
-                    Platform settings
-                  </a>
-                </div>
               </nav>
             </motion.div>
           )}

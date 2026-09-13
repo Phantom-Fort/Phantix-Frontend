@@ -3,6 +3,8 @@
 **Where:** **Analytics** → `/analytics`
 **What:** The organization's security picture, live — posture, findings, comparative and automation panels — with nothing to generate and nothing to wait for.
 
+![Analytics](../../screenshots/app/analytics.png)
+
 ---
 
 ## Process flow

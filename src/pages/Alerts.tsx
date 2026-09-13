@@ -44,7 +44,7 @@ export default function Alerts() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Alerts"
-        description="Severity-routed client notifications. Critical ? email + WhatsApp + Telegram; everything else ? email only. Routing is enforced server-side, not just configured."
+        description="Severity-routed client notifications. Critical → email + WhatsApp + Telegram; everything else → email only. Routing is enforced server-side, not just configured."
         actions={
           <>
           <DocLink docId="hc-alert-channels" label="Alerts how-to" />

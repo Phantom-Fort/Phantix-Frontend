@@ -338,7 +338,13 @@ export default function Dashboard() {
               ) : undefined
             }
           />
-          {trendPoints.length > 1 ? (
+          {trendRes.loading && trendPoints.length <= 1 ? (
+            <div className="mt-2 flex h-[190px] items-end gap-2">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} className="skeleton flex-1 rounded-sm" style={{ height: `${30 + ((i * 37) % 60)}%` }} />
+              ))}
+            </div>
+          ) : trendPoints.length > 1 ? (
             <TrendChart points={trendPoints} color="#E8B54D" height={190} />
           ) : (
             <p className="py-10 text-center text-xs text-slate-500">

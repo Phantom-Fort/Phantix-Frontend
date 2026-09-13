@@ -248,6 +248,7 @@ export default function Reports() {
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
   const fetchedCampaigns = useRef(false);
 
   // The catalog is what the page offers; without it there is nothing to pick.
@@ -392,9 +393,10 @@ export default function Reports() {
   useEffect(() => {
     if (genOpen && !fetchedCampaigns.current && api) {
       fetchedCampaigns.current = true;
+      setCampaignsLoading(true);
       api.get<any>("/vapt/campaigns?limit=50").then((r) => {
         setCampaigns(r.items ?? r.campaigns ?? r ?? []);
-      }).catch(() => {});
+      }).catch(() => {}).finally(() => setCampaignsLoading(false));
     }
   }, [genOpen]);
 
@@ -922,14 +924,18 @@ export default function Reports() {
             return (
               <div>
                 <label className="label">Campaign</label>
-                <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
-                  <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
-                  {campaigns.map((c: any) => (
-                    <option key={c.id} value={c.id}>
-                      #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
-                    </option>
-                  ))}
-                </select>
+                {campaignsLoading ? (
+                  <div className="skeleton h-9 w-full rounded-md" />
+                ) : (
+                  <select className="input" value={genForm.campaign_id} onChange={(e) => setGenForm((p) => ({ ...p, campaign_id: e.target.value }))}>
+                    <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
+                    {campaigns.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             );
           })()}

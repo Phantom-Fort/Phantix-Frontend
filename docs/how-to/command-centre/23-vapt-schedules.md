@@ -3,6 +3,8 @@
 **Where:** **VAPT** → `/vapt/schedules` · `/vapt/procedures` · `/vapt/settings`
 **What:** The cadence, the rules of engagement, and the engine configuration behind VAPT campaigns.
 
+![VAPT schedules](../../screenshots/app/vapt_schedules.png)
+
 ---
 
 ## Process flow

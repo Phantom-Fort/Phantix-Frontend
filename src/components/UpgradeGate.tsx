@@ -1,6 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Sparkle } from "lucide-react";
+import { Sparkles, Sparkle, UserCog } from "lucide-react";
 import { Card } from "@/components/ui";
 import { upsellFor, isFreePlan } from "@/lib/entitlements";
 import { useEntitlements } from "@/lib/useEntitlements";
@@ -10,12 +9,14 @@ import { cx } from "@/lib/utils";
 // Two shapes, used deliberately:
 //
 //  • <UpgradeGate>   replaces a page a plan cannot use at all. It explains what
-//                    was blocked and routes to payment — never a dead end.
+//                    was blocked and never a dead end.
 //  • <UpsellBanner>  sits at the top of a page that still works, when only part
 //                    of it needs a higher plan.
 //
-// Both link to /plans with the feature key, so the pricing page can say "this is
-// what you were trying to do" instead of a generic pitch.
+// Operators sign in here with a login link, not a company password, so they
+// have no way to reach the Platform's billing page even if we sent them there.
+// Plan purchase is a company-admin action — both surfaces point at the admin,
+// not at a redirect an operator can't complete.
 
 export function UpgradeGate({
   feature,
@@ -34,8 +35,6 @@ export function UpgradeGate({
     body ??
     up?.blurb ??
     "Your current plan does not include this. Upgrading unlocks it immediately — nothing you have already configured is lost.";
-  const to = feature ? `/plans?feature=${encodeURIComponent(feature)}` : "/plans";
-
   return (
     <Card className={cx("mx-auto max-w-2xl text-center", className)}>
       <div className="flex flex-col items-center gap-3 py-6">
@@ -44,11 +43,13 @@ export function UpgradeGate({
         </span>
         <h2 className="font-display text-lg font-semibold text-white">{heading}</h2>
         <p className="max-w-md text-sm leading-6 text-slate-400">{detail}</p>
-        <Link to={to} className="btn-primary mt-2 !px-5 !py-2 text-sm">
-          See plans &amp; upgrade <ArrowRight size={15} className="ml-1.5 inline" />
-        </Link>
+        <p className="mt-2 flex items-center gap-2 rounded-md border border-gold-400/30 bg-gold-400/[0.08] px-4 py-2.5 text-sm font-medium text-gold-200">
+          <UserCog size={16} className="shrink-0 text-gold-300" />
+          Ask your organization admin to upgrade the plan
+        </p>
         <p className="text-[11px] text-slate-500">
-          Cards are charged per company; AI work is metered as credits. Viewing and exporting is never billed.
+          Plan changes and billing are managed on the Platform by your company admin. Cards are charged per company —
+          nothing you have already configured is lost while you wait.
         </p>
       </div>
     </Card>
@@ -76,7 +77,6 @@ export function UpsellBanner({
   if (!up && !title) return null;
   const label = title ?? up?.label ?? "Unlock with an upgrade";
   const detail = body ?? up?.blurb ?? "";
-  const to = `/plans?feature=${encodeURIComponent(feature)}`;
 
   return (
     <div
@@ -89,9 +89,9 @@ export function UpsellBanner({
       <p className="min-w-0 flex-1 text-[11px] leading-5 text-gold-100/90">
         <span className="font-semibold text-gold-200">{label}.</span> {detail}
       </p>
-      <Link to={to} className="btn-secondary shrink-0 !px-3 !py-1.5 !text-xs">
-        Upgrade <ArrowRight size={12} className="ml-1 inline" />
-      </Link>
+      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-gold-300">
+        <UserCog size={13} /> Ask your admin to upgrade
+      </span>
     </div>
   );
 }

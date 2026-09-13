@@ -3,6 +3,10 @@
 **Where:** **SOC** → `/soc` · `/soc/war-room` · `/soc/playbooks` · `/soc/advisor` · `/soc/logs` · `/soc/agents` · `/soc/cloud`
 **What:** Detection, triage, response and the analyst surfaces around them.
 
+![SOC dashboard](../../screenshots/app/soc.png)
+
+![War room](../../screenshots/app/soc_war_room.png)
+
 ---
 
 ## Process flow

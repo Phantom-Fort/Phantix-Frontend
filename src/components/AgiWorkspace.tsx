@@ -749,15 +749,13 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               </li>
             ))}
           </ul>
-          {/* When the blocker is entitlement, the way out is payment — send them
-              there instead of leaving a list of reasons with no action. */}
+          {/* When the blocker is entitlement, the way out is payment — but an
+              operator has no company password to reach the Platform's billing
+              page, so point them at their admin instead of a dead-end redirect. */}
           {access?.agi.blockers.some((b) => /entitle|plan|payment|subscri|premium/i.test(`${b.code} ${b.message}`)) && (
-            <button
-              onClick={() => navigate("/plans?feature=ai_pentest_agent")}
-              className="btn-primary mt-4 !text-xs"
-            >
-              <Sparkles size={12} className="mr-1 inline" /> See plans &amp; upgrade
-            </button>
+            <p className="mt-4 flex items-center gap-2 rounded-md border border-gold-400/30 bg-gold-400/[0.08] px-3.5 py-2 text-xs font-medium text-gold-200">
+              <Sparkles size={13} className="shrink-0 text-gold-300" /> Ask your organization admin to upgrade the plan
+            </p>
           )}
         </div>
       )}

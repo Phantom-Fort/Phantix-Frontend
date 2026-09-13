@@ -3,6 +3,8 @@
 **Where:** **Agent activity** → `/agent-activity`
 **What:** Every action the agent took for your organization — the run, the domain, your intent, who asked, whether it was authorized, and what happened.
 
+![Agent activity](../../screenshots/app/agent_activity.png)
+
 ---
 
 ## Process flow

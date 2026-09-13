@@ -3,6 +3,8 @@
 **Where:** **Threat Intel** → `/threat-intel`
 **What:** IOC lookup and correlation against your own inventory — indicators are matched to the assets you actually have, never to a generic feed dump.
 
+![Threat intelligence](../../screenshots/app/threat_intel.png)
+
 ---
 
 ## Process flow

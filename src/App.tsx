@@ -49,7 +49,6 @@ import ComplianceGaps from "@/pages/ComplianceGaps";
 import ComplianceProfile from "@/pages/ComplianceProfile";
 import ComplianceConnectors from "@/pages/ComplianceConnectors";
 import Analytics from "@/pages/Analytics";
-import Plans from "@/pages/Plans";
 import VaptSchedules from "@/pages/VaptSchedules";
 import VaptSettings from "@/pages/VaptSettings";
 import VaptProcedures from "@/pages/VaptProcedures";
@@ -132,7 +131,6 @@ export default function App() {
             <Route path="/code" element={<RequireAuth><Code /></RequireAuth>} />
             <Route path="/posture" element={<RequireAuth><Posture /></RequireAuth>} />
             <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
-            <Route path="/plans" element={<RequireAuth><Plans /></RequireAuth>} />
             <Route path="/vapt" element={<RequireAuth><Vapt /></RequireAuth>} />
             <Route path="/vapt/schedules" element={<RequireAuth><VaptSchedules /></RequireAuth>} />
             <Route path="/vapt/settings" element={<RequireAuth><VaptSettings /></RequireAuth>} />

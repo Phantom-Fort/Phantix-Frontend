@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState, TableSkeleton } from "@/components/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
@@ -57,7 +57,7 @@ export default function Assets() {
     securityDbBlocked: false,
     error: null,
   }, "assets");
-  const { data: prioritized } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
+  const { data: prioritized, loading: prioritizedLoading } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
   const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -457,6 +457,9 @@ export default function Assets() {
       {tab === "prioritized" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="!p-0 overflow-hidden">
+            {prioritizedLoading && !(prioritized ?? []).length ? (
+              <div className="p-4"><TableSkeleton rows={6} /></div>
+            ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-phantix-700/40 text-left text-[11px] uppercase tracking-wider text-slate-500">
@@ -503,6 +506,7 @@ export default function Assets() {
                 )}
               </tbody>
             </table>
+            )}
             <Pagination
               totalItems={prioritized?.length ?? 0}
               page={prioSafePage}

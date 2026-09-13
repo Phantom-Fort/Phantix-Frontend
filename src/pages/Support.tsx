@@ -25,13 +25,20 @@ import {
 
 const THREAD_POLL_MS = 10_000;
 
-const QUICK_LINKS: { label: string; to: string; hint: string; external?: boolean }[] = [
+const QUICK_LINKS: { label: string; to: string; hint: string }[] = [
   { label: "Documentation & Help Centre", to: "/docs", hint: "Setup, day-to-day use and integrations" },
   { label: "Support how-to", to: "/docs/howto-app-15", hint: "Raising and working a ticket" },
   { label: "Frequently asked questions", to: "/docs/faq", hint: "Answers for common questions" },
-  { label: "Plans, billing & credits", to: "/plans", hint: "Upgrade, renewal and credit top-ups" },
   { label: "Privacy & security", to: "/docs/privacy-trust", hint: "How your data is held" },
 ];
+
+// Plan upgrades and billing are a company-admin action on the Platform —
+// operators sign in here with a login link, not a company password, so this
+// is a note, not a link they could actually complete.
+const BILLING_NOTE = {
+  label: "Plans, billing & credits",
+  hint: "Ask your organization admin — upgrades and renewals are managed on the Platform",
+};
 
 export default function Support() {
   const { toast, session } = useStore();
@@ -325,6 +332,15 @@ export default function Support() {
                 <ExternalLink size={12} className="shrink-0 text-slate-600" />
               </Link>
             ))}
+            {/* Not a link — an operator has no company password to complete a
+                billing redirect, so this names who can act instead. */}
+            <div className="flex items-center gap-3 rounded-lg border border-phantix-700/40 px-3.5 py-2.5">
+              <ShieldCheck size={14} className="shrink-0 text-gold-400" />
+              <span className="min-w-0 flex-1">
+                <span className="block text-xs font-medium text-slate-200">{BILLING_NOTE.label}</span>
+                <span className="block text-[11px] text-slate-500">{BILLING_NOTE.hint}</span>
+              </span>
+            </div>
           </div>
           <p className="mt-3 text-[11px] leading-5 text-slate-500">
             Support is available to every operator in your organization; tickets are owned by the organization, and

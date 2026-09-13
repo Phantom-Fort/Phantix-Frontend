@@ -3,6 +3,8 @@
 **Where:** **Code** → `/code`
 **What:** GitHub-connected repositories, branch/PR review runs, AutoFix proposals, and Continuous PR — code is analysed in an ephemeral clone, never stored by the platform.
 
+![Code security](../../screenshots/app/code.png)
+
 ---
 
 ## Process flow

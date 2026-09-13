@@ -68,6 +68,53 @@
     --muted-foreground: #a1a1aa;
   }
 
+  /* Auth showcase panel (login screens) is a fixed dark hero, by design —
+     every scene inside it (globe, sonar, incident timeline, etc.) is styled
+     assuming a dark backdrop. Re-declaring the dark palette here, scoped to a
+     class instead of :root, lets it stay dark even while the rest of the app
+     is on light theme, since CSS variables only flip at :root[data-theme]. */
+  .auth-showcase-dark {
+    --phantix-950: 0 0 0;
+    --phantix-900: 10 10 10;
+    --phantix-850: 16 16 16;
+    --phantix-800: 24 24 27;
+    --phantix-700: 63 63 70;
+    --phantix-600: 82 82 91;
+    --phantix-500: 82 82 91;
+    --phantix-400: 113 113 122;
+    --phantix-300: 161 161 170;
+    --phantix-200: 212 212 216;
+    --phantix-100: 228 228 231;
+    --gold-100: 250 227 179;
+    --gold-200: 246 214 148;
+    --gold-300: 243 205 126;
+    --gold-400: 232 181 77;
+    --gold-500: 212 162 78;
+    --gold-600: 185 134 47;
+    --slate-50: 250 250 250;
+    --slate-100: 244 244 245;
+    --slate-200: 228 228 231;
+    --slate-300: 212 212 216;
+    --slate-400: 161 161 170;
+    --slate-500: 113 113 122;
+    --slate-600: 82 82 91;
+    --slate-700: 63 63 70;
+    --slate-800: 39 39 42;
+    --slate-900: 24 24 27;
+    --slate-950: 9 9 11;
+    --surface: 10 10 10;
+    --surface-card: 18 18 20;
+    --surface-inset: 14 14 16;
+    --surface-sidebar: 0 0 0;
+    --border-subtle: 63 63 70;
+    --border-strong: 82 82 91;
+    --foreground: #e4e4e7;
+    --muted-foreground: #a1a1aa;
+    --color-white: 255 255 255;
+    --color-black: 0 0 0;
+    color-scheme: dark;
+  }
+
   :root[data-theme="light"] {
     /* ── Light theme — neutral "Vercel / Cloudflare" palette ── */
     color-scheme: light;
@@ -631,6 +678,12 @@ p {
   }
   .prose-doc hr {
     @apply border-phantix-700/50 my-8;
+  }
+  /* Without this, consecutive markdown images (no text between them) render
+     as bare inline <img> tags — no width cap, no gap — and pack tightly
+     against each other instead of stacking as separate figures. */
+  .prose-doc img {
+    @apply block w-full max-w-full my-4 rounded-md border border-phantix-700/50;
   }
   .prose-doc img {
     @apply rounded-md my-4;

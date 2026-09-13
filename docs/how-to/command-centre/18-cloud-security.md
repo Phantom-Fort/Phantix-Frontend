@@ -3,6 +3,8 @@
 **Where:** **Cloud Posture** → `/cloud`
 **What:** Cloud, VPS and PaaS connectors, log-drain ingest, and the five posture capabilities — which packs can actually run, what is exposed, TLS health, host baselines, and how execution is contained.
 
+![Cloud security](../../screenshots/app/cloud.png)
+
 ---
 
 ## Process flow

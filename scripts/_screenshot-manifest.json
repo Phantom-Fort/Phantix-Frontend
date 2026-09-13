@@ -33,5 +33,6 @@
   { "name": "soc_war_room", "path": "/soc/war-room", "file": "app/soc_war_room.png", "waitText": "War" },
   { "name": "pentest_scope", "path": "/pentest/external-scope", "file": "app/pentest_scope.png", "waitText": "scope" },
   { "name": "integrations", "path": "/integrations", "file": "app/integrations.png", "waitText": "Integrat" },
-  { "name": "threat_models", "path": "/threat-models", "file": "app/threat_models.png", "waitText": "Threat model" }
+  { "name": "threat_models", "path": "/threat-models", "file": "app/threat_models.png", "waitText": "Threat model" },
+  { "name": "analytics", "path": "/analytics", "file": "app/analytics.png", "waitText": "Analytics" }
 ]

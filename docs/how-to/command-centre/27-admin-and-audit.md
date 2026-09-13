@@ -3,6 +3,12 @@
 **Where:** **Audit trail** → `/audit` · **People** → `/people` · **Integrations Hub** → `/integrations` · **BETA sandbox** → `/sandbox`
 **What:** The supporting surfaces — who did what, who is in the organization, where findings are delivered, and how to try new features safely.
 
+![Audit trail](../../screenshots/app/audit.png)
+
+![People & dual control](../../screenshots/app/people.png)
+
+![Integrations Hub](../../screenshots/app/integrations.png)
+
 ---
 
 ## Process flow

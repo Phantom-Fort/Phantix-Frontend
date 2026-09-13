@@ -3,6 +3,8 @@
 **Where:** **Threat models** → `/threat-models`
 **What:** Evidence-graded, stage-aware threats derived from a product project's context (components, trust boundaries, flows, documents) — not a scanner result.
 
+![Threat models](../../screenshots/app/threat_models.png)
+
 ---
 
 ## Process flow

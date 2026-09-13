@@ -3,6 +3,10 @@
 **Where:** **Compliance** → `/compliance` · `/compliance/questionnaire` · `/compliance/gaps` · `/compliance/profile` · `/compliance/connectors`
 **What:** Frameworks, the questions that scope them, the gaps they reveal, the business profile that drives them, and the connectors that collect evidence.
 
+![Compliance](../../screenshots/app/compliance.png)
+
+![Compliance questionnaire](../../screenshots/app/compliance_questionnaire.png)
+
 ---
 
 ## Process flow

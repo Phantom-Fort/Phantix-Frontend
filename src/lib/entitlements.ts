@@ -159,53 +159,6 @@ export function upsellFor(key?: string | null): UpsellFeature | null {
   return UPSELL_FEATURES[key] ?? null;
 }
 
-// ── Self-serve checkout ──────────────────────────────────────────────────────
-
-export interface SubscribeResult {
-  payment?: { id?: number; amount_due_ngn?: number; reference?: string };
-  subscription?: Record<string, unknown>;
-  message?: string;
-}
-
-export async function subscribe(cycle: "monthly" | "yearly"): Promise<SubscribeResult> {
-  if (isDemoMode()) {
-    await delay(500);
-    return { payment: { id: 0 }, message: "Demo checkout is disabled." };
-  }
-  return api.post<SubscribeResult>("/billing/subscribe", { billing_cycle: cycle });
-}
-
-export interface CheckoutSession {
-  authorization_url: string;
-  access_code?: string;
-  reference?: string;
-  public_key?: string;
-}
-
-/** Initialize Paystack checkout for a pending invoice. */
-export async function initializeCheckout(
-  paymentId: number,
-  callbackUrl?: string,
-): Promise<CheckoutSession> {
-  return api.post<CheckoutSession>(`/billing/payments/${paymentId}/initialize`, {
-    ...(callbackUrl ? { callback_url: callbackUrl } : {}),
-  });
-}
-
-/**
- * Subscribe then open checkout. Returns the redirect URL, or throws with a message
- * the caller can show. Kept here so every upsell CTA runs the same flow.
- */
-export async function startCheckout(cycle: "monthly" | "yearly"): Promise<string> {
-  const res = await subscribe(cycle);
-  const paymentId = Number(res.payment?.id ?? 0);
-  if (!paymentId) {
-    throw new Error(res.message || "Could not create the invoice for this plan.");
-  }
-  const callback = `${window.location.origin}/plans?checkout=return`;
-  const session = await initializeCheckout(paymentId, callback);
-  if (!session?.authorization_url) {
-    throw new Error("Payment provider did not return a checkout URL.");
-  }
-  return session.authorization_url;
-}
+// Self-serve checkout (subscribe, plan purchase) lives on the Platform app's
+// Billing page now — every upgrade CTA in this app links there instead of
+// running its own checkout flow.

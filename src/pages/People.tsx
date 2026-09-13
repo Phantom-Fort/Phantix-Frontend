@@ -74,7 +74,7 @@ export default function People() {
                     <p className="font-semibold text-slate-100">{s.user?.full_name}</p>
                     <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">{s.slot}</span>
                   </div>
-                  <p className="text-xs text-slate-500">{s.user?.title} ï¿½ {s.user?.email}</p>
+                  <p className="text-xs text-slate-500">{s.user?.title} · {s.user?.email}</p>
                   <p className="mt-1 text-[11px] text-slate-600">{s.desc}</p>
                 </div>
               </div>
@@ -115,7 +115,7 @@ export default function People() {
                       </span>
                       <div>
                         <p className="font-medium text-slate-200">{u.full_name}</p>
-                        <p className="text-xs text-slate-500">{u.email} ï¿½ {u.title}</p>
+                        <p className="text-xs text-slate-500">{u.email} · {u.title}</p>
                       </div>
                     </div>
                   </td>

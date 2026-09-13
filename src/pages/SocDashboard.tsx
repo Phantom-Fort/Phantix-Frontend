@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Gauge, Shield, Wifi, Monitor, Clock, Crosshair,
+  Gauge, Shield, Wifi, Monitor, Clock, Crosshair, Boxes,
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
   ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio, HeartPulse,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState } from "@/components/ui";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState, CardListSkeleton } from "@/components/ui";
 import SecurityDbBanner from "@/components/SecurityDbBanner";
 import DocLink from "@/components/DocLink";
 import SocAvailability from "@/components/SocAvailability";
@@ -635,7 +635,9 @@ export default function SocDashboard() {
             <button className="btn-primary !py-2 text-sm" onClick={() => setCaseOpen(true)}><Plus size={14} /> Open case</button>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            {(casesRes.data?.items ?? []).length === 0 ? (
+            {casesRes.loading && !(casesRes.data?.items ?? []).length ? (
+              <div className="md:col-span-2"><CardListSkeleton rows={4} /></div>
+            ) : (casesRes.data?.items ?? []).length === 0 ? (
               <div className="md:col-span-2"><EmptyState icon={<BellRing size={24} />} title="No cases" body="Escalate a detection to open an incident case" /></div>
             ) : (casesRes.data?.items ?? []).map((c) => (
               <button key={c.id} type="button" className="text-left" onClick={() => void openCaseDetail(c)}>
@@ -672,7 +674,9 @@ export default function SocDashboard() {
             <button className="btn-primary !py-2 text-sm" onClick={() => setRuleOpen(true)}><Plus size={14} /> New rule</button>
           </div>
           <Card className="!p-0 overflow-hidden">
-            {(rulesRes.data ?? []).length === 0 ? (
+            {rulesRes.loading && !(rulesRes.data ?? []).length ? (
+              <div className="p-4"><TableSkeleton rows={5} /></div>
+            ) : (rulesRes.data ?? []).length === 0 ? (
               <EmptyState icon={<FileText size={24} />} title="No rules" body="Create a detection rule or seed the templates" />
             ) : (
               <div className="overflow-x-auto">
@@ -720,20 +724,36 @@ export default function SocDashboard() {
         <div className="space-y-4">
           <Card>
             <CardHeader title="Enrichment adapters" subtitle="Optional external enrichment only — SOC operates fully on internal SecureGraph signals" />
-            <div className="grid gap-3 md:grid-cols-2">
-              {(adaptersRes.data ?? []).map((a) => (
-                <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
-                  <div>
-                    <p className="text-sm font-medium text-slate-100">{a.displayName ?? a.id ?? a.vendor}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">{a.vendor}</p>
-                    {a.detail && <p className="mt-1 text-xs text-slate-500">{a.detail}</p>}
+            {adaptersRes.loading && !(adaptersRes.data ?? []).length ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4" style={{ opacity: 1 - i * 0.12 }}>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="skeleton h-4 w-2/3 rounded" />
+                      <div className="skeleton h-3 w-1/3 rounded" />
+                    </div>
+                    <div className="skeleton h-5 w-20 shrink-0 rounded-md" />
                   </div>
-                  <span className={cx("chip text-[10px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
-                    {a.configured ? <><CheckCircle2 size={10} /> Connected</> : <><XCircle size={10} /> Not connected</>}
-                  </span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (adaptersRes.data ?? []).length === 0 ? (
+              <EmptyState icon={<Boxes size={24} />} title="No adapters" body="No enrichment adapters are configured for this org" />
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2">
+                {(adaptersRes.data ?? []).map((a) => (
+                  <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
+                    <div>
+                      <p className="text-sm font-medium text-slate-100">{a.displayName ?? a.id ?? a.vendor}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">{a.vendor}</p>
+                      {a.detail && <p className="mt-1 text-xs text-slate-500">{a.detail}</p>}
+                    </div>
+                    <span className={cx("chip text-[10px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
+                      {a.configured ? <><CheckCircle2 size={10} /> Connected</> : <><XCircle size={10} /> Not connected</>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="mt-4 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-3.5 text-xs leading-5 text-slate-500">
               <strong className="text-slate-300">Note:</strong> adapters are optional enrichment only. SOC operates fully on internal SecureGraph
               signals without external SIEM/SOAR. <span className="font-mono">siem_connectors_live: false</span>

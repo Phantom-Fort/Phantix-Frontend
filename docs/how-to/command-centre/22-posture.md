@@ -3,6 +3,8 @@
 **Where:** **Posture** → `/posture`
 **What:** The continuous loop — what is due for review, what regressed, and the trend of accepted risk — assembled from every engine rather than a single scan.
 
+![Posture](../../screenshots/app/posture.png)
+
 ---
 
 ## Process flow

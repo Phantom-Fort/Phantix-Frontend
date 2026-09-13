@@ -3,6 +3,8 @@
 **Where:** **Reports** → **Findings tracker** tab (`/reports?tab=tracker`)  
 **What:** Living remediation board — **not** a generated file.
 
+![Findings tracker](../../screenshots/app/tracker.png)
+
 ---
 
 ## Process flow
