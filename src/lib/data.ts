@@ -2306,9 +2306,49 @@ export function normalizeIntelSignals(raw: unknown): TiSignal[] {
   });
 }
 
-export function loadCloudProviders(): Promise<CloudProvider[]> {
+// The provider endpoint returns `{ providers: [...] }` in camelCase
+// (displayName/help/authModes). Normalize it into the CloudProvider shape the
+// pages consume so the picker never silently renders an empty catalog.
+function normalizeCloudProviders(raw: unknown): CloudProvider[] {
+  const list: unknown[] = Array.isArray(raw)
+    ? raw
+    : raw && typeof raw === "object" && Array.isArray((raw as Record<string, unknown>).providers)
+      ? ((raw as Record<string, unknown>).providers as unknown[])
+      : asList<unknown>(raw);
+  return (list as Array<Record<string, unknown> | null | undefined>)
+    .map((p): CloudProvider => {
+      const r = (p ?? {}) as Record<string, unknown>;
+      const category = typeof r.category === "string" ? r.category : typeof r.kind === "string" ? r.kind : "";
+      const help = typeof r.help === "string" ? r.help : typeof r.description === "string" ? r.description : "";
+      const strArr = (v: unknown): string[] | undefined =>
+        Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : undefined;
+      return {
+        id: String(r.id ?? r.provider ?? ""),
+        name: String(r.displayName ?? r.name ?? r.id ?? ""),
+        description: help || undefined,
+        help: help || undefined,
+        kind: category || undefined,
+        category: category || undefined,
+        auth: typeof r.auth === "string" ? r.auth : undefined,
+        authModes: strArr(r.authModes),
+        engines: strArr(r.engines),
+        credentialKeys: strArr(r.credentialKeys),
+        accountCapable: typeof r.accountCapable === "boolean" ? r.accountCapable : undefined,
+        africa: typeof r.africa === "boolean" ? r.africa : undefined,
+        webhook: (r.webhook as CloudProvider["webhook"]) ?? undefined,
+        fields: Array.isArray(r.fields) ? (r.fields as CloudProvider["fields"]) : undefined,
+      };
+    })
+    .filter((p) => p.id);
+}
+
+export async function loadCloudProviders(): Promise<CloudProvider[]> {
   if (isDemoMode()) { return delay(150).then(() => demo.cloudProviders); }
-  return softList<CloudProvider>("/cloud-security/providers");
+  try {
+    return normalizeCloudProviders(await api.get<unknown>("/cloud-security/providers"));
+  } catch {
+    return [];
+  }
 }
 
 export async function loadCloudConnectors(meta?: LoadMeta): Promise<CloudConnector[]> {

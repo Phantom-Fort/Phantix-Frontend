@@ -1344,6 +1344,14 @@ export interface CloudProvider {
   name: string;
   description?: string;
   kind?: string;
+  category?: string;
+  auth?: string;
+  authModes?: string[];
+  engines?: string[];
+  help?: string;
+  credentialKeys?: string[];
+  accountCapable?: boolean;
+  africa?: boolean;
   webhook?: {
     label?: string;
     ingestUrlHint?: string;
