@@ -428,7 +428,7 @@ function ReturningLogin({
         </div>
 
         <div className="mt-5 space-y-2 text-center">
-          <button onClick={() => { enterDemo(); navigate("/dashboard"); }} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-300">
+          <button onClick={() => { enterDemo(); navigate("/choose-app"); }} className="flex w-full items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-300">
             <PlayCircle size={13} /> Explore the demo tenant
           </button>
           <button onClick={() => { setShowInvite((v) => !v); setError(null); }} className="block w-full text-xs text-gold-400 hover:text-gold-300">
@@ -722,7 +722,7 @@ function AppLoginFlow({
         <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[420px] text-center">
           <LoginBrand subtitle="Application sign-in" note="Demo mode --- explore features instantly" />
           <button
-            onClick={() => { enterDemo(); navigate("/dashboard"); }}
+            onClick={() => { enterDemo(); navigate("/choose-app"); }}
             className="mt-2 inline-flex items-center gap-2 rounded-md border border-gold-400/40 bg-phantix-800 px-6 py-3 font-semibold text-gold-300 hover:bg-phantix-850"
           >
             <PlayCircle size={16} /> Explore the demo tenant

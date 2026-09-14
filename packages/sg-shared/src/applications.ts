@@ -212,9 +212,14 @@ export async function applicationHandoffHref(
 ): Promise<string> {
   const target = applicationTarget(key, path);
   const fallback = target.href;
-  // Staying inside this application needs no handoff, and the demo has no
-  // session to hand over.
-  if (!target.external || isDemoMode()) return fallback;
+  // Staying inside this application needs no handoff.
+  if (!target.external) return fallback;
+  // The demo has no session to hand over — but its flag lives in per-origin
+  // storage, so the target has to be told in the URL that this is still a demo.
+  if (isDemoMode()) {
+    const base = (APPLICATION_HOSTS[key] || "").replace(/\/+$/, "");
+    return base ? `${base}/#demo=1` : fallback;
+  }
   try {
     const minted = await api.post<HandoffMinted>("/app/auth/handoff", { application: key });
     // The backend's open_url is the deployed host; on a dev server that is the

@@ -28,10 +28,8 @@ export default function Home() {
   // dashboard: Core is one of four applications, not the default destination.
   // The demo is the exception — it has one application and no choice to make.
   useEffect(() => {
-    if (session?.authenticated && !demoActive) {
+    if (session?.authenticated || demoActive) {
       navigate("/choose-app", { replace: true });
-    } else if (session?.authenticated) {
-      navigate("/dashboard", { replace: true });
     }
   }, [session, demoActive, navigate]);
 
@@ -40,12 +38,14 @@ export default function Home() {
 
   // Landing-page deep link: app.phantixlabs.com/?demo=1 → straight into the demo
   useEffect(() => {
-    if (params.get("demo") === "1") { enterDemo(); navigate("/dashboard", { replace: true }); }
+    if (params.get("demo") === "1") { enterDemo(); navigate("/choose-app", { replace: true }); }
   }, [params, enterDemo, navigate]);
 
   const goDemo = () => {
+    // The demo walks the whole product, not just Core, so it starts at the
+    // picker like any other operator.
     enterDemo();
-    navigate("/dashboard");
+    navigate("/choose-app");
   };
 
   return (

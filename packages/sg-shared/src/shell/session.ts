@@ -12,9 +12,12 @@
  * exists, so signing out or rotating the device kills it too.
  */
 import { apiRequest, setStoredSession, type ApplicationKey } from "./api";
+import { enterDemoMode, isDemoFlagSet } from "../api";
 
 /** URL fragment key carrying a handoff code, e.g. `https://attack…/#sg=abc`. */
 const HANDOFF_FRAGMENT_KEY = "sg";
+/** Fragment marking the guided demo, which has no session to hand over. */
+const DEMO_FRAGMENT_KEY = "demo";
 
 interface HandoffMinted {
   code: string;
@@ -31,6 +34,23 @@ interface HandoffRedeemed {
   organization_user_id?: number;
   email?: string;
   full_name?: string;
+}
+
+/** Read (and remove) a bare flag from the URL fragment, e.g. `#demo=1`. */
+function takeFlagFromFragment(key: string): boolean {
+  if (typeof window === "undefined") return false;
+  const hash = window.location.hash.replace(/^#/, "");
+  if (!hash) return false;
+  const params = new URLSearchParams(hash);
+  if (params.get(key) !== "1") return false;
+  params.delete(key);
+  const rest = params.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}${rest ? `#${rest}` : ""}`,
+  );
+  return true;
 }
 
 /** Read (and remove) the handoff code from the current URL fragment. */
@@ -58,6 +78,12 @@ function takeCodeFromFragment(): string {
  * then bounces the operator to the Core login, which is the correct failure.
  */
 export async function handoffUrl(target: ApplicationKey, fallbackHost: string): Promise<string> {
+  // The guided demo has no session, and its flag lives in per-origin storage —
+  // so it has to be told, in the URL, that it is still the demo on arrival.
+  if (isDemoFlagSet()) {
+    const base = (fallbackHost || "").replace(/\/+$/, "");
+    return base ? `${base}/#${DEMO_FRAGMENT_KEY}=1` : fallbackHost;
+  }
   try {
     const minted = await apiRequest<HandoffMinted>("/app/auth/handoff", {
       method: "POST",
@@ -80,6 +106,10 @@ export async function handoffUrl(target: ApplicationKey, fallbackHost: string): 
  * "not signed in" redirect. Runs before any other API call on boot.
  */
 export async function consumeHandoff(application: ApplicationKey): Promise<boolean> {
+  if (takeFlagFromFragment(DEMO_FRAGMENT_KEY)) {
+    enterDemoMode();
+    return true;
+  }
   const code = takeCodeFromFragment();
   if (!code) return false;
   try {

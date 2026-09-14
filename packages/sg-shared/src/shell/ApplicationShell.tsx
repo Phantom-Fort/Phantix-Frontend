@@ -211,10 +211,13 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   useEffect(() => {
     let alive = true;
     (async () => {
-      const demo = isDemoFlagSet();
+      let demo = isDemoFlagSet();
       if (!demo && !appToken()) {
+        // The arriving fragment carries either a session handoff or the demo,
+        // whose flag cannot cross an origin in storage.
         const handed = await consumeHandoff(application);
-        if (!handed) {
+        demo = isDemoFlagSet();
+        if (!handed && !demo) {
           window.location.assign(coreLoginUrl(application));
           return;
         }
