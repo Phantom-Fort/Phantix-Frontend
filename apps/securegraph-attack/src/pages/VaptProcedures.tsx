@@ -84,7 +84,7 @@ export default function VaptProcedures() {
   }, [procedures]);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Procedures & correlation"
         description="What the testing engine can run, how it correlates findings, and which new rules it has mined from observed patterns."

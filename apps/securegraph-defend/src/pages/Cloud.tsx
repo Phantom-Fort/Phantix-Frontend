@@ -206,7 +206,7 @@ export default function Cloud() {
   const emptyState = !connectors.data.length;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Cloud Security"
         description="Cloud, VPS, and PaaS connectors, log drains, and org-scoped threat intel."

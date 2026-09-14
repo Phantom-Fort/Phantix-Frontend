@@ -127,7 +127,7 @@ export default function ComplianceProfile() {
             </p>
           )}
 
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             <Card>
               <CardHeader title="Organization" subtitle="Sector and size" action={<Building2 size={15} className="text-gold-400" />} />
               <div className="space-y-3">

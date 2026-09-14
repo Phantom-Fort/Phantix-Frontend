@@ -107,7 +107,7 @@ export default function Compliance() {
   const defaultControlId = complianceFrameworks.find((f) => f.id === evidenceForm.framework_id)?.controls?.[0]?.id ?? "";
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Compliance"
         description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit --- gaps show human review status."

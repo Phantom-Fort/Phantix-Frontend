@@ -58,7 +58,7 @@ export default function VaptSchedules() {
   const failures = rows.reduce((n, r) => n + (r.total_failures ?? 0), 0);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="VAPT schedules"
         description="Recurring authorized testing. Each schedule runs one procedure against a scope on a cadence, with blackout windows to keep it away from your busy hours."

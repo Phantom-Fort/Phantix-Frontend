@@ -141,7 +141,7 @@ export default function ThreatIntel() {
   const empty = !signals.length && !events.data.length && !reputation.length;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Threat Intelligence"
         description="Matches connector IOCs and scan reputation against this org’s assets."

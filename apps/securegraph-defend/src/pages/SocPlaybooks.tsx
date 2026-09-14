@@ -16,7 +16,7 @@ export default function SocPlaybooks() {
   if (pl) return <PageSkeleton variant="list" rows={4} />;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Playbooks & MITRE"
         description="Response playbooks, runbooks, and MITRE ATT&CK coverage mapping."

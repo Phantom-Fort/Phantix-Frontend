@@ -28,7 +28,7 @@ export default function SocWarRoom() {
   const playbookCatalog: SocPlaybook[] = data?.playbook_catalog ?? [];
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="War Room"
         description="Incident case management with playbook-driven checklists, evidence timelines, and SLA tracking."

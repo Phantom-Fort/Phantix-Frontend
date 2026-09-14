@@ -99,7 +99,7 @@ export default function ComplianceGaps() {
   };
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Compliance gaps"
         description="Your live findings mapped onto framework controls. What is left is the set of controls nothing in your current security posture demonstrates."

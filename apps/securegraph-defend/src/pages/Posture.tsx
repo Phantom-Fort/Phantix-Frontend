@@ -130,7 +130,7 @@ export default function Posture() {
   const surfaces = Object.entries(snapshot?.surfaces ?? {});
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Posture"
         description="Per-surface posture, product-context drift and accepted risks due for re-review (continuous loop)."

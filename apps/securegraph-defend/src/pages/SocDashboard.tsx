@@ -367,7 +367,7 @@ export default function SocDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Security Operations Center"
         description="Detection triage, cases, rules, and live monitoring"

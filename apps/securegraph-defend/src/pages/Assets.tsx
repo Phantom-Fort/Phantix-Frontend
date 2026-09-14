@@ -409,7 +409,7 @@ export default function Assets() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Attack-surface inventory"

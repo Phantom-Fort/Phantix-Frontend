@@ -73,7 +73,7 @@ export default function ComplianceConnectors() {
   const ready = connectors.filter((c) => c.ready ?? c.configured).length;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Evidence connectors"
         description="Automated control evidence. Configure a connector once and each collection run stores fresh evidence against the controls it covers."

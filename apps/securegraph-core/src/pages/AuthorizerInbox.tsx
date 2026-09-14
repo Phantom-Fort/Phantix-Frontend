@@ -150,7 +150,7 @@ export default function AuthorizerInbox() {
   }
 
   return (
-    <div className="mx-auto max-w-[1000px]">
+    <div>
       <PageHeader
         title="Authorizations"
         description={inbox?.authorizer?.email ? `Approving as ${inbox.authorizer.fullName || inbox.authorizer.email}` : "Review and decide on pending approvals"}

@@ -18,7 +18,7 @@ export default function SocCloudIntegration() {
   if (cl || dl) return <PageSkeleton variant="list" rows={4} />;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Cloud Integrations"
         description="Connect cloud providers for log ingestion, event monitoring, and security posture visibility."

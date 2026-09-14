@@ -36,7 +36,7 @@ export default function IntegrationsHub() {
   const pendingAuth = installations.filter((i) => i.status === "pending_auth");
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Integrations Hub"
         description="Connect your tools and services: alert channels, SSO providers, webhooks, and SCIM provisioning."

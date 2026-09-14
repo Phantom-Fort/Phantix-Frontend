@@ -41,7 +41,7 @@ export default function Docs({ application = "all" }: DocsProps) {
   const featured = docs.filter((d) => d.badge);
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}

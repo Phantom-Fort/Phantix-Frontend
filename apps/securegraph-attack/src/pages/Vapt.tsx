@@ -369,7 +369,7 @@ export default function Vapt() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="VAPT campaigns"

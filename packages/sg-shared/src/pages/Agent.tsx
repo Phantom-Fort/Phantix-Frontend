@@ -208,7 +208,7 @@ export default function Agent({ initialMode = "agent", allowAgi = false }: { ini
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[900px]">
+      <div>
         <div className="skeleton mb-6 h-8 w-64 rounded" />
         <div className="skeleton h-96 rounded-2xl" />
       </div>
@@ -217,7 +217,7 @@ export default function Agent({ initialMode = "agent", allowAgi = false }: { ini
 
   if (status && !status.agent_enabled) {
     return (
-      <div className="mx-auto max-w-[640px]">
+      <div>
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="text-center">
             <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-phantix-800/70 text-gold-400"><Bot size={30} /></span>

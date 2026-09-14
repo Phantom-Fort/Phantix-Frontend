@@ -15,7 +15,7 @@ export default function SocAgentManager() {
   if (fl) return <PageSkeleton variant="list" rows={4} />;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Agents"
         description="Unified SecureGraph agent fleet: register, monitor, and deploy log-shipping agents."

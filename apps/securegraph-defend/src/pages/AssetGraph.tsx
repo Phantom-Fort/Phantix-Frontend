@@ -89,7 +89,7 @@ export default function AssetGraph() {
   const loading = bundle.loading && !(bundle.data.assets ?? []).length;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Asset Relationship Graph"
         description="Force-directed map of your attack surface — grouped by tags and asset types, connected by real engine relationships"

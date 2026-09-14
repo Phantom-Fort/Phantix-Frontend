@@ -20,7 +20,7 @@ export default function SocAdvisor() {
   if (dl) return <PageSkeleton variant="list" rows={4} />;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="SOC Advisor"
         description="Posture score trends, benchmarks, readiness assessments, and automated recommendations."

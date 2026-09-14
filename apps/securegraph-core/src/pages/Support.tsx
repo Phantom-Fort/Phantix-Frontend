@@ -167,7 +167,7 @@ export default function Support() {
   if (selected) {
     const closed = ["resolved", "closed"].includes(selected.status);
     return (
-      <div className="mx-auto max-w-[900px]">
+      <div>
         <PageHeader
           title={selected.subject}
           description={`${selected.reference ?? `#${selected.id}`} · ${selected.category ?? "general"} · opened ${timeAgo(selected.created_at)}`}
@@ -253,7 +253,7 @@ export default function Support() {
 
   // ── List + real-time help ──────────────────────────────────────────────────
   return (
-    <div className="mx-auto max-w-[1100px]">
+    <div>
       <PageHeader
         title="Support"
         description="Reach the SecureGraph support desk. Tickets are raised on behalf of your organization and answered here and by email."

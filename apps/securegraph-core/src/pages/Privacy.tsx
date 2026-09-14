@@ -134,7 +134,7 @@ export default function Privacy() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="space-y-5">
       <PageHeader title="Privacy & data requests" description="Your rights under NDPA §34–37 — raise requests in product, not by email." />
 
       <Card>
@@ -168,6 +168,7 @@ export default function Privacy() {
         )}
       </Card>
 
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
       <Card>
         <CardHeader title="Raise a data subject request" subtitle="Choose the right — each is explained below" />
         <form onSubmit={submit} className="space-y-4 px-5 pb-5">
@@ -237,6 +238,7 @@ export default function Privacy() {
           )}
         </div>
       </Card>
+      </div>
     </div>
   );
 }

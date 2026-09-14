@@ -234,7 +234,7 @@ export default function Dashboard() {
   const trendDelta = trendFirst != null && trendLast != null ? Math.round(trendLast - trendFirst) : null;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {data.securityDbBlocked && <SecurityDbBanner message={data.error} />}
 
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">

@@ -125,7 +125,7 @@ export default function Scans() {
   const selImpact = selected ? (selected.evidence?.impact_analysis ?? {}) : {};
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Scans"

@@ -552,7 +552,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Report solutions"
         description="Generate a report for the question you need answered — across every attack surface and every engine, not just VAPT. The library holds what has already been produced; the tracker is a living remediation board, not a report file."

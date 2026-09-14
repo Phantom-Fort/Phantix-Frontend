@@ -129,7 +129,7 @@ export default function Risks() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Risk register"

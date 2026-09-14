@@ -118,7 +118,7 @@ if (loading) {
 
   if (!me?.enrolled) {
     return (
-      <div className="mx-auto max-w-[900px]">
+      <div>
         <PageHeader title="BETA sandbox" description="Design-partner cohort feedback" />
         <EmptyState
           icon={<FlaskConical size={28} />}
@@ -130,7 +130,7 @@ if (loading) {
   }
 
   return (
-    <div className="mx-auto max-w-[1100px]">
+    <div>
       <PageHeader
         title="BETA sandbox"
         description={`${me.program?.name ?? "Launch cohort"} · Command Centre tools + Platform org admin`}

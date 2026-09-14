@@ -140,7 +140,7 @@ export default function DocPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       {/* Breadcrumb */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-6 flex items-center gap-2 text-xs text-slate-500">
         <Link to="/docs" className="flex items-center gap-1.5 hover:text-gold-400">

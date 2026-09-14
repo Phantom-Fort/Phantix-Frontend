@@ -81,7 +81,7 @@ export default function AgentActivity() {
   const deniedCount = items.filter(isDenied).length;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Agent activity"
         description="What the agent did for your organization — run, domain, intent, authorization and outcome for every action."

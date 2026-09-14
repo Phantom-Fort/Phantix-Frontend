@@ -119,7 +119,7 @@ export default function ThreatModels() {
   };
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Threat models"
         description="STRIDE-style threats derived from a product's real components, data flows and product information, graded by how well the evidence supports them."

@@ -209,7 +209,7 @@ export default function AssetIntelligenceDashboard() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Asset Intelligence"
         description="Security posture overview powered by automated enrichment, relationship mapping, and plain-language summaries"

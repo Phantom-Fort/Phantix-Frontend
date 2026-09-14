@@ -91,7 +91,7 @@ export default function Overview({
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1200px]">
+      <div>
         <PageHeaderSkeleton />
         <CardListSkeleton rows={3} />
       </div>
@@ -99,7 +99,7 @@ export default function Overview({
   }
 
   return (
-    <div className="mx-auto max-w-[1200px]">
+    <div>
       <PageHeader
         title={`${card?.label || APPLICATION_LABEL[application]}`}
         description={card?.description || undefined}

@@ -201,7 +201,7 @@ export default function Analytics() {
     trend.length > 0;
 
   return (
-    <div className="mx-auto max-w-[1500px]">
+    <div>
       <PageHeader
         title="Analytics"
         description="Live analysis of your organization's security data across every surface and engine — no report generation required."

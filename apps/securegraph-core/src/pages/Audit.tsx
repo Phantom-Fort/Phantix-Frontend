@@ -85,7 +85,7 @@ export default function Audit() {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Audit trail"
         description="Who did what, and when. Every action carries the person who initiated it, the person who authorised it, and where from — grouped by application."

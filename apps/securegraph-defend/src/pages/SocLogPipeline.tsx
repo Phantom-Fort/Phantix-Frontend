@@ -25,7 +25,7 @@ export default function SocLogPipeline() {
   if (sl) return <PageSkeleton variant="list" rows={4} />;
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Log Pipeline"
         description="Search and monitor security log ingestion from deployed agents and cloud integrations."

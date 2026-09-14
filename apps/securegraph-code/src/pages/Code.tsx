@@ -211,7 +211,7 @@ export default function Code() {
   }, [requireDualControl, toast, load]);
 
   return (
-    <div className="mx-auto max-w-[1400px]">
+    <div>
       <PageHeader
         title="Code"
         description="Source control, AutoFix, Continuous PR, connected repositories and branch/merge-request reviews."
