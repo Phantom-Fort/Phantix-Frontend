@@ -5,6 +5,7 @@ import { cx } from "@/lib/utils";
 import { useResource } from "@/lib/useResource";
 import {
   accessibleApplications,
+  applicationHandoffHref,
   applicationTarget,
   loadApplications,
   lastApp,
@@ -47,13 +48,17 @@ export default function AppSwitcher({ current = "core" }: { current?: Applicatio
 
   if (apps.length <= 1) return null;
 
-  function go(app: ApplicationCard) {
+  async function go(app: ApplicationCard) {
     rememberApp(app.key);
     setOpen(false);
     if (app.key === current) return;
     const target = applicationTarget(app.key);
-    if (target.external) window.location.assign(target.href);
-    else navigate(target.href);
+    if (!target.external) {
+      navigate(target.href);
+      return;
+    }
+    // Carry this session across the origin boundary (single-use, seconds-long).
+    window.location.assign(await applicationHandoffHref(app.key));
   }
 
   return (

@@ -1,14 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, LogOut } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, Lock, LogOut } from "lucide-react";
 import { useSidebarCollapsed } from "../useSidebarCollapsed";
-import { apiGet, appToken } from "./api";
+import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
+import { consumeHandoff, handoffUrl } from "./session";
 import {
   APPLICATION_LABEL,
   APPLICATION_ORDER,
   type ApplicationKey,
   type NavSection,
 } from "./types";
+
+/** One launcher card as the backend reports it. */
+interface ApplicationCard {
+  key: ApplicationKey;
+  label: string;
+  entitled: boolean;
+  accessible: boolean;
+  reason: string | null;
+  open_url: string;
+}
 
 export interface ApplicationShellProps {
   application: ApplicationKey;
@@ -28,39 +39,64 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   const { collapsed, toggle } = useSidebarCollapsed();
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const [me, setMe] = useState<{ full_name?: string; email?: string } | null>(null);
+  const [cards, setCards] = useState<ApplicationCard[] | null>(null);
+  const [opening, setOpening] = useState<ApplicationKey | "">("");
 
-  // Unauthenticated operators are sent to the Core login (which owns the
-  // app-session handshake). Cross-app session handoff copies the tokens.
+  // Every call from this shell declares which application it comes from.
+  setApplication(application);
+
+  // Arriving from another application carries a single-use handoff code in the
+  // URL fragment (storage is per-origin, so there is no session here yet).
+  // Only an operator with neither a session nor a handoff goes back to the Core
+  // login, which owns the app-session handshake.
   useEffect(() => {
-    if (!appToken()) {
-      const login = hosts.core ? `${hosts.core}/login` : "/login";
-      window.location.assign(login);
-      return;
-    }
     let alive = true;
-    apiGet<{ full_name?: string; email?: string }>("/app/auth/me")
-      .then((v) => alive && setMe(v))
-      .catch(() => alive && setMe(null));
+    (async () => {
+      if (!appToken()) {
+        const handed = await consumeHandoff(application);
+        if (!handed) {
+          window.location.assign(hosts.core ? `${hosts.core}/login` : "/login");
+          return;
+        }
+      }
+      if (!alive) return;
+      apiGet<{ full_name?: string; email?: string }>("/app/auth/me")
+        .then((v) => alive && setMe(v))
+        .catch(() => alive && setMe(null));
+      apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications")
+        .then((v) => alive && setCards(v?.applications || []))
+        .catch(() => alive && setCards(null));
+    })();
     return () => {
       alive = false;
     };
-  }, [hosts.core]);
+  }, [application, hosts.core]);
 
-  function openApp(key: ApplicationKey) {
+  // Backend truth when we have it; the static order until then.
+  const switcherItems: ApplicationCard[] =
+    cards ??
+    APPLICATION_ORDER.map((key) => ({
+      key,
+      label: APPLICATION_LABEL[key],
+      entitled: true,
+      accessible: true,
+      reason: null,
+      open_url: hosts[key] || "",
+    }));
+
+  async function openApp(card: ApplicationCard) {
+    if (card.key === application || !card.accessible) return;
+    setOpening(card.key);
+    // Mint the handoff before leaving: the target origin cannot see this
+    // session, and the code is single-use and expires in seconds.
+    const url = await handoffUrl(card.key, card.open_url || hosts[card.key] || "");
     setSwitcherOpen(false);
-    if (key === application) return;
-    const base = hosts[key];
-    if (base) window.location.assign(base);
+    setOpening("");
+    if (url) window.location.assign(url);
   }
 
   function signOut() {
-    try {
-      sessionStorage.removeItem("app_session_token");
-      sessionStorage.removeItem("app_device_token");
-      sessionStorage.removeItem("app_device_id");
-    } catch {
-      /* ignore */
-    }
+    clearStoredSession();
     window.location.assign(hosts.core ? `${hosts.core}/login` : "/login");
   }
 
@@ -129,18 +165,28 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
             </button>
             {switcherOpen && (
               <div className="absolute bottom-full left-0 z-50 mb-1 w-56 rounded-md border border-phantix-700 bg-phantix-900 p-1 shadow-card">
-                {APPLICATION_ORDER.map((key) => (
+                {switcherItems.map((card) => (
                   <button
-                    key={key}
-                    onClick={() => openApp(key)}
+                    key={card.key}
+                    onClick={() => openApp(card)}
+                    disabled={!card.accessible || opening === card.key}
+                    title={card.accessible ? card.label : card.reason || "Not available"}
                     className={`flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left text-xs ${
-                      key === application
+                      card.key === application
                         ? "text-gold-300"
-                        : "text-slate-300 hover:bg-phantix-800"
+                        : card.accessible
+                          ? "text-slate-300 hover:bg-phantix-800"
+                          : "cursor-not-allowed text-slate-600"
                     }`}
                   >
-                    <span>{APPLICATION_LABEL[key]}</span>
-                    {key === application && <span className="text-[10px] uppercase">current</span>}
+                    <span>{card.label}</span>
+                    {card.key === application ? (
+                      <span className="text-[10px] uppercase">current</span>
+                    ) : opening === card.key ? (
+                      <span className="text-[10px] uppercase text-slate-500">opening</span>
+                    ) : !card.accessible ? (
+                      <Lock size={11} className="shrink-0 text-slate-600" />
+                    ) : null}
                   </button>
                 ))}
               </div>

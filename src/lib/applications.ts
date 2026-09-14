@@ -178,6 +178,40 @@ export function applicationTarget(key: ApplicationKey, path = "/dashboard"): App
   return { external: true, href: `${base}${path && path !== "/dashboard" ? path : "/"}` };
 }
 
+interface HandoffMinted {
+  code: string;
+  expires_in: number;
+  open_url: string;
+}
+
+/**
+ * The href to open another application **with this session**.
+ *
+ * Browser storage is per-origin, so Attack / Defend / Code cannot see the
+ * session established here. The backend mints a short-lived, single-use code
+ * bound to that one application; it travels in the URL fragment (never sent to
+ * a server, never logged) and the target redeems it once on arrival.
+ *
+ * On any failure this degrades to the plain host: the target then sends the
+ * operator to the Core login, which is the correct outcome, not a lockout.
+ */
+export async function applicationHandoffHref(
+  key: ApplicationKey,
+  path = "/",
+): Promise<string> {
+  const fallback = applicationTarget(key, path).href;
+  if (key === "core" || isDemoMode()) return fallback;
+  try {
+    const minted = await api.post<HandoffMinted>("/app/auth/handoff", { application: key });
+    const base = (minted?.open_url || APPLICATION_HOSTS[key] || "").replace(/\/+$/, "");
+    if (!minted?.code || !base) return fallback;
+    const suffix = path && path !== "/dashboard" ? path : "/";
+    return `${base}${suffix}#sg=${encodeURIComponent(minted.code)}`;
+  } catch {
+    return fallback;
+  }
+}
+
 /** The apps this principal may actually enter (order preserved). */
 export function accessibleApplications(snap: ApplicationsSnapshot | null): ApplicationCard[] {
   if (!snap) return [];

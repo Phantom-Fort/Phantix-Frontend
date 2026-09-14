@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { cx } from "@/lib/utils";
 import {
   accessibleApplications,
+  applicationHandoffHref,
   applicationTarget,
   loadApplications,
   lastApp,
@@ -73,11 +74,15 @@ export default function ChooseApp() {
   const apps = accessibleApplications(snap);
   const last = lastApp();
 
-  function open(app: ApplicationCard) {
+  async function open(app: ApplicationCard) {
     rememberApp(app.key);
     const target = applicationTarget(app.key);
-    if (target.external) window.location.assign(target.href);
-    else navigate(target.href, { replace: true });
+    if (!target.external) {
+      navigate(target.href, { replace: true });
+      return;
+    }
+    // Carry this session across the origin boundary (single-use, seconds-long).
+    window.location.assign(await applicationHandoffHref(app.key));
   }
 
   // Single application: no choice to make — go straight in.

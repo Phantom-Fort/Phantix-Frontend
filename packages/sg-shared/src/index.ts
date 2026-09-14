@@ -1,7 +1,20 @@
 export { useSidebarCollapsed } from "./useSidebarCollapsed";
 export { ApplicationShell } from "./shell/ApplicationShell";
 export type { ApplicationShellProps } from "./shell/ApplicationShell";
-export { apiGet, apiRequest, appToken, deviceToken } from "./shell/api";
+export {
+  ApiError,
+  apiGet,
+  apiRequest,
+  appToken,
+  activeApplication,
+  clearStoredSession,
+  deviceId,
+  deviceToken,
+  dualControlSession,
+  setApplication,
+  setStoredSession,
+} from "./shell/api";
+export { consumeHandoff, handoffUrl } from "./shell/session";
 export {
   APPLICATION_LABEL,
   APPLICATION_ORDER,
