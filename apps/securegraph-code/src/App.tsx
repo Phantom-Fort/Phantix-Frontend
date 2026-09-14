@@ -2,6 +2,8 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
 import type { ApplicationKey } from "@sg/shell/types";
+import Docs from "@sg/pages/Docs";
+import DocPage from "@sg/pages/DocPage";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
 import { HOSTS } from "./hosts";
@@ -31,6 +33,10 @@ export default function App() {
           <Route path="/context" element={<ContextProjects />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+        {/* Documentation renders full-width, without the application sidebar. */}
+        <Route path="/docs" element={<Docs application="code" />} />
+        <Route path="/docs/:docId" element={<DocPage />} />
+
       </Routes>
       <ToastViewport />
       <DualControlOverlay />

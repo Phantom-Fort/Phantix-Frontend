@@ -33,6 +33,7 @@ import hcTroubleshoot from "@docs/docs/user-docs/12-troubleshooting.md?raw";
 import hcComplianceFrameworks from "@docs/docs/user-docs/13-compliance-frameworks.md?raw";
 
 // In-app user manuals + task how-tos (Command Centre help centre)
+import type { ApplicationKey } from "./shell/types";
 import { manualDocs } from "./manualDocs";
 import { howToDocs } from "./howToDocs";
 
@@ -43,6 +44,45 @@ export interface DocEntry {
   category: string;
   content: string;
   badge?: string;
+  /** The application this documentation belongs to. */
+  application: ApplicationKey;
+}
+
+/** Documentation is arranged by the application it documents. */
+export const APPLICATION_SECTIONS: { id: ApplicationKey; label: string; blurb: string }[] = [
+  { id: "core", label: "Core", blurb: "Setup, security graph, reports, billing and the AI assistant" },
+  { id: "attack", label: "Attack", blurb: "Targets, VAPT campaigns, web/API scans and the pentest agent" },
+  { id: "defend", label: "Defend", blurb: "Assets, exposure, cloud, compliance, risk, SOC and threat intel" },
+  { id: "code", label: "Code", blurb: "Code review, repositories, threat models and product context" },
+];
+
+/** Best-effort application for a document from its id/title/description. */
+function classifyDoc(d: Omit<DocEntry, "application">): ApplicationKey {
+  const s = `${d.id} ${d.title} ${d.description ?? ""}`.toLowerCase();
+  const has = (...ws: string[]) => ws.some((w) => s.includes(w));
+  if (
+    has(
+      "github", "repositor", "branch", "code review", "code security", "threat model",
+      "product context", "sast", "secret", "dependenc", "merge request", "pull request",
+      "source code",
+    )
+  )
+    return "code";
+  if (
+    has(
+      "vapt", "pentest", "exploit", "scan", "target", "recon", "mobile", "external scope",
+      "autonomous", "red team", "nmap", "nuclei", "web application", "api security",
+    )
+  )
+    return "attack";
+  if (
+    has(
+      "soc", "compliance", "risk", "cloud", "threat intel", "asset", "availability",
+      "posture", "incident", "exposure", "discovery", "framework",
+    )
+  )
+    return "defend";
+  return "core";
 }
 
 export const docCategories = [
@@ -54,7 +94,7 @@ export const docCategories = [
   { id: "manuals", label: "User manuals", blurb: "Screenshotted guides for each product surface" },
 ] as const;
 
-export const docs: DocEntry[] = [
+const RAW_DOCS: Omit<DocEntry, "application">[] = [
   // Help Centre
   { id: "hc-getting-started", title: "Getting started", description: "Register your organization, complete setup, and take your first security actions.", category: "help", content: hcGettingStarted, badge: "Start here" },
   { id: "hc-security-database", title: "Connect a security database", description: "Set up PostgreSQL (Supabase, Neon, RDS, DigitalOcean, Railway) — SecureGraph-hosted coming soon.", category: "help", content: hcSecurityDb },
@@ -83,12 +123,19 @@ export const docs: DocEntry[] = [
   { id: "for-developers", title: "For developers", description: "Public API overview and the AI Agent API plan.", category: "guides", content: forDevelopers },
   { id: "faq", title: "FAQ", description: "Answers for first contact and common questions.", category: "guides", content: faq },
   { id: "getting-started", title: "Getting started", description: "CTAs and the onboarding path for new organizations.", category: "guides", content: gettingStarted },
-  ...(manualDocs as DocEntry[]),
-  ...(howToDocs as DocEntry[]),
+  ...(manualDocs as Omit<DocEntry, "application">[]),
+  ...(howToDocs as Omit<DocEntry, "application">[]),
 ];
 
 export function getDoc(id: string): DocEntry | undefined {
   return docs.find((d) => d.id === id);
+}
+
+export const docs: DocEntry[] = RAW_DOCS.map((d) => ({ ...d, application: classifyDoc(d) }));
+
+/** Documents for one application (its own section of the help centre). */
+export function docsForApplication(app: ApplicationKey): DocEntry[] {
+  return docs.filter((d) => d.application === app);
 }
 
 // ── Doc cross-linking ────────────────────────────────────────────────────────
