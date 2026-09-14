@@ -6,9 +6,9 @@
   "description": "SecureGraph Attack application",
   "scripts": {
     "dev": "vite --port 5175",
-    "build": "tsc -b && vite build",
+    "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "framer-motion": "^11.11.17",
