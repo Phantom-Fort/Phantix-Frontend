@@ -34,7 +34,7 @@ import { shortName } from "../utils";
 import { loadSandboxMe } from "../sandbox";
 import { PLATFORM_IDENTITY_URL } from "../links";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
-import { isDemoFlagSet } from "../api";
+import { isDemoFlagSet, setActiveApplication } from "../api";
 import { consumeHandoff, handoffUrl } from "./session";
 import { IS_DEV_HOSTS } from "../config";
 import {
@@ -203,8 +203,10 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   const [cards, setCards] = useState<ApplicationCard[] | null>(null);
   const [opening, setOpening] = useState<ApplicationKey | "">("");
 
-  // Every call from this shell declares which application it comes from.
+  // Every call from this shell declares which application it comes from — both
+  // the shell's own client and the shared @sg/api client used by pages.
   setApplication(application);
+  setActiveApplication(application);
 
   useEffect(() => {
     let alive = true;
