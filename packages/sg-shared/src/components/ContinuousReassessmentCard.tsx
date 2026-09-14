@@ -174,7 +174,7 @@ export default function ContinuousReassessmentCard() {
             <div key={s.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
               <div className="min-w-0">
                 <p className="text-sm text-slate-200">{s.schedule_name || `Project #${s.project_id}`}</p>
-                <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[13px] text-slate-500">
                   <span className="chip border-phantix-700 font-mono text-phantix-300">{s.cadence || "7d"}</span>
                   <span className="chip border-phantix-700 text-slate-400">debounce {s.debounce_hours ?? 24}h</span>
                   {s.target_key && <span className="chip border-phantix-700 font-mono text-slate-400">{s.target_key}</span>}

@@ -124,7 +124,7 @@ export default function ComplianceConnectors() {
                           </span>
                         </div>
                         {c.description && <p className="mt-1 text-xs leading-5 text-slate-400">{String(c.description)}</p>}
-                        <p className="mt-1 font-mono text-[11px] text-slate-600">{key}</p>
+                        <p className="mt-1 font-mono text-[13px] text-slate-600">{key}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <button onClick={() => setEditing(c)} className="btn-ghost text-xs !py-1.5">Configure</button>

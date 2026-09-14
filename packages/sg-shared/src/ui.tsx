@@ -72,14 +72,14 @@ export function ImpactPanel({ impact }: { impact: any }) {
       {cia && (
         <div className="flex flex-wrap gap-1.5">
           {(["confidentiality","integrity","availability"] as const).map(k => (
-            <span key={k} className={cx("chip text-[10px] capitalize", cia[k] === "high" ? "bg-red-500/10 text-red-400 border-red-500/20" : cia[k] === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : cia[k] === "low" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-slate-500/10 text-slate-500")}>{k.slice(0,1).toUpperCase()}: {cia[k]}</span>
+            <span key={k} className={cx("chip text-[12px] capitalize", cia[k] === "high" ? "bg-red-500/10 text-red-400 border-red-500/20" : cia[k] === "medium" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" : cia[k] === "low" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-slate-500/10 text-slate-500")}>{k.slice(0,1).toUpperCase()}: {cia[k]}</span>
           ))}
         </div>
       )}
-      {catChips.length > 0 && <div className="flex flex-wrap gap-1">{catChips.map((c: string) => <span key={c} className="chip text-[10px] bg-phantix-800/70 text-slate-300">{c}</span>)}</div>}
+      {catChips.length > 0 && <div className="flex flex-wrap gap-1">{catChips.map((c: string) => <span key={c} className="chip text-[12px] bg-phantix-800/70 text-slate-300">{c}</span>)}</div>}
       {impact.business_impact && <p className="text-slate-300 leading-5"><span className="font-semibold text-slate-200">Business impact: </span>{impact.business_impact}</p>}
       {impact.technical_impact && <p className="text-slate-400 leading-5"><span className="font-semibold text-slate-300">Technical: </span>{impact.technical_impact}</p>}
-      {impact.regulatory_concerns?.length > 0 && <p className="text-[10px] text-slate-500">Regulatory hints: {impact.regulatory_concerns.join(", ")}</p>}
+      {impact.regulatory_concerns?.length > 0 && <p className="text-[12px] text-slate-500">Regulatory hints: {impact.regulatory_concerns.join(", ")}</p>}
       {impact.summary && !impact.business_impact && <p className="text-slate-300">{impact.summary}</p>}
     </div>
   );
@@ -784,7 +784,7 @@ export function Tabs({
             {t.count !== undefined && (
               <span
                 className={cx(
-                  "rounded-sm px-1.5 py-0.5 font-mono text-[10px] font-bold",
+                  "rounded-sm px-1.5 py-0.5 font-mono text-[12px] font-bold",
                   active === t.id ? "bg-phantix-950/60 text-gold-300" : "bg-phantix-700/60 text-slate-300",
                 )}
               >

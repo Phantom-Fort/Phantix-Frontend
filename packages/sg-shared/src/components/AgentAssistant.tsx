@@ -233,7 +233,7 @@ export default function AgentAssistant() {
                 <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
                 <div className="min-w-0">
                   <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
-                  <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
                     Security operations assistant
                     {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
                   </p>
@@ -248,7 +248,7 @@ export default function AgentAssistant() {
                         aria-selected={mode === m}
                         onClick={() => setMode(m)}
                         className={cx(
-                          "rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition-colors",
+                          "rounded-md px-2 py-1 text-[12px] font-semibold capitalize transition-colors",
                           mode === m ? "bg-phantix-800 text-white" : "text-slate-500 hover:text-slate-300",
                         )}
                       >
@@ -275,7 +275,7 @@ export default function AgentAssistant() {
                     <Sparkles size={15} className="mt-0.5 shrink-0 text-gold-300" />
                     <span>
                       <span className="block text-xs font-semibold text-gold-200">Open a support ticket</span>
-                      <span className="block text-[11px] leading-5 text-gold-100/80">Describe the issue and pick a priority — critical is triaged first.</span>
+                      <span className="block text-[13px] leading-5 text-gold-100/80">Describe the issue and pick a priority — critical is triaged first.</span>
                     </span>
                   </button>
                   <button
@@ -285,7 +285,7 @@ export default function AgentAssistant() {
                     <ArrowRight size={15} className="mt-0.5 shrink-0 text-slate-400" />
                     <span>
                       <span className="block text-xs font-semibold text-slate-200">Support centre</span>
-                      <span className="block text-[11px] leading-5 text-slate-500">Your tickets, live replies and first-response targets.</span>
+                      <span className="block text-[13px] leading-5 text-slate-500">Your tickets, live replies and first-response targets.</span>
                     </span>
                   </button>
                   <button
@@ -295,7 +295,7 @@ export default function AgentAssistant() {
                     <BookOpen size={15} className="mt-0.5 shrink-0 text-slate-400" />
                     <span>
                       <span className="block text-xs font-semibold text-slate-200">Documentation &amp; Help Centre</span>
-                      <span className="block text-[11px] leading-5 text-slate-500">Setup guides, how-tos and FAQs — most answers are already written down.</span>
+                      <span className="block text-[13px] leading-5 text-slate-500">Setup guides, how-tos and FAQs — most answers are already written down.</span>
                     </span>
                   </button>
                   <a
@@ -305,11 +305,11 @@ export default function AgentAssistant() {
                     <Mail size={15} className="mt-0.5 shrink-0 text-slate-400" />
                     <span>
                       <span className="block text-xs font-semibold text-slate-200">Email the desk</span>
-                      <span className="block text-[11px] leading-5 text-slate-500">support@phantixlabs.com</span>
+                      <span className="block text-[13px] leading-5 text-slate-500">support@phantixlabs.com</span>
                     </span>
                   </a>
                   <div className="mt-auto rounded-xl border border-severity-critical/25 bg-severity-critical/[0.06] px-3.5 py-3">
-                    <p className="text-[11px] leading-5 text-red-200/85">
+                    <p className="text-[13px] leading-5 text-red-200/85">
                       <strong className="text-severity-critical">Live incident?</strong> Choose Critical priority and the
                       “Security incident” category so it is triaged first.
                     </p>
@@ -323,7 +323,7 @@ export default function AgentAssistant() {
                   {connError && (
                     <div className="flex items-center gap-2 rounded-xl border border-severity-critical/40 bg-severity-critical/10 px-3 py-2.5">
                       <X size={13} className="shrink-0 text-severity-critical" />
-                      <p className="text-[11px] leading-4 text-red-300">{connError}</p>
+                      <p className="text-[13px] leading-4 text-red-300">{connError}</p>
                     </div>
                   )}
                   <AnimatePresence initial={false}>
@@ -332,8 +332,8 @@ export default function AgentAssistant() {
                         <div className={cx("max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-6", m.role === "user" ? "bg-gold-400/15 text-gold-100 border border-gold-400/20" : "bg-phantix-800/60 text-slate-200 border border-phantix-700/40")}>
                           {m.role === "agent" && m.thinking && (
                             <details className="mb-1.5">
-                              <summary className="flex cursor-pointer items-center gap-1.5 text-[11px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
-                              <div className="mt-1 border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{m.thinking}</div>
+                              <summary className="flex cursor-pointer items-center gap-1.5 text-[13px] text-slate-500 hover:text-slate-300"><BrainCircuit size={11} /> Thinking</summary>
+                              <div className="mt-1 border-l-2 border-phantix-600/50 pl-2.5 text-[13px] leading-5 text-slate-500">{m.thinking}</div>
                             </details>
                           )}
                           {m.role === "agent" ? <MarkdownView source={m.text} /> : <p className="whitespace-pre-wrap">{m.text}</p>}
@@ -341,7 +341,7 @@ export default function AgentAssistant() {
                             <div className="mt-2 space-y-1">
                               <button
                                 onClick={() => { navigate(m.nav!.route); setOpen(false); }}
-                                className="flex w-full items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 text-left text-[11px] font-semibold text-gold-200 transition-colors hover:bg-gold-400/20"
+                                className="flex w-full items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 text-left text-[13px] font-semibold text-gold-200 transition-colors hover:bg-gold-400/20"
                               >
                                 <ArrowRight size={12} /> Go to {m.nav.label}
                               </button>
@@ -349,7 +349,7 @@ export default function AgentAssistant() {
                                 <button
                                   key={a.route}
                                   onClick={() => { navigate(a.route); setOpen(false); }}
-                                  className="flex w-full items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-1.5 text-left text-[11px] text-slate-300 transition-colors hover:border-phantix-500/50"
+                                  className="flex w-full items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-1.5 text-left text-[13px] text-slate-300 transition-colors hover:border-phantix-500/50"
                                 >
                                   <ArrowRight size={12} /> {a.label}
                                 </button>
@@ -372,7 +372,7 @@ export default function AgentAssistant() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -6 }}
                             transition={{ duration: 0.2 }}
-                            className="flex items-center gap-2 text-[11px] text-slate-400"
+                            className="flex items-center gap-2 text-[13px] text-slate-400"
                           >
                             {phase === "connecting" && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Connecting to stream…</>)}
                             {phase === "streaming" && !liveThinking && !liveAnswer && (<><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Analysing…</>)}
@@ -382,7 +382,7 @@ export default function AgentAssistant() {
                         </AnimatePresence>
                         {liveThinking && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">
-                            <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[11px] leading-5 text-slate-500">{liveThinking}</div>
+                            <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-phantix-600/50 pl-2.5 text-[13px] leading-5 text-slate-500">{liveThinking}</div>
                           </motion.div>
                         )}
                         {liveAnswer && <p className="mt-1.5 whitespace-pre-wrap">{liveAnswer}<span className="ml-0.5 inline-block h-3.5 w-[7px] animate-pulse rounded-sm bg-gold-400/70 align-middle" /></p>}
@@ -413,7 +413,7 @@ export default function AgentAssistant() {
               {messages.length === 1 && !busy && (
                 <div className="grid grid-cols-1 gap-1.5 border-t border-phantix-700/40 px-3.5 py-2.5 sm:grid-cols-2">
                   {SUGGESTIONS.map((s) => (
-                    <button key={s} onClick={() => void send(s)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-2 text-left text-[11px] leading-4 text-slate-300 transition-colors hover:border-gold-400/40 hover:bg-phantix-800/60">{s}</button>
+                    <button key={s} onClick={() => void send(s)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/60 px-2.5 py-2 text-left text-[13px] leading-4 text-slate-300 transition-colors hover:border-gold-400/40 hover:bg-phantix-800/60">{s}</button>
                   ))}
                 </div>
               )}
@@ -438,7 +438,7 @@ export default function AgentAssistant() {
                     <button onClick={() => void send()} disabled={!input.trim()} className="btn-primary !px-3 !py-1.5 !text-xs" aria-label="Send"><Send size={13} /></button>
                   )}
                 </div>
-                <p className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-600">
+                <p className="mt-1.5 flex items-center gap-1.5 text-[12px] text-slate-600">
                   <Sparkles size={10} />
                   {chatSend.hint === "queued"
                     ? "Queued — press Enter again to send now, or wait for the current reply."

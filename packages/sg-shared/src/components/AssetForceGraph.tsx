@@ -512,7 +512,7 @@ export default function AssetForceGraph({
         </button>
       )}
       {interactive && (
-        <div className="pointer-events-none absolute bottom-2 left-3 font-mono text-[10px] uppercase tracking-wider text-slate-600">
+        <div className="pointer-events-none absolute bottom-2 left-3 font-mono text-[12px] uppercase tracking-wider text-slate-600">
           {nodesRef.current.length} nodes · {edgesRef.current.length} links · {Math.round(zoomLabel * 100)}%
         </div>
       )}

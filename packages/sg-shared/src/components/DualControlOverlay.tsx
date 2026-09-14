@@ -219,7 +219,7 @@ export default function DualControlOverlay() {
                 </p>
               )}
               {demoActive && (
-                <p className="mt-2 flex items-center gap-1.5 text-[11px] text-gold-300">
+                <p className="mt-2 flex items-center gap-1.5 text-[13px] text-gold-300">
                   <Loader2 size={11} className="animate-spin" /> Demo tenant — dual-control is completing automatically
                 </p>
               )}
@@ -227,7 +227,7 @@ export default function DualControlOverlay() {
 
             <div className="relative space-y-4 px-6 py-5">
               {(initiator || authorizer) && (
-                <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-3.5 py-3 text-[11px] leading-5 text-slate-400">
+                <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-3.5 py-3 text-[13px] leading-5 text-slate-400">
                   <p className="mb-1 font-semibold uppercase tracking-wider text-slate-500">Assigned controllers</p>
                   {initiator && (
                     <p>
@@ -257,7 +257,7 @@ export default function DualControlOverlay() {
                         autoFocus
                       />
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500">Your email from the login link --- no re-entry needed.</p>
+                    <p className="mt-1 text-[13px] text-slate-500">Your email from the login link --- no re-entry needed.</p>
                   </div>
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy} onClick={() => void sendCode()}>
@@ -283,7 +283,7 @@ export default function DualControlOverlay() {
                   </div>
                   {devOtp && (
                     <div className="rounded-xl border border-gold-400/30 bg-gold-400/8 p-3 text-center">
-                      <p className="text-[10px] uppercase tracking-wider text-gold-400/80">Dev OTP</p>
+                      <p className="text-[12px] uppercase tracking-wider text-gold-400/80">Dev OTP</p>
                       <p className="mt-1 font-mono text-xl font-bold tracking-[0.35em] text-gold-300">{devOtp}</p>
                     </div>
                   )}

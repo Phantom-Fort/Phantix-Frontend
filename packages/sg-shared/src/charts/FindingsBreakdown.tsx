@@ -103,8 +103,8 @@ export default function FindingsBreakdown({
           aria-pressed={framing === f.id}
           className={
             framing === f.id
-              ? "rounded px-2 py-0.5 text-[10.5px] font-medium bg-phantix-800/80 text-slate-100"
-              : "rounded px-2 py-0.5 text-[10.5px] font-medium text-slate-500 hover:text-slate-300"
+              ? "rounded px-2 py-0.5 text-[12px] font-medium bg-phantix-800/80 text-slate-100"
+              : "rounded px-2 py-0.5 text-[12px] font-medium text-slate-500 hover:text-slate-300"
           }
         >
           {f.label}
@@ -127,7 +127,7 @@ export default function FindingsBreakdown({
       ])}
     >
       {data.length === 0 ? (
-        <div className="flex items-center justify-center text-[11px] text-slate-600" style={{ height }}>
+        <div className="flex items-center justify-center text-[13px] text-slate-600" style={{ height }}>
           Nothing to show for this framing.
         </div>
       ) : (

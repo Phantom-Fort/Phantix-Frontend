@@ -59,7 +59,7 @@ export function ThemeToggle({ className }: { className?: string }) {
           role="menu"
           className="absolute right-0 z-[60] mt-1.5 min-w-[160px] overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 p-1 shadow-lg"
         >
-          <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          <p className="px-2.5 pb-1 pt-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
             Theme
           </p>
           {options.map((o) => {

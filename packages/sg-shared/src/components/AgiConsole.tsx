@@ -923,7 +923,7 @@ export default function AgiConsole({
                 )}
                 {visibleFindings.map((f) => (
                   <button key={f.id} onClick={() => setFindingId(f.id)} className={cx("wb-pad-x flex w-full items-start gap-1.5 border-b border-phantix-700/20 py-1.5 text-left transition-colors hover:bg-phantix-800/40", findingId === f.id && "bg-phantix-800/50")}>
-                    <SeverityBadge severity={f.severity} className="mt-0.5 !px-1 !py-0 !text-[8px]" />
+                    <SeverityBadge severity={f.severity} className="mt-0.5 !px-1 !py-0 !text-[11px]" />
                     <span className="min-w-0 flex-1">
                       <span className="wb-xs block truncate text-slate-200">{f.title}</span>
                       <span className="wb-2xs mt-0.5 flex items-center gap-1 text-slate-500">
@@ -937,7 +937,7 @@ export default function AgiConsole({
                       </span>
                       {f.verification && (
                         <span className="mt-1 flex">
-                          <VerificationBadge verification={f.verification} className="!px-1 !py-0 !text-[8px]" />
+                          <VerificationBadge verification={f.verification} className="!px-1 !py-0 !text-[11px]" />
                         </span>
                       )}
                     </span>
@@ -990,7 +990,7 @@ export default function AgiConsole({
                 <p className="font-display text-sm font-semibold">Destructive action gate</p>
               </div>
               <p className="mt-2 text-xs leading-5 text-slate-400">This command matches a high-risk pattern (exploit, DoS, or privilege escalation). Confirm you intend to run it against the allowlisted scope only.</p>
-              <pre className="mt-3 whitespace-pre-wrap rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[11px] text-slate-200">{overrideDrafts[gate.id] ?? gate.proposed_command}</pre>
+              <pre className="mt-3 whitespace-pre-wrap rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[13px] text-slate-200">{overrideDrafts[gate.id] ?? gate.proposed_command}</pre>
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={() => { const a = gate; setGate(null); onDecide(a, true, overrideDrafts[a.id] ?? a.proposed_command); }}

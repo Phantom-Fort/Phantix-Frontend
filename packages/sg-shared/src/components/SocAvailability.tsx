@@ -242,7 +242,7 @@ export default function SocAvailability() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} />)}
         </div>
         <CardSectionSkeleton rows={3} />
@@ -278,13 +278,13 @@ export default function SocAvailability() {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-100">{inc.title}</p>
                   <p className="text-xs text-slate-500">Down since {timeAgo(inc.down_at)} · <span className="font-mono text-severity-critical">{formatDuration(inc.elapsed_seconds)}</span> elapsed{inc.source ? ` · ${titleCase(inc.source)}` : ""}</p>
-                  {inc.last_error && <p className="mt-0.5 truncate font-mono text-[11px] text-slate-400">{inc.last_error}</p>}
+                  {inc.last_error && <p className="mt-0.5 truncate font-mono text-[13px] text-slate-400">{inc.last_error}</p>}
                 </div>
                 <SeverityBadge severity={inc.severity as any} />
                 <div className="flex items-center gap-1.5">
-                  <button onClick={() => setDetail(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[11px]"><ExternalLink size={12} className="mr-1 inline" /> Detail</button>
-                  <button onClick={() => void acknowledge(inc)} className="btn-secondary !px-2.5 !py-1.5 !text-[11px]"><CheckCircle2 size={12} className="mr-1 inline" /> Acknowledge</button>
-                  <button onClick={() => void markFp(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[11px] text-slate-400"><XCircle size={12} className="mr-1 inline" /> FP</button>
+                  <button onClick={() => setDetail(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[13px]"><ExternalLink size={12} className="mr-1 inline" /> Detail</button>
+                  <button onClick={() => void acknowledge(inc)} className="btn-secondary !px-2.5 !py-1.5 !text-[13px]"><CheckCircle2 size={12} className="mr-1 inline" /> Acknowledge</button>
+                  <button onClick={() => void markFp(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[13px] text-slate-400"><XCircle size={12} className="mr-1 inline" /> FP</button>
                 </div>
               </div>
             ))}
@@ -306,12 +306,12 @@ export default function SocAvailability() {
                   <p className="text-sm font-medium text-slate-200">{inc.title}</p>
                   <p className="text-xs text-slate-500">{timeAgo(inc.down_at)} → {inc.recovered_at ? timeAgo(inc.recovered_at) : "—"}</p>
                 </div>
-                {inc.excluded_from_sla && <span className="chip border-slate-500/50 bg-slate-500/10 text-[10px] text-slate-400">excluded</span>}
+                {inc.excluded_from_sla && <span className="chip border-slate-500/50 bg-slate-500/10 text-[12px] text-slate-400">excluded</span>}
                 <div className="text-right">
                   <p className="font-mono text-sm font-bold text-emerald-300">{formatDuration(inc.time_to_resolve_seconds)}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">time to resolve</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">time to resolve</p>
                 </div>
-                <button onClick={() => setDetail(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[11px]"><ExternalLink size={12} className="mr-1 inline" /> Detail</button>
+                <button onClick={() => setDetail(inc)} className="btn-ghost !px-2.5 !py-1.5 !text-[13px]"><ExternalLink size={12} className="mr-1 inline" /> Detail</button>
               </div>
             ))}
           </div>
@@ -331,7 +331,7 @@ export default function SocAvailability() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-phantix-700/40 text-[11px] uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-phantix-700/40 text-[13px] uppercase tracking-wider text-slate-500">
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Type</th>
@@ -348,7 +348,7 @@ export default function SocAvailability() {
                   <tr key={c.id} className="border-b border-phantix-800/40 last:border-0 hover:bg-phantix-800/30">
                     <td className="px-3 py-2.5">{statusChip(c.last_status)}</td>
                     <td className="px-3 py-2.5 text-sm font-medium text-slate-200">{c.name}</td>
-                    <td className="px-3 py-2.5"><span className="chip font-mono text-[10px] text-slate-400">{c.check_type}</span></td>
+                    <td className="px-3 py-2.5"><span className="chip font-mono text-[12px] text-slate-400">{c.check_type}</span></td>
                     <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{c.target}</td>
                     <td className="px-3 py-2.5 font-mono text-xs text-slate-400">{c.last_latency_ms != null ? `${c.last_latency_ms}ms` : "—"}</td>
                     <td className="px-3 py-2.5 text-xs text-slate-400">{c.last_status === "down" ? <span className="text-severity-critical font-mono">{c.consecutive_failures}/{c.failures_to_down}</span> : <span className="font-mono">{c.consecutive_failures}/{c.failures_to_down}</span>}</td>
@@ -398,11 +398,11 @@ export default function SocAvailability() {
           ]).map((d) => (
             <div key={d.os} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3.5">
               <p className="text-sm font-semibold text-slate-100">{d.label || titleCase(d.os)}</p>
-              <p className="mt-1 truncate font-mono text-[11px] text-slate-500" title={d.filename}>{d.filename}</p>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 truncate font-mono text-[13px] text-slate-500" title={d.filename}>{d.filename}</p>
+              <p className="mt-1 text-[13px] text-slate-500">
                 {d.sizeBytes ? formatBytes(d.sizeBytes) : "—"}
               </p>
-              <p className="mt-1 break-all font-mono text-[10px] text-slate-600" title={d.sha256}>
+              <p className="mt-1 break-all font-mono text-[12px] text-slate-600" title={d.sha256}>
                 sha256: {d.sha256 ? `${d.sha256.slice(0, 16)}…` : "—"}
               </p>
               <button
@@ -431,7 +431,7 @@ export default function SocAvailability() {
                   <span className="text-slate-500">{channelOpen === ch.id ? "−" : "+"}</span>
                 </button>
                 {channelOpen === ch.id && (
-                  <pre className="overflow-x-auto border-t border-phantix-800/50 px-3.5 py-2.5 font-mono text-[11px] leading-5 text-slate-300">
+                  <pre className="overflow-x-auto border-t border-phantix-800/50 px-3.5 py-2.5 font-mono text-[13px] leading-5 text-slate-300">
                     {(ch.commands ?? []).join("\n")}
                   </pre>
                 )}
@@ -440,7 +440,7 @@ export default function SocAvailability() {
           </div>
         )}
         {(agentCatalog?.afterInstall ?? []).length > 0 && (
-          <ul className="mt-3 list-inside list-disc text-[11px] leading-5 text-slate-500">
+          <ul className="mt-3 list-inside list-disc text-[13px] leading-5 text-slate-500">
             {agentCatalog!.afterInstall!.map((line) => (
               <li key={line}>{line}</li>
             ))}
@@ -458,12 +458,12 @@ export default function SocAvailability() {
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
             <p className="font-semibold text-slate-200">External tool events</p>
             <p className="mt-1 leading-5">Any tool (Uptime Kuma, Healthchecks, Alertmanager) can open/close MTTR-tracked incidents:</p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[10px] text-slate-300">{"POST /api/v1/soc/availability/events\n{ \"event\": \"down\", \"target\": \"https://app/client.com\", \"title\": \"API production\", \"source\": \"uptime_kuma\" }"}</pre>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[12px] text-slate-300">{"POST /api/v1/soc/availability/events\n{ \"event\": \"down\", \"target\": \"https://app/client.com\", \"title\": \"API production\", \"source\": \"uptime_kuma\" }"}</pre>
           </div>
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
             <p className="font-semibold text-slate-200">Heartbeat endpoint</p>
             <p className="mt-1 leading-5">Agent posts with org API key (not user JWT). Missed heartbeats open downtime automatically.</p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[10px] text-slate-300">{agentCatalog?.endpoint ?? "POST /api/v1/soc/availability/heartbeat"}\nHeader: X-Org-Api-Key</pre>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[12px] text-slate-300">{agentCatalog?.endpoint ?? "POST /api/v1/soc/availability/heartbeat"}\nHeader: X-Org-Api-Key</pre>
           </div>
         </div>
       </Card>
@@ -527,7 +527,7 @@ export default function SocAvailability() {
               <label className="flex items-center gap-1.5 text-xs text-slate-300"><input type="checkbox" checked={form.notify_on_recovery} onChange={(e) => setForm({ ...form, notify_on_recovery: e.target.checked })} className="accent-[rgb(var(--gold-400))]" /> Notify recovery</label>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500">Critical downtime also notifies email / WhatsApp / Telegram per Alerts settings when configured.</p>
+          <p className="text-[12px] text-slate-500">Critical downtime also notifies email / WhatsApp / Telegram per Alerts settings when configured.</p>
           <button onClick={() => void save()} disabled={saving} className="btn-primary w-full !py-2.5 !text-xs">{saving ? <Spinner className="h-3 w-3" /> : editing ? <Pencil size={13} /> : <Plus size={13} />} {editing ? "Save check" : "Create check"}</button>
         </div>
       </Modal>
@@ -539,8 +539,8 @@ export default function SocAvailability() {
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge status={detail.status} />
               <SeverityBadge severity={detail.severity as any} />
-              <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[10px] text-slate-400">{titleCase(detail.source)}</span>
-              {detail.excluded_from_sla && <span className="chip border-slate-500/50 bg-slate-500/10 text-[10px] text-slate-400">excluded from SLA</span>}
+              <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">{titleCase(detail.source)}</span>
+              {detail.excluded_from_sla && <span className="chip border-slate-500/50 bg-slate-500/10 text-[12px] text-slate-400">excluded from SLA</span>}
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-lg bg-phantix-950/60 p-3"><p className="text-slate-500">Down at</p><p className="mt-1 font-mono text-slate-200">{new Date(detail.down_at).toLocaleString()}</p></div>
@@ -548,11 +548,11 @@ export default function SocAvailability() {
               <div className="rounded-lg bg-emerald-400/10 p-3"><p className="text-emerald-300">Time to resolve</p><p className="mt-1 font-mono text-lg font-bold text-emerald-300">{formatDuration(detail.time_to_resolve_seconds)}</p></div>
               <div className="rounded-lg bg-phantix-950/60 p-3"><p className="text-slate-500">Time to acknowledge</p><p className="mt-1 font-mono text-slate-200">{formatDuration(detail.time_to_acknowledge_seconds)}</p></div>
             </div>
-            {detail.last_error && <div className="rounded-lg bg-severity-critical/10 p-3 font-mono text-[11px] text-red-300">{detail.last_error}</div>}
+            {detail.last_error && <div className="rounded-lg bg-severity-critical/10 p-3 font-mono text-[13px] text-red-300">{detail.last_error}</div>}
             {detail.evidence && Object.keys(detail.evidence).length > 0 && (
               <details>
                 <summary className="cursor-pointer text-xs text-slate-400 hover:text-slate-200">Evidence</summary>
-                <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/60 p-3 text-[11px] text-slate-400">{JSON.stringify(detail.evidence, null, 2)}</pre>
+                <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/60 p-3 text-[13px] text-slate-400">{JSON.stringify(detail.evidence, null, 2)}</pre>
               </details>
             )}
             {detail.soc_detection_id && (

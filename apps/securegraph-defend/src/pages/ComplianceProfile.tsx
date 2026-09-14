@@ -198,7 +198,7 @@ export default function ComplianceProfile() {
                     >
                       <span className="min-w-0">
                         <span className={cx("block text-sm", on ? "text-gold-200" : "text-slate-300")}>{f.label}</span>
-                        <span className="block text-[11px] text-slate-500">{f.hint}</span>
+                        <span className="block text-[13px] text-slate-500">{f.hint}</span>
                       </span>
                       <span className={cx("chip shrink-0", on ? "border-gold-400/40 text-gold-200" : "border-phantix-700 text-slate-500")}>
                         {on ? "Yes" : "No"}
@@ -236,7 +236,7 @@ export default function ComplianceProfile() {
                   placeholder="NG, GH, KE"
                   className="input mt-1"
                 />
-                <p className="mt-1 text-[11px] text-slate-500">Comma separated — drives cross-border data rules.</p>
+                <p className="mt-1 text-[13px] text-slate-500">Comma separated — drives cross-border data rules.</p>
               </div>
             </Card>
 

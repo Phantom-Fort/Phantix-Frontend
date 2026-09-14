@@ -124,7 +124,7 @@ export default function VaptSchedules() {
                         <span className="chip border-phantix-700 text-slate-400">{s.timezone}</span>
                         <span className="chip border-phantix-700 text-slate-400">max {s.max_concurrent_per_org} concurrent</span>
                       </div>
-                      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-[11px] text-slate-500 sm:grid-cols-4">
+                      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-slate-500 sm:grid-cols-4">
                         <span>Last run <span className="text-slate-400">{when(s.last_run_at)}</span></span>
                         <span>Next run <span className="text-slate-400">{when(s.next_run_at)}</span></span>
                         <span>Runs <span className="text-slate-400">{s.total_runs}</span></span>
@@ -257,7 +257,7 @@ function CreateScheduleModal({
             ))}
           </div>
           <input id="sch-cron" value={cron} onChange={(e) => setCron(e.target.value)} className="input mt-2 font-mono !text-xs" />
-          <p className="mt-1 text-[11px] text-slate-500">Simple interval (1d, 7d, 12h) or a 5-field cron expression.</p>
+          <p className="mt-1 text-[13px] text-slate-500">Simple interval (1d, 7d, 12h) or a 5-field cron expression.</p>
         </div>
 
         <div className="flex justify-end gap-2">

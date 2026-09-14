@@ -170,7 +170,7 @@ export default function Scans() {
               </div>
               <div className="text-right">
                 <p className="font-display text-2xl font-bold text-white">{active.progress}%</p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">{active.findings_count} findings</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">{active.findings_count} findings</p>
               </div>
               <button
                 className="btn-danger !py-2"
@@ -210,7 +210,7 @@ export default function Scans() {
               </div>
               <div className="text-right">
                 <p className="font-display text-2xl font-bold text-white">{githubActive.progress}%</p>
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">{githubActive.findings_count} findings</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">{githubActive.findings_count} findings</p>
               </div>
               <a href="/assets" className="btn-secondary !py-2">
                 <Github size={14} /> Back to assets
@@ -252,7 +252,7 @@ export default function Scans() {
                     <td className="td">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-slate-200">#{j.id}</span>
-                        <span className={cx("chip text-[9px]", isGitHub ? "border-phantix-500/30 bg-phantix-500/10 text-phantix-300" : "border-phantix-700/40 bg-phantix-800/50 text-slate-400")}>
+                        <span className={cx("chip text-[11px]", isGitHub ? "border-phantix-500/30 bg-phantix-500/10 text-phantix-300" : "border-phantix-700/40 bg-phantix-800/50 text-slate-400")}>
                           {isGitHub ? <><Github size={9} /> GitHub analysis</> : "network/vuln"}
                         </span>
                       </div>
@@ -260,7 +260,7 @@ export default function Scans() {
                     <td className="td">
                       <div className="flex gap-1.5">
                         {(j.tools ?? []).map((t) => (
-                          <span key={t} className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono text-[10px] text-phantix-300">{t}</span>
+                          <span key={t} className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono text-[12px] text-phantix-300">{t}</span>
                         ))}
                       </div>
                     </td>
@@ -343,8 +343,8 @@ export default function Scans() {
                           return (
                             <>
                               {conf != null && <span className="hidden font-mono text-xs text-slate-500 sm:block">{conf} conf</span>}
-                              {reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
-                              {reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
+                              {reportable === true && <span className="chip text-[12px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
+                              {reportable === false && <span className="chip text-[12px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held</span>}
                               <SeverityBadge severity={r.severity} />
                               {impact != null && <ImpactBadge level={impact} score={impactScore} />}
                               <VerificationBadge status={verStatus} />
@@ -380,39 +380,39 @@ export default function Scans() {
             <div className="flex flex-wrap items-center gap-2">
               <SeverityBadge severity={selected.severity} />
               <VerificationBadge status={selected.verification_status} />
-              {selected.reportable === true && <span className="chip text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
-              {selected.reportable === false && <span className="chip text-[10px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held from reports</span>}
+              {selected.reportable === true && <span className="chip text-[12px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Reportable</span>}
+              {selected.reportable === false && <span className="chip text-[12px] text-slate-500 bg-slate-400/10 border-slate-500/30">Held from reports</span>}
               {(selected.impact_level as string) && <ImpactBadge level={selected.impact_level} score={selected.impact_score} />}
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Asset</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Asset</p>
                 <p className="mt-0.5 font-mono text-slate-200">{selected.asset_value || "—"}</p>
               </div>
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Tool / Job</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Tool / Job</p>
                 <p className="mt-0.5 font-mono text-slate-200">{selected.tool} · #{selected.scan_job_id}</p>
               </div>
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Detected</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Detected</p>
                 <p className="mt-0.5 text-slate-200">{formatDateTime(selected.created_at)}</p>
               </div>
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Result ID</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Result ID</p>
                 <p className="mt-0.5 font-mono text-slate-200">#{selected.id}</p>
               </div>
             </div>
 
             {selected.description && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
                 <p className="text-sm leading-6 text-slate-300">{selected.description}</p>
               </div>
             )}
 
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Verification</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Verification</p>
               <div className="space-y-1.5 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
                   <span className="text-slate-500">Status: <span className="font-medium text-slate-200">{selected.verification_status}</span></span>
@@ -420,30 +420,30 @@ export default function Scans() {
                   {selVer.method && <span className="text-slate-500">Method: <span className="font-mono text-slate-200">{selVer.method}</span></span>}
                 </div>
                 {selVer.verification_reason && <p className="text-slate-400">{selVer.verification_reason}</p>}
-                {selVer.verified_by && <p className="text-[11px] text-slate-500">Reviewed by {selVer.verified_by}{selVer.verified_at ? ` · ${formatDateTime(selVer.verified_at)}` : ""}</p>}
+                {selVer.verified_by && <p className="text-[13px] text-slate-500">Reviewed by {selVer.verified_by}{selVer.verified_at ? ` · ${formatDateTime(selVer.verified_at)}` : ""}</p>}
               </div>
             </div>
 
             {selImpact?.impact_level && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
                 <ImpactPanel impact={selImpact} />
               </div>
             )}
 
             {(selected as any).evidence && Object.keys((selected as any).evidence).length > 0 && (
               <details className="text-xs">
-                <summary className="flex cursor-pointer items-center gap-1 text-slate-500 hover:text-slate-300 text-[11px]">
+                <summary className="flex cursor-pointer items-center gap-1 text-slate-500 hover:text-slate-300 text-[13px]">
                   <ChevronDown size={12} /> Raw evidence
                 </summary>
-                <pre className="mt-2 max-h-60 overflow-auto rounded-lg border border-phantix-700/40 bg-phantix-950/70 p-2.5 font-mono text-[10px] leading-4 text-slate-400">
+                <pre className="mt-2 max-h-60 overflow-auto rounded-lg border border-phantix-700/40 bg-phantix-950/70 p-2.5 font-mono text-[12px] leading-4 text-slate-400">
                   {JSON.stringify((selected as any).evidence, null, 2)}
                 </pre>
               </details>
             )}
 
             <div className="border-t border-phantix-700/40 pt-4">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Manual review decision</p>
+              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Manual review decision</p>
               <textarea
                 className="input mb-3 min-h-[64px] w-full resize-y"
                 placeholder="Optional note (e.g. evidence confirmed on retest, customer verified, duplicates CVE-XXXX...)"
@@ -473,7 +473,7 @@ export default function Scans() {
                   {verifyBusy === "rejected" ? <Spinner className="h-3.5 w-3.5" /> : <Ban size={14} />} Reject
                 </button>
               </div>
-              <p className="mt-2 text-[10px] text-slate-500">
+              <p className="mt-2 text-[12px] text-slate-500">
                 <Lock size={10} className="mr-1 inline text-gold-400" />
                 Decision persists via PATCH /scans/results/{selected.id}/verification and is picked up by the reporting gate.
               </p>

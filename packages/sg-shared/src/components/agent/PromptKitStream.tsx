@@ -98,7 +98,7 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gold-400/25 bg-gold-400/10 text-gold-300">
           <Radar size={9} />
         </span>
-        <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-400">{working}</p>
+        <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-400">{working}</p>
       </div>
     );
   }
@@ -108,14 +108,14 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
     return (
       <div className="max-w-full pl-10">
         <Reasoning className="rounded-xl border border-phantix-700/30 bg-phantix-950/50 px-3 py-2">
-          <ReasoningTrigger className="text-[11px] font-medium text-slate-400 transition-colors hover:text-slate-200">
+          <ReasoningTrigger className="text-[13px] font-medium text-slate-400 transition-colors hover:text-slate-200">
             <span className="flex items-center gap-1.5">
               <BrainCircuit size={11} className="text-gold-400/80" /> Thought process
             </span>
           </ReasoningTrigger>
           <ReasoningContent
             markdown
-            className="mt-2 text-[11px]"
+            className="mt-2 text-[13px]"
             contentClassName="prose-chat text-slate-500"
           >
             {normalizeAgiMarkdown(t.content)}
@@ -131,7 +131,7 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
         <Bot size={13} />
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        <p className="mb-1 text-[12px] font-medium uppercase tracking-wider text-muted-foreground">
           {PERSONA_LABEL[persona] ?? "Agent"}
         </p>
         <MessageContent markdown className="bg-secondary text-foreground">

@@ -17,7 +17,7 @@ const RISK_FILTERS = ["all", "critical", "high", "medium", "low"] as const;
 
 function GraphLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500">
+    <div className="flex flex-wrap items-center gap-3 text-[12px] text-slate-500">
       <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: "#F43F5E" }} /> critical</span>
       <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: "#FB923C" }} /> high</span>
       <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full" style={{ background: "#FACC15" }} /> medium</span>
@@ -143,7 +143,7 @@ export default function AssetGraph() {
             <input type="checkbox" checked={showTypes} onChange={(e) => setShowTypes(e.target.checked)} className="sr-only" />
             <Boxes size={11} /> Asset types
           </label>
-          <div className="ml-auto flex items-center gap-3 font-mono text-[11px] text-slate-500">
+          <div className="ml-auto flex items-center gap-3 font-mono text-[13px] text-slate-500">
             <span>{prunedModel.counts.assets} assets</span>
             <span>·</span>
             <span>{prunedModel.counts.tags} tags</span>
@@ -258,7 +258,7 @@ export default function AssetGraph() {
                       ["Last seen", timeAgo(String(meta.lastSeenAt ?? ""))],
                     ].map(([k, v]) => (
                       <div key={k} className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2.5 py-2">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                        <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                         <p className="mt-0.5 truncate text-slate-200">{v}</p>
                       </div>
                     ))}
@@ -286,7 +286,7 @@ export default function AssetGraph() {
                     </span>
                     <div>
                       <p className="font-display text-lg font-semibold text-white">{selected.label}</p>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-500">{isTag ? "tag cluster" : "asset-type cluster"}</p>
+                      <p className="text-[13px] uppercase tracking-wider text-slate-500">{isTag ? "tag cluster" : "asset-type cluster"}</p>
                     </div>
                   </div>
                   <div className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-3 py-2.5 text-sm text-slate-300">

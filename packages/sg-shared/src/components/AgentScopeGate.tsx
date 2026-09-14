@@ -115,7 +115,7 @@ export default function AgentScopeGate({
             <p className="text-sm text-slate-200">
               {card.prompt ?? `Select which organization data ${agentName} may read for ${actionLabel}.`}
             </p>
-            <p className="mt-1 text-[11px] leading-5 text-slate-500">
+            <p className="mt-1 text-[13px] leading-5 text-slate-500">
               Tenant inventory is never sent to the model until you confirm. {card.total ?? totalOptions} resource
               {(card.total ?? totalOptions) === 1 ? "" : "s"} available
               {card.selection_ttl_seconds ? ` · selection expires in ${Math.round(card.selection_ttl_seconds / 60)} min` : ""}.
@@ -124,12 +124,12 @@ export default function AgentScopeGate({
         </div>
 
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[11px] uppercase tracking-wider text-slate-500">
+          <span className="text-[13px] uppercase tracking-wider text-slate-500">
             <Layers size={11} className="mr-1 inline" /> {selectionCount} of {totalOptions} selected
           </span>
           <div className="flex items-center gap-1.5">
-            <button type="button" onClick={selectAll} className="btn-ghost !px-2.5 !py-1 !text-[11px]">Select all</button>
-            <button type="button" onClick={clearAll} className="btn-ghost !px-2.5 !py-1 !text-[11px]">Clear</button>
+            <button type="button" onClick={selectAll} className="btn-ghost !px-2.5 !py-1 !text-[13px]">Select all</button>
+            <button type="button" onClick={clearAll} className="btn-ghost !px-2.5 !py-1 !text-[13px]">Clear</button>
           </div>
         </div>
 
@@ -151,7 +151,7 @@ export default function AgentScopeGate({
                     {allSelected && <Check size={11} strokeWidth={3} />}
                   </span>
                   <span className="truncate text-xs font-semibold text-slate-200">{g.label ?? g.key}</span>
-                  <span className="ml-auto shrink-0 text-[10px] text-slate-500">
+                  <span className="ml-auto shrink-0 text-[12px] text-slate-500">
                     {groupSelectedCount(g)}/{options.length}
                     {g.truncated ? " · truncated" : ""}
                   </span>
@@ -172,14 +172,14 @@ export default function AgentScopeGate({
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-xs text-slate-200">{o.value ?? o.name ?? `#${optionSelectedId(o)}`}</span>
                           {o.name && o.name !== o.value && (
-                            <span className="block truncate text-[10px] text-slate-500">{o.name}</span>
+                            <span className="block truncate text-[12px] text-slate-500">{o.name}</span>
                           )}
                         </span>
                         <span className="flex shrink-0 items-center gap-1">
-                          {o.asset_type && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[10px] text-slate-400">{o.asset_type}</span>}
-                          {o.environment && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[10px] text-slate-500">{o.environment}</span>}
+                          {o.asset_type && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">{o.asset_type}</span>}
+                          {o.environment && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-500">{o.environment}</span>}
                           {o.criticality && (
-                            <span className={cx("chip text-[10px] capitalize",
+                            <span className={cx("chip text-[12px] capitalize",
                               o.criticality === "critical" ? "border-severity-critical/40 bg-severity-critical/10 text-severity-critical"
                                 : o.criticality === "high" ? "border-severity-high/40 bg-severity-high/10 text-severity-high"
                                   : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
@@ -197,7 +197,7 @@ export default function AgentScopeGate({
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-phantix-700/40 pt-4">
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+          <span className="flex items-center gap-1.5 text-[12px] text-slate-500">
             <Lock size={10} /> Only the resources you select are shared with the agent.
           </span>
           <div className="flex items-center gap-2">

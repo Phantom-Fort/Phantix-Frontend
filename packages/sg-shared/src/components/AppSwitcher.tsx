@@ -101,7 +101,7 @@ export default function AppSwitcher({ current = "core" }: { current?: Applicatio
                   <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-100">
                     {app.label}
                     {isCurrent ? (
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-gold-400">
+                      <span className="text-[12px] font-medium uppercase tracking-wider text-gold-400">
                         current
                       </span>
                     ) : (
@@ -113,7 +113,7 @@ export default function AppSwitcher({ current = "core" }: { current?: Applicatio
               </button>
             );
           })}
-          <div className="mt-1 border-t border-phantix-700/40 px-3 py-2 text-[11px] text-slate-500">
+          <div className="mt-1 border-t border-phantix-700/40 px-3 py-2 text-[13px] text-slate-500">
             {last ? `Last used: ${last}` : "Switch without signing in again"}
           </div>
         </div>

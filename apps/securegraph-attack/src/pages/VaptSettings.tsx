@@ -112,7 +112,7 @@ export default function VaptSettings() {
                 <span className={cx("block text-sm font-medium", mining ? "text-emerald-300" : "text-slate-300")}>
                   {mining ? "Consent granted" : "Consent not granted"}
                 </span>
-                <span className="block text-[11px] text-slate-500">
+                <span className="block text-[13px] text-slate-500">
                   {settings?.mining_consent_granted_at
                     ? `Since ${new Date(settings.mining_consent_granted_at).toLocaleDateString()}`
                     : "Tap to change"}
@@ -124,7 +124,7 @@ export default function VaptSettings() {
             </button>
 
             {settings?.mining_data_scope && (
-              <p className="mt-3 flex items-start gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 p-3 text-[11px] leading-5 text-slate-400">
+              <p className="mt-3 flex items-start gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 p-3 text-[13px] leading-5 text-slate-400">
                 <Info size={12} className="mt-0.5 shrink-0 text-gold-400" />
                 Data scope: <span className="font-mono text-slate-300">{settings.mining_data_scope}</span>
               </p>
@@ -158,7 +158,7 @@ export default function VaptSettings() {
                   >
                     <span className="min-w-0">
                       <span className={cx("block text-sm capitalize", active ? "text-gold-200" : "text-slate-300")}>{t}</span>
-                      <span className="block text-[11px] leading-4 text-slate-500">{THRESHOLD_COPY[t]}</span>
+                      <span className="block text-[13px] leading-4 text-slate-500">{THRESHOLD_COPY[t]}</span>
                     </span>
                     {active && saving === "threshold" && <Loader2 size={13} className="shrink-0 animate-spin text-gold-300" />}
                   </button>

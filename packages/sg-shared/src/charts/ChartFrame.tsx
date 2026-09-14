@@ -48,14 +48,14 @@ export default function ChartFrame({
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate font-display text-[13px] font-semibold text-slate-100">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{subtitle}</p>}
+          {subtitle && <p className="mt-0.5 text-[13px] leading-4 text-slate-500">{subtitle}</p>}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {controls}
           {canTable && (
             <button
               onClick={() => setAsTable((v) => !v)}
-              className="btn-ghost !px-2 !py-1 !text-[11px]"
+              className="btn-ghost !px-2 !py-1 !text-[13px]"
               title={asTable ? "Show the chart" : "Show the numbers"}
               aria-label={asTable ? "Show the chart" : "Show the numbers"}
             >
@@ -71,7 +71,7 @@ export default function ChartFrame({
             <thead>
               <tr className="border-b border-phantix-700/40">
                 {tableHead!.map((h) => (
-                  <th key={h} className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                  <th key={h} className="px-2 py-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
                     {h}
                   </th>
                 ))}
@@ -81,7 +81,7 @@ export default function ChartFrame({
               {tableRows!.map((row, i) => (
                 <tr key={i} className="border-b border-phantix-800/50 last:border-0">
                   {row.map((cell, j) => (
-                    <td key={j} className={cx("px-2 py-1.5 text-[11.5px]", j === 0 ? "text-slate-300" : "font-mono text-slate-400")}>
+                    <td key={j} className={cx("px-2 py-1.5 text-[13px]", j === 0 ? "text-slate-300" : "font-mono text-slate-400")}>
                       {cell}
                     </td>
                   ))}
@@ -100,9 +100,9 @@ export default function ChartFrame({
             <span key={item.key} className="flex items-center gap-1.5">
               {/* The swatch carries identity; the text stays ink, never the series colour. */}
               <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
-              <span className="text-[10.5px] text-slate-400">{item.label}</span>
+              <span className="text-[12px] text-slate-400">{item.label}</span>
               {item.value != null && (
-                <span className="font-mono text-[10.5px] text-slate-500">{item.value}</span>
+                <span className="font-mono text-[12px] text-slate-500">{item.value}</span>
               )}
             </span>
           ))}

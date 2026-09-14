@@ -76,7 +76,7 @@ export default function SocLogPipeline() {
                 <span className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", entry.level === "error" ? "bg-severity-critical" : entry.level === "warn" ? "bg-severity-high" : "bg-slate-500")} />
                 <div className="flex-1 min-w-0">
                   <p className="font-mono text-xs text-slate-200 truncate">{entry.message}</p>
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[12px] text-slate-500">
                     {entry.host} &middot; {entry.facility} &middot; {entry.timestamp ? timeAgo(entry.timestamp) : ""}
                   </p>
                 </div>
@@ -90,7 +90,7 @@ export default function SocLogPipeline() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
           {stats && (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 <Card className="!p-4">
                   <p className="text-2xl font-semibold text-white">{stats.total_24h}</p>
                   <p className="text-xs text-slate-400">Events (24h)</p>

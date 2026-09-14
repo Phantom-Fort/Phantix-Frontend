@@ -229,7 +229,7 @@ export default function Agent({ initialMode = "agent", allowAgi = false }: { ini
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <a href={PLATFORM_AI_URL} className="btn-primary"><Sparkles size={15} /> Enable on Platform</a>
             </div>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-500">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2 text-[13px] text-slate-500">
               <span className="chip border-phantix-600/50 bg-phantix-800/60"><Lock size={10} className="mr-1 inline" /> Admin-gated</span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60"><ShieldCheck size={10} className="mr-1 inline" /> Never scores risk</span>
             </div>
@@ -604,7 +604,7 @@ function AgentChat({
           <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
             <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
-            <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
               {specialists.length > 0
                 ? `Works across ${specialists.slice(0, 3).map((x) => x.label).join(", ")}${
                     specialists.length > 3 ? ` +${specialists.length - 3}` : ""
@@ -615,7 +615,7 @@ function AgentChat({
           </div>
           <span
             className={cx(
-              "ml-auto flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-medium",
+              "ml-auto flex items-center gap-1 rounded-full border px-2.5 py-1 text-[12px] font-medium",
               operate.unlocked ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
             )}
           >
@@ -629,14 +629,14 @@ function AgentChat({
             the chief still answers, and an empty strip beats a wrong one. */}
         {specialists.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-phantix-700/30 px-5 py-2">
-          <span className="text-[10px] uppercase tracking-wider text-slate-600 mr-1">Specialists</span>
+          <span className="text-[12px] uppercase tracking-wider text-slate-600 mr-1">Specialists</span>
           {specialists.map((d) => (
             <button
               key={d.id}
               onClick={() => invokeDomain(d.id)}
               disabled={busy}
               title={d.desc}
-              className="flex items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2 py-1 text-[11px] text-slate-300 transition-colors hover:border-gold-400/40 hover:bg-phantix-800/50 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2 py-1 text-[13px] text-slate-300 transition-colors hover:border-gold-400/40 hover:bg-phantix-800/50 disabled:opacity-50"
             >
               {d.icon} {d.label}
             </button>
@@ -670,7 +670,7 @@ function AgentChat({
               <div key={i} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-7 w-7" loop /></span>
                 <div className="min-w-0 max-w-[88%] space-y-2">
-                  {m.runId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
+                  {m.runId && <span className="flex items-center gap-1.5 text-[12px] text-gold-400"><Timer size={10} /> run {m.runId}</span>}
                   {m.thinking && (
                     <Steps defaultOpen={false} className="rounded-xl border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
                       <StepsItem>
@@ -684,9 +684,9 @@ function AgentChat({
                   <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{m.text}</Markdown>
                   {m.skills && m.skills.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10px] text-slate-500">Skills:</span>
+                      <span className="text-[12px] text-slate-500">Skills:</span>
                       {m.skills.map((s) => (
-                        <span key={s} className="chip border-gold-400/20 bg-gold-400/5 font-mono text-[10px] text-gold-300">{s}</span>
+                        <span key={s} className="chip border-gold-400/20 bg-gold-400/5 font-mono text-[12px] text-gold-300">{s}</span>
                       ))}
                     </div>
                   )}
@@ -725,7 +725,7 @@ function AgentChat({
                         />
                         {!t.ok && t.error && (
                           <div className="flex flex-wrap items-center gap-2 pl-1">
-                            <p className="text-[10px] leading-4 text-slate-500">{t.error}</p>
+                            <p className="text-[12px] leading-4 text-slate-500">{t.error}</p>
                             {isAuthorizationBlock(t.error) && liveRunId && (
                               <button
                                 onClick={() => void requestApproval(t.tool)}
@@ -754,9 +754,9 @@ function AgentChat({
                   </Steps>
                 )}
                 {!liveThinking && !liveAnswer && tools.length === 0 && phase !== "connecting" && (
-                  <p className="flex items-center gap-2 text-[11px] text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Analysing…</p>
+                  <p className="flex items-center gap-2 text-[13px] text-slate-400"><LottiePlayer animationData={flowData} className="h-5 w-5" loop speed={1.2} /> Analysing…</p>
                 )}
-                {liveRunId && <span className="flex items-center gap-1.5 text-[10px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
+                {liveRunId && <span className="flex items-center gap-1.5 text-[12px] text-gold-400"><Timer size={10} /> run {liveRunId}</span>}
                 {liveAnswer && (
                   <Markdown className="prose dark:prose-invert prose-sm max-w-none break-words prose-pre:bg-transparent prose-p:leading-[1.65] [&_a]:text-gold-300 [&_a]:underline [&_strong]:text-slate-100 [&_code]:rounded [&_code]:border [&_code]:border-phantix-700/50 [&_code]:bg-phantix-950/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-[0.85em] [&_code]:text-gold-200/90 [&_pre_code]:border-0 [&_pre_code]:bg-transparent [&_pre_code]:p-0">{liveAnswer + "\u258d"}</Markdown>
                 )}
@@ -792,7 +792,7 @@ function AgentChat({
               )}
             </PromptInputActions>
           </PromptInput>
-          <p className="mt-2 flex items-center gap-1.5 text-[10px] text-slate-600">
+          <p className="mt-2 flex items-center gap-1.5 text-[12px] text-slate-600">
             <ShieldCheck size={10} />
             {chatSend.hint === "queued"
               ? "Queued — press Enter again to send now, or wait for the current reply."
@@ -865,14 +865,14 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><BrainCircuit size={18} /></span>
           <div className="mr-auto">
             <p className="font-display text-sm font-semibold text-white">Skill library</p>
-            <p className="text-[11px] text-slate-500">Skills mint only after anonymization + review. Auto-promote happens only in lab.</p>
+            <p className="text-[13px] text-slate-500">Skills mint only after anonymization + review. Auto-promote happens only in lab.</p>
           </div>
           <div className="flex items-center gap-1.5">
             {(["all", "active", "candidate", "quarantined"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={cx("rounded-lg px-2.5 py-1.5 text-[11px] transition-colors", filter === f ? "bg-phantix-800/80 text-white" : "text-slate-500 hover:text-slate-300")}
+                className={cx("rounded-lg px-2.5 py-1.5 text-[13px] transition-colors", filter === f ? "bg-phantix-800/80 text-white" : "text-slate-500 hover:text-slate-300")}
               >
                 {f === "all" ? `All (${skills.length})` : `${f} (${counts[f as Exclude<typeof f, "all">]})`}
               </button>
@@ -890,12 +890,12 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[13px] font-semibold text-white">{s.name}</span>
-                  <span className="chip border-phantix-600/40 bg-phantix-800/50 font-mono text-[10px] text-slate-400">v{s.version}</span>
+                  <span className="chip border-phantix-600/40 bg-phantix-800/50 font-mono text-[12px] text-slate-400">v{s.version}</span>
                   {statusChip(s.status)}
-                  {s.domain && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[10px] text-slate-400">{s.domain}</span>}
+                  {s.domain && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">{s.domain}</span>}
                 </div>
                 <p className="mt-1 text-xs leading-5 text-slate-400">{s.description}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-[13px] text-slate-500">
                   <span className="flex items-center gap-1"><ThumbsUp size={11} className="text-gold-400" /> Score {(s.score * 100).toFixed(0)}%</span>
                   <span className="flex items-center gap-1"><Timer size={11} /> {s.uses} uses</span>
                   {s.last_used_at && <span className="text-slate-600">Last used {new Date(s.last_used_at).toLocaleDateString()}</span>}
@@ -903,10 +903,10 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 {s.status !== "active" && (
-                  <button onClick={() => void act(s, "active")} disabled={busyId === s.id} className="btn-secondary !py-1.5 !text-[11px]"><ThumbsUp size={12} /> Promote</button>
+                  <button onClick={() => void act(s, "active")} disabled={busyId === s.id} className="btn-secondary !py-1.5 !text-[13px]"><ThumbsUp size={12} /> Promote</button>
                 )}
                 {s.status !== "quarantined" && (
-                  <button onClick={() => void act(s, "quarantined")} disabled={busyId === s.id} className="btn-ghost !py-1.5 !text-[11px] text-severity-medium hover:text-severity-medium"><AlertTriangle size={12} /> Quarantine</button>
+                  <button onClick={() => void act(s, "quarantined")} disabled={busyId === s.id} className="btn-ghost !py-1.5 !text-[13px] text-severity-medium hover:text-severity-medium"><AlertTriangle size={12} /> Quarantine</button>
                 )}
                 {s.status !== "retired" && (
                   <button onClick={() => void act(s, "retired")} disabled={busyId === s.id} title="Retire" className="rounded-lg border border-phantix-700/40 p-2 text-slate-500 hover:border-severity-critical/40 hover:text-severity-critical"><RotateCcw size={12} /></button>
@@ -918,7 +918,7 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
         </div>
 
         <div className="border-t border-phantix-700/40 px-5 py-3">
-          <p className="flex items-center gap-1.5 text-[10px] text-slate-600">
+          <p className="flex items-center gap-1.5 text-[12px] text-slate-600">
             <ShieldCheck size={10} /> Skills are only promoted to active after human review. Candidate skills run in shadow mode; quarantined skills never execute. Governance is immutable and audited.
           </p>
         </div>

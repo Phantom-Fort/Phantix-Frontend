@@ -244,7 +244,7 @@ export default function Analytics() {
 
           {/* Posture: where we stand, and where the exposure sits. */}
           <section className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Posture
             </h2>
             <SurfaceScoreRow surfaces={surfaceRows} onSelect={(s) => setSurface(s === surface ? null : s)} selected={surface} />
@@ -259,7 +259,7 @@ export default function Analytics() {
                 {trend.length ? (
                   <TrendChart points={trend.map((p) => ({ label: p.day, value: p.score }))} height={208} />
                 ) : (
-                  <div className="flex items-center justify-center text-[11px] text-slate-600" style={{ height: 208 }}>
+                  <div className="flex items-center justify-center text-[13px] text-slate-600" style={{ height: 208 }}>
                     Posture history appears once there are two or more snapshots.
                   </div>
                 )}
@@ -269,7 +269,7 @@ export default function Analytics() {
 
           {/* Findings: magnitude and share, reframeable. */}
           <section className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Findings
             </h2>
             <FindingsBreakdown
@@ -291,7 +291,7 @@ export default function Analytics() {
           {/* Direction over time — the question standing counts cannot answer. */}
           {timeline && timeline.series.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Direction
               </h2>
               <MovementTimeline timeline={timeline} />
@@ -326,7 +326,7 @@ export default function Analytics() {
           {/* Compliance standing, framework by framework. */}
           {complianceRows.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Compliance
               </h2>
               <ComparativeBars
@@ -346,7 +346,7 @@ export default function Analytics() {
 
           {/* Comparative analysis — surfaces measured against each other. */}
           <section className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
               Comparative analysis
             </h2>
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -384,7 +384,7 @@ export default function Analytics() {
           {/* Automation cost — analytics about the platform's own work. */}
           {usage && (
             <section className="space-y-3">
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Automation
               </h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -414,7 +414,7 @@ export default function Analytics() {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-1.5 text-[11px] text-slate-600"
+            className="flex items-center gap-1.5 text-[13px] text-slate-600"
           >
             <Activity size={11} />
             Read live from posture, the finding tracker and the AI budget. To hand any of this to

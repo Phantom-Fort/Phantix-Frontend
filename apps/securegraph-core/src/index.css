@@ -561,12 +561,16 @@ p {
       hover:bg-severity-critical/25 active:scale-[0.98];
   }
 
+  /* Type ladder — the smallest legible step is 11px and it is for badges and
+     keycaps only. Meta is 12, secondary 13, body 14 (text-sm). Nothing in the
+     product should go below 11: the reference dashboards we match bottom out
+     around 12 and put most interface text at 13-14. */
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium border;
   }
 
   .th {
-    @apply px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+    @apply px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wider text-slate-400;
   }
 
   .td {
@@ -596,7 +600,7 @@ p {
   .skeleton:nth-child(n + 6)::after { animation-delay: 0.45s; }
 
   .nav-item {
-    @apply flex items-center gap-3 rounded-md px-3 py-1.5 text-sm leading-tight font-medium text-slate-400
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-sm leading-tight font-medium text-slate-400
       transition-all duration-150 hover:text-slate-100 hover:bg-phantix-800/60;
   }
   .nav-item.active {

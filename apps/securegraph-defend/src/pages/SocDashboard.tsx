@@ -420,7 +420,7 @@ export default function SocDashboard() {
                     const total = detTrend.data.reduce((s, p) => s + (p.value ?? 0), 0);
                     const hot = detTrend.data.reduce((s, p) => s + (p.secondary ?? 0), 0);
                     return total > 0 ? (
-                      <span className="font-mono text-[11px] text-slate-500">
+                      <span className="font-mono text-[13px] text-slate-500">
                         {total} signals <span className="text-severity-high">· {hot} crit/high</span>
                       </span>
                     ) : undefined;
@@ -442,7 +442,7 @@ export default function SocDashboard() {
                     <div className="flex items-center gap-2 min-w-0">
                       {panel.source.includes("soc") ? <Crosshair size={15} className="shrink-0 text-gold-400" /> : <Shield size={15} className="shrink-0 text-phantix-400" />}
                       <span className="truncate">{panel.title}</span>
-                      {!panel.ready && <span className="chip shrink-0 text-[10px] text-amber-300/90 bg-amber-400/10 border-amber-400/20">Soon</span>}
+                      {!panel.ready && <span className="chip shrink-0 text-[12px] text-amber-300/90 bg-amber-400/10 border-amber-400/20">Soon</span>}
                     </div>
                   }
                   subtitle={panel.note || panel.source}
@@ -466,7 +466,7 @@ export default function SocDashboard() {
                         <p className="text-xs text-slate-400"><span className="font-mono tabular-nums text-slate-200">{openCount}</span> open detections</p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {Object.entries(queueAgg?.bySeverityOpen ?? queueAgg?.by_severity_open ?? {}).map(([s, n]) => (
-                            <span key={s} className="chip text-[10px] capitalize"><SeverityBadge severity={sevOf(s)} /> {String(n)}</span>
+                            <span key={s} className="chip text-[12px] capitalize"><SeverityBadge severity={sevOf(s)} /> {String(n)}</span>
                           ))}
                         </div>
                       </div>
@@ -496,11 +496,11 @@ export default function SocDashboard() {
                     <Radio size={14} className={cx(liveConnected ? "text-gold-400" : "text-slate-500")} />
                     Live feed
                   </p>
-                  <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                  <p className="mt-0.5 text-[13px] text-slate-500 truncate">
                     {liveConnected ? "SSE · last 12 non-heartbeat events" : "Reconnecting…"}
                   </p>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{livePreview.length}</span>
+                <span className="shrink-0 font-mono text-[13px] tabular-nums text-slate-500">{livePreview.length}</span>
               </div>
               {/* Heartbeat status strip */}
               <div className="flex items-center gap-2.5 border-b border-phantix-700/30 bg-phantix-950/40 px-3 py-2.5">
@@ -509,7 +509,7 @@ export default function SocDashboard() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-slate-100">{liveConnected ? "Server responsive" : "Waiting for heartbeat"}</p>
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[12px] text-slate-500">
                     {lastHeartbeatAt
                       ? <>Heartbeat {timeAgo(lastHeartbeatAt)} · stream healthy</>
                       : liveConnected ? "Awaiting the first heartbeat ping…" : "Reconnecting to the event stream…"}
@@ -544,7 +544,7 @@ export default function SocDashboard() {
                       )} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-[10px] text-slate-500 shrink-0">{timeAgo(evt.ts)}</span>
+                          <span className="font-mono text-[12px] text-slate-500 shrink-0">{timeAgo(evt.ts)}</span>
                           {sev && <SeverityBadge severity={sevOf(sev)} />}
                         </div>
                         <p className="mt-0.5 text-slate-300 leading-snug line-clamp-2">{ssePayloadLabel(evt.event, payload)}</p>
@@ -608,7 +608,7 @@ export default function SocDashboard() {
                         <td className="td">
                           <div className="min-w-0 max-w-md">
                             <p className="font-medium text-slate-100 truncate">{d.title}</p>
-                            <p className="text-[11px] text-slate-500 truncate">{d.correlator_id ?? d.source} · asset #{d.asset_id ?? "—"}{d.risk_id ? ` · risk #${d.risk_id}` : ""}</p>
+                            <p className="text-[13px] text-slate-500 truncate">{d.correlator_id ?? d.source} · asset #{d.asset_id ?? "—"}{d.risk_id ? ` · risk #${d.risk_id}` : ""}</p>
                           </div>
                         </td>
                         <td className="td"><SeverityBadge severity={sevOf(String(d.severity))} /></td>
@@ -634,7 +634,7 @@ export default function SocDashboard() {
             <p className="text-xs text-slate-500">Optional incident cases linked from escalated detections.</p>
             <button className="btn-primary !py-2 text-sm" onClick={() => setCaseOpen(true)}><Plus size={14} /> Open case</button>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             {casesRes.loading && !(casesRes.data?.items ?? []).length ? (
               <div className="md:col-span-2"><CardListSkeleton rows={4} /></div>
             ) : (casesRes.data?.items ?? []).length === 0 ? (
@@ -644,7 +644,7 @@ export default function SocDashboard() {
                 <Card hover className="cursor-pointer">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="chip text-[10px]">#{c.id}</span>
+                      <span className="chip text-[12px]">#{c.id}</span>
                       <p className="font-medium text-slate-100">{c.title}</p>
                     </div>
                     <StatusBadge status={String(c.status)} />
@@ -697,11 +697,11 @@ export default function SocDashboard() {
                       <tr key={r.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors">
                         <td className="td">
                           <p className="font-medium text-slate-100">{r.name}</p>
-                          {r.description && <p className="text-[11px] text-slate-500">{r.description}</p>}
+                          {r.description && <p className="text-[13px] text-slate-500">{r.description}</p>}
                         </td>
-                        <td className="td"><span className="chip text-[10px]">{r.source ?? "org"}</span></td>
+                        <td className="td"><span className="chip text-[12px]">{r.source ?? "org"}</span></td>
                         <td className="td"><SeverityBadge severity={sevOf(String(r.severity_default))} /></td>
-                        <td className="td font-mono text-[11px] text-slate-400">{Object.keys(r.match_spec ?? {}).join(", ")}</td>
+                        <td className="td font-mono text-[13px] text-slate-400">{Object.keys(r.match_spec ?? {}).join(", ")}</td>
                         <td className="td font-mono text-xs text-slate-400">{r.dedup_window_seconds ? `${Math.round(r.dedup_window_seconds / 3600)}h` : "—"}</td>
                         <td className="td">{r.enabled ? <StatusBadge status="active" /> : <StatusBadge status="closed" />}</td>
                         <td className="td">
@@ -744,10 +744,10 @@ export default function SocDashboard() {
                   <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
                     <div>
                       <p className="text-sm font-medium text-slate-100">{a.displayName ?? a.id ?? a.vendor}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">{a.vendor}</p>
+                      <p className="mt-0.5 text-[13px] text-slate-500">{a.vendor}</p>
                       {a.detail && <p className="mt-1 text-xs text-slate-500">{a.detail}</p>}
                     </div>
-                    <span className={cx("chip text-[10px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
+                    <span className={cx("chip text-[12px] shrink-0", a.configured ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
                       {a.configured ? <><CheckCircle2 size={10} /> Connected</> : <><XCircle size={10} /> Not connected</>}
                     </span>
                   </div>
@@ -787,16 +787,16 @@ export default function SocDashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <SeverityBadge severity={sevOf(String(detail.severity))} />
               <StatusBadge status={String(detail.status)} />
-              <span className="chip text-[10px]">{detail.source}</span>
-              {detail.occurrence_count > 1 && <span className="chip text-[10px] text-severity-medium">{detail.occurrence_count} occurrences</span>}
-              {detail.case_id && <span className="chip text-[10px] text-gold-400">case #{detail.case_id}</span>}
+              <span className="chip text-[12px]">{detail.source}</span>
+              {detail.occurrence_count > 1 && <span className="chip text-[12px] text-severity-medium">{detail.occurrence_count} occurrences</span>}
+              {detail.case_id && <span className="chip text-[12px] text-gold-400">case #{detail.case_id}</span>}
             </div>
             {detail.summary && <p className="text-sm text-slate-300">{detail.summary}</p>}
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               {[["Asset", detail.asset_id ? `#${detail.asset_id}` : "—"], ["Risk", detail.risk_id ? `#${detail.risk_id}` : "—"], ["Correlator", detail.correlator_id ?? "—"], ["Assignee", detail.assignee_ref ?? "—"], ["First seen", detail.first_seen_at ? timeAgo(detail.first_seen_at) : "—"], ["Last seen", detail.last_seen_at ? timeAgo(detail.last_seen_at) : "—"]].map(([k, v]) => (
                 <div key={k} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                   <p className="mt-0.5 font-medium text-slate-200">{v}</p>
                 </div>
               ))}
@@ -804,8 +804,8 @@ export default function SocDashboard() {
 
             {detail.evidence && Object.keys(detail.evidence).length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Evidence</p>
-                <pre className="rounded-lg bg-phantix-950/70 border border-phantix-700/40 p-3 text-[11px] font-mono text-slate-400 overflow-x-auto">{JSON.stringify(detail.evidence, null, 2)}</pre>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Evidence</p>
+                <pre className="rounded-lg bg-phantix-950/70 border border-phantix-700/40 p-3 text-[13px] font-mono text-slate-400 overflow-x-auto">{JSON.stringify(detail.evidence, null, 2)}</pre>
               </div>
             )}
 
@@ -879,7 +879,7 @@ export default function SocDashboard() {
                 <div className="flex flex-wrap items-center gap-2">
                   <SeverityBadge severity={sevOf(String((caseDetail ?? selectedCase).severity))} />
                   <StatusBadge status={String((caseDetail ?? selectedCase).status)} />
-                  {(caseDetail ?? selectedCase).assignee_ref && <span className="chip text-[10px]">{((caseDetail ?? selectedCase).assignee_ref as string)}</span>}
+                  {(caseDetail ?? selectedCase).assignee_ref && <span className="chip text-[12px]">{((caseDetail ?? selectedCase).assignee_ref as string)}</span>}
                 </div>
                 {(caseDetail ?? selectedCase).summary && <p className="text-sm text-slate-300">{(caseDetail ?? selectedCase).summary}</p>}
 
@@ -895,7 +895,7 @@ export default function SocDashboard() {
                 {/* Linked detections */}
                 {(caseDetail?.detections?.length ?? 0) > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Linked detections</p>
+                    <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Linked detections</p>
                     <div className="space-y-1.5">
                       {(caseDetail?.detections ?? []).map((d) => (
                         <div key={d.id} className="flex items-center justify-between rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2 text-xs">
@@ -912,12 +912,12 @@ export default function SocDashboard() {
 
                 {/* Notes */}
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Timeline notes</p>
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Timeline notes</p>
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {(caseDetail?.notes?.length ?? 0) === 0 && <p className="text-xs text-slate-500">No notes yet.</p>}
                     {(caseDetail?.notes ?? []).map((n) => (
                       <div key={n.id} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 p-3">
-                        <div className="flex items-center justify-between text-[10px] text-slate-500">
+                        <div className="flex items-center justify-between text-[12px] text-slate-500">
                           <span className="font-mono">{n.author_ref ?? "analyst"}</span>
                           <span>{n.created_at ? timeAgo(n.created_at) : ""}</span>
                         </div>

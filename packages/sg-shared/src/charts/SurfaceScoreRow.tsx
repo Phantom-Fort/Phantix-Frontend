@@ -66,7 +66,7 @@ export default function SurfaceScoreRow({
                 className="h-2 w-2 shrink-0 rounded-sm"
                 style={{ backgroundColor: surfaceColor(s.surface, mode) }}
               />
-              <span className="truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <span className="truncate text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 {SURFACE_LABELS[s.surface] ?? s.surface}
               </span>
             </div>
@@ -85,7 +85,7 @@ export default function SurfaceScoreRow({
               )}
             </div>
 
-            <p className="mt-1.5 text-[10.5px] text-slate-500">
+            <p className="mt-1.5 text-[12px] text-slate-500">
               {untested ? (
                 "not assessed"
               ) : (

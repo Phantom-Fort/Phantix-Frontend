@@ -28,7 +28,7 @@ function IocBadge({ type }: { type: string }) {
     url: "text-gold-300 bg-gold-400/10 border-gold-400/30",
     email: "text-purple-300 bg-purple-400/10 border-purple-400/30",
   };
-  return <span className={cx("chip shrink-0 text-[10px] font-mono", colors[type] ?? "text-slate-400 bg-slate-500/10 border-slate-500/30")}>{type}</span>;
+  return <span className={cx("chip shrink-0 text-[12px] font-mono", colors[type] ?? "text-slate-400 bg-slate-500/10 border-slate-500/30")}>{type}</span>;
 }
 
 const emptyIntel: IntelDashboard = {};
@@ -195,7 +195,7 @@ export default function ThreatIntel() {
             <strong>{lookupResult.new.length}</strong> new signal(s) upserted for this lookup{lookupResult.matched > 0 ? `, ${lookupResult.matched} matched to assets` : ""}.
           </p>
         )}
-        <p className="mt-2 text-[11px] text-slate-500">Lookup is treated as a write — it upserts a correlation signal for this org (rate-limited 30/min).</p>
+        <p className="mt-2 text-[13px] text-slate-500">Lookup is treated as a write — it upserts a correlation signal for this org (rate-limited 30/min).</p>
       </Card>
 
       <Tabs
@@ -247,13 +247,13 @@ export default function ThreatIntel() {
                             <td className="td">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-mono text-[13px] text-slate-100 truncate max-w-[240px]">{s.ioc}</span>
-                                {isNew && <span className="chip text-[9px] shrink-0 text-emerald-300 bg-emerald-400/10 border-emerald-400/20">NEW</span>}
+                                {isNew && <span className="chip text-[11px] shrink-0 text-emerald-300 bg-emerald-400/10 border-emerald-400/20">NEW</span>}
                               </div>
-                              <p className="text-[11px] text-slate-500 truncate max-w-[280px]">{s.title}</p>
+                              <p className="text-[13px] text-slate-500 truncate max-w-[280px]">{s.title}</p>
                             </td>
                             <td className="td"><IocBadge type={s.iocType} /></td>
                             <td className="td"><SeverityBadge severity={sevOf(String(s.severity))} /></td>
-                            <td className="td"><span className="chip text-[10px]">{s.source || "—"}</span></td>
+                            <td className="td"><span className="chip text-[12px]">{s.source || "—"}</span></td>
                             <td className="td">
                               {matched.length > 0 ? (
                                 <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{matched.length} asset(s)</span>
@@ -296,13 +296,13 @@ export default function ThreatIntel() {
                         <tr key={e.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors">
                           <td className="td">
                             <p className="font-medium text-slate-100 truncate max-w-[240px]">{e.title ?? e.title}</p>
-                            {e.summary && <p className="text-[11px] text-slate-500 truncate max-w-[280px]">{e.summary}</p>}
+                            {e.summary && <p className="text-[13px] text-slate-500 truncate max-w-[280px]">{e.summary}</p>}
                           </td>
-                          <td className="td"><span className="chip text-[10px]">{e.provider ?? e.provider}</span></td>
+                          <td className="td"><span className="chip text-[12px]">{e.provider ?? e.provider}</span></td>
                           <td className="td"><SeverityBadge severity={sevOf(e.severity ?? e.severity)} /></td>
-                          <td className="td"><span className="chip text-[10px] text-slate-300">{e.eventKind ?? titleCase(e.event_kind ?? "")}</span></td>
+                          <td className="td"><span className="chip text-[12px] text-slate-300">{e.eventKind ?? titleCase(e.event_kind ?? "")}</span></td>
                           <td className="td">
-                            <div className="flex flex-wrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[9px] text-slate-400">{m}</span>)}</div>
+                            <div className="flex flex-wrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[11px] text-slate-400">{m}</span>)}</div>
                           </td>
                           <td className="td text-xs text-slate-500 whitespace-nowrap">{e.receivedAt ?? e.received_at ? timeAgo((e.receivedAt ?? e.received_at) as string) : "—"}</td>
                         </tr>
@@ -338,7 +338,7 @@ export default function ThreatIntel() {
                       {reputation.map((r: any) => (
                         <tr key={r.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors">
                           <td className="td font-medium text-slate-100">{r.title}</td>
-                          <td className="td"><span className="chip text-[10px]">{r.tool ?? "yaml_ti"}</span></td>
+                          <td className="td"><span className="chip text-[12px]">{r.tool ?? "yaml_ti"}</span></td>
                           <td className="td"><SeverityBadge severity={sevOf(String(r.severity))} /></td>
                           <td className="td font-mono text-xs text-slate-300">{r.ioc ?? r.asset_value ?? "—"}</td>
                           <td className="td text-xs text-slate-500 whitespace-nowrap">{r.created_at ?? r.createdAt ? timeAgo((r.created_at ?? r.createdAt) as string) : "—"}</td>
@@ -360,7 +360,7 @@ export default function ThreatIntel() {
             <div className="flex flex-wrap items-center gap-2">
               <IocBadge type={openIoc.iocType} />
               <SeverityBadge severity={sevOf(String(openIoc.severity))} />
-              {openIoc.source && <span className="chip text-[10px]">{openIoc.source}</span>}
+              {openIoc.source && <span className="chip text-[12px]">{openIoc.source}</span>}
               {(openIoc.matchedAssetIds ?? []).length > 0
                 ? <span className="chip text-emerald-300 bg-emerald-400/10 border-emerald-400/20">{(openIoc.matchedAssetIds ?? []).length} matched asset(s)</span>
                 : <span className="chip text-slate-400 bg-slate-500/10 border-slate-500/30">No asset match</span>}
@@ -369,15 +369,15 @@ export default function ThreatIntel() {
             <div className="grid grid-cols-2 gap-3 text-xs">
               {[["First seen", openIoc.firstSeenAt ? timeAgo(openIoc.firstSeenAt) : "—"], ["Last seen", openIoc.lastSeenAt ? timeAgo(openIoc.lastSeenAt) : "—"], ["Occurrences", `${openIoc.occurrenceCount ?? 1}`], ["ID", `#${openIoc.id}`]].map(([k, v]) => (
                 <div key={k} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                   <p className="mt-0.5 font-medium text-slate-200">{v}</p>
                 </div>
               ))}
             </div>
             {openIoc.evidence && Object.keys(openIoc.evidence).length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Evidence</p>
-                <pre className="rounded-lg bg-phantix-950/70 border border-phantix-700/40 p-3 text-[11px] font-mono text-slate-400 overflow-x-auto">{JSON.stringify(openIoc.evidence, null, 2)}</pre>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Evidence</p>
+                <pre className="rounded-lg bg-phantix-950/70 border border-phantix-700/40 p-3 text-[13px] font-mono text-slate-400 overflow-x-auto">{JSON.stringify(openIoc.evidence, null, 2)}</pre>
               </div>
             )}
             {(openIoc.matchedAssetIds ?? []).length > 0 && (

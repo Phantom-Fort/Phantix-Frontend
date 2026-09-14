@@ -34,7 +34,7 @@ function criticalityDot(crit: string | null | undefined): string {
 function Section({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/40 p-3.5">
-      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="mb-2 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-400">
         {icon} {title}
       </p>
       {children}
@@ -227,14 +227,14 @@ export default function AssetIntelligenceDashboard() {
         }
       />
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <Card className="lg:col-span-1 flex flex-col items-center justify-center py-6">
           <ProgressRing value={score} size={100} stroke={7}>
             <span className="font-display text-2xl font-bold text-white">{score}</span>
-            <span className="text-[9px] font-medium uppercase tracking-wider text-slate-500">score</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">score</span>
           </ProgressRing>
           <p className="text-xs text-slate-400 mt-3">Posture Score</p>
-          <p className="text-[10px] text-slate-500 mt-0.5">higher = healthier</p>
+          <p className="text-[12px] text-slate-500 mt-0.5">higher = healthier</p>
         </Card>
         <StatCard label="Active Assets" value={<AnimatedNumber value={intelData.totals?.activeAssets ?? intelData.total_assets ?? 0} />} icon={<Globe size={18} />} />
         <StatCard label="High Risk" value={<AnimatedNumber value={intelData.totals?.highRiskAssets ?? 0} />} icon={<AlertTriangle size={18} />} accent="red" />
@@ -350,7 +350,7 @@ export default function AssetIntelligenceDashboard() {
             subtitle="Heartbeat + engine events streamed from your security database via SSE"
             action={
               <span className={cx(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium",
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[13px] font-medium",
                 liveConnected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
               )}>
                 <span className={cx("inline-flex h-2 w-2 rounded-full", liveConnected ? "bg-gold-400" : "bg-severity-medium")} />
@@ -415,15 +415,15 @@ export default function AssetIntelligenceDashboard() {
                       {valueLabel && !isHeartbeat && <span className="font-mono text-slate-500"> · {valueLabel}</span>}
                     </p>
                     {isHeartbeat && (
-                      <p className="text-[10px] text-gold-400/70">Security database reachable — event stream healthy</p>
+                      <p className="text-[12px] text-gold-400/70">Security database reachable — event stream healthy</p>
                     )}
                   </div>
                   {isRiskEvent(evt.event) && (payload.previousRiskLevel || payload.riskLevel) && (
-                    <span className="ml-auto shrink-0 text-[10px] text-slate-500">
+                    <span className="ml-auto shrink-0 text-[12px] text-slate-500">
                       {String(payload.previousRiskLevel ?? "?")} <span className="mx-0.5">→</span> {String(payload.riskLevel ?? "?")}
                     </span>
                   )}
-                  <span className="shrink-0 text-[10px] font-mono text-slate-500">{timeAgo(evt.ts)}</span>
+                  <span className="shrink-0 text-[12px] font-mono text-slate-500">{timeAgo(evt.ts)}</span>
                 </div>
               );
             })}
@@ -458,7 +458,7 @@ export default function AssetIntelligenceDashboard() {
               <AssetForceGraph model={inlineGraph} />
             </div>
           )}
-          <p className="mt-2 text-[10px] uppercase tracking-wider text-slate-600">
+          <p className="mt-2 text-[12px] uppercase tracking-wider text-slate-600">
             {inlineGraph.counts.assets} assets · {inlineGraph.counts.tags} tags · {inlineGraph.counts.types} type clusters · scroll to zoom, drag nodes to rearrange
           </p>
         </Card>
@@ -520,13 +520,13 @@ export default function AssetIntelligenceDashboard() {
                       <span className={cx("h-2 w-2 shrink-0 rounded-full", criticalityDot(a.criticality))} title={`criticality: ${a.criticality ?? "unknown"}`} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-mono text-sm text-slate-200">{a.value}</span>
-                        <span className="block truncate text-[11px] text-slate-500">{a.name || a.asset_type.replace(/_/g, " ")} · {(a.tags ?? []).length} tag(s)</span>
+                        <span className="block truncate text-[13px] text-slate-500">{a.name || a.asset_type.replace(/_/g, " ")} · {(a.tags ?? []).length} tag(s)</span>
                       </span>
-                      {!a.is_verified && <span className="chip shrink-0 text-[9px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
+                      {!a.is_verified && <span className="chip shrink-0 text-[11px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
                     </button>
                   ))}
                 </div>
-                <p className="border-t border-phantix-800/60 px-3 py-1.5 text-[10px] text-slate-600">
+                <p className="border-t border-phantix-800/60 px-3 py-1.5 text-[12px] text-slate-600">
                   {allAssets.length} asset(s) in inventory · sorted by value · Esc closes
                 </p>
               </div>
@@ -547,7 +547,7 @@ export default function AssetIntelligenceDashboard() {
             )}
           </button>
           {explanation && (
-            <p className="text-[11px] leading-4 text-slate-500">
+            <p className="text-[13px] leading-4 text-slate-500">
               Built from the engines' own records for <span className="font-mono text-slate-400">{explanation.brief.assetLabel}</span> — regenerate after scans or intel refresh to see it evolve.
             </p>
           )}
@@ -573,7 +573,7 @@ export default function AssetIntelligenceDashboard() {
                   : "Composed deterministically from every engine record — never invents CVEs or scores"
               }
               action={
-                <span className={cx("chip text-[10px]", explanation.source === "ai" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "text-slate-400")}>
+                <span className={cx("chip text-[12px]", explanation.source === "ai" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "text-slate-400")}>
                   {explanation.source === "ai" ? "model + data" : "engine data"} · {explanation.brief.recordCount} records
                 </span>
               }
@@ -600,18 +600,18 @@ export default function AssetIntelligenceDashboard() {
                         <SeverityBadge severity={(f.severity as any) ?? "info"} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm text-slate-200">{f.title}</p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[13px] text-slate-500">
                             {f.tool}{f.createdAt ? ` · ${timeAgo(f.createdAt)}` : ""}
                             {f.confidence != null ? ` · ${Math.round(Number(f.confidence))}% confidence` : ""}
                           </p>
                         </div>
                         {["manually_verified", "auto_verified"].includes(f.verificationStatus)
-                          ? <span className="chip shrink-0 text-[10px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30"><CheckCircle2 size={10} /> verified</span>
-                          : <span className="chip shrink-0 text-[10px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
+                          ? <span className="chip shrink-0 text-[12px] text-emerald-400 bg-emerald-400/10 border-emerald-400/30"><CheckCircle2 size={10} /> verified</span>
+                          : <span className="chip shrink-0 text-[12px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
                       </div>
                     ))}
                     {explanation.brief.findings.length > 8 && (
-                      <p className="pl-1 text-[11px] text-slate-500">+{explanation.brief.findings.length - 8} more in Scans</p>
+                      <p className="pl-1 text-[13px] text-slate-500">+{explanation.brief.findings.length - 8} more in Scans</p>
                     )}
                   </div>
                 </Section>
@@ -628,7 +628,7 @@ export default function AssetIntelligenceDashboard() {
                             <RiskBadge level={r.level} />
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm text-slate-200">{r.title}</p>
-                              <p className="text-[11px] text-slate-500">
+                              <p className="text-[13px] text-slate-500">
                                 {titleCase(r.status)}{r.priorityBand ? ` · ${r.priorityBand}` : ""}{r.treatmentStatus ? ` · ${titleCase(r.treatmentStatus)}` : ""}
                               </p>
                             </div>
@@ -645,9 +645,9 @@ export default function AssetIntelligenceDashboard() {
                             <div className="flex items-center gap-2">
                               <SeverityBadge severity={(d.severity as any) ?? "info"} />
                               <p className="min-w-0 flex-1 truncate text-sm text-slate-200">{d.title}</p>
-                              <span className="shrink-0 font-mono text-[11px] text-slate-500">×{d.occurrences}</span>
+                              <span className="shrink-0 font-mono text-[13px] text-slate-500">×{d.occurrences}</span>
                             </div>
-                            <p className="mt-0.5 text-[11px] text-slate-500">
+                            <p className="mt-0.5 text-[13px] text-slate-500">
                               {titleCase(d.status)}{d.priorityScore != null ? ` · priority ${d.priorityScore}` : ""}
                               {d.assignee ? ` · ${d.assignee}` : ""}
                               {d.lastSeenAt ? ` · seen ${timeAgo(d.lastSeenAt)}` : ""}
@@ -671,10 +671,10 @@ export default function AssetIntelligenceDashboard() {
                         <div key={`${rel.id}-${rel.via}`} className="flex items-center gap-2 text-xs">
                           <CircleDot size={9} className={cx("shrink-0", rel.via === "intelligence" ? "text-phantix-400" : "text-gold-400")} />
                           <span className="truncate text-slate-300">{rel.value}</span>
-                          <span className="ml-auto shrink-0 chip text-[9px]">{rel.via === "intelligence" ? titleCase(rel.assetType || "asset") : rel.via.replace(/_/g, " ")}</span>
+                          <span className="ml-auto shrink-0 chip text-[11px]">{rel.via === "intelligence" ? titleCase(rel.assetType || "asset") : rel.via.replace(/_/g, " ")}</span>
                         </div>
                       ))}
-                      {explanation.brief.related.length > 6 && <p className="pl-4 text-[11px] text-slate-500">+{explanation.brief.related.length - 6} more</p>}
+                      {explanation.brief.related.length > 6 && <p className="pl-4 text-[13px] text-slate-500">+{explanation.brief.related.length - 6} more</p>}
                     </div>
                   )}
                 </Section>
@@ -685,7 +685,7 @@ export default function AssetIntelligenceDashboard() {
                       {explanation.brief.tags.length === 0
                         ? <span className="text-xs text-slate-500">No tags assigned</span>
                         : explanation.brief.tags.map((t) => (
-                            <span key={t.name} className="chip text-[10px]" style={{ color: t.color || undefined, borderColor: `${t.color}55`, background: `${t.color}14` }}>
+                            <span key={t.name} className="chip text-[12px]" style={{ color: t.color || undefined, borderColor: `${t.color}55`, background: `${t.color}14` }}>
                               {t.name}
                             </span>
                           ))}
@@ -693,10 +693,10 @@ export default function AssetIntelligenceDashboard() {
                     <div className="flex flex-wrap gap-1.5">
                       {explanation.brief.activeThreats.length === 0
                         ? <span className="text-xs text-slate-500">No active threat mapping</span>
-                        : explanation.brief.activeThreats.map((t) => <span key={t} className="chip text-[10px] text-severity-high bg-severity-high/10 border-severity-high/30">{t}</span>)}
+                        : explanation.brief.activeThreats.map((t) => <span key={t} className="chip text-[12px] text-severity-high bg-severity-high/10 border-severity-high/30">{t}</span>)}
                     </div>
                     {explanation.brief.criticality && (
-                      <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
                         <Clock size={11} /> criticality <span className="capitalize text-slate-300">{explanation.brief.criticality}</span> · env <span className="capitalize text-slate-300">{explanation.brief.environment ?? "—"}</span>
                       </p>
                     )}
@@ -709,10 +709,10 @@ export default function AssetIntelligenceDashboard() {
                   <div className="space-y-1.5">
                     {explanation.brief.recommendedActions.map((a) => (
                       <div key={a.label} className="flex items-start gap-2.5 rounded-lg bg-phantix-900/40 border border-phantix-700/30 px-3 py-2">
-                        <span className={cx("chip shrink-0 mt-0.5 text-[9px] uppercase", a.priority === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/30" : a.priority === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/30" : "text-slate-400")}>{a.priority}</span>
+                        <span className={cx("chip shrink-0 mt-0.5 text-[11px] uppercase", a.priority === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/30" : a.priority === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/30" : "text-slate-400")}>{a.priority}</span>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-slate-200">{a.label}</p>
-                          <p className="text-[11px] text-slate-500">{a.description}</p>
+                          <p className="text-[13px] text-slate-500">{a.description}</p>
                         </div>
                       </div>
                     ))}
@@ -724,7 +724,7 @@ export default function AssetIntelligenceDashboard() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Link to="/assets" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
           <Server size={20} className="shrink-0 text-phantix-400" />
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Asset Inventory</p><p className="truncate text-xs text-slate-400">Manage all assets</p></div>

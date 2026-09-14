@@ -47,7 +47,7 @@ function PackRow({
         <p className="text-xs font-medium text-slate-200">
           {label} — <span className={enabled ? "text-emerald-400" : "text-severity-medium"}>{enabled ? "enabled" : "held"}</span>
         </p>
-        {!enabled && reason && <p className="mt-0.5 text-[11px] leading-5 text-slate-500">{reason}</p>}
+        {!enabled && reason && <p className="mt-0.5 text-[13px] leading-5 text-slate-500">{reason}</p>}
         {extra}
       </div>
     </div>
@@ -84,7 +84,7 @@ export default function CloudPosturePanel({
         <CardHeader title="Posture capabilities" subtitle="Packs, exposure, TLS, host baselines, execution" />
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-severity-medium/30 bg-severity-medium/10 p-3">
           <ShieldAlert size={16} className="shrink-0 text-severity-medium" />
-          <p className="min-w-0 flex-1 text-[11px] leading-5 text-severity-medium">
+          <p className="min-w-0 flex-1 text-[13px] leading-5 text-severity-medium">
             {error
               ? `Could not load posture capabilities: ${error}`
               : "Posture capabilities are unavailable for this organization."}
@@ -123,7 +123,7 @@ export default function CloudPosturePanel({
           reason={packs.cloud.reason}
           extra={
             (packs.cloud.providers_configured?.length ?? 0) > 0 ? (
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-0.5 text-[13px] text-slate-500">
                 Providers: {packs.cloud.providers_configured?.join(", ").toUpperCase()}
               </p>
             ) : undefined
@@ -134,11 +134,11 @@ export default function CloudPosturePanel({
 
       {/* 2 · Network exposure with first/last seen */}
       <div className="mt-5">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-slate-500">
           <Network size={12} /> Network exposure
         </p>
         {network_exposure.schema_upgrade_required ? (
-          <p className="rounded-md border border-gold-400/25 bg-gold-400/[0.06] p-3 text-[11px] leading-5 text-gold-200">
+          <p className="rounded-md border border-gold-400/25 bg-gold-400/[0.06] p-3 text-[13px] leading-5 text-gold-200">
             The exposure inventory is created when the security schema is bootstrapped. Re-run
             <span className="mx-1 font-mono">POST /db-connections/&#123;id&#125;/bootstrap</span> to enable it.
           </p>
@@ -165,14 +165,14 @@ export default function CloudPosturePanel({
                   <tbody>
                     {network_exposure.items.slice(0, 6).map((row, i) => (
                       <tr key={`${row.host}-${row.port}-${i}`} className="border-b border-phantix-800/40 last:border-b-0">
-                        <td className="td font-mono text-[11px] text-slate-300">{row.host}</td>
-                        <td className="td font-mono text-[11px] text-slate-200">
+                        <td className="td font-mono text-[13px] text-slate-300">{row.host}</td>
+                        <td className="td font-mono text-[13px] text-slate-200">
                           {row.port}/{row.protocol ?? "tcp"}
                           {row.tls && <span className="chip ml-1 border-emerald-400/30 text-emerald-400">tls</span>}
                         </td>
-                        <td className="td text-[11px] text-slate-400">{row.service ?? "—"}</td>
-                        <td className="td text-[11px] text-slate-500" title={row.first_seen_at ?? ""}>{timeAgo(row.first_seen_at ?? null)}</td>
-                        <td className="td text-[11px] text-slate-400" title={row.last_seen_at ?? ""}>{timeAgo(row.last_seen_at ?? null)}</td>
+                        <td className="td text-[13px] text-slate-400">{row.service ?? "—"}</td>
+                        <td className="td text-[13px] text-slate-500" title={row.first_seen_at ?? ""}>{timeAgo(row.first_seen_at ?? null)}</td>
+                        <td className="td text-[13px] text-slate-400" title={row.last_seen_at ?? ""}>{timeAgo(row.last_seen_at ?? null)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -185,7 +185,7 @@ export default function CloudPosturePanel({
 
       {/* 3 · TLS posture */}
       <div className="mt-5">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-slate-500">
           <Lock size={12} /> TLS posture ({tls_posture.affected_hosts} host{tls_posture.affected_hosts === 1 ? "" : "s"})
         </p>
         {issues.length === 0 ? (
@@ -202,7 +202,7 @@ export default function CloudPosturePanel({
           </div>
         )}
         {tls_posture.expiring_soon?.length > 0 && (
-          <p className="mt-2 text-[11px] text-slate-500">
+          <p className="mt-2 text-[13px] text-slate-500">
             Expiring soon:{" "}
             {tls_posture.expiring_soon.slice(0, 4).map((e) => `${e.host} (${e.days_remaining}d)`).join(" · ")}
           </p>
@@ -211,7 +211,7 @@ export default function CloudPosturePanel({
 
       {/* 4 · CIS-style host baselines */}
       <div className="mt-5">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-slate-500">
           <ShieldAlert size={12} /> CIS-style host targets
         </p>
         {cis_host_targets.available?.length ? (
@@ -243,7 +243,7 @@ export default function CloudPosturePanel({
 
       {/* 5 · Execution isolation + per-org lock */}
       <div className="mt-5">
-        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <p className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-slate-500">
           <KeyRound size={12} /> Execution
         </p>
         <div className="flex flex-wrap gap-1.5">

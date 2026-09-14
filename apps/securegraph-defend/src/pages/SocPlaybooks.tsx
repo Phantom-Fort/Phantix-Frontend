@@ -53,7 +53,7 @@ export default function SocPlaybooks() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
           {ml ? (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-4">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="card !p-4">
                     <div className="skeleton h-7 w-16 rounded" />
@@ -77,7 +77,7 @@ export default function SocPlaybooks() {
           ) : (
             <>
               {stats && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   <Card className="!p-4">
                     <p className="text-2xl font-semibold text-white">{stats.total_techniques}</p>
                     <p className="text-xs text-slate-400">Total techniques</p>
@@ -103,7 +103,7 @@ export default function SocPlaybooks() {
                       <div className="mt-2 h-1.5 rounded-full bg-phantix-800">
                         <div className="h-full rounded-full bg-gold-400" style={{ width: `${tactic.coverage}%` }} />
                       </div>
-                      <p className="mt-1 text-[10px] text-slate-500">{tactic.techniques} techniques</p>
+                      <p className="mt-1 text-[12px] text-slate-500">{tactic.techniques} techniques</p>
                     </Card>
                   ))}
                 </div>

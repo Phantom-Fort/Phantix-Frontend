@@ -186,7 +186,7 @@ export default function Privacy() {
                 )}
               >
                 <p className={cx("text-sm font-medium", type === r.id ? "text-gold-300" : "text-slate-200")}>{r.label}</p>
-                <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{r.helper}</p>
+                <p className="mt-0.5 text-[13px] leading-4 text-slate-500">{r.helper}</p>
               </button>
             ))}
           </div>
@@ -227,9 +227,9 @@ export default function Privacy() {
                       <span className="mx-2 text-slate-600">·</span>
                       {typeLabel(r.request_type)}
                     </p>
-                    {r.details && <p className="mt-0.5 truncate text-[11px] text-slate-500">{r.details}</p>}
+                    {r.details && <p className="mt-0.5 truncate text-[13px] text-slate-500">{r.details}</p>}
                   </div>
-                  <span className={cx("chip !px-2 !py-0.5 text-[10px] capitalize", STATUS_COLORS[r.status] ?? "border-phantix-600/50 bg-phantix-800/60 text-slate-300")}>
+                  <span className={cx("chip !px-2 !py-0.5 text-[12px] capitalize", STATUS_COLORS[r.status] ?? "border-phantix-600/50 bg-phantix-800/60 text-slate-300")}>
                     {r.status.replace(/_/g, " ")}
                   </span>
                 </div>

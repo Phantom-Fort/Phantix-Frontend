@@ -67,7 +67,7 @@ export default function ComparativeBars({
       ])}
     >
       {!hasData ? (
-        <div className="flex items-center justify-center text-[11px] text-slate-600" style={{ height: 120 }}>
+        <div className="flex items-center justify-center text-[13px] text-slate-600" style={{ height: 120 }}>
           Nothing recorded across these categories yet.
         </div>
       ) : (

@@ -29,7 +29,7 @@ export default function PublicChrome() {
               <span className="block font-display text-[15px] font-bold text-white">
                 SecureGraph
               </span>
-              <span className="block text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">
+              <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">
                 Documentation
               </span>
             </span>

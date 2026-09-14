@@ -39,7 +39,7 @@ export default function Overview({ application }: { application: ApplicationKey 
             {card.capabilities.map((c) => (
               <span
                 key={c}
-                className="chip border-phantix-700 bg-phantix-900 text-[11px] text-slate-300"
+                className="chip border-phantix-700 bg-phantix-900 text-[13px] text-slate-300"
               >
                 {c}
               </span>

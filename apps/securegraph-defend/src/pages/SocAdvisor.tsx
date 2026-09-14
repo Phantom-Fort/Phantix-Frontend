@@ -38,7 +38,7 @@ export default function SocAdvisor() {
 
       {tab === "dashboard" && dashboard && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             <Card className="!p-4">
               <p className="text-3xl font-semibold text-gold-400">{dashboard.score}</p>
               <p className="text-xs text-slate-400">Posture score</p>
@@ -60,7 +60,7 @@ export default function SocAdvisor() {
                 {dashboard.trend.map((pt, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full rounded-t bg-gold-400/60" style={{ height: `${Math.max(4, (pt.score / 100) * 80)}px` }} />
-                    <span className="text-[9px] text-slate-500">{pt.date.slice(5)}</span>
+                    <span className="text-[11px] text-slate-500">{pt.date.slice(5)}</span>
                   </div>
                 ))}
               </div>
@@ -120,7 +120,7 @@ export default function SocAdvisor() {
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-200">{rec.title}</p>
                     {rec.description && <p className="mt-1 text-xs text-slate-400">{rec.description}</p>}
-                    {rec.assignee && <p className="mt-1 text-[11px] text-slate-500">Assigned to: {rec.assignee}</p>}
+                    {rec.assignee && <p className="mt-1 text-[13px] text-slate-500">Assigned to: {rec.assignee}</p>}
                   </div>
                   <div className="flex gap-1.5">
                     {["resolved", "accepted", "rejected"].includes(rec.status) ? null : (

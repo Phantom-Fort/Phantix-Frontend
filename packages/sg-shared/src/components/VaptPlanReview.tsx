@@ -58,35 +58,35 @@ function SubstepRow({
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-slate-500">{substep.rank}.</span>
-            <span className="text-[12.5px] font-medium text-slate-200">{substep.label}</span>
+            <span className="text-[13px] text-slate-500">{substep.rank}.</span>
+            <span className="text-[13px] font-medium text-slate-200">{substep.label}</span>
             <SeverityBadge
               severity={(substep.worst_severity || "info") as Severity}
-              className="!px-1.5 !py-0 !text-[9px]"
+              className="!px-1.5 !py-0 !text-[11px]"
             />
-            <span className="text-[10px] text-slate-500">
+            <span className="text-[12px] text-slate-500">
               {substep.check_count} {substep.check_count === 1 ? "check" : "checks"}
             </span>
             {substep.max_duration_minutes != null && (
-              <span className="text-[10px] text-slate-600">~{substep.max_duration_minutes}m</span>
+              <span className="text-[12px] text-slate-600">~{substep.max_duration_minutes}m</span>
             )}
             {substep.regression && (
-              <span className="chip border-severity-critical/30 bg-severity-critical/10 text-[9px] text-severity-critical">
+              <span className="chip border-severity-critical/30 bg-severity-critical/10 text-[11px] text-severity-critical">
                 <RotateCcw size={9} className="mr-1 inline" /> regression
               </span>
             )}
             {substep.accepted_risk && (
-              <span className="chip border-amber-400/30 bg-amber-400/10 text-[9px] text-amber-300">
+              <span className="chip border-amber-400/30 bg-amber-400/10 text-[11px] text-amber-300">
                 accepted risk
               </span>
             )}
           </div>
           {substep.why && (
-            <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{substep.why}</p>
+            <p className="mt-0.5 text-[13px] leading-4 text-slate-500">{substep.why}</p>
           )}
           <button
             onClick={() => setOpen((v) => !v)}
-            className="mt-1 inline-flex items-center gap-1 text-[10px] text-slate-500 hover:text-slate-300"
+            className="mt-1 inline-flex items-center gap-1 text-[12px] text-slate-500 hover:text-slate-300"
           >
             {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
             {open ? "Hide" : "Show"} checks
@@ -103,19 +103,19 @@ function SubstepRow({
                         : "bg-slate-600",
                     )}
                   />
-                  <span className="truncate text-[10.5px] text-slate-400">
+                  <span className="truncate text-[12px] text-slate-400">
                     {check.display_name || check.name}
                   </span>
-                  <span className="shrink-0 font-mono text-[9px] text-slate-600">{check.name}</span>
+                  <span className="shrink-0 font-mono text-[11px] text-slate-600">{check.name}</span>
                 </li>
               ))}
               {(substep.checks ?? []).length === 0 && (
-                <li className="text-[10.5px] text-slate-600">No individual checks listed.</li>
+                <li className="text-[12px] text-slate-600">No individual checks listed.</li>
               )}
             </ul>
           )}
           {(substep.vuln_classes ?? []).length > 0 && (
-            <p className="mt-1 font-mono text-[9.5px] text-slate-600">
+            <p className="mt-1 font-mono text-[11px] text-slate-600">
               verifies: {(substep.vuln_classes ?? []).join(", ")}
             </p>
           )}
@@ -143,14 +143,14 @@ function StepBlock({
           <Layers size={13} className="shrink-0 text-gold-300" />
           <span className="text-[13px] font-semibold text-slate-100">{step.step_name}</span>
           {substeps.length > 0 && (
-            <span className="text-[10.5px] text-slate-500">
+            <span className="text-[12px] text-slate-500">
               {substeps.length} {substeps.length === 1 ? "type" : "types"} · {checks}{" "}
               {checks === 1 ? "check" : "checks"}
             </span>
           )}
         </div>
         {(step.vuln_focus ?? []).length > 0 && (
-          <span className="truncate font-mono text-[9.5px] text-slate-600">
+          <span className="truncate font-mono text-[11px] text-slate-600">
             hunting: {(step.vuln_focus ?? []).slice(0, 3).map((f) => f.vuln_class).join(", ")}
           </span>
         )}
@@ -167,7 +167,7 @@ function StepBlock({
           ))}
         </div>
       ) : (
-        <p className="px-3 py-2 text-[11px] text-slate-500">
+        <p className="px-3 py-2 text-[13px] text-slate-500">
           {step.target || "Runs its own pipeline — no per-type breakdown."}
         </p>
       )}
@@ -220,14 +220,14 @@ export default function VaptPlanReview({
     <Modal open={open} onClose={onClose} title="Review the assessment plan" wide>
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[11px] text-slate-300">
+          <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[13px] text-slate-300">
             <Target size={11} className="mr-1 inline" /> {activeTypes} vulnerability types
           </span>
-          <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[11px] text-slate-300">
+          <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[13px] text-slate-300">
             {activeChecks} checks
           </span>
           {plan.estimated_duration && (
-            <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[11px] text-slate-300">
+            <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[13px] text-slate-300">
               {plan.estimated_duration}
             </span>
           )}
@@ -236,19 +236,19 @@ export default function VaptPlanReview({
               <SeverityBadge
                 key={sev}
                 severity={sev}
-                className="!px-1.5 !py-0 !text-[9px]"
+                className="!px-1.5 !py-0 !text-[11px]"
               />
             ) : null,
           )}
           {(plan.frameworks?.required ?? []).length > 0 && (
-            <span className="chip border-gold-400/30 bg-gold-400/10 text-[11px] text-gold-200">
+            <span className="chip border-gold-400/30 bg-gold-400/10 text-[13px] text-gold-200">
               {(plan.frameworks?.required ?? []).map((f) => f.toUpperCase()).join(" + ")}
             </span>
           )}
         </div>
 
         {coverage?.auto_seeded && (
-          <p className="flex items-start gap-1.5 text-[11px] leading-4 text-slate-500">
+          <p className="flex items-start gap-1.5 text-[13px] leading-4 text-slate-500">
             <Info size={11} className="mt-0.5 shrink-0" />
             Vulnerability types are seeded automatically from the scan catalog
             {coverage.catalog_total_checks
@@ -260,11 +260,11 @@ export default function VaptPlanReview({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-md border border-phantix-700/40 bg-phantix-900/30 p-3">
-            <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <h4 className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-slate-400">
               <Crosshair size={11} /> Product context
             </h4>
             {product?.available ? (
-              <div className="space-y-0.5 text-[11.5px] leading-5 text-slate-400">
+              <div className="space-y-0.5 text-[13px] leading-5 text-slate-400">
                 <p>
                   {product.components} components · {product.flows} flows ·{" "}
                   {product.cross_boundary_flows} crossing a trust boundary
@@ -284,7 +284,7 @@ export default function VaptPlanReview({
                 )}
               </div>
             ) : (
-              <p className="text-[11.5px] leading-5 text-slate-500">
+              <p className="text-[13px] leading-5 text-slate-500">
                 None documented — targeting is inventory-driven. Add components and flows so the
                 plan can prioritise by what the software actually does.
               </p>
@@ -292,11 +292,11 @@ export default function VaptPlanReview({
           </div>
 
           <div className="rounded-md border border-phantix-700/40 bg-phantix-900/30 p-3">
-            <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <h4 className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-slate-400">
               <ShieldCheck size={11} /> What we already know
             </h4>
             {intel?.available ? (
-              <div className="space-y-0.5 text-[11.5px] leading-5 text-slate-400">
+              <div className="space-y-0.5 text-[13px] leading-5 text-slate-400">
                 <p>
                   {intel.prior_open_findings} findings still open across{" "}
                   {intel.targets_with_history} known targets
@@ -320,7 +320,7 @@ export default function VaptPlanReview({
                 )}
               </div>
             ) : (
-              <p className="text-[11.5px] leading-5 text-slate-500">
+              <p className="text-[13px] leading-5 text-slate-500">
                 First assessment for these targets — no priors to apply.
               </p>
             )}
@@ -329,7 +329,7 @@ export default function VaptPlanReview({
 
         {(plan.vuln_focus ?? []).length > 0 && (
           <div className="rounded-md border border-gold-400/20 bg-gold-400/[0.06] p-3">
-            <h4 className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gold-200">
+            <h4 className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-gold-200">
               <Sparkles size={11} /> Hunting first
             </h4>
             <div className="flex flex-wrap gap-1.5">
@@ -337,7 +337,7 @@ export default function VaptPlanReview({
                 <span
                   key={focus.vuln_class}
                   title={focus.rationale || undefined}
-                  className="chip border-phantix-600/40 bg-phantix-800/50 font-mono text-[10px] text-slate-300"
+                  className="chip border-phantix-600/40 bg-phantix-800/50 font-mono text-[12px] text-slate-300"
                 >
                   {focus.rank}. {focus.vuln_class}
                   {focus.requires_approval && (
@@ -346,18 +346,18 @@ export default function VaptPlanReview({
                 </span>
               ))}
             </div>
-            <p className="mt-1.5 text-[10.5px] text-slate-500">
+            <p className="mt-1.5 text-[12px] text-slate-500">
               Classes marked with a warning need an authorizer before the confirming step runs.
             </p>
           </div>
         )}
 
         <div className="space-y-2">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+          <h4 className="text-[13px] font-semibold uppercase tracking-wide text-slate-400">
             Steps &amp; vulnerability types
           </h4>
           {steps.length === 0 ? (
-            <p className="text-[11.5px] text-slate-500">This plan has no steps.</p>
+            <p className="text-[13px] text-slate-500">This plan has no steps.</p>
           ) : (
             steps
               .filter((s) => s.step_type === "scan" || s.step_type === "web_scan")
@@ -374,17 +374,17 @@ export default function VaptPlanReview({
 
         {plan.narrative && (
           <details className="rounded-md border border-phantix-700/40 bg-phantix-900/30 p-3">
-            <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            <summary className="cursor-pointer text-[13px] font-semibold uppercase tracking-wide text-slate-400">
               Full plan summary
             </summary>
-            <pre className="mt-2 whitespace-pre-wrap font-sans text-[11.5px] leading-5 text-slate-400">
+            <pre className="mt-2 whitespace-pre-wrap font-sans text-[13px] leading-5 text-slate-400">
               {plan.narrative}
             </pre>
           </details>
         )}
 
         {disabled.size > 0 && (
-          <p className="text-[11px] leading-4 text-amber-300">
+          <p className="text-[13px] leading-4 text-amber-300">
             {disabled.size} vulnerability {disabled.size === 1 ? "type" : "types"} switched off —
             their checks will not run. The rest of each step is unaffected.
           </p>
@@ -403,7 +403,7 @@ export default function VaptPlanReview({
             Create draft campaign
           </button>
         </div>
-        <p className="text-[10.5px] leading-4 text-slate-500">
+        <p className="text-[12px] leading-4 text-slate-500">
           Creates the campaign as a <strong className="text-slate-400">draft</strong>. Nothing is
           scanned until you start it, and scope is re-validated on every run.
         </p>

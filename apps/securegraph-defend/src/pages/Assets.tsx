@@ -462,7 +462,7 @@ export default function Assets() {
             ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-phantix-700/40 text-left text-[11px] uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-phantix-700/40 text-left text-[13px] uppercase tracking-wider text-slate-500">
                   <th className="px-5 py-3 font-medium">Asset</th>
                   <th className="px-5 py-3 font-medium">Type</th>
                   <th className="px-5 py-3 font-medium">Risk score</th>
@@ -622,7 +622,7 @@ export default function Assets() {
                                 <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
                                 {(() => {
                                   const t = assetTierBadge(a);
-                                  return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium ${t.cls}`}>{t.label}</span> : null;
+                                  return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[12px] font-medium ${t.cls}`}>{t.label}</span> : null;
                                 })()}
                               </div>
                             </div>
@@ -709,7 +709,7 @@ export default function Assets() {
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-xs text-slate-500">{timeAgo(j.created_at)}</div>
-                  {j.completed_at && <div className="text-[10px] text-slate-600">Completed {timeAgo(j.completed_at)}</div>}
+                  {j.completed_at && <div className="text-[12px] text-slate-600">Completed {timeAgo(j.completed_at)}</div>}
                 </div>
               </div>
 
@@ -718,14 +718,14 @@ export default function Assets() {
               {/* Subdomains */}
               {subdomains.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-phantix-700/40">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
                     Subdomains ({subdomains.length})
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {subdomains.slice(0, 20).map((s: string) => (
-                      <span key={s} className="chip text-[10px] text-phantix-300 bg-phantix-500/10 border-phantix-500/20 font-mono">{s}</span>
+                      <span key={s} className="chip text-[12px] text-phantix-300 bg-phantix-500/10 border-phantix-500/20 font-mono">{s}</span>
                     ))}
-                    {subdomains.length > 20 && <span className="text-[10px] text-slate-500">+{subdomains.length - 20} more</span>}
+                    {subdomains.length > 20 && <span className="text-[12px] text-slate-500">+{subdomains.length - 20} more</span>}
                   </div>
                 </div>
               )}
@@ -733,21 +733,21 @@ export default function Assets() {
               {/* Priority endpoints */}
               {priorityEndpoints.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-phantix-700/30">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
                     Priority Endpoints ({priorityEndpoints.length})
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {priorityEndpoints.slice(0, 15).map((e: string) => (
-                      <span key={e} className="text-[10px] text-severity-medium bg-severity-medium/10 border border-severity-medium/20 rounded px-1.5 py-0.5 font-mono truncate max-w-[280px]">{e}</span>
+                      <span key={e} className="text-[12px] text-severity-medium bg-severity-medium/10 border border-severity-medium/20 rounded px-1.5 py-0.5 font-mono truncate max-w-[280px]">{e}</span>
                     ))}
-                    {priorityEndpoints.length > 15 && <span className="text-[10px] text-slate-500">+{priorityEndpoints.length - 15} more</span>}
+                    {priorityEndpoints.length > 15 && <span className="text-[12px] text-slate-500">+{priorityEndpoints.length - 15} more</span>}
                   </div>
                 </div>
               )}
 
               {/* Tools used */}
               {tools.length > 0 && (
-                <div className="mt-2 text-[10px] text-slate-500">
+                <div className="mt-2 text-[12px] text-slate-500">
                   Tools: {tools.join(", ")}
                   {rs.method && <span className="ml-2">· Method: {rs.method}</span>}
                 </div>
@@ -756,16 +756,16 @@ export default function Assets() {
               {/* Errors */}
               {errors.length > 0 && (
                 <div className="mt-2 rounded-lg bg-severity-critical/5 border border-severity-critical/20 p-2.5">
-                  <p className="text-[10px] font-semibold text-severity-critical mb-1">Errors ({errors.length})</p>
+                  <p className="text-[12px] font-semibold text-severity-critical mb-1">Errors ({errors.length})</p>
                   {errors.slice(0, 3).map((e: string, i: number) => (
-                    <p key={i} className="text-[10px] text-severity-critical/80 leading-relaxed">{e}</p>
+                    <p key={i} className="text-[12px] text-severity-critical/80 leading-relaxed">{e}</p>
                   ))}
-                  {errors.length > 3 && <p className="text-[10px] text-slate-500 mt-0.5">+{errors.length - 3} more errors</p>}
+                  {errors.length > 3 && <p className="text-[12px] text-slate-500 mt-0.5">+{errors.length - 3} more errors</p>}
                 </div>
               )}
 
               {j.error_message && (
-                <div className="mt-2 rounded-lg bg-severity-critical/5 border border-severity-critical/20 p-2.5 text-[10px] text-severity-critical">{j.error_message}</div>
+                <div className="mt-2 rounded-lg bg-severity-critical/5 border border-severity-critical/20 p-2.5 text-[12px] text-severity-critical">{j.error_message}</div>
               )}
             </Card>
           )})}
@@ -840,13 +840,13 @@ export default function Assets() {
               </button>
             )}
             {githubAnalysisJob?.id && githubAnalysisJob.status !== "completed" && (
-              <a href="/scans" className="mt-2 block rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-3 py-2 text-center text-[11px] text-slate-400 transition-colors hover:border-phantix-500/50 hover:text-slate-200">
+              <a href="/scans" className="mt-2 block rounded-lg border border-phantix-700/40 bg-phantix-950/60 px-3 py-2 text-center text-[13px] text-slate-400 transition-colors hover:border-phantix-500/50 hover:text-slate-200">
                 {githubAnalysisJob.skipped_start
                   ? "A GitHub analysis is already running (skipped a new start). View Scans."
                   : `GitHub analysis job #${githubAnalysisJob.id} · ${githubAnalysisJob.status ?? "queued"}. Track in Scans.`}
               </a>
             )}
-            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/integrations/github · GET /github/installation</p>
+            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/integrations/github · GET /github/installation</p>
           </Card>
 
           <Card hover className="flex flex-col">
@@ -856,7 +856,7 @@ export default function Assets() {
             <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("API import requires a dual-control operate session.")) setShowApiModal(true); })(); }}>
               Import Spec
             </button>
-            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/import/api</p>
+            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/import/api</p>
           </Card>
 
           <Card hover className="flex flex-col">
@@ -885,7 +885,7 @@ export default function Assets() {
             }})(); }}>
               Upload APK
             </button>
-            <p className="mt-2 font-mono text-[10px] text-slate-500">POST /assets/upload/apk</p>
+            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/upload/apk</p>
           </Card>
 
           <MobileHandoffCard />
@@ -918,7 +918,7 @@ export default function Assets() {
                 ["Last seen", timeAgo(selected.last_seen_at)],
               ].map(([k, v]) => (
                 <div key={k} className="rounded-xl bg-phantix-950/60 border border-phantix-700/40 p-3">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                   <p className="mt-1 font-medium text-slate-200">{v}</p>
                 </div>
               ))}
@@ -943,7 +943,7 @@ export default function Assets() {
                       ["Exposure", selectedIntel.exposure_level],
                     ].map(([k, v]) => (
                       <div key={k} className="rounded-xl bg-phantix-950/60 border border-phantix-700/40 p-3">
-                        <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                        <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                         <p className="mt-1 font-medium text-slate-200 capitalize">{v}</p>
                       </div>
                     ))}
@@ -1084,7 +1084,7 @@ export default function Assets() {
             <>
               <p className="text-xs text-slate-400">Paste a GitHub Personal Access Token (classic or fine-grained) with <strong>repo</strong> or <strong>Contents: Read</strong> scope. The token is stored encrypted and never shown again.</p>
               <div><label className="label">Personal Access Token</label><input className="input font-mono text-sm" type="password" placeholder="ghp_..." value={githubPat} onChange={(e) => setGithubPat(e.target.value)} /></div>
-              <p className="text-[10px] text-slate-500">Minimum scopes: <code>public_repo</code> (classic) or <code>Contents: Read</code> (fine-grained). Revoke anytime in GitHub → Settings → Developer settings.</p>
+              <p className="text-[12px] text-slate-500">Minimum scopes: <code>public_repo</code> (classic) or <code>Contents: Read</code> (fine-grained). Revoke anytime in GitHub → Settings → Developer settings.</p>
               <button onClick={handleGithubConnect} disabled={importingGithub || !githubPat} className="btn-primary w-full">{importingGithub ? <Spinner className="h-4 w-4" /> : null}Connect with PAT</button>
             </>
           ) : (
@@ -1143,7 +1143,7 @@ export default function Assets() {
                 onChange={(e) => setApiFile(e.target.files?.[0] ?? null)}
               />
               {apiFile && (
-                <p className="mt-1.5 text-[11px] text-slate-400">
+                <p className="mt-1.5 text-[13px] text-slate-400">
                   Selected: <span className="text-slate-200">{apiFile.name}</span> · {(apiFile.size / 1024).toFixed(1)} KB
                 </p>
               )}
@@ -1160,11 +1160,11 @@ export default function Assets() {
                 value={apiUrl}
                 onChange={(e) => setApiUrl(e.target.value)}
               />
-              <p className="mt-1.5 text-[11px] text-slate-500">SecureGraph fetches the spec from this URL and imports it automatically.</p>
+              <p className="mt-1.5 text-[13px] text-slate-500">SecureGraph fetches the spec from this URL and imports it automatically.</p>
             </div>
           )}
 
-          <p className="text-[10px] text-slate-500">Endpoints are imported as API assets with path, method, and auth metadata.</p>
+          <p className="text-[12px] text-slate-500">Endpoints are imported as API assets with path, method, and auth metadata.</p>
           <button
             onClick={handleApiImport}
             disabled={importing || (apiInputMode === "file" ? !apiFile : apiInputMode === "url" ? !apiUrl : !apiSpec.trim())}

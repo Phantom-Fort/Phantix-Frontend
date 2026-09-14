@@ -40,13 +40,13 @@ export default function SandboxBanner() {
         <p className="text-xs font-semibold text-slate-100">
           BETA sandbox{me.program?.name ? ` · ${me.program.name}` : ""}
           {unread > 0 && (
-            <span className="ml-2 chip border-gold-400/40 bg-gold-400/15 text-[10px] text-gold-300">
+            <span className="ml-2 chip border-gold-400/40 bg-gold-400/15 text-[12px] text-gold-300">
               {unread} update{unread === 1 ? "" : "s"}
             </span>
           )}
         </p>
         {latest && (
-          <p className="mt-0.5 truncate text-[11px] text-slate-400">
+          <p className="mt-0.5 truncate text-[13px] text-slate-400">
             {breaking ? "Breaking: " : ""}
             {latest.title}
             {(latest.version_label || latest.versionLabel) && (

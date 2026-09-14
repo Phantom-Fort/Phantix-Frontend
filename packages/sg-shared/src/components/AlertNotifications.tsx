@@ -92,7 +92,7 @@ export function NotificationBell() {
         <Bell size={16} />
         {unread > 0 && (
           <span
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[9px] font-bold"
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[11px] font-bold"
             style={{ color: "#fff" }}
           >
             {unread > 9 ? "9+" : unread}
@@ -110,8 +110,8 @@ export function NotificationBell() {
               className="absolute right-0 top-full z-[85] mt-2 w-80 overflow-hidden rounded-xl border border-phantix-700/50 bg-phantix-900 shadow-card"
             >
               <div className="flex items-center justify-between border-b border-phantix-700/40 px-3.5 py-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Notifications</p>
-                <span className="text-[10px] text-slate-500">{inbox.length} total</span>
+                <p className="text-[13px] font-semibold uppercase tracking-wider text-slate-400">Notifications</p>
+                <span className="text-[12px] text-slate-500">{inbox.length} total</span>
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {inbox.length === 0 && <p className="px-4 py-8 text-center text-xs text-slate-500">No alerts yet.</p>}
@@ -122,11 +122,11 @@ export function NotificationBell() {
                       <span className={cx("mt-0.5 h-2 w-2 shrink-0 rounded-full", meta.bar)} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className={cx("chip !px-1.5 !py-0 !text-[9px]", meta.chip)}>{meta.label}</span>
-                          <span className="text-[10px] text-slate-500">{timeAgo(n.createdAt)}</span>
+                          <span className={cx("chip !px-1.5 !py-0 !text-[11px]", meta.chip)}>{meta.label}</span>
+                          <span className="text-[12px] text-slate-500">{timeAgo(n.createdAt)}</span>
                         </div>
                         <p className="mt-0.5 text-[12px] leading-4 text-slate-200">{n.title}</p>
-                        {n.eventType && <p className="mt-0.5 font-mono text-[10px] text-slate-500">{n.eventType}</p>}
+                        {n.eventType && <p className="mt-0.5 font-mono text-[12px] text-slate-500">{n.eventType}</p>}
                       </div>
                       <button onClick={() => dismissInbox(n.id)} className="rounded p-1 text-slate-500 hover:text-slate-200" aria-label="Dismiss">
                         <X size={12} />
@@ -247,10 +247,10 @@ export default function AlertNotifications() {
               >
                 <span className={cx("absolute inset-y-0 left-0 w-1", meta.bar)} />
                 <div className="flex items-start gap-3 p-3 pl-4">
-                  <span className={cx("chip shrink-0 !text-[10px]", meta.chip)}>{meta.icon} {meta.label}</span>
+                  <span className={cx("chip shrink-0 !text-[12px]", meta.chip)}>{meta.icon} {meta.label}</span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-medium leading-5 text-slate-100">{n.title}</p>
-                    {n.eventType && <p className="mt-0.5 font-mono text-[10px] text-slate-500">{n.eventType}</p>}
+                    {n.eventType && <p className="mt-0.5 font-mono text-[12px] text-slate-500">{n.eventType}</p>}
                   </div>
                   <button onClick={() => dismissNotice(n.id)} className="shrink-0 rounded-md p-1 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-200" aria-label="Dismiss notification">
                     <X size={14} />
@@ -294,7 +294,7 @@ export default function AlertNotifications() {
                 </span>
               </div>
 
-              <p className="mt-6 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#fee2e2]/90">
+              <p className="mt-6 inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.2em] text-[#fee2e2]/90">
                 <BellRing size={13} /> Critical security alert
               </p>
               <h2 className="mt-3 font-display text-2xl font-bold leading-tight text-[#ffffff]">{blocking.title}</h2>

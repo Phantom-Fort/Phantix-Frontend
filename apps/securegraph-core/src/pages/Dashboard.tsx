@@ -254,7 +254,7 @@ export default function Dashboard() {
                 <Link
                   key={s.key || s.host}
                   to={`/assets?q=${encodeURIComponent(s.host)}`}
-                  className="chip font-mono border-phantix-700 bg-phantix-900 text-[10px] text-slate-400 hover:border-gold-400/50 hover:text-gold-300"
+                  className="chip font-mono border-phantix-700 bg-phantix-900 text-[12px] text-slate-400 hover:border-gold-400/50 hover:text-gold-300"
                 >
                   {s.name || s.host}
                 </Link>
@@ -382,7 +382,7 @@ export default function Dashboard() {
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-600">
+        <p className="text-[13px] text-slate-600">
           More cuts of this data —  movement over time, aging, SLA breaches, compliance —  on{" "}
           <a href="/analytics" className="text-gold-300 underline-offset-2 hover:underline">
             Analytics
@@ -442,7 +442,7 @@ export default function Dashboard() {
             <div className="flex flex-col items-center py-4">
               <ProgressRing value={postureScore} size={140} color={postureScore >= 70 ? "#34D399" : "#E8B54D"}>
                 <span className="font-mono text-3xl font-semibold tracking-tight text-white">{postureScore}</span>
-                <span className="text-[10px] font-medium uppercase tracking-wider text-slate-500">score</span>
+                <span className="text-[12px] font-medium uppercase tracking-wider text-slate-500">score</span>
               </ProgressRing>
               <p className="mt-4 text-center text-xs text-slate-500">
                 Verified {num(cc?.posture?.totals?.verified)} · Unscanned{" "}
@@ -479,7 +479,7 @@ export default function Dashboard() {
                         <SeverityBadge severity={str(r.riskLevel ?? r.level, "info") as any} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm text-slate-200">{str(r.title)}</p>
-                          <p className="text-[11px] text-slate-500">{titleCase(str(r.status, ""))}</p>
+                          <p className="text-[13px] text-slate-500">{titleCase(str(r.status, ""))}</p>
                         </div>
                       </div>
                     </Link>
@@ -517,7 +517,7 @@ export default function Dashboard() {
                         <SeverityBadge severity={str(d.severity, "info") as any} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm text-slate-200">{str(d.title)}</p>
-                          <p className="text-[11px] text-slate-500">
+                          <p className="text-[13px] text-slate-500">
                             {titleCase(str(d.status, "open"))}
                             {d.occurrenceCount != null ? ` · ×${num(d.occurrenceCount)}` : ""}
                           </p>
@@ -558,7 +558,7 @@ export default function Dashboard() {
                         <SeverityBadge severity={str(t.severity, "critical") as any} />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm text-slate-200">{str(t.title)}</p>
-                          <p className="font-mono text-[11px] text-slate-500">
+                          <p className="font-mono text-[13px] text-slate-500">
                             {key}
                             {String(t.status) === "regressed" && (
                               <span className="ml-1.5 text-severity-critical">regressed</span>
@@ -624,7 +624,7 @@ export default function Dashboard() {
                 subtitle="SSE command-center stream"
                 action={
                   <span className={cx(
-                    "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-medium",
+                    "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[12px] font-medium",
                     connected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
                   )}>
                     <span className={cx("inline-flex h-2 w-2 rounded-full", connected ? "bg-gold-400" : "bg-severity-medium")} />
@@ -668,7 +668,7 @@ export default function Dashboard() {
                   <div key={`${e.ts}-${i}`} className="flex items-start gap-2 text-xs">
                     <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
                     <div className="min-w-0">
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-gold-400/80">{e.type}</p>
+                      <p className="font-mono text-[12px] uppercase tracking-wider text-gold-400/80">{e.type}</p>
                       <p className="truncate text-slate-300">{e.label}</p>
                       <p className="text-slate-600">{timeAgo(e.ts)}</p>
                     </div>

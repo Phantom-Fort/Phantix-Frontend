@@ -27,16 +27,16 @@ function CorrelationChips({ correlation }: { correlation: any }) {
   return (
     <div className="mt-1.5 space-y-1">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Findings confirmed by more than one tool">
+        <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Findings confirmed by more than one tool">
           {consensus} consensus
         </span>
-        <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-400" title="Findings seen by a single tool only">
+        <span className="chip text-[12px] border-slate-500/30 bg-slate-500/10 text-slate-400" title="Findings seen by a single tool only">
           {singletons} single-tool
         </span>
-        {tools.length > 0 && <span className="text-[10px] text-slate-600">tools: {tools.join(", ")}</span>}
+        {tools.length > 0 && <span className="text-[12px] text-slate-600">tools: {tools.join(", ")}</span>}
       </div>
       {groups.length > 0 && (
-        <details className="text-[10px] text-slate-500">
+        <details className="text-[12px] text-slate-500">
           <summary className="cursor-pointer hover:text-slate-300">Confirmed by tool</summary>
           <div className="mt-1 space-y-1">
             {groups.map((g, i) => (
@@ -44,14 +44,14 @@ function CorrelationChips({ correlation }: { correlation: any }) {
                 <p className="flex flex-wrap items-center gap-1.5 text-slate-300">
                   {g.title || g.issue_family || "Group"}
                   {g.consensus
-                    ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">consensus</span>
-                    : <span className="chip text-[9px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">single-tool</span>}
+                    ? <span className="chip text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">consensus</span>
+                    : <span className="chip text-[11px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">single-tool</span>}
                 </p>
                 {(Array.isArray(g.confirmed_by_tools) && g.confirmed_by_tools.length > 0) && (
-                  <p className="mt-0.5 text-[10px] text-emerald-300/90">confirmed: {g.confirmed_by_tools.join(", ")}</p>
+                  <p className="mt-0.5 text-[12px] text-emerald-300/90">confirmed: {g.confirmed_by_tools.join(", ")}</p>
                 )}
                 {(Array.isArray(g.missed_by_tools) && g.missed_by_tools.length > 0) && (
-                  <p className="mt-0.5 text-[10px] text-severity-medium/90">missed by: {g.missed_by_tools.join(", ")}</p>
+                  <p className="mt-0.5 text-[12px] text-severity-medium/90">missed by: {g.missed_by_tools.join(", ")}</p>
                 )}
               </div>
             ))}
@@ -74,7 +74,7 @@ function RoeChips({ roe }: { roe: any }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1.5">
       {chips.map(([label, on]) => (
-        <span key={label} className={cx("chip text-[9px]", on ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-700/40 bg-phantix-900/50 text-slate-600")}>
+        <span key={label} className={cx("chip text-[11px]", on ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-700/40 bg-phantix-900/50 text-slate-600")}>
           {label}: {on ? "on" : "off"}
         </span>
       ))}
@@ -458,7 +458,7 @@ export default function Vapt() {
                     </div>
                     {c.status === "active" && (
                       <div className="mt-3">
-                        <div className="mb-1 flex justify-between text-[11px] text-slate-500">
+                        <div className="mb-1 flex justify-between text-[13px] text-slate-500">
                           <span>{c.phase}</span><span className="font-mono">{c.progress}%</span>
                         </div>
                         <ProgressBar value={c.progress} />
@@ -494,7 +494,7 @@ export default function Vapt() {
                   ].map(([v, l, c]) => (
                     <div key={String(l)} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2.5 text-center">
                       <p className={cx("font-display text-lg font-bold", c)}>{v}</p>
-                      <p className="text-[9px] uppercase tracking-wider text-slate-500">{l}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">{l}</p>
                     </div>
                   ))}
                 </div>
@@ -502,21 +502,21 @@ export default function Vapt() {
                 {/* Intelligent plan steps */}
                 {((activeSelected as any).procedure_snapshot?.steps?.length > 0) && (
                   <div className="mb-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                       {(activeSelected as any).procedure_snapshot.display_name || "Assessment Plan"}
                       {activeSelected.campaign_type === "intelligent_assessment" && (activeSelected as any).procedure_snapshot.description && (
-                        <span className="block font-normal text-[11px] text-slate-500 normal-case tracking-normal mt-0.5">
+                        <span className="block font-normal text-[13px] text-slate-500 normal-case tracking-normal mt-0.5">
                           ~1.1 hours · network_scan, dns_scan, web_scan, vuln_scan
                         </span>
                       )}
                     </p>
                     {(activeSelected as any).procedure_snapshot.description && (
-                      <p className="text-[11px] text-slate-500 mb-2">{(activeSelected as any).procedure_snapshot.description}</p>
+                      <p className="text-[13px] text-slate-500 mb-2">{(activeSelected as any).procedure_snapshot.description}</p>
                     )}
 
                     {/* Plan summary: frameworks + duration */}
                     {((activeSelected as any).asset_scope?.intelligent_plan_id) && (
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] text-slate-500">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[12px] text-slate-500">
                         {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
                           <span>{((activeSelected as any).asset_scope?.asset_types as string[])?.length ?? 0} asset types</span>
                         )}
@@ -552,7 +552,7 @@ export default function Vapt() {
                         return (
                           <div key={i} className={cx("flex items-start gap-3 py-2 border-b border-phantix-800/40 last:border-0", isCurrent && "bg-severity-low/5 -mx-2 px-2 rounded")}>
                             <div className="flex flex-col items-center shrink-0">
-                              <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-severity-low/20 text-severity-low" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
+                              <div className={cx("w-6 h-6 rounded-full flex items-center justify-center text-[12px] font-bold", isCompleted ? "bg-emerald-400/20 text-emerald-400" : isCurrent ? "bg-severity-low/20 text-severity-low" : isFailed ? "bg-severity-critical/20 text-severity-critical" : "bg-phantix-800/70 text-slate-300")}>
                                 {isCompleted ? <CheckCircle2 size={12} /> : isFailed ? <XCircle size={12} /> : isCurrent ? <Loader2 size={12} className="animate-spin" /> : i + 1}
                               </div>
                               {i < (((activeSelected as any).procedure_snapshot?.steps?.length ?? 0) - 1) && (
@@ -563,12 +563,12 @@ export default function Vapt() {
                               <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-severity-low" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
                                 {icon} {step.step_name}
                                 {step.config?.max_duration_minutes && (
-                                  <span className="text-[9px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
+                                  <span className="text-[11px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
                                 )}
-                                {isCurrent && <span className="text-[10px] text-severity-low font-normal">running</span>}
-                                {isCompleted && <span className="text-[10px] text-emerald-400 font-normal">complete</span>}
+                                {isCurrent && <span className="text-[12px] text-severity-low font-normal">running</span>}
+                                {isCompleted && <span className="text-[12px] text-emerald-400 font-normal">complete</span>}
                               </p>
-                              <p className={cx("text-[11px] leading-relaxed", isCurrent ? "text-slate-400" : "text-slate-500")}>{step.step_description}</p>
+                              <p className={cx("text-[13px] leading-relaxed", isCurrent ? "text-slate-400" : "text-slate-500")}>{step.step_description}</p>
                               {/* Vulnerability types this step tests for (planner substeps).
                                   Disabled types are kept visible but struck through: what was
                                   deliberately excluded is part of the record. */}
@@ -579,7 +579,7 @@ export default function Vapt() {
                                       key={sub.key}
                                       title={sub.why || undefined}
                                       className={cx(
-                                        "chip text-[9px]",
+                                        "chip text-[11px]",
                                         sub.enabled === false
                                           ? "border-phantix-700/40 text-slate-600 line-through"
                                           : sub.regression
@@ -592,7 +592,7 @@ export default function Vapt() {
                                     </span>
                                   ))}
                                   {(step.config.substeps as any[]).length > 6 && (
-                                    <span className="chip border-phantix-700/40 text-[9px] text-slate-600">
+                                    <span className="chip border-phantix-700/40 text-[11px] text-slate-600">
                                       +{(step.config.substeps as any[]).length - 6} more
                                     </span>
                                   )}
@@ -618,13 +618,13 @@ export default function Vapt() {
                         <div className="mt-1 space-y-2">
                           {followOnSteps.length > 0 && (
                             <div className="rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-2.5">
-                              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Auto-enqueued follow-on research</p>
+                              <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Auto-enqueued follow-on research</p>
                               {followOnSteps.map((e, i) => (
                                 <div key={i} className="flex items-center gap-2 py-1 text-xs">
                                   <GitBranch size={12} className="shrink-0 text-gold-400" />
                                   <span className="text-slate-300">Auto: {e.step_name}</span>
-                                  {e.tool && <span className="font-mono text-[10px] text-slate-500">{e.tool}</span>}
-                                  {e.fromStep && <span className="text-[10px] text-slate-600">after {e.fromStep}</span>}
+                                  {e.tool && <span className="font-mono text-[12px] text-slate-500">{e.tool}</span>}
+                                  {e.fromStep && <span className="text-[12px] text-slate-600">after {e.fromStep}</span>}
                                 </div>
                               ))}
                             </div>
@@ -644,7 +644,7 @@ export default function Vapt() {
                     })()}
 
                     {/* Plan metadata footer */}
-                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-slate-500 bg-phantix-950/50 rounded-lg px-3 py-2">
                       {(activeSelected as any).asset_scope?.asset_types?.length > 0 && (
                         <><span className="w-1 h-1 rounded-full bg-slate-500" />{(activeSelected as any).asset_scope?.asset_types?.length ?? 0} asset types</>
                       )}
@@ -661,7 +661,7 @@ export default function Vapt() {
                         <><span className="w-1 h-1 rounded-full bg-slate-500" />host dedupe</>
                       )}
                     </div>
-                    <div className="mt-2 text-[10px] text-slate-600 bg-phantix-950/30 rounded-lg px-3 py-2 leading-relaxed">
+                    <div className="mt-2 text-[12px] text-slate-600 bg-phantix-950/30 rounded-lg px-3 py-2 leading-relaxed">
                       Each subdomain scanned separately. Domain IPs not re-scanned on vuln steps. Time budgets apply --- partial completion is not a failure.
                     </div>
                   </div>
@@ -672,7 +672,7 @@ export default function Vapt() {
                   <div className="mb-4">
                     {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).length > 0 && (
                       <div className="p-3 rounded-lg bg-phantix-800/30 border border-phantix-700/30 space-y-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Scan Results</p>
+                        <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">Scan Results</p>
                         {((activeSelected as any).procedure_snapshot?.steps || []).filter((s: any) => s.output_summary || s.finding_count > 0).slice(0, 5).map((step: any, i: number) => {
                           const summary = step.output_summary || {};
                           const isPartial = summary.budget_exhausted || summary.partial;
@@ -702,14 +702,14 @@ export default function Vapt() {
                                     <span className="text-slate-500">
                                       {' '}· {skipped} skipped (already scanned / domain IP)
                                       {skipReasons.length > 0 && (
-                                        <span className="block text-[10px] text-slate-600">
+                                        <span className="block text-[12px] text-slate-600">
                                           {skipReasons.slice(0, 3).map((r) => <span key={r} className="block">{r}</span>)}
                                           {skipReasons.length > 3 && <span>+{skipReasons.length - 3} more</span>}
                                         </span>
                                       )}
                                     </span>
                                   )}
-                                  {tools.length > 0 && <span className="block text-[10px] text-slate-600">tools: {tools.join(", ")}</span>}
+                                  {tools.length > 0 && <span className="block text-[12px] text-slate-600">tools: {tools.join(", ")}</span>}
                                 </p>
                                 {summary.multi_tool_correlation && <CorrelationChips correlation={summary.multi_tool_correlation} />}
                                 {summary.roe && <RoeChips roe={summary.roe} />}
@@ -718,12 +718,12 @@ export default function Vapt() {
                                     <div className="h-1 flex-1 rounded-full bg-phantix-800">
                                       <div className={cx("h-full rounded-full", isPartial ? "bg-severity-medium" : "bg-emerald-400")} style={{ width: `${budgetPct}%` }} />
                                     </div>
-                                    <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                                    <span className="text-[12px] text-slate-500 whitespace-nowrap">
                                       {Math.round(elapsedSec / 60)}m / {Math.round(budgetSec / 60)}m
                                     </span>
                                   </div>
                                 )}
-                                {isPartial && <p className="text-severity-medium text-[10px] mt-0.5">Partial --- time budget reached</p>}
+                                {isPartial && <p className="text-severity-medium text-[12px] mt-0.5">Partial --- time budget reached</p>}
                               </div>
                             </div>
                           );
@@ -735,14 +735,14 @@ export default function Vapt() {
 
                 {/* Lifecycle controls */}
                 <div className="border-t border-phantix-700/40 pt-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Actions</p>
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Actions</p>
                   <div className="flex flex-wrap gap-2">
                     {activeSelected.status === "draft" && (
                       <>
                         <button className="btn-primary !py-2 text-sm" onClick={() => handleCampaignAction(activeSelected.id, "start")}>
                           <Play size={14} /> Start Campaign
                         </button>
-                        <p className="w-full text-[10px] text-slate-500">
+                        <p className="w-full text-[12px] text-slate-500">
                           Review the plan above, then start. Full VAPT requires authorizer approval before execution.
                         </p>
                       </>
@@ -790,7 +790,7 @@ export default function Vapt() {
 
                 {/* Findings */}
                 <div className="border-t border-phantix-700/40 mt-4 pt-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Findings ({campaignFindings.length})</p>
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Findings ({campaignFindings.length})</p>
                   <div className="space-y-2">
                     {campaignFindings.length === 0 && <p className="text-xs text-slate-500">No correlated attack paths yet. Raw findings are under Scans → Results.</p>}
                     {campaignFindings.slice(0, 5).map((f) => (
@@ -801,11 +801,11 @@ export default function Vapt() {
                             <SeverityBadge severity={f.severity} />
                             <VerificationBadge status={f.verification_status} />
                             {f.impact_level && <ImpactBadge level={f.impact_level} score={f.impact_score} />}
-                            {isReportable(f) ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span> : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held</span>}
+                            {isReportable(f) ? <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span> : <span className="chip text-[12px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held</span>}
                             <ChevronRight size={14} className="shrink-0 text-slate-600" />
                           </div>
                           {f.attack_path?.length > 0 && (
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[13px] text-slate-500">
                               <GitBranch size={11} className="text-gold-400" />
                               {f.attack_path.map((hop, i) => (
                                 <span key={i} className="flex items-center gap-1.5">
@@ -815,7 +815,7 @@ export default function Vapt() {
                               ))}
                             </div>
                           )}
-                          <div className="mt-1.5 flex flex-wrap gap-3 text-[11px] text-slate-500">
+                          <div className="mt-1.5 flex flex-wrap gap-3 text-[13px] text-slate-500">
                             {f.asset_value && <span className="font-mono">{f.asset_value}</span>}
                             {f.cve && <span className="font-mono text-gold-400">{f.cve}</span>}
                             {f.cvss != null && <span>CVSS {f.cvss.toFixed(1)}</span>}
@@ -850,7 +850,7 @@ export default function Vapt() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-slate-100">{f.title}</p>
-                        {isReportable(f) ? <span className="chip text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[9px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
+                        {isReportable(f) ? <span className="chip text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[11px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500">campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value || "—"}</span>{f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}{f.cvss != null && <> · CVSS {f.cvss.toFixed(1)}</>}{f.correlation_rule && <> · <span className="font-mono">{f.correlation_rule}</span></>}</p>
                     </div>
@@ -874,71 +874,71 @@ export default function Vapt() {
               <VerificationBadge status={findingSelected.verification_status} />
               {findingSelected.impact_level && <ImpactBadge level={findingSelected.impact_level} score={findingSelected.impact_score} />}
               {isReportable(findingSelected)
-                ? <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span>
-                : <span className="chip text-[10px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held from reports</span>}
-              {findingSelected.requires_human_review && <span className="chip text-[10px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">Human review</span>}
+                ? <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">Reportable</span>
+                : <span className="chip text-[12px] border-slate-500/30 bg-slate-500/10 text-slate-500">Held from reports</span>}
+              {findingSelected.requires_human_review && <span className="chip text-[12px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">Human review</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
               {findingSelected.asset_value && (
                 <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">Asset</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">Asset</p>
                   <p className="mt-0.5 truncate font-mono text-slate-200">{findingSelected.asset_value}</p>
                 </div>
               )}
               {findingSelected.correlation_rule && (
                 <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">Correlation rule</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">Correlation rule</p>
                   <p className="mt-0.5 truncate font-mono text-gold-300">{findingSelected.correlation_rule}</p>
                 </div>
               )}
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Campaign</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Campaign</p>
                 <p className="mt-0.5 font-mono text-slate-200">#{findingSelected.campaign_id}</p>
               </div>
               {findingSelected.cve && (
                 <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">CVE</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">CVE</p>
                   <p className="mt-0.5 truncate font-mono text-gold-400">{findingSelected.cve}</p>
                 </div>
               )}
               {findingSelected.cvss != null && (
                 <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">CVSS</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">CVSS</p>
                   <p className="mt-0.5 font-mono text-slate-200">{findingSelected.cvss.toFixed(1)}</p>
                 </div>
               )}
               <div className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2">
-                <p className="text-[10px] uppercase tracking-wider text-slate-500">Detected</p>
+                <p className="text-[12px] uppercase tracking-wider text-slate-500">Detected</p>
                 <p className="mt-0.5 text-slate-200">{formatDateTime(findingSelected.created_at)}</p>
               </div>
             </div>
 
             {findingSelected.description && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Description</p>
                 <p className="text-sm leading-6 text-slate-300">{findingSelected.description}</p>
               </div>
             )}
 
             {findingSelected.attack_path_object?.risk_summary && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Risk summary</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Risk summary</p>
                 <p className="text-xs leading-5 text-slate-400">{findingSelected.attack_path_object.risk_summary}</p>
               </div>
             )}
 
             {selectedSteps && selectedSteps.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Attack path</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Attack path</p>
                 <div className="flex flex-col gap-1">
                   {selectedSteps.map((s, i, arr) => (
                     <div key={i} className="flex items-center gap-2">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-phantix-800/70 font-mono text-[10px] font-bold text-slate-300">{i + 1}</span>
-                      <span className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[11px] text-slate-200">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-phantix-800/70 font-mono text-[12px] font-bold text-slate-300">{i + 1}</span>
+                      <span className="rounded-lg border border-phantix-700/40 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[13px] text-slate-200">
                         {s.title || `Asset #${s.asset_id}`}
                       </span>
-                      {s.severity && <span className="text-[10px] text-slate-500">{s.severity}</span>}
+                      {s.severity && <span className="text-[12px] text-slate-500">{s.severity}</span>}
                       {i < arr.length - 1 && <ChevronRight size={12} className="shrink-0 text-slate-600" />}
                     </div>
                   ))}
@@ -948,7 +948,7 @@ export default function Vapt() {
 
             {!!selectedFinding?.impact_analysis?.impact_level && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Impact analysis</p>
                 <ImpactPanel impact={selectedFinding.impact_analysis} />
               </div>
             )}
@@ -959,7 +959,7 @@ export default function Vapt() {
                   Verification: <span className="font-medium text-slate-200">{findingSelected.verification_status}</span>
                   {findingSelected.confidence != null && <> · Confidence: <span className="font-mono text-slate-200">{findingSelected.confidence}</span></>}
                 </p>
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[12px] text-slate-500">
                   Auto-classified by the verification engine from the correlated attack path and its underlying scan evidence.
                 </p>
               </div>
@@ -969,8 +969,8 @@ export default function Vapt() {
             <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Retest after remediation</p>
-                  <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">Retest after remediation</p>
+                  <p className="mt-0.5 text-[12px] leading-4 text-slate-500">
                     Re-runs the deterministic findings check; if it can’t decide, the AI engine judges the finding data.
                   </p>
                 </div>
@@ -987,7 +987,7 @@ export default function Vapt() {
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                   <span
                     className={cx(
-                      "chip text-[10px]",
+                      "chip text-[12px]",
                       retestResult.outcome === "resolved"
                         ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                         : retestResult.outcome === "still_present"
@@ -1001,10 +1001,10 @@ export default function Vapt() {
                         ? "Still present"
                         : "Inconclusive"}
                   </span>
-                  <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">
+                  <span className="chip text-[12px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">
                     {retestResult.engine === "ai" ? "AI engine" : "deterministic engine"}
                   </span>
-                  {retestResult.reason && <span className="text-[10px] text-slate-500">{retestResult.reason}</span>}
+                  {retestResult.reason && <span className="text-[12px] text-slate-500">{retestResult.reason}</span>}
                 </div>
               )}
             </div>
@@ -1047,7 +1047,7 @@ export default function Vapt() {
           {["web_scan", "api_scan", "full_vapt"].includes(createForm.campaign_type) && (
             <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3.5 space-y-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Research depth</p>
+                <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Research depth</p>
                 <div className="space-y-1.5">
                   <label className={cx("flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2", createForm.researchDepth === "standard" ? "border-gold-400/40 bg-gold-400/8" : "border-phantix-700/40 bg-phantix-900/50")}>
                     <input type="radio" name="researchDepth" className="mt-0.5 accent-gold-400" checked={createForm.researchDepth === "standard"} onChange={() => setCreateForm((f) => ({ ...f, researchDepth: "standard" }))} />
@@ -1062,7 +1062,7 @@ export default function Vapt() {
                     </span>
                   </label>
                   {createForm.researchDepth === "poc" && (
-                    <p className="text-[10px] leading-4 text-severity-medium/90 px-1">
+                    <p className="text-[12px] leading-4 text-severity-medium/90 px-1">
                       Controlled proofs (upload polyglot, SSRF OOB) may interact with the live app. Ensure ROE / dual-control is unlocked.
                     </p>
                   )}
@@ -1072,11 +1072,11 @@ export default function Vapt() {
                 <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.bruteforceAcked} onChange={(e) => setCreateForm((f) => ({ ...f, bruteforceAcked: e.target.checked }))} />
                 Authorize login bruteforce <span className="text-slate-500">(acknowledge_bruteforce=true)</span>
               </label>
-              <details className="text-[11px]">
+              <details className="text-[13px]">
                 <summary className="cursor-pointer text-slate-400 hover:text-slate-200">Credentials panel (optional)</summary>
                 <div className="mt-2 space-y-3">
                   <div>
-                    <p className="text-[10px] text-slate-500 mb-1">Primary session --- priv-esc + JWT + BOLA bearer</p>
+                    <p className="text-[12px] text-slate-500 mb-1">Primary session --- priv-esc + JWT + BOLA bearer</p>
                     <div className="grid grid-cols-3 gap-2">
                       <input className="input !py-1.5 text-xs" placeholder="username" value={creds.username} onChange={(e) => setCreds((c) => ({ ...c, username: e.target.value }))} />
                       <input className="input !py-1.5 text-xs" type="password" placeholder="password" value={creds.password} onChange={(e) => setCreds((c) => ({ ...c, password: e.target.value }))} />
@@ -1084,14 +1084,14 @@ export default function Vapt() {
                     </div>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-500 mb-1">Alternate session --- dual-session BOLA comparison</p>
+                    <p className="text-[12px] text-slate-500 mb-1">Alternate session --- dual-session BOLA comparison</p>
                     <div className="grid grid-cols-3 gap-2">
                       <input className="input !py-1.5 text-xs" placeholder="username" value={altCreds.username} onChange={(e) => setAltCreds((c) => ({ ...c, username: e.target.value }))} />
                       <input className="input !py-1.5 text-xs" type="password" placeholder="password" value={altCreds.password} onChange={(e) => setAltCreds((c) => ({ ...c, password: e.target.value }))} />
                       <input className="input !py-1.5 text-xs" placeholder="token / bearer / jwt" value={altCreds.token} onChange={(e) => setAltCreds((c) => ({ ...c, token: e.target.value }))} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-600">Secrets are never echoed back by the API --- findings show only credentials_provided.</p>
+                  <p className="text-[12px] text-slate-600">Secrets are never echoed back by the API --- findings show only credentials_provided.</p>
                 </div>
               </details>
             </div>

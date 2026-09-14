@@ -47,7 +47,7 @@ export function UpgradeGate({
           <UserCog size={16} className="shrink-0 text-gold-300" />
           Ask your organization admin to upgrade the plan
         </p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-[13px] text-slate-500">
           Plan changes and billing are managed on the Platform by your company admin. Cards are charged per company —
           nothing you have already configured is lost while you wait.
         </p>
@@ -86,10 +86,10 @@ export function UpsellBanner({
       )}
     >
       <Sparkle size={14} className="shrink-0 text-gold-300" />
-      <p className="min-w-0 flex-1 text-[11px] leading-5 text-gold-100/90">
+      <p className="min-w-0 flex-1 text-[13px] leading-5 text-gold-100/90">
         <span className="font-semibold text-gold-200">{label}.</span> {detail}
       </p>
-      <span className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-gold-300">
+      <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-gold-300">
         <UserCog size={13} /> Ask your admin to upgrade
       </span>
     </div>

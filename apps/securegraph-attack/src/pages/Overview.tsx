@@ -144,7 +144,7 @@ export default function Overview({
                 {card.capabilities.map((c) => (
                   <span
                     key={c}
-                    className="chip border-phantix-700 bg-phantix-900 text-[11px] text-slate-300"
+                    className="chip border-phantix-700 bg-phantix-900 text-[13px] text-slate-300"
                   >
                     {c}
                   </span>
@@ -158,14 +158,14 @@ export default function Overview({
       {/* Launchpad: every page, grouped the way the sidebar groups them. */}
       {sections.map((section) => (
         <div key={section.label} className="mb-6">
-          <p className="mb-2.5 font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+          <p className="mb-2.5 font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-slate-500">
             {section.label}
           </p>
           <motion.div
             variants={grid}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
             {section.items.map((item) => (
               <motion.div key={item.to} variants={tile}>

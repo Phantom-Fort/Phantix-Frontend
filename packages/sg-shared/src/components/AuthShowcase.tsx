@@ -97,7 +97,7 @@ function SonarScene() {
         {["API", "WEB", "DB"].map((label) => (
           <div key={label} className="rounded-md border border-white/10 bg-phantix-950/60 px-3 py-2.5">
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">{label}</span>
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-slate-300">{label}</span>
               <span className="h-1.5 w-1.5 rounded-full" style={{ background: GOLD }} />
             </div>
             <svg viewBox="0 0 120 26" className="h-7 w-full" preserveAspectRatio="none">
@@ -140,7 +140,7 @@ function IncidentScene() {
             >
               <span style={{ color: i === 0 ? GOLD : BLUE_LIGHT }}>{s.icon}</span>
             </div>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-300">{s.label}</span>
+            <span className="text-[12px] font-semibold uppercase tracking-wider text-slate-300">{s.label}</span>
           </div>
         ))}
       </div>
@@ -155,11 +155,11 @@ function IncidentScene() {
 
       <div className="mt-6 rounded-md border border-white/10 bg-phantix-950/60 p-4">
         <div className="flex items-center gap-2 text-xs">
-          <span className="chip !py-0.5 !text-[10px] border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.1)]" style={{ color: GOLD }}>
+          <span className="chip !py-0.5 !text-[12px] border-[rgba(232,181,77,0.5)] bg-[rgba(232,181,77,0.1)]" style={{ color: GOLD }}>
             ACTIVE
           </span>
           <span className="font-mono text-slate-300">INC-2026-08-0411</span>
-          <span className="ml-auto font-mono text-[10px] text-slate-500">8.4K events / 6m</span>
+          <span className="ml-auto font-mono text-[12px] text-slate-500">8.4K events / 6m</span>
         </div>
         <p className="mt-2.5 text-sm leading-6 text-slate-200">
           <span className="font-semibold text-white">Lateral movement</span> detected on api.acme.ng — playbook
@@ -169,7 +169,7 @@ function IncidentScene() {
           {["8.4K", "23", "4", "0"].map((v, i) => (
             <div key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-center">
               <p className="font-mono text-sm" style={{ color: GOLD }}>{v}</p>
-              <p className="text-[9px] uppercase tracking-wider text-slate-500">phase {i + 1}</p>
+              <p className="text-[11px] uppercase tracking-wider text-slate-500">phase {i + 1}</p>
             </div>
           ))}
         </div>
@@ -200,7 +200,7 @@ function AlertsScene() {
           <div data-anim="chan" className="flex h-11 w-11 items-center justify-center rounded-md border border-white/15 bg-phantix-950/70" style={{ color: BLUE_LIGHT }}>
             {c.icon}
           </div>
-          <span className="text-[10px] font-medium text-slate-300">{c.label}</span>
+          <span className="text-[12px] font-medium text-slate-300">{c.label}</span>
         </div>
       ))}
     </div>
@@ -215,8 +215,8 @@ function AgentScene() {
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
           <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
           <span className="h-2.5 w-2.5 rounded-full" style={{ background: GOLD }} />
-          <span className="ml-2 font-mono text-[11px] text-slate-400">phantix-agent · session 8812</span>
-          <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px]" style={{ color: GOLD }}>
+          <span className="ml-2 font-mono text-[13px] text-slate-400">phantix-agent · session 8812</span>
+          <span className="ml-auto flex items-center gap-1.5 font-mono text-[12px]" style={{ color: GOLD }}>
             <span className="h-1.5 w-1.5 rounded-full animate-pulse-soft" style={{ background: GOLD }} /> approved
           </span>
         </div>
@@ -243,12 +243,12 @@ function AgentScene() {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-200">Autonomous investigation</p>
-            <p className="text-[10px] text-slate-500">anonymized · governed · audited</p>
+            <p className="text-[12px] text-slate-500">anonymized · governed · audited</p>
           </div>
         </div>
         <div className="flex gap-1.5">
           {["DeepSeek", "GPT", "Claude"].map((m) => (
-            <span key={m} data-anim="consensus" className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 font-mono text-[10px] text-slate-300">{m}</span>
+            <span key={m} data-anim="consensus" className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 font-mono text-[12px] text-slate-300">{m}</span>
           ))}
         </div>
       </div>
@@ -287,7 +287,7 @@ function PipelineScene() {
           >
             {s.icon}
           </span>
-          <span className="rounded-full border border-white/10 bg-phantix-950/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-200">{s.label}</span>
+          <span className="rounded-full border border-white/10 bg-phantix-950/70 px-2.5 py-1 text-[12px] font-semibold uppercase tracking-wider text-slate-200">{s.label}</span>
         </div>
       ))}
     </div>
@@ -540,7 +540,7 @@ export default function AuthShowcase() {
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: GOLD }}>
+          <div className="flex items-center gap-2.5 text-[13px] font-semibold uppercase tracking-[0.24em]" style={{ color: GOLD }}>
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#e8b54d]/15" style={{ color: GOLD }}>{slide.icon}</span>
             {slide.kicker}
           </div>
@@ -564,7 +564,7 @@ export default function AuthShowcase() {
             />
           ))}
         </div>
-        <div className="flex items-center gap-2.5 font-mono text-[11px] text-slate-400">
+        <div className="flex items-center gap-2.5 font-mono text-[13px] text-slate-400">
           <span className="text-lg font-semibold" style={{ color: GOLD }}>
             <span data-anim="stat" data-count={slide.stat.value}>0</span>
           </span>

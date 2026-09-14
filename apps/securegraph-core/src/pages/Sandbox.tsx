@@ -155,17 +155,17 @@ if (loading) {
         and <strong className="text-slate-200">Platform</strong> (org management). Staff portal is SecureGraph-internal only.
       </div>
 
-      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider text-slate-500">Member status</p>
+          <p className="text-[13px] uppercase tracking-wider text-slate-500">Member status</p>
           <p className="mt-1 text-lg font-semibold text-slate-100">{titleCase(me.member?.status ?? "active")}</p>
         </Card>
         <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider text-slate-500">Unread updates</p>
+          <p className="text-[13px] uppercase tracking-wider text-slate-500">Unread updates</p>
           <p className="mt-1 text-lg font-semibold text-gold-300">{me.unreadUpdates ?? 0}</p>
         </Card>
         <Card className="!p-4">
-          <p className="text-[11px] uppercase tracking-wider text-slate-500">Seats</p>
+          <p className="text-[13px] uppercase tracking-wider text-slate-500">Seats</p>
           <p className="mt-1 text-lg font-semibold text-slate-100">≤ {me.program?.maxMembers ?? 20}</p>
         </Card>
       </div>
@@ -194,13 +194,13 @@ if (loading) {
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         {severityChip(u.severity)}
-                        {ver && <span className="chip font-mono text-[10px] text-slate-400">{ver}</span>}
+                        {ver && <span className="chip font-mono text-[12px] text-slate-400">{ver}</span>}
                         {u.acked && (
-                          <span className="chip border-emerald-400/30 bg-emerald-400/10 text-[10px] text-emerald-300">
+                          <span className="chip border-emerald-400/30 bg-emerald-400/10 text-[12px] text-emerald-300">
                             <CheckCircle2 size={10} className="mr-1 inline" /> acked
                           </span>
                         )}
-                        {pub && <span className="ml-auto text-[11px] text-slate-600">{timeAgo(pub)}</span>}
+                        {pub && <span className="ml-auto text-[13px] text-slate-600">{timeAgo(pub)}</span>}
                       </div>
                       <p className="mt-2 text-sm font-semibold text-slate-100">{u.title}</p>
                       {body && (
@@ -233,12 +233,12 @@ if (loading) {
                   <div key={r.id ?? i} className="rounded-xl border border-phantix-700/40 bg-phantix-950/40 px-3.5 py-2.5">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-bold text-gold-300">{r.score}/5</span>
-                      {r.nps != null && <span className="text-[11px] text-slate-500">NPS {r.nps}</span>}
+                      {r.nps != null && <span className="text-[13px] text-slate-500">NPS {r.nps}</span>}
                       {r.area && <StatusBadge status={r.area} />}
                     </div>
                     {r.comment && <p className="mt-1 text-xs text-slate-300">{r.comment}</p>}
                     {r.what_broke && (
-                      <p className="mt-1 flex items-start gap-1 text-[11px] text-severity-high">
+                      <p className="mt-1 flex items-start gap-1 text-[13px] text-severity-high">
                         <AlertTriangle size={11} className="mt-0.5 shrink-0" /> {r.what_broke}
                       </p>
                     )}

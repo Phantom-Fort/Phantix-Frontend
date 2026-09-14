@@ -142,7 +142,7 @@ export default function ThreatModels() {
         <ErrorState title="Threat models unavailable" body={error} onRetry={() => void load()} />
       ) : (
         <div className="space-y-5">
-          <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[11px] leading-5 text-gold-200">
+          <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[13px] leading-5 text-gold-200">
             <Info size={12} className="mt-0.5 shrink-0" />
             <span>
               A model comes from a product's information. Add <strong className="font-semibold">product information</strong>, an architecture diagram
@@ -216,7 +216,7 @@ export default function ThreatModels() {
                     <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
                       <div className="min-w-0">
                         <p className="text-sm text-slate-200">{p.name}</p>
-                        <p className="mt-0.5 text-[11px] text-slate-500">#{p.id} · {p.stage}</p>
+                        <p className="mt-0.5 text-[13px] text-slate-500">#{p.id} · {p.stage}</p>
                         <ReadinessChips summary={summary} />
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -276,7 +276,7 @@ export default function ThreatModels() {
                   <div key={r.modelId} className="flex items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 px-3 py-2">
                     <button onClick={() => setOpenModelId(r.modelId)} className="min-w-0 flex-1 text-left">
                       <span className="block text-sm text-slate-200">Model #{r.modelId}</span>
-                      <span className="block text-[11px] text-slate-500">
+                      <span className="block text-[13px] text-slate-500">
                         {r.projectName || "unknown project"} · {new Date(r.seenAt).toLocaleDateString()}
                       </span>
                     </button>
@@ -328,7 +328,7 @@ export default function ThreatModels() {
 
 function ReadinessChips({ summary }: { summary?: ProductContextSummary | null }) {
   if (!summary) {
-    return <p className="mt-1.5 text-[11px] text-slate-600">Add product information, a diagram or requirements</p>;
+    return <p className="mt-1.5 text-[13px] text-slate-600">Add product information, a diagram or requirements</p>;
   }
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -509,7 +509,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
       ) : (
         <div className="space-y-5">
           {data?.model?.stage === "planned" && (
-            <p className="flex items-start gap-2 rounded-md border border-sky-400/30 bg-sky-400/10 p-3 text-[11px] leading-5 text-sky-300">
+            <p className="flex items-start gap-2 rounded-md border border-sky-400/30 bg-sky-400/10 p-3 text-[13px] leading-5 text-sky-300">
               <Info size={12} className="mt-0.5 shrink-0" />
               Planned design review — the entries below are design decisions to take, not confirmed defects.
             </p>
@@ -521,7 +521,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[13px] text-slate-500">
               Stage <span className="text-slate-300">{data?.model?.stage ?? "—"}</span> · status{" "}
               <span className="text-slate-300">{data?.model?.status ?? "—"}</span>
             </p>
@@ -637,7 +637,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                               const v = e.currentTarget.value.trim();
                               if (v && Number(v) !== t.owner_ref) void patchThreatField(t, { owner_ref: Number(v) });
                             }}
-                            className="w-16 rounded-md border border-phantix-700 bg-transparent px-1.5 py-0.5 font-mono text-[10px] text-slate-500 outline-none focus:border-gold-400/40"
+                            className="w-16 rounded-md border border-phantix-700 bg-transparent px-1.5 py-0.5 font-mono text-[12px] text-slate-500 outline-none focus:border-gold-400/40"
                           />
                         </div>
                       </div>
@@ -648,7 +648,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                       )}
                     </div>
                     {t.verification_question && (
-                      <p className="mt-2 flex items-start gap-1.5 text-[11px] leading-5 text-slate-500">
+                      <p className="mt-2 flex items-start gap-1.5 text-[13px] leading-5 text-slate-500">
                         <HelpCircle size={11} className="mt-0.5 shrink-0" />
                         {t.verification_question}
                       </p>

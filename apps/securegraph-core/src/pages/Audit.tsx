@@ -125,7 +125,7 @@ export default function Audit() {
                 <X size={12} /> Clear
               </button>
             )}
-            <span className="ml-auto text-[11px] text-slate-600">{filtered.length} events</span>
+            <span className="ml-auto text-[13px] text-slate-600">{filtered.length} events</span>
           </div>
 
           <Card className="!p-0 overflow-hidden">
@@ -160,7 +160,7 @@ export default function Audit() {
                     >
                       <td className="td text-center">
                         <span className={cx(
-                          "inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold",
+                          "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold",
                           e.details?.passive !== false ? "bg-blue-400/15 text-blue-400" : "bg-emerald-400/15 text-emerald-400"
                         )}>
                           {e.details?.passive !== false ? "V" : "C"}
@@ -168,39 +168,39 @@ export default function Audit() {
                       </td>
                       <td className="td max-w-[340px]">
                         <p className="font-medium text-slate-200">{(desc?.label ?? e.action_label) || "Activity"}</p>
-                        <p className="text-[11px] leading-5 text-slate-400">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</p>
+                        <p className="text-[13px] leading-5 text-slate-400">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</p>
                       </td>
                       <td className="td">
-                        <span className={cx("text-[11px] font-medium", am.color)}>{am.label}</span>
+                        <span className={cx("text-[13px] font-medium", am.color)}>{am.label}</span>
                       </td>
                       <td className="td">
                         <div className="flex items-center gap-1.5">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-phantix-700/60 text-[9px] font-bold text-phantix-200">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-md bg-phantix-700/60 text-[11px] font-bold text-phantix-200">
                             {(e.initiator_name ?? "?").slice(0, 1)}
                           </span>
                           <div>
-                            <p className="text-[11px] text-slate-300">{e.initiator_name ?? "---"}</p>
-                            <p className="text-[9px] text-slate-600">{e.initiator_title ?? ""}</p>
+                            <p className="text-[13px] text-slate-300">{e.initiator_name ?? "---"}</p>
+                            <p className="text-[11px] text-slate-600">{e.initiator_title ?? ""}</p>
                           </div>
                         </div>
                       </td>
                       <td className="td">
                         {e.authorizer_name ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gold-400/20 text-[9px] font-bold text-gold-300">
+                            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gold-400/20 text-[11px] font-bold text-gold-300">
                               {e.authorizer_name.slice(0, 1)}
                             </span>
                             <div>
-                              <p className="text-[11px] text-slate-300">{e.authorizer_name}</p>
-                              <p className="text-[9px] text-slate-600">{e.authorizer_title ?? ""}</p>
+                              <p className="text-[13px] text-slate-300">{e.authorizer_name}</p>
+                              <p className="text-[11px] text-slate-600">{e.authorizer_title ?? ""}</p>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[11px] text-slate-600">---</span>
+                          <span className="text-[13px] text-slate-600">---</span>
                         )}
                       </td>
-                      <td className="td font-mono text-[10px] text-slate-500">{e.ip_address ?? "---"}</td>
-                      <td className="td text-[11px] text-slate-500 whitespace-nowrap">{timeAgo(e.created_at)}</td>
+                      <td className="td font-mono text-[12px] text-slate-500">{e.ip_address ?? "---"}</td>
+                      <td className="td text-[13px] text-slate-500 whitespace-nowrap">{timeAgo(e.created_at)}</td>
                     </motion.tr>
                   );
                 })}

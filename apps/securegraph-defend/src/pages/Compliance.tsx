@@ -155,7 +155,7 @@ export default function Compliance() {
                   <div className="min-w-0">
                     <p className="font-display font-semibold text-slate-100">{a.framework_name}</p>
                     <p className="mt-0.5 text-xs text-slate-500">{timeAgo(a.created_at)}</p>
-                    <div className="mt-2 flex gap-2 text-[11px]">
+                    <div className="mt-2 flex gap-2 text-[13px]">
                       <span className="text-emerald-400">{a.controls_passed} pass</span>
                       <span className="text-severity-critical">{a.controls_gap} gap</span>
                       <span className="text-slate-500">{a.controls_unknown} unknown</span>
@@ -281,7 +281,7 @@ export default function Compliance() {
             <motion.div key={e.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card hover className="!p-4">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-phantix-800/70 font-mono text-[10px] font-bold text-gold-400">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-phantix-800/70 font-mono text-[12px] font-bold text-gold-400">
                     {e.connector.slice(0, 3).toUpperCase()}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -336,7 +336,7 @@ export default function Compliance() {
               /> Include posture (verified findings + asset signals)
             </label>
           </div>
-          <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[11px] leading-5 text-slate-500">
+          <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[13px] leading-5 text-slate-500">
             POST /compliance/assessments — runs the merge engine per control and writes a scored assessment you can review under Control results.
           </p>
           <button className="btn-primary w-full" type="submit" disabled={assessBusy}>

@@ -37,12 +37,12 @@ function SectionChips({ sections }: { sections: string[] }) {
   return (
     <div className="mt-2.5 flex flex-wrap gap-1">
       {shown.map((s) => (
-        <span key={s} className="chip !px-1.5 !py-0 border-phantix-700/40 bg-phantix-900/60 text-[9.5px] text-slate-500">
+        <span key={s} className="chip !px-1.5 !py-0 border-phantix-700/40 bg-phantix-900/60 text-[11px] text-slate-500">
           {s.replace(/_/g, " ")}
         </span>
       ))}
       {sections.length > shown.length && (
-        <span className="chip !px-1.5 !py-0 border-phantix-700/40 text-[9.5px] text-slate-600">
+        <span className="chip !px-1.5 !py-0 border-phantix-700/40 text-[11px] text-slate-600">
           +{sections.length - shown.length}
         </span>
       )}
@@ -72,22 +72,22 @@ function TypeCard({
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-semibold leading-5 text-slate-100">{entry.title}</h3>
-          <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+          <p className="mt-0.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-600">
             {entry.audience}
           </p>
         </div>
       </div>
 
-      <p className="mt-2.5 flex-1 text-[11.5px] leading-5 text-slate-400">{entry.use_case}</p>
+      <p className="mt-2.5 flex-1 text-[13px] leading-5 text-slate-400">{entry.use_case}</p>
       <SectionChips sections={entry.sections} />
 
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-phantix-800/60 pt-2.5">
-        <span className="text-[10.5px] text-slate-600">
+        <span className="text-[12px] text-slate-600">
           {entry.section_count} sections
           {entry.requires_campaign && " · needs a campaign"}
         </span>
         <button
-          className={entry.featured ? "btn-primary !px-2.5 !py-1 !text-[11px]" : "btn-secondary !px-2.5 !py-1 !text-[11px]"}
+          className={entry.featured ? "btn-primary !px-2.5 !py-1 !text-[13px]" : "btn-secondary !px-2.5 !py-1 !text-[13px]"}
           disabled={busy}
           onClick={() => onGenerate(entry)}
         >
@@ -154,7 +154,7 @@ export default function ReportSolutions({
           one click from here so the common case never runs a report at all. */}
       {recent.length > 0 && (
         <section>
-          <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <h2 className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             Ready to view
           </h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -171,7 +171,7 @@ export default function ReportSolutions({
                   <span className="block truncate text-[12px] font-medium text-slate-200">
                     {titleFor(r.report_type)}
                   </span>
-                  <span className="block truncate text-[10.5px] text-slate-500">
+                  <span className="block truncate text-[12px] text-slate-500">
                     v{r.report_version ?? 1}
                     {r.status && r.status !== "complete" ? ` · ${r.status}` : ""}
                   </span>
@@ -183,10 +183,10 @@ export default function ReportSolutions({
       )}
       <section>
         <div className="mb-2.5 flex items-baseline justify-between gap-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             Most used
           </h2>
-          <p className="text-[10.5px] text-slate-600">Generated on demand from live engine data</p>
+          <p className="text-[12px] text-slate-600">Generated on demand from live engine data</p>
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           {featured.map((entry) => (
@@ -202,7 +202,7 @@ export default function ReportSolutions({
 
       {rest.length > 0 && (
         <section>
-          <h2 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+          <h2 className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
             More report types
           </h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">

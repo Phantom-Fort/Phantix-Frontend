@@ -209,7 +209,7 @@ export default function ChooseApp() {
         <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
         <span className="leading-tight">
           <span className="block font-display text-[15px] font-bold text-white">SecureGraph</span>
-          <span className="block text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">
             Applications
           </span>
         </span>
@@ -312,7 +312,7 @@ export default function ChooseApp() {
             animate={calm ? undefined : { y: [0, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           />
-          <p className="mt-3 font-mono text-[11px] font-semibold uppercase tracking-[0.28em] text-gold-400">
+          <p className="mt-3 font-mono text-[13px] font-semibold uppercase tracking-[0.28em] text-gold-400">
             SecureGraph
           </p>
           <h1 className="mt-2 font-display text-[28px] font-bold leading-tight text-white sm:text-3xl">
@@ -380,11 +380,11 @@ export default function ChooseApp() {
                   </div>
                   <span className="ml-auto flex items-center gap-2">
                     {last === "core" && (
-                      <span className="chip border-phantix-700 bg-phantix-900 text-[10px] uppercase tracking-wider text-slate-400">
+                      <span className="chip border-phantix-700 bg-phantix-900 text-[12px] uppercase tracking-wider text-slate-400">
                         last used
                       </span>
                     )}
-                    <kbd className="hidden rounded border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 sm:inline-block">
+                    <kbd className="hidden rounded border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[12px] text-slate-400 sm:inline-block">
                       {shortcutFor(core)}
                     </kbd>
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-200 group-hover:text-gold-300">
@@ -403,7 +403,7 @@ export default function ChooseApp() {
                     {core.capabilities.map((c) => (
                       <span
                         key={c}
-                        className="rounded-md bg-phantix-900/60 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                        className="rounded-md bg-phantix-900/60 px-2 py-0.5 text-[12px] font-medium text-slate-500"
                       >
                         {c}
                       </span>
@@ -474,12 +474,12 @@ export default function ChooseApp() {
                         <span className="block font-display text-lg font-bold leading-tight text-white">
                           {app.label}
                         </span>
-                        <span className={cx("block text-[11px] font-medium", accent.text)}>
+                        <span className={cx("block text-[13px] font-medium", accent.text)}>
                           {subtitle(app)}
                         </span>
                       </span>
                       {app.accessible ? (
-                        <kbd className="hidden shrink-0 rounded border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] text-slate-400 sm:inline-block">
+                        <kbd className="hidden shrink-0 rounded border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[12px] text-slate-400 sm:inline-block">
                           {shortcutFor(app)}
                         </kbd>
                       ) : (
@@ -496,7 +496,7 @@ export default function ChooseApp() {
                         {app.surfaces.slice(0, 4).map((s, si) => (
                           <motion.span
                             key={s.path}
-                            className="rounded-md bg-phantix-900/60 px-2 py-0.5 text-[10px] font-medium text-slate-500"
+                            className="rounded-md bg-phantix-900/60 px-2 py-0.5 text-[12px] font-medium text-slate-500"
                             variants={{ hover: { y: -2, color: "rgb(var(--slate-300))" } }}
                             transition={{ delay: si * 0.03 }}
                           >
@@ -504,7 +504,7 @@ export default function ChooseApp() {
                           </motion.span>
                         ))}
                         {app.surfaces.length > 4 && (
-                          <span className="text-[10px] text-slate-600">
+                          <span className="text-[12px] text-slate-600">
                             +{app.surfaces.length - 4} more
                           </span>
                         )}
@@ -530,7 +530,7 @@ export default function ChooseApp() {
                         </motion.span>
                       )}
                       {last === app.key && (
-                        <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-500">
+                        <span className="ml-auto text-[12px] uppercase tracking-wider text-slate-500">
                           last used
                         </span>
                       )}
@@ -569,7 +569,7 @@ export default function ChooseApp() {
 
       </main>
 
-      <footer className="relative z-20 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-phantix-700/60 px-5 py-3.5 text-[11px] text-slate-600 sm:px-6">
+      <footer className="relative z-20 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-phantix-700/60 px-5 py-3.5 text-[13px] text-slate-600 sm:px-6">
         <span>SecureGraph</span>
         <Link to="/docs" className="transition-colors hover:text-slate-400">
           Documentation

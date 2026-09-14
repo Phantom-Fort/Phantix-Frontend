@@ -67,7 +67,7 @@ export default function AgiDrawer() {
           <Radar size={16} />
           {live && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />}
         </span>
-        <span className="hidden -rotate-180 text-[10px] font-semibold uppercase tracking-[0.18em] [writing-mode:vertical-rl] lg:block">Pentest Agent</span>
+        <span className="hidden -rotate-180 text-[12px] font-semibold uppercase tracking-[0.18em] [writing-mode:vertical-rl] lg:block">Pentest Agent</span>
       </button>
 
       <AnimatePresence>

@@ -130,7 +130,7 @@ const trackerStatuses = TRACKER_STATUSES;
 
 function JsonPre({ data }: { data: unknown }) {
   return (
-    <pre className="mt-2 overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-[11px] leading-relaxed text-slate-300 max-h-[400px]">
+    <pre className="mt-2 overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-[13px] leading-relaxed text-slate-300 max-h-[400px]">
       {JSON.stringify(data, null, 2)}
     </pre>
   );
@@ -158,7 +158,7 @@ function SectionRenderer({ section }: { section: any }) {
     if (Array.isArray(content)) {
       return (
         <div className="mt-2 space-y-2">
-          <p className="text-[10px] text-slate-600">{content.length} items</p>
+          <p className="text-[12px] text-slate-600">{content.length} items</p>
           {content.slice(0, 5).map((item: any, i: number) => (
             <details key={i} className="rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-xs text-slate-300">
               <summary className="cursor-pointer font-mono font-semibold text-gold-300 hover:text-gold-200">
@@ -168,7 +168,7 @@ function SectionRenderer({ section }: { section: any }) {
               <JsonPre data={item} />
             </details>
           ))}
-          {content.length > 5 && <p className="text-[10px] text-slate-600">+{content.length - 5} more items</p>}
+          {content.length > 5 && <p className="text-[12px] text-slate-600">+{content.length - 5} more items</p>}
         </div>
       );
     }
@@ -654,14 +654,14 @@ export default function Reports() {
                     ] as [number | null, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="min-w-[3rem] text-center">
                         <p className={cx("font-display text-lg font-bold tabular-nums", v == null ? "text-slate-600" : c)}>{v == null ? "—" : v}</p>
-                        <p className="text-[9px] uppercase tracking-wider text-slate-600">{l}</p>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-600">{l}</p>
                       </div>
                     ))}
                   </div>
 
                   {r.status === "generating" ? (
                     <div className="w-40">
-                      <p className="mb-1 text-right text-[11px] text-slate-500">rendering...</p>
+                      <p className="mb-1 text-right text-[13px] text-slate-500">rendering...</p>
                       <ProgressBar value={72} color="#38BDF8" />
                     </div>
                   ) : (
@@ -675,7 +675,7 @@ export default function Reports() {
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f, onDownloadError); }}
                           className={cx(
-                            "rounded-lg border px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase transition-colors",
+                            "rounded-lg border px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase transition-colors",
                             f === "pdf" || f === "docx" || f === "pptx" || f === "html"
                               ? "border-gold-400/40 bg-gold-400/10 text-gold-300 hover:bg-gold-400/20"
                               : "border-phantix-700/50 text-slate-400 hover:bg-phantix-800/60",
@@ -795,7 +795,7 @@ export default function Reports() {
                         <td className="td">
                           <div className="flex items-center gap-1.5">
                             {f.status === "regressed" && (
-                              <span className="chip border-severity-critical/40 bg-severity-critical/10 text-[10px] text-severity-critical">regressed</span>
+                              <span className="chip border-severity-critical/40 bg-severity-critical/10 text-[12px] text-severity-critical">regressed</span>
                             )}
                             <select
                               value={trackerStatuses.includes(f.status as any) ? f.status : "open"}
@@ -842,7 +842,7 @@ export default function Reports() {
                               <span
                                 title={f.retest_status}
                                 className={cx(
-                                  "chip text-[9px]",
+                                  "chip text-[11px]",
                                   f.retest_status === "confirmed"
                                     ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
                                     : f.retest_status === "failed"
@@ -901,7 +901,7 @@ export default function Reports() {
               const chosen = reportTypes.find((t) => t.report_type === genForm.report_type);
               if (!chosen) return null;
               return (
-                <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                <p className="mt-1 text-[13px] leading-4 text-slate-500">
                   {chosen.use_case}
                   {!chosen.requires_campaign && " No campaign needed."}
                 </p>
@@ -916,7 +916,7 @@ export default function Reports() {
             if (!needsCampaign) {
               return (
                 <div className="rounded-lg border border-phantix-700/40 bg-phantix-950/40 px-3 py-2">
-                  <p className="text-[11.5px] leading-5 text-slate-500">
+                  <p className="text-[13px] leading-5 text-slate-500">
                     Organization-scoped — this report reads every engine for the whole org, so there
                     is no campaign to pick.
                   </p>
@@ -955,7 +955,7 @@ export default function Reports() {
                   ? <><ShieldAlert size={13} className="text-severity-medium" /> Verification pending</>
                   : <><ShieldCheck size={13} className="text-emerald-400" /> Verification gate</>}
               </p>
-              {gateError && <p className="mt-1.5 text-[11px] text-severity-critical">{gateError}</p>}
+              {gateError && <p className="mt-1.5 text-[13px] text-severity-critical">{gateError}</p>}
               {gateLoading && !gateError && (
                 <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -979,19 +979,19 @@ export default function Reports() {
                     ] as [number, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="rounded-lg bg-phantix-900/60 px-2.5 py-1.5">
                         <p className={cx("font-display text-base font-bold tabular-nums", c)}>{v}</p>
-                        <p className="text-[9px] uppercase tracking-wider text-slate-500">{l}</p>
+                        <p className="text-[11px] uppercase tracking-wider text-slate-500">{l}</p>
                       </div>
                     ))}
                   </div>
                   {gate.needs_acknowledgement && (
-                    <p className="mt-2 rounded-lg border border-severity-medium/30 bg-severity-medium/10 px-2.5 py-2 text-[11px] leading-5 text-severity-medium">
+                    <p className="mt-2 rounded-lg border border-severity-medium/30 bg-severity-medium/10 px-2.5 py-2 text-[13px] leading-5 text-severity-medium">
                       {gate.unverified_pending} finding(s) still need verification and will be excluded (or appendix-only).
                       {" "}{gate.reportable} auto/manual-verified will be included.{" "}
                       <strong>Generate verified-only</strong> sends acknowledge_unverified=true.
                     </p>
                   )}
                   {gate.message && !gate.needs_acknowledgement && (
-                    <p className="mt-1.5 text-[11px] text-slate-500">{gate.message}</p>
+                    <p className="mt-1.5 text-[13px] text-slate-500">{gate.message}</p>
                   )}
                 </>
               )}
@@ -1030,7 +1030,7 @@ export default function Reports() {
             <FileDown size={12} className="mr-1.5 inline text-gold-400" />
             Reports include only auto- or manually verified findings. Each verified finding is analyzed for business and technical impact (CIA triad, blast radius) before it is added to the deliverable. PDF/DOCX follow the standard VAPT template.
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[13px] text-slate-500">
             Generate report with <strong>run_inline=true</strong> for immediate delivery; use <strong>run_inline=false</strong> for large campaigns to avoid gateway timeouts. Poll GET /reports/{"{id}"} until status=complete.
           </p>
           <button className="btn-primary w-full" disabled={genSubmitting}>
@@ -1052,8 +1052,8 @@ export default function Reports() {
                 will be included. Auto-verified findings are always included.
               </p>
             </div>
-            {ackGate.message && <p className="text-[11px] leading-5 text-slate-500">{ackGate.message}</p>}
-            <div className="flex flex-wrap gap-1.5 text-[11px] text-slate-400">
+            {ackGate.message && <p className="text-[13px] leading-5 text-slate-500">{ackGate.message}</p>}
+            <div className="flex flex-wrap gap-1.5 text-[13px] text-slate-400">
               <span className="chip border-phantix-600/50 bg-phantix-800/60">reportable: <strong className="text-emerald-300">{ackGate.reportable}</strong></span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60">auto-verified: <strong className="text-emerald-300">{ackGate.auto_verified}</strong></span>
               <span className="chip border-phantix-600/50 bg-phantix-800/60">manual: <strong className="text-slate-200">{ackGate.manually_verified}</strong></span>
@@ -1076,7 +1076,7 @@ export default function Reports() {
                 {genSubmitting ? <><RefreshCw size={14} className="animate-spin" /> Generating...</> : <><Download size={14} /> Generate verified-only</>}
               </button>
             </div>
-            {ackGate.hint && <p className="text-[10px] text-slate-500">{ackGate.hint}</p>}
+            {ackGate.hint && <p className="text-[12px] text-slate-500">{ackGate.hint}</p>}
           </div>
         )}
       </Modal>
@@ -1128,13 +1128,13 @@ export default function Reports() {
                       {(detail.ai_narratives.web_research.items as Array<{ title?: string; url?: string; snippet?: string }>).map((it, i) => (
                         <li key={i} className="rounded-lg border border-phantix-700/30 px-2.5 py-1.5">
                           <p className="font-medium text-slate-300">{it.title || it.url || "Source"}</p>
-                          {it.url && <a href={it.url} target="_blank" rel="noreferrer" className="break-all text-[10px] text-gold-300 underline">{it.url}</a>}
-                          {it.snippet && <p className="mt-0.5 text-[11px] leading-4 text-slate-500">{it.snippet}</p>}
+                          {it.url && <a href={it.url} target="_blank" rel="noreferrer" className="break-all text-[12px] text-gold-300 underline">{it.url}</a>}
+                          {it.snippet && <p className="mt-0.5 text-[13px] leading-4 text-slate-500">{it.snippet}</p>}
                         </li>
                       ))}
                     </ul>
                     {detail.ai_narratives.source && (
-                      <p className="mt-1.5 text-[10px] text-slate-600">{detail.ai_narratives.source}</p>
+                      <p className="mt-1.5 text-[12px] text-slate-600">{detail.ai_narratives.source}</p>
                     )}
                   </details>
                 )}
@@ -1143,7 +1143,7 @@ export default function Reports() {
 
             {/* Verification gate chips from GET /reports/{id}.verification_gate */}
             {(detail as any).verification_gate && (
-              <div className="flex flex-wrap gap-1.5 text-[11px]">
+              <div className="flex flex-wrap gap-1.5 text-[13px]">
                 <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-300">
                   reportable: <strong className="text-emerald-300">{(detail as any).verification_gate.reportable}</strong>
                 </span>
@@ -1172,7 +1172,7 @@ export default function Reports() {
                       <button
                         key={fmt}
                         onClick={() => handleDownload(detail.id, fmt, onDownloadError)}
-                        className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[10px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
+                        className="rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase text-gold-300 hover:bg-gold-400/10"
                       >
                         <Download size={10} className="mr-1 inline" /> {fmt === "pptx" ? "Board deck (.pptx)" : fmt}
                       </button>
@@ -1181,7 +1181,7 @@ export default function Reports() {
                   {errors.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
                       {errors.map(({ format: fmt, error }) => (
-                        <span key={fmt} className="rounded-lg border border-severity-critical/30 bg-severity-critical/10 px-2 py-1 text-[10px] text-red-300" title={error}>
+                        <span key={fmt} className="rounded-lg border border-severity-critical/30 bg-severity-critical/10 px-2 py-1 text-[12px] text-red-300" title={error}>
                           {fmt} failed
                         </span>
                       ))}
@@ -1203,7 +1203,7 @@ export default function Reports() {
                       key={key}
                       onClick={() => setDetailTab(key)}
                       className={cx(
-                        "rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors",
+                        "rounded-lg px-2.5 py-1.5 text-[13px] font-medium transition-colors",
                         detailTab === key
                           ? "bg-gold-400/12 border border-gold-400/30 text-gold-200"
                           : "border border-transparent text-slate-500 hover:text-slate-300 hover:bg-phantix-800/60",
@@ -1216,7 +1216,7 @@ export default function Reports() {
                 {detailTab && detail.sections[detailTab] && (
                   <div className="space-y-3">
                     {detail.sections[detailTab].metadata && (
-                      <div className="flex flex-wrap gap-2 text-[10px] text-slate-500">
+                      <div className="flex flex-wrap gap-2 text-[12px] text-slate-500">
                         {detail.sections[detailTab].metadata.count != null && (
                           <span className="chip border-phantix-600/50 bg-phantix-800/60">{detail.sections[detailTab].metadata.count} entries</span>
                         )}
@@ -1250,7 +1250,7 @@ export default function Reports() {
                 {retestTarget.priority && <span>· {retestTarget.priority}</span>}
               </div>
             </div>
-            <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[11px] leading-5 text-slate-500">
+            <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[13px] leading-5 text-slate-500">
               Runs a targeted scan of only this finding's asset with the tool family that originally flagged it
               (or the override below). If the retest comes back clean, the finding is{" "}
               <strong className="text-emerald-300">closed automatically (fixed)</strong>.
@@ -1283,7 +1283,7 @@ export default function Reports() {
               <button className="btn-primary w-full" type="submit" disabled={retestBusy}>
                 {retestBusy ? <Spinner className="h-4 w-4" /> : <RefreshCw size={14} />} Run unit retest
               </button>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-[12px] text-slate-500">
                 <Lock size={10} className="mr-1 inline text-gold-400" />
                 POST /reports/tracker/{retestTarget.finding_key}/retest — needs dual-control when configured.
               </p>

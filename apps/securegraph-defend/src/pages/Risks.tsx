@@ -191,7 +191,7 @@ export default function Risks() {
                   <div className="flex flex-1 flex-wrap items-center gap-4 p-4">
                     <div className="w-14 text-center">
                       <p className="font-display text-2xl font-bold" style={{ color }}>{r.inherent_score}</p>
-                      <p className="text-[9px] uppercase tracking-wider text-slate-600">score</p>
+                      <p className="text-[11px] uppercase tracking-wider text-slate-600">score</p>
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -206,7 +206,7 @@ export default function Risks() {
                       </p>
                     </div>
                     <div className="hidden w-40 md:block">
-                      <div className="mb-1 flex justify-between text-[10px] text-slate-500">
+                      <div className="mb-1 flex justify-between text-[12px] text-slate-500">
                         <span>Priority {r.priority_score.toFixed(1)}</span>
                         <span>{bm.label}</span>
                       </div>
@@ -249,7 +249,7 @@ export default function Risks() {
               ].map(([k, v]) => (
                 <div key={String(k)} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-center">
                   <p className="font-display text-xl font-bold text-white">{v}</p>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-500">{k}</p>
+                  <p className="text-[12px] uppercase tracking-wider text-slate-500">{k}</p>
                 </div>
               ))}
             </div>
@@ -269,7 +269,7 @@ export default function Risks() {
                         <span className="font-medium text-slate-200 truncate">{b.component}</span>
                         <span className="font-mono text-gold-300 shrink-0 ml-2">+{b.contribution}</span>
                       </div>
-                      {b.detail && <p className="mt-0.5 text-[10px] text-slate-500">{b.detail}</p>}
+                      {b.detail && <p className="mt-0.5 text-[12px] text-slate-500">{b.detail}</p>}
                     </div>
                   )) : (
                     <p className="text-xs text-slate-500">No rule factors</p>
@@ -280,7 +280,7 @@ export default function Risks() {
                     <p className="text-xs text-slate-400 mb-1">Findings by severity</p>
                     <div className="flex flex-wrap gap-1.5">
                       {Object.entries((selected.scoring_breakdown as any).findings_counts as Record<string, number>).map(([sev, count]) => (
-                        <span key={sev} className={cx("chip text-[10px] capitalize", sev === "critical" ? "text-severity-critical bg-severity-critical/10 border-severity-critical/20" : sev === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/20" : sev === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/20" : "text-severity-low bg-severity-low/10 border-severity-low/20")}>
+                        <span key={sev} className={cx("chip text-[12px] capitalize", sev === "critical" ? "text-severity-critical bg-severity-critical/10 border-severity-critical/20" : sev === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/20" : sev === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/20" : "text-severity-low bg-severity-low/10 border-severity-low/20")}>
                           {sev}: {count}
                         </span>
                       ))}
@@ -303,7 +303,7 @@ export default function Risks() {
                     .map(([k, v]) => (
                       <div key={k} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-2.5 text-center">
                         <p className="font-mono text-sm font-semibold text-slate-200">{typeof v === "number" ? v.toFixed(1) : v}</p>
-                        <p className="mt-0.5 text-[8px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
+                        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
                       </div>
                     ));
                 })()}
@@ -330,7 +330,7 @@ export default function Risks() {
                 View history
               </button>
             </div>
-            <p className="text-[11px] leading-4 text-slate-500">
+            <p className="text-[13px] leading-4 text-slate-500">
               Treatment approve/reject requires the <strong>authorizer</strong>
               {dualControl.authorizer?.full_name ? ` (${dualControl.authorizer.full_name})` : ""} dual-control session.
               Residual risk is recalculated on propose/approve/complete.

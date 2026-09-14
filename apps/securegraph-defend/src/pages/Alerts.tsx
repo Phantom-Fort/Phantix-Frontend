@@ -88,7 +88,7 @@ export default function Alerts() {
                   </div>
                   <div className="flex gap-1.5">
                     {(a.channels ?? []).map((c) => (
-                      <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[10px] font-medium text-slate-400">{c}</span>
+                      <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[12px] font-medium text-slate-400">{c}</span>
                     ))}
                   </div>
                   <SeverityBadge severity={a.severity} />
@@ -137,7 +137,7 @@ export default function Alerts() {
                   <span className="text-right font-mono text-xs text-slate-200">{v}</span>
                 </div>
               ))}
-              <p className="text-[11px] leading-4 text-slate-500">
+              <p className="text-[13px] leading-4 text-slate-500">
                 Passwords are Fernet-encrypted on the platform DB and never re-displayed.
               </p>
               <button

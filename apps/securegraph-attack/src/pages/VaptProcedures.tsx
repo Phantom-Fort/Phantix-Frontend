@@ -140,7 +140,7 @@ export default function VaptProcedures() {
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-200">{procedureName(p)}</p>
-                        <p className="mt-0.5 font-mono text-[11px] text-slate-500">{procedureKey(p)}</p>
+                        <p className="mt-0.5 font-mono text-[13px] text-slate-500">{procedureKey(p)}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
                           {p.category && <span className="chip border-phantix-700 text-slate-400">{text(p.category)}</span>}
                           {p.phase && <span className="chip border-phantix-700 text-phantix-300">{text(p.phase)}</span>}
@@ -171,7 +171,7 @@ export default function VaptProcedures() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-slate-200">{text(r.name ?? r.title ?? r.rule_key, "Rule")}</p>
                         {r.description && <p className="mt-1 text-xs leading-5 text-slate-400">{text(r.description)}</p>}
-                        {r.rule_key && <p className="mt-1 font-mono text-[11px] text-slate-500">{text(r.rule_key)}</p>}
+                        {r.rule_key && <p className="mt-1 font-mono text-[13px] text-slate-500">{text(r.rule_key)}</p>}
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
                         {r.severity && <SeverityBadge severity={sevOf(r.severity)} />}
@@ -186,7 +186,7 @@ export default function VaptProcedures() {
 
           {tab === "candidates" && (
             <div className="space-y-3">
-              <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[11px] leading-5 text-gold-200">
+              <p className="flex items-start gap-2 rounded-md border border-gold-400/30 bg-gold-400/10 p-3 text-[13px] leading-5 text-gold-200">
                 <Lightbulb size={12} className="mt-0.5 shrink-0" />
                 <span>
                   {candidateNote ?? "Candidates require human review before activation as correlation rules."}

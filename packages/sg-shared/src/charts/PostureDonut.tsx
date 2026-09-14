@@ -75,7 +75,7 @@ export default function PostureDonut({
             <span className="font-display text-4xl font-semibold" style={{ color: tone.color }}>
               {overallScore ?? "—"}
             </span>
-            <span className="mt-1 text-[11px] text-slate-500">nothing outstanding</span>
+            <span className="mt-1 text-[13px] text-slate-500">nothing outstanding</span>
           </div>
         ) : (
           <>
@@ -107,7 +107,7 @@ export default function PostureDonut({
               <span className="font-display text-[34px] font-semibold leading-none" style={{ color: tone.color }}>
                 {overallScore ?? "—"}
               </span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <span className="mt-1 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {tone.label}
               </span>
             </div>

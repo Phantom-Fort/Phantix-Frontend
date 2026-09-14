@@ -214,7 +214,7 @@ export default function Support() {
                         : "rounded-bl-sm border border-phantix-700 bg-phantix-900/60 text-slate-300",
                     )}
                   >
-                    <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">
+                    <p className="mb-1 text-[12px] uppercase tracking-wider text-slate-500">
                       {m.author_name || (mine ? "You" : "SecureGraph Support")} · {timeAgo(m.created_at)}
                     </p>
                     <p className="whitespace-pre-wrap">{m.body}</p>
@@ -228,7 +228,7 @@ export default function Support() {
           </div>
 
           {closed ? (
-            <p className="mt-4 rounded-md border border-phantix-700/50 bg-phantix-950/50 p-3 text-[11px] text-slate-500">
+            <p className="mt-4 rounded-md border border-phantix-700/50 bg-phantix-950/50 p-3 text-[13px] text-slate-500">
               This ticket is {selected.status}. Open a new ticket if the issue returns.
             </p>
           ) : (
@@ -279,7 +279,7 @@ export default function Support() {
               <MessageSquare size={16} className="mt-0.5 shrink-0 text-gold-300" />
               <span className="min-w-0">
                 <span className="block text-xs font-semibold text-gold-200">Start a ticket now</span>
-                <span className="block text-[11px] leading-5 text-gold-100/80">
+                <span className="block text-[13px] leading-5 text-gold-100/80">
                   Answered in-thread and by email. First response {RESPONSE_TARGETS[priority]} at {priority} priority.
                 </span>
               </span>
@@ -288,14 +288,14 @@ export default function Support() {
               <Mail size={16} className="mt-0.5 shrink-0 text-slate-400" />
               <span className="min-w-0">
                 <span className="block text-xs font-semibold text-slate-200">Email support</span>
-                <span className="block text-[11px] leading-5 text-slate-500">support@phantixlabs.com — include your org and any job/campaign IDs.</span>
+                <span className="block text-[13px] leading-5 text-slate-500">support@phantixlabs.com — include your org and any job/campaign IDs.</span>
               </span>
             </a>
             <div className="flex items-start gap-3 rounded-lg border border-severity-critical/25 bg-severity-critical/[0.06] px-3.5 py-3">
               <AlertTriangle size={16} className="mt-0.5 shrink-0 text-severity-critical" />
               <span className="min-w-0">
                 <span className="block text-xs font-semibold text-severity-critical">Live security incident</span>
-                <span className="block text-[11px] leading-5 text-red-200/85">
+                <span className="block text-[13px] leading-5 text-red-200/85">
                   Raise a ticket with <strong>Critical</strong> priority and category “Security incident” — it is triaged first.
                 </span>
               </span>
@@ -303,10 +303,10 @@ export default function Support() {
           </div>
 
           <div className="mt-4 rounded-md border border-phantix-700/50 bg-phantix-950/40 p-3">
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">First-response targets</p>
+            <p className="text-[12px] uppercase tracking-wider text-slate-500">First-response targets</p>
             <div className="mt-2 space-y-1">
               {TICKET_PRIORITIES.map((p) => (
-                <div key={p.id} className="flex items-center justify-between gap-3 text-[11px]">
+                <div key={p.id} className="flex items-center justify-between gap-3 text-[13px]">
                   <span className="text-slate-400">{p.label}</span>
                   <span className="text-slate-500">{RESPONSE_TARGETS[p.id]}</span>
                 </div>
@@ -327,7 +327,7 @@ export default function Support() {
                 <BookOpen size={14} className="shrink-0 text-gold-400" />
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-medium text-slate-200">{l.label}</span>
-                  <span className="block text-[11px] text-slate-500">{l.hint}</span>
+                  <span className="block text-[13px] text-slate-500">{l.hint}</span>
                 </span>
                 <ExternalLink size={12} className="shrink-0 text-slate-600" />
               </Link>
@@ -338,11 +338,11 @@ export default function Support() {
               <ShieldCheck size={14} className="shrink-0 text-gold-400" />
               <span className="min-w-0 flex-1">
                 <span className="block text-xs font-medium text-slate-200">{BILLING_NOTE.label}</span>
-                <span className="block text-[11px] text-slate-500">{BILLING_NOTE.hint}</span>
+                <span className="block text-[13px] text-slate-500">{BILLING_NOTE.hint}</span>
               </span>
             </div>
           </div>
-          <p className="mt-3 text-[11px] leading-5 text-slate-500">
+          <p className="mt-3 text-[13px] leading-5 text-slate-500">
             Support is available to every operator in your organization; tickets are owned by the organization, and
             the person who raised one is recorded so the desk knows who to answer.
           </p>
@@ -381,7 +381,7 @@ export default function Support() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm text-slate-200">{t.subject}</span>
-                  <span className="block text-[11px] text-slate-500">
+                  <span className="block text-[13px] text-slate-500">
                     {t.reference ?? `#${t.id}`}
                     {t.category ? ` · ${t.category.replace(/_/g, " ")}` : ""}
                     {` · ${t.message_count ?? t.messages?.length ?? 0} message${(t.message_count ?? t.messages?.length ?? 0) === 1 ? "" : "s"}`}
@@ -399,7 +399,7 @@ export default function Support() {
       {/* New ticket */}
       <Modal open={createOpen} onClose={closeCreate} title="New support ticket" wide>
         <form className="space-y-4" onSubmit={submit}>
-          <p className="rounded-md border border-phantix-700/50 bg-phantix-950/50 p-3 text-[11px] leading-5 text-slate-500">
+          <p className="rounded-md border border-phantix-700/50 bg-phantix-950/50 p-3 text-[13px] leading-5 text-slate-500">
             Submitting as <span className="font-semibold text-slate-300">{session?.userName || "your operator account"}</span> on behalf of
             your organization. The ticket is owned by the organization and shared with your teammates.
           </p>
@@ -419,7 +419,7 @@ export default function Support() {
               <select id="sup-priority" className="input mt-1" value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)}>
                 {TICKET_PRIORITIES.map((p) => <option key={p.id} value={p.id}>{p.label} — {p.hint}</option>)}
               </select>
-              <p className="mt-1 text-[11px] text-slate-500">First response {RESPONSE_TARGETS[priority]}.</p>
+              <p className="mt-1 text-[13px] text-slate-500">First response {RESPONSE_TARGETS[priority]}.</p>
             </div>
           </div>
           <div>

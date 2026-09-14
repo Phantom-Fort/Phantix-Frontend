@@ -215,7 +215,7 @@ export default function ComplianceQuestionnaire() {
               <span>{p.not_applicable} n/a</span>
             </div>
             {(p.disclaimer || data.disclaimer) && (
-              <p className="mt-4 flex items-start gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 p-3 text-[11px] leading-5 text-slate-400">
+              <p className="mt-4 flex items-start gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 p-3 text-[13px] leading-5 text-slate-400">
                 <Info size={12} className="mt-0.5 shrink-0 text-gold-400" />
                 {p.disclaimer || data.disclaimer}
               </p>
@@ -341,7 +341,7 @@ export default function ComplianceQuestionnaire() {
                         {ANSWER_LABEL[a.answer_value] ?? a.answer_value}
                       </span>
                     </div>
-                    <p className="mt-1 text-[11px] text-slate-500">
+                    <p className="mt-1 text-[13px] text-slate-500">
                       {a.stated_role}{a.stated_title ? ` · ${a.stated_title}` : ""} · {a.answered_by_email}
                     </p>
                     {a.notes && <p className="mt-2 text-xs leading-5 text-slate-400">{a.notes}</p>}
@@ -406,7 +406,7 @@ function QuestionRow({
         <div className="flex shrink-0 items-center gap-1.5">
           {saving && <Loader2 size={13} className="animate-spin text-slate-500" />}
           {isFreeText ? (
-            <span className="text-[11px] text-slate-500">Free-text — answer in the audit view</span>
+            <span className="text-[13px] text-slate-500">Free-text — answer in the audit view</span>
           ) : (
             ANSWER_CHOICES.map((choice) => (
               <button

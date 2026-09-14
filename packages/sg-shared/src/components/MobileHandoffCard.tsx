@@ -81,7 +81,7 @@ export default function MobileHandoffCard() {
             value={analysis}
             onChange={(e) => setAnalysis(e.target.value)}
           />
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[13px] text-slate-500">
             From a static APK/AAB/IPA analysis. Only endpoints that are in an authorized scope can be reassessed.
           </p>
         </div>
@@ -99,14 +99,14 @@ export default function MobileHandoffCard() {
               <AlertTriangle size={12} /> {result.requires_authorization ? "Requires authorization — parked for an authorizer." : "Proposal created."}
             </p>
             {result.hosts?.length ? (
-              <p className="mt-1 font-mono text-[10px] text-slate-400">{result.hosts.slice(0, 8).join(", ")}</p>
+              <p className="mt-1 font-mono text-[12px] text-slate-400">{result.hosts.slice(0, 8).join(", ")}</p>
             ) : null}
             {result.message && <p className="mt-1 text-slate-400">{result.message}</p>}
           </div>
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <p className="flex items-center gap-1 text-[11px] text-slate-500">
+          <p className="flex items-center gap-1 text-[13px] text-slate-500">
             <ShieldCheck size={12} /> No scan starts without authorization.
           </p>
           <button className="btn-primary text-xs" disabled={busy} onClick={() => void handoff()}>

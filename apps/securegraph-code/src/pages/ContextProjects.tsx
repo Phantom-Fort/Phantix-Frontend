@@ -94,11 +94,11 @@ export default function ContextProjects() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-slate-500">#{p.id}</p>
+                  <p className="mt-0.5 font-mono text-[13px] text-slate-500">#{p.id}</p>
                 </div>
                 <span className={cx("chip shrink-0", STAGE_TONE[p.stage] ?? STAGE_TONE.planned)}>{stageLabel(p.stage)}</span>
               </div>
-              <p className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-500">
+              <p className="mt-4 flex items-center gap-1.5 text-[13px] text-slate-500">
                 <Share2 size={11} /> Open to upload a diagram, add requirements or search documents
               </p>
             </Card>
@@ -158,7 +158,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-slate-500">Stage shapes which threats the engine considers realistic.</p>
+          <p className="mt-2 text-[13px] text-slate-500">Stage shapes which threats the engine considers realistic.</p>
         </div>
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="btn-ghost text-xs !py-2">Cancel</button>
@@ -374,7 +374,7 @@ function ProjectDrawer({ project, onClose }: { project: ProductProject; onClose:
               placeholder="Paste the requirements, design notes or user stories..."
               className="input mt-1 min-h-[220px] resize-y"
             />
-            <p className="mt-1 text-[11px] text-slate-500">Chunked for retrieval so the threat engine can cite it.</p>
+            <p className="mt-1 text-[13px] text-slate-500">Chunked for retrieval so the threat engine can cite it.</p>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setDocOpen(false)} className="btn-ghost text-xs !py-2">Cancel</button>

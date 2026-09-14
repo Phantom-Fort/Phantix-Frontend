@@ -104,7 +104,7 @@ export default function SandboxApplyPublic() {
           <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div>
             <p className="font-display text-sm font-bold text-white">SecureGraph</p>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </a>
         <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export default function SandboxApplyPublic() {
               <FlaskConical size={22} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-400">BETA design partners</p>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-gold-400">BETA design partners</p>
               <h1 className="font-display text-xl font-bold text-white">Apply for sandbox access</h1>
             </div>
             <div className="text-right">
@@ -138,12 +138,12 @@ export default function SandboxApplyPublic() {
                 <span className="text-gold-300">{enrolledCount}</span>
                 <span className="text-slate-500">/{max}</span>
               </p>
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">enrolled</p>
+              <p className="text-[12px] uppercase tracking-wider text-slate-500">enrolled</p>
             </div>
           </div>
 
           <div className="mb-5">
-            <div className="mb-1.5 flex justify-between text-[11px] text-slate-500">
+            <div className="mb-1.5 flex justify-between text-[13px] text-slate-500">
               <span>{status.seatsUsed}/{max} seats held</span>
               <span>{status.open ? `${Math.max(0, max - status.seatsUsed)} open` : "closed"}</span>
             </div>
@@ -198,7 +198,7 @@ export default function SandboxApplyPublic() {
             </div>
           ) : (
             <form className="space-y-3.5" onSubmit={(e) => void submit(e)}>
-              <p className="text-[11px] leading-5 text-slate-500">
+              <p className="text-[13px] leading-5 text-slate-500">
                 Applications are reviewed for registered organizations. Your organization is identified from your session.
               </p>
               <div>
@@ -217,7 +217,7 @@ export default function SandboxApplyPublic() {
                 <input className="input" value={hearAbout} onChange={(e) => setHearAbout(e.target.value)} />
               </div>
               {error && <p className="text-xs text-severity-critical">{error}</p>}
-              <p className="text-[11px] leading-5 text-slate-500">
+              <p className="text-[13px] leading-5 text-slate-500">
                 Limited to {max} organizations. Staff review submissions in the staff portal.
               </p>
               <button type="submit" className="btn-primary w-full !py-3" disabled={busy}>

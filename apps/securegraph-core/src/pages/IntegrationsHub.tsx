@@ -69,7 +69,7 @@ export default function IntegrationsHub() {
                     <p className="text-xs text-slate-400">{conn.description}</p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {conn.auth_modes.map((mode) => (
-                        <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[10px] text-slate-400">{mode}</span>
+                        <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[12px] text-slate-400">{mode}</span>
                       ))}
                       <StatusBadge status={conn.status} />
                     </div>
@@ -132,7 +132,7 @@ export default function IntegrationsHub() {
                   </div>
                 </div>
                 {inst.last_test_at && (
-                  <p className="mt-2 text-[11px] text-slate-500">Last test: {inst.last_test_ok ? "OK" : "Failed"} &middot; {timeAgo(inst.last_test_at)}</p>
+                  <p className="mt-2 text-[13px] text-slate-500">Last test: {inst.last_test_ok ? "OK" : "Failed"} &middot; {timeAgo(inst.last_test_at)}</p>
                 )}
               </Card>
             </motion.div>

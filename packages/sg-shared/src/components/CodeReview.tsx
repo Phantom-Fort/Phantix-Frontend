@@ -119,17 +119,17 @@ function BlobView({ blob }: { blob: CodeBlob }) {
           <FileCode2 size={13} className="shrink-0 text-slate-500" />
           <span className="truncate font-mono text-xs text-slate-300">{blob.path}</span>
           {blob.sha && (
-            <span className="shrink-0 font-mono text-[10px] text-slate-500">@ {blob.sha.slice(0, 7)}</span>
+            <span className="shrink-0 font-mono text-[12px] text-slate-500">@ {blob.sha.slice(0, 7)}</span>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {blob.redacted && (
-            <span className="chip text-[10px] border-amber-400/30 bg-amber-400/10 text-amber-300">
+            <span className="chip text-[12px] border-amber-400/30 bg-amber-400/10 text-amber-300">
               <Lock size={10} className="mr-1 inline" /> value masked
             </span>
           )}
           {blob.permalink && (
-            <a href={blob.permalink} target="_blank" rel="noreferrer" className="btn-ghost !px-2 !py-1 !text-[11px]">
+            <a href={blob.permalink} target="_blank" rel="noreferrer" className="btn-ghost !px-2 !py-1 !text-[13px]">
               <ExternalLink size={11} /> GitHub
             </a>
           )}
@@ -137,7 +137,7 @@ function BlobView({ blob }: { blob: CodeBlob }) {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse font-mono text-[12.5px] leading-[1.6]">
+        <table className="w-full border-collapse font-mono text-[13px] leading-[1.6]">
           <tbody>
             {lines.map((line, i) => (
               <tr
@@ -149,7 +149,7 @@ function BlobView({ blob }: { blob: CodeBlob }) {
               >
                 <td
                   className={cx(
-                    "w-[1%] select-none whitespace-nowrap border-r border-phantix-700/40 px-3 text-right align-top text-[11px]",
+                    "w-[1%] select-none whitespace-nowrap border-r border-phantix-700/40 px-3 text-right align-top text-[13px]",
                     line.highlight ? "text-severity-critical" : "text-slate-600",
                   )}
                 >
@@ -169,7 +169,7 @@ function BlobView({ blob }: { blob: CodeBlob }) {
       </div>
 
       {!blob.anchored && (
-        <p className="border-t border-phantix-700/50 px-3 py-2 text-[11px] text-slate-500">
+        <p className="border-t border-phantix-700/50 px-3 py-2 text-[13px] text-slate-500">
           This detector reports the file, not a line — the head of the file is shown.
         </p>
       )}
@@ -317,20 +317,20 @@ function FindingDetail({
             <div className="mb-1.5 flex flex-wrap items-center gap-2">
               <SeverityBadge severity={(finding.severity || "info") as Severity} />
               {finding.reportable ? (
-                <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+                <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
                   <ShieldCheck size={10} className="mr-1 inline" /> verified · gates merge
                 </span>
               ) : (
-                <span className="chip text-[10px] border-phantix-600/40 text-slate-500">unverified signal</span>
+                <span className="chip text-[12px] border-phantix-600/40 text-slate-500">unverified signal</span>
               )}
-              <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">
+              <span className="chip text-[12px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">
                 {LAYER_LABEL[finding.layer || ""] || finding.layer}
               </span>
               {finding.cwe && (
-                <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">{finding.cwe}</span>
+                <span className="chip text-[12px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">{finding.cwe}</span>
               )}
               {finding.status === "dismissed" && (
-                <span className="chip text-[10px] border-amber-400/30 bg-amber-400/10 text-amber-300">dismissed</span>
+                <span className="chip text-[12px] border-amber-400/30 bg-amber-400/10 text-amber-300">dismissed</span>
               )}
             </div>
             <h3 className="text-base font-semibold text-slate-100">{finding.title}</h3>
@@ -398,7 +398,7 @@ function FindingDetail({
               </button>
             )}
             {finding.guidance_specific === false && (
-              <span className="text-[11px] text-slate-500">
+              <span className="text-[13px] text-slate-500">
                 General guidance for this layer — no rule-specific text is registered yet.
               </span>
             )}
@@ -415,13 +415,13 @@ function FindingDetail({
               {explanation.remediation && <p className="mt-2 text-sm leading-6 text-slate-400"><span className="text-slate-300">Remediation: </span>{explanation.remediation}</p>}
               <div className="mt-2 flex flex-wrap gap-2">
                 {explanation.requires_human_review && (
-                  <span className="chip text-[10px] border-amber-400/30 bg-amber-400/10 text-amber-300">needs human review</span>
+                  <span className="chip text-[12px] border-amber-400/30 bg-amber-400/10 text-amber-300">needs human review</span>
                 )}
                 {explanation.hallucination_flagged && (
-                  <span className="chip text-[10px] border-severity-critical/30 bg-severity-critical/10 text-severity-critical">flagged for review</span>
+                  <span className="chip text-[12px] border-severity-critical/30 bg-severity-critical/10 text-severity-critical">flagged for review</span>
                 )}
                 {explanation.model_name && (
-                  <span className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">{explanation.model_name}</span>
+                  <span className="chip text-[12px] border-phantix-600/40 bg-phantix-800/50 text-slate-400">{explanation.model_name}</span>
                 )}
               </div>
             </div>
@@ -432,7 +432,7 @@ function FindingDetail({
       <Card>
         <CardHeader title="AutoFix" subtitle="Ephemeral clone → app-signed commit → draft PR a developer merges" action={<GitPullRequest size={15} className="text-gold-300" />} />
         <div className="flex flex-wrap items-center gap-2">
-          <span className={cx("chip text-[11px]", AUTOFIX_TONE[afState] || "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
+          <span className={cx("chip text-[13px]", AUTOFIX_TONE[afState] || "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
             {AUTOFIX_LABEL[afState] || afState}
           </span>
           {af.pr_url && (
@@ -441,14 +441,14 @@ function FindingDetail({
             </a>
           )}
           {af.signed && (
-            <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+            <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
               <ShieldCheck size={10} className="mr-1 inline" /> signed commit
             </span>
           )}
-          {af.branch && <span className="font-mono text-[11px] text-slate-500">{af.branch}</span>}
+          {af.branch && <span className="font-mono text-[13px] text-slate-500">{af.branch}</span>}
         </div>
         {af.detail && <p className="mt-2 text-xs leading-5 text-slate-400">{af.detail}</p>}
-        <p className="mt-2 text-[11px] leading-4 text-slate-500">
+        <p className="mt-2 text-[13px] leading-4 text-slate-500">
           Dual-controlled: the request is parked for an authorizer before it runs. AutoFix never forks and never
           merges — the PR opens as a draft.
         </p>
@@ -551,7 +551,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {(["critical", "high", "medium", "low"] as const).map((sev) =>
             counts[sev] ? (
-              <span key={sev} className="chip text-[10px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">
+              <span key={sev} className="chip text-[12px] border-phantix-600/40 bg-phantix-800/50 text-slate-300">
                 <span className={cx("mr-1 inline-block h-1.5 w-1.5 rounded-full", SEV_DOT[sev])} />
                 {counts[sev]} {sev}
               </span>
@@ -617,15 +617,15 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
                           />
                           <FileCode2 size={13} className={cx("mt-0.5 shrink-0", active ? "text-gold-300" : "text-slate-500")} />
                           <div className="min-w-0 flex-1">
-                            <p className={cx("truncate font-mono text-[11.5px]", active ? "text-slate-100" : "text-slate-300")} title={f.path}>
+                            <p className={cx("truncate font-mono text-[13px]", active ? "text-slate-100" : "text-slate-300")} title={f.path}>
                               {f.path}
                             </p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              <SeverityBadge severity={(f.worst_severity || "info") as Severity} className="!px-1.5 !py-0 !text-[9px]" />
-                              <span className="text-[10px] text-slate-500">{f.findings} finding{f.findings === 1 ? "" : "s"}</span>
+                              <SeverityBadge severity={(f.worst_severity || "info") as Severity} className="!px-1.5 !py-0 !text-[11px]" />
+                              <span className="text-[12px] text-slate-500">{f.findings} finding{f.findings === 1 ? "" : "s"}</span>
                               {f.autofix_pr_url && <GitPullRequest size={10} className="text-emerald-400" />}
                             </div>
-                            {f.repo && <p className="mt-1 truncate text-[10px] text-slate-600">{f.repo}</p>}
+                            {f.repo && <p className="mt-1 truncate text-[12px] text-slate-600">{f.repo}</p>}
                           </div>
                         </div>
                       </button>
@@ -665,10 +665,10 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
                                   />
                                   <span className={cx("relative mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", SEV_DOT[fd.severity] || SEV_DOT.info)} />
                                   <span className="min-w-0 flex-1">
-                                    <span className={cx("block truncate text-[11.5px]", fd.id === selectedId ? "text-slate-100" : "text-slate-400")}>
+                                    <span className={cx("block truncate text-[13px]", fd.id === selectedId ? "text-slate-100" : "text-slate-400")}>
                                       {fd.title}
                                     </span>
-                                    <span className="mt-0.5 block text-[10px] text-slate-600">
+                                    <span className="mt-0.5 block text-[12px] text-slate-600">
                                       {fd.start_line ? `line ${fd.start_line}` : "file-level"}
                                       {fd.autofix?.pr_number ? ` · PR #${fd.autofix.pr_number}` : ""}
                                     </span>

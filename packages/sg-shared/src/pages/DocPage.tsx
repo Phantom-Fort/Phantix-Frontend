@@ -173,10 +173,10 @@ export default function DocPage() {
           />
 
           {/* Prev / next */}
-          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
             {prev ? (
               <Link to={`/docs/${prev.id}`} className="card group p-4 transition-all hover:border-phantix-500/60">
-                <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">
+                <p className="flex items-center gap-1.5 text-[13px] uppercase tracking-wider text-slate-500">
                   <ArrowLeft size={11} /> Previous
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-200 group-hover:text-gold-300">{prev.title}</p>
@@ -184,7 +184,7 @@ export default function DocPage() {
             ) : <span />}
             {next && (
               <Link to={`/docs/${next.id}`} className="card group p-4 text-right transition-all hover:border-phantix-500/60">
-                <p className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-wider text-slate-500">
+                <p className="flex items-center justify-end gap-1.5 text-[13px] uppercase tracking-wider text-slate-500">
                   Next <ArrowRight size={11} />
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-200 group-hover:text-gold-300">{next.title}</p>
@@ -197,7 +197,7 @@ export default function DocPage() {
         <aside className="hidden xl:block">
           <div className="sticky top-20">
             <div className="card p-4">
-              <p className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              <p className="mb-3 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 <ListTree size={13} /> On this page
               </p>
               <nav className="max-h-[62vh] space-y-0.5 overflow-y-auto pr-1">

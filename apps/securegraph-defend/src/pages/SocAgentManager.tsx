@@ -22,7 +22,7 @@ export default function SocAgentManager() {
        actions={<DocLink docId="howto-app-25" label="SOC operations how-to" />} />
 
       {fleet && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           <Card className="!p-4">
             <div className="flex items-center gap-2">
               <Wifi size={14} className="text-emerald-400" />
@@ -63,7 +63,7 @@ export default function SocAgentManager() {
                   <p className="text-xs text-slate-500">v{agent.version} &middot; ID: {agent.agent_id.slice(0, 12)}</p>
                 </div>
                 <StatusBadge status={agent.status} />
-                {agent.last_heartbeat && <span className="text-[11px] text-slate-500">{timeAgo(agent.last_heartbeat)}</span>}
+                {agent.last_heartbeat && <span className="text-[13px] text-slate-500">{timeAgo(agent.last_heartbeat)}</span>}
               </div>
             </Card>
           </motion.div>
@@ -82,7 +82,7 @@ export default function SocAgentManager() {
                     {ch.commands?.length > 0 && (
                       <div className="mt-2 space-y-1">
                         {ch.commands.map((cmd, i) => (
-                          <code key={i} className="block font-mono text-[11px] text-slate-400">{cmd}</code>
+                          <code key={i} className="block font-mono text-[13px] text-slate-400">{cmd}</code>
                         ))}
                       </div>
                     )}

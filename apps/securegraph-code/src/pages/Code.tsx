@@ -252,7 +252,7 @@ export default function Code() {
           full cards live on the Providers page — this strip exists so the
           section you actually came for is not pushed below the fold. */}
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
-        <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
+        <span className="mr-1 font-mono text-[12px] uppercase tracking-[0.18em] text-slate-500">
           Source control
         </span>
         <button
@@ -299,7 +299,7 @@ export default function Code() {
         <button
           type="button"
           onClick={() => setTab("providers")}
-          className="ml-auto text-[11px] text-slate-500 transition-colors hover:text-slate-300"
+          className="ml-auto text-[13px] text-slate-500 transition-colors hover:text-slate-300"
         >
           Manage providers
         </button>
@@ -364,11 +364,11 @@ export default function Code() {
                         <td className="td text-xs font-mono text-slate-400">{r.default_branch || s?.watched_branch || "—"}</td>
                         <td className="td">
                           {s?.enabled ? (
-                            <span className="chip text-[10px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+                            <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
                               {s.watched_branch || "watching"}
                             </span>
                           ) : (
-                            <span className="chip text-[10px] border-phantix-600/40 text-slate-500">off</span>
+                            <span className="chip text-[12px] border-phantix-600/40 text-slate-500">off</span>
                           )}
                         </td>
                         <td className="td text-xs text-slate-400">{r.private ? "Private" : "Public"}</td>
@@ -418,7 +418,7 @@ export default function Code() {
                       <td className="td text-xs font-mono text-slate-400">{e.ref}</td>
                       <td className="td text-xs font-mono text-slate-500">{e.sha?.slice(0, 10)}</td>
                       <td className="td text-xs text-slate-300">{e.size_tier}</td>
-                      <td className="td"><span className={cx("chip text-[10px]", statusTone(e.status))}>{e.status}</span></td>
+                      <td className="td"><span className={cx("chip text-[12px]", statusTone(e.status))}>{e.status}</span></td>
                       <td className="td text-xs text-slate-500">{e.created_at ? timeAgo(e.created_at) : "—"}</td>
                     </tr>
                   ))}
@@ -490,7 +490,7 @@ export default function Code() {
                         </td>
                         <td className="td text-xs text-slate-400">app_install</td>
                         <td className="td">
-                          <span className={cx("chip text-[10px]", connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 text-slate-400")}>
+                          <span className={cx("chip text-[12px]", connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 text-slate-400")}>
                             {connected ? "connected" : "not connected"}
                           </span>
                         </td>
@@ -510,7 +510,7 @@ export default function Code() {
                             </td>
                             <td className="td text-xs text-slate-400">{(c.auth_modes || []).join(" · ")}</td>
                             <td className="td">
-                              <span className={cx("chip text-[10px]", providerTone(install?.status))}>
+                              <span className={cx("chip text-[12px]", providerTone(install?.status))}>
                                 {install?.status === "active" ? "connected" : install?.status || "not connected"}
                               </span>
                             </td>
@@ -540,7 +540,7 @@ export default function Code() {
                     </tbody>
                   </table>
                 </div>
-                <p className="p-3 text-[11px] leading-4 text-slate-500">
+                <p className="p-3 text-[13px] leading-4 text-slate-500">
                   Point the provider webhook at <code className="mx-1">&#123;API_BASE&#125;{SCM_WEBHOOK_PATH.gitlab}</code> for GitLab
                   or <code className="mx-1">&#123;API_BASE&#125;{SCM_WEBHOOK_PATH.gitea}</code> for Gitea. Signatures are verified with the
                   connector secret (<code>X-Gitlab-Token</code> / <code>X-Gitea-Signature</code>); GitHub uses the App's <code>X-Hub-Signature-256</code>.
@@ -632,12 +632,12 @@ function ScmConnectModal({ connector, onClose, onDone }: { connector: Integratio
               value={token}
               onChange={(e) => setToken(e.target.value)}
             />
-            <p className="mt-1 text-[11px] text-slate-500">
+            <p className="mt-1 text-[13px] text-slate-500">
               Stored encrypted and projected to the Asset Engine; the API never returns it.
             </p>
           </div>
         ) : (
-          <p className="text-[11px] text-slate-500">You will be redirected to {connector.name} to authorise repository access.</p>
+          <p className="text-[13px] text-slate-500">You will be redirected to {connector.name} to authorise repository access.</p>
         )}
         <div className="flex justify-end gap-3">
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
@@ -736,7 +736,7 @@ function ContinuousPrForm({ repos, onDone }: { repos: Repo[]; onDone: () => void
             value={findingText}
             onChange={(e) => setFindingText(e.target.value)}
           />
-          <p className="mt-1 text-[11px] text-slate-500">
+          <p className="mt-1 text-[13px] text-slate-500">
             Only verified findings reach AutoFix; the patch will follow your product-context code style and be signed by the app.
           </p>
         </div>
@@ -758,7 +758,7 @@ function ContinuousPrForm({ repos, onDone }: { repos: Repo[]; onDone: () => void
             Open Continuous PR
           </button>
         </div>
-        <p className="text-[11px] leading-4 text-slate-500">
+        <p className="text-[13px] leading-4 text-slate-500">
           Dual-controlled: the request is parked for an authorizer before it runs. It never forks (the GitHub App
           token pushes a branch to the same repo) and never merges — the PR opens as a draft.
         </p>

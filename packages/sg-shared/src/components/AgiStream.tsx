@@ -140,11 +140,11 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
           <Radar size={12} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className={cx("block truncate font-semibold text-slate-200", dense ? "text-[11px]" : "text-xs")}>
+          <span className={cx("block truncate font-semibold text-slate-200", dense ? "text-[13px]" : "text-xs")}>
             {activity}
             {b.workingOn ? <span className="text-slate-400"> — {b.workingOn}</span> : null}
           </span>
-          <span className={cx("block text-[10px] text-slate-500", dense ? "hidden" : "")}>
+          <span className={cx("block text-[12px] text-slate-500", dense ? "hidden" : "")}>
             {b.turn ? `Turn ${b.turn}${b.total ? ` of ${b.total}` : ""}` : "Turn"}
             {b.phase ? ` · ${b.phase}` : ""}
             {b.status ? ` · ${b.status}` : ""}
@@ -159,12 +159,12 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
       {open && (
         <div className="space-y-2.5 border-t border-phantix-700/30 px-3 py-2.5">
           {b.workingOn && (
-            <p className={cx("font-medium text-slate-200", dense ? "text-[11px]" : "text-xs")}>
+            <p className={cx("font-medium text-slate-200", dense ? "text-[13px]" : "text-xs")}>
               Working on: <span className="font-normal text-slate-300">{b.workingOn}</span>
             </p>
           )}
           {b.happened && (
-            <p className={cx("leading-relaxed text-slate-400", dense ? "text-[10px]" : "text-[11px]")}>{b.happened}</p>
+            <p className={cx("leading-relaxed text-slate-400", dense ? "text-[12px]" : "text-[13px]")}>{b.happened}</p>
           )}
           {b.found.length > 0 && (
             <BriefSection title="What was found" items={b.found} dense={dense} accent="text-emerald-300" />
@@ -175,13 +175,13 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
           )}
           {b.tools.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[9px]" : "text-[10px]")}>Tools</span>
+              <span className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[11px]" : "text-[12px]")}>Tools</span>
               {b.tools.map((t, i) => (
-                <span key={i} className="chip !px-1.5 !py-0 font-mono text-[10px] text-gold-300">{t}</span>
+                <span key={i} className="chip !px-1.5 !py-0 font-mono text-[12px] text-gold-300">{t}</span>
               ))}
             </div>
           )}
-          {b.note && <p className={cx("text-slate-500", dense ? "text-[10px]" : "text-[11px]")}>Loop note: {b.note}</p>}
+          {b.note && <p className={cx("text-slate-500", dense ? "text-[12px]" : "text-[13px]")}>Loop note: {b.note}</p>}
         </div>
       )}
       <CopyBtn text={content} className="absolute right-2 top-2 z-10 !opacity-0 group-hover:!opacity-100" />
@@ -192,8 +192,8 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
 function BriefSection({ title, items, dense = false, accent }: { title: string; items: string[]; dense?: boolean; accent?: string }) {
   return (
     <div>
-      <p className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[9px]" : "text-[10px]")}>{title}</p>
-      <ul className={cx("mt-1 space-y-1", dense ? "text-[10px]" : "text-[11px]")}>
+      <p className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[11px]" : "text-[12px]")}>{title}</p>
+      <ul className={cx("mt-1 space-y-1", dense ? "text-[12px]" : "text-[13px]")}>
         {items.slice(0, 6).map((it, i) => (
           <li key={i} className="flex items-start gap-1.5 leading-relaxed text-slate-300">
             <span className={cx("mt-1.5 h-1 w-1 shrink-0 rounded-full", accent ?? "bg-slate-500")} />
@@ -280,7 +280,7 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
         }}
         className={cx(
           "mt-0 border-phantix-700/40 bg-phantix-950/70",
-          dense ? "[&_pre]:!max-h-32 [&_*]:!text-[11px]" : "[&_pre]:!max-h-60",
+          dense ? "[&_pre]:!max-h-32 [&_*]:!text-[13px]" : "[&_pre]:!max-h-60",
         )}
       />
       <CopyBtn text={t.content} className="absolute right-2 top-2 z-10 !opacity-0 group-hover:!opacity-100" />
@@ -327,8 +327,8 @@ export function ToolGroupCard({
         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-phantix-800/80 text-gold-400">
           <Terminal size={11} />
         </span>
-        <span className={cx("truncate font-mono font-semibold text-slate-200", dense ? "text-[11px]" : "text-xs")}>{tool}</span>
-        <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[10px] text-gold-300">× {count}</span>
+        <span className={cx("truncate font-mono font-semibold text-slate-200", dense ? "text-[13px]" : "text-xs")}>{tool}</span>
+        <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[12px] text-gold-300">× {count}</span>
         <span className={cx("ml-auto shrink-0 text-slate-500 transition-transform", open && "rotate-180")}>
           <ChevronDown size={12} />
         </span>
@@ -340,9 +340,9 @@ export function ToolGroupCard({
             const output = body || command;
             return (
               <div key={i} className="rounded-lg bg-phantix-900/50 px-2.5 py-1.5">
-                {command && <p className={cx("font-mono text-slate-500", dense ? "text-[10px]" : "text-[11px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>}
+                {command && <p className={cx("font-mono text-slate-500", dense ? "text-[12px]" : "text-[13px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>}
                 {output && (
-                  <p className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-300", dense ? "text-[10px]" : "text-[11px]")}>
+                  <p className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-300", dense ? "text-[12px]" : "text-[13px]")}>
                     {linkify(output)}
                   </p>
                 )}
@@ -440,10 +440,10 @@ export function IssuesStrip({
   return (
     <div className="rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-2.5">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+        <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
           Issues found ({findings.length})
         </p>
-        <a href={href} className="text-[10px] font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200">
+        <a href={href} className="text-[12px] font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200">
           Open tracker →
         </a>
       </div>
@@ -458,7 +458,7 @@ export function IssuesStrip({
             >
               <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", SEV_DOT[sev] ?? "bg-slate-500")} />
               <span className="min-w-0 flex-1 truncate text-slate-300">{f.title}</span>
-              {f.cve && <span className="shrink-0 font-mono text-[9px] text-gold-400">{f.cve}</span>}
+              {f.cve && <span className="shrink-0 font-mono text-[11px] text-gold-400">{f.cve}</span>}
             </a>
           );
         })}
@@ -540,8 +540,8 @@ function PlanCard({ content, dense = false, time }: { content: string; dense?: b
           <Radar size={12} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className={cx("block truncate font-semibold text-slate-200", dense ? "text-[11px]" : "text-xs")}>{summary}</span>
-          <span className={cx("block text-[10px] text-slate-500", dense && "hidden")}>
+          <span className={cx("block truncate font-semibold text-slate-200", dense ? "text-[13px]" : "text-xs")}>{summary}</span>
+          <span className={cx("block text-[12px] text-slate-500", dense && "hidden")}>
             {skillCount > 0 && `${skillCount} skill${skillCount === 1 ? "" : "s"}`}
             {objectiveCount > 0 && `${skillCount > 0 ? " · " : ""}${objectiveCount} objectives`}
             {time ? ` · ${time}` : ""}
@@ -553,7 +553,7 @@ function PlanCard({ content, dense = false, time }: { content: string; dense?: b
       </button>
       {open && (
         <div className="wb-scroll max-h-72 overflow-y-auto border-t border-phantix-700/30 px-3 py-2.5">
-          <pre className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-400", dense ? "text-[10px]" : "text-[11px]")}>{content}</pre>
+          <pre className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-400", dense ? "text-[12px]" : "text-[13px]")}>{content}</pre>
         </div>
       )}
     </div>
@@ -624,12 +624,12 @@ function PiHelperCard({ t, dense = false, observe = false }: { t: AgiTranscriptC
           <accent.Icon size={12} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className={cx("flex items-center gap-1.5", dense ? "text-[11px]" : "text-xs")}>
+          <span className={cx("flex items-center gap-1.5", dense ? "text-[13px]" : "text-xs")}>
             <span className="truncate font-semibold text-slate-200">{title}</span>
-            <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[9px] uppercase text-slate-400">{p.profile}</span>
-            {p.latencyMs != null && <span className="shrink-0 font-mono text-[9px] tabular-nums text-slate-500">{(p.latencyMs / 1000).toFixed(1)}s</span>}
+            <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[11px] uppercase text-slate-400">{p.profile}</span>
+            {p.latencyMs != null && <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{(p.latencyMs / 1000).toFixed(1)}s</span>}
           </span>
-          <span className={cx("block truncate text-slate-400", dense ? "text-[10px]" : "wb-xs")}>
+          <span className={cx("block truncate text-slate-400", dense ? "text-[12px]" : "wb-xs")}>
             {p.failed && p.error
               ? `Helper unavailable (${p.error}) — the main agent continues.`
               : observe
@@ -643,17 +643,17 @@ function PiHelperCard({ t, dense = false, observe = false }: { t: AgiTranscriptC
       </button>
       {open && (
         <div className="space-y-2 border-t border-phantix-700/30 px-3 py-2.5">
-          {p.task && <p className={cx("leading-relaxed text-slate-300", dense ? "text-[10px]" : "wb-xs")}>{p.task}</p>}
+          {p.task && <p className={cx("leading-relaxed text-slate-300", dense ? "text-[12px]" : "wb-xs")}>{p.task}</p>}
           {p.failed && p.message && (
-            <p className={cx("leading-relaxed text-severity-medium", dense ? "text-[10px]" : "wb-xs")}>{p.message}</p>
+            <p className={cx("leading-relaxed text-severity-medium", dense ? "text-[12px]" : "wb-xs")}>{p.message}</p>
           )}
           {(p.result || p.resultLine) && (
-            <pre className={cx("wb-scroll overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-phantix-700/40 bg-phantix-950/70 p-2 font-mono leading-5 text-slate-300", dense ? "text-[10px]" : "text-[11px]")}>
+            <pre className={cx("wb-scroll overflow-x-auto whitespace-pre-wrap break-words rounded-lg border border-phantix-700/40 bg-phantix-950/70 p-2 font-mono leading-5 text-slate-300", dense ? "text-[12px]" : "text-[13px]")}>
               {p.resultLine ?? p.result}
             </pre>
           )}
           {p.tools && (
-            <p className="font-mono text-[10px] text-slate-500">tools: {p.tools}</p>
+            <p className="font-mono text-[12px] text-slate-500">tools: {p.tools}</p>
           )}
         </div>
       )}
@@ -792,7 +792,7 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gold-400/25 bg-gold-400/10 text-gold-300">
           <Radar size={9} />
         </span>
-        <p className={cx("min-w-0 flex-1 truncate font-medium text-slate-400", dense ? "text-[10px]" : "wb-xs")}>
+        <p className={cx("min-w-0 flex-1 truncate font-medium text-slate-400", dense ? "text-[12px]" : "wb-xs")}>
           {working}
           {time && <span className="ml-1.5 tabular-nums text-slate-600">{time}</span>}
         </p>
@@ -811,14 +811,14 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
         className={cx("min-w-0", dense ? "max-w-full" : "max-w-[92%]")}
       >
         <Reasoning className="rounded-xl border border-phantix-700/30 bg-phantix-950/50 px-3 py-2">
-          <ReasoningTrigger className={cx("font-medium text-slate-400 transition-colors hover:text-slate-200", dense ? "text-[10px]" : "wb-xs")}>
+          <ReasoningTrigger className={cx("font-medium text-slate-400 transition-colors hover:text-slate-200", dense ? "text-[12px]" : "wb-xs")}>
             <span className="flex items-center gap-1.5">
               <BrainCircuit size={11} className="text-gold-400/80" /> Thought process
             </span>
           </ReasoningTrigger>
           <ReasoningContent
             markdown
-            className={cx("mt-2", dense ? "text-[10px]" : "wb-xs")}
+            className={cx("mt-2", dense ? "text-[12px]" : "wb-xs")}
             contentClassName="prose-chat text-slate-500"
           >
             {normalizeAgiMarkdown(t.content)}
@@ -928,8 +928,8 @@ export function QueuedPromptStrip({ prompts, dense = false }: { prompts: QueuedP
             )}
           </span>
           <div className="min-w-0 flex-1">
-            <p className={cx("truncate font-medium text-gold-100", dense ? "text-[11px]" : "wb-sm")}>{p.content}</p>
-            <p className={cx("text-gold-300/60", dense ? "text-[9px]" : "wb-2xs")}>
+            <p className={cx("truncate font-medium text-gold-100", dense ? "text-[13px]" : "wb-sm")}>{p.content}</p>
+            <p className={cx("text-gold-300/60", dense ? "text-[11px]" : "wb-2xs")}>
               {p.delivered ? "Received — waiting for the agent to act on it" : "Queued — the agent picks this up on its next turn"}
             </p>
           </div>
@@ -1066,7 +1066,7 @@ export function AgentActivityLine({ activity, dense = false }: { activity: Agent
       ) : (
         <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", dot)} aria-hidden />
       )}
-      <span className={cx("min-w-0 flex-1 truncate font-medium", dense ? "text-[10px]" : "wb-xs")}>
+      <span className={cx("min-w-0 flex-1 truncate font-medium", dense ? "text-[12px]" : "wb-xs")}>
         <motion.span
           key={streaming ? `cycle-${step}` : "static"}
           initial={{ opacity: 0, y: 2 }}

@@ -175,13 +175,13 @@ export default function AuthorizerInbox() {
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Initiator</p>
+              <p className="text-[12px] uppercase tracking-wider text-slate-500">Initiator</p>
               <p className="mt-1 text-sm text-slate-200">
                 {controlRoles.initiator_name || controlRoles.initiator_title || "—"}
               </p>
             </div>
             <div className="rounded-md border border-phantix-700/40 bg-phantix-950/50 p-3">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500">Authorizer</p>
+              <p className="text-[12px] uppercase tracking-wider text-slate-500">Authorizer</p>
               <p className="mt-1 text-sm text-slate-200">
                 {controlRoles.authorizer_name || controlRoles.authorizer_title || "—"}
               </p>
@@ -207,7 +207,7 @@ export default function AuthorizerInbox() {
           >
             {f.label}
             {f.count != null && f.count > 0 && (
-              <span className={cx("ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold", filter === f.id ? "bg-gold-400/20" : "bg-phantix-700/60")}>
+              <span className={cx("ml-1.5 rounded-full px-1.5 py-0.5 text-[12px] font-bold", filter === f.id ? "bg-gold-400/20" : "bg-phantix-700/60")}>
                 {f.count}
               </span>
             )}
@@ -237,9 +237,9 @@ export default function AuthorizerInbox() {
                     </span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="chip text-[10px] text-slate-400 bg-slate-400/10 border-slate-500/30">{channelLabel}</span>
-                        {item.actionKey && <span className="text-[10px] font-mono text-slate-500">{item.actionKey}</span>}
-                        {item.requiredRole && <span className="text-[10px] text-slate-500 capitalize">requires {item.requiredRole}</span>}
+                        <span className="chip text-[12px] text-slate-400 bg-slate-400/10 border-slate-500/30">{channelLabel}</span>
+                        {item.actionKey && <span className="text-[12px] font-mono text-slate-500">{item.actionKey}</span>}
+                        {item.requiredRole && <span className="text-[12px] text-slate-500 capitalize">requires {item.requiredRole}</span>}
                       </div>
                       <p className="text-sm font-semibold text-slate-100">{item.title || item.kind?.replace(/_/g, " ") || `#${item.inboxId}`}</p>
                       {item.summary && <p className="text-xs text-slate-400 mt-0.5">{item.summary}</p>}
@@ -270,7 +270,7 @@ export default function AuthorizerInbox() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
         <a href="/vapt" className="card p-4 flex items-center gap-3 hover:border-phantix-500/60 transition-colors">
           <Crosshair size={20} className="text-phantix-400" />
           <div><p className="text-sm font-medium text-white">VAPT Campaigns</p><p className="text-xs text-slate-400">View campaigns</p></div>
@@ -348,15 +348,15 @@ function AuthorizerCatalog() {
                       {String(r.label ?? r.title ?? r.action_key ?? r.key ?? `Action ${i + 1}`)}
                     </p>
                     {(r.action_key ?? r.key) != null && (
-                      <p className="mt-0.5 font-mono text-[10px] text-slate-500">{String(r.action_key ?? r.key)}</p>
+                      <p className="mt-0.5 font-mono text-[12px] text-slate-500">{String(r.action_key ?? r.key)}</p>
                     )}
                     {r.description != null && (
-                      <p className="mt-1 text-[11px] leading-4 text-slate-400">{String(r.description)}</p>
+                      <p className="mt-1 text-[13px] leading-4 text-slate-400">{String(r.description)}</p>
                     )}
                   </div>
                 ))}
               </div>
-              {note && <p className="mt-3 text-[11px] leading-4 text-slate-500">{note}</p>}
+              {note && <p className="mt-3 text-[13px] leading-4 text-slate-500">{note}</p>}
             </>
           )}
         </div>

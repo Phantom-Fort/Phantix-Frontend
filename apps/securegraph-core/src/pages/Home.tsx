@@ -62,7 +62,7 @@ export default function Home() {
           <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div className="leading-tight">
             <p className="font-display text-[15px] font-bold text-white">SecureGraph</p>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
           </div>
           <nav className="ml-10 hidden items-center gap-6 text-sm text-slate-400 md:flex">
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
@@ -180,7 +180,7 @@ export default function Home() {
               )}
             >
               {t.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-phantix-950">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-3.5 py-1 text-[12px] font-bold uppercase tracking-wider text-phantix-950">
                   Most popular
                 </span>
               )}
@@ -192,7 +192,7 @@ export default function Home() {
                     <span className="font-display text-4xl font-bold text-white">{t.monthly_ngn === 0 ? "Free" : `₦${t.monthly_ngn.toLocaleString()}`}</span>
                     {t.monthly_ngn > 0 && <span className="text-sm text-slate-500">/month</span>}
                     {t.first_month_ngn != null && t.first_month_ngn > 0 && <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} — {t.monthly_ngn > 0 ? `${Math.round((1 - t.first_month_ngn / t.monthly_ngn) * 100)}% off` : "free"}</p>}
-                    {t.yearly_price_ngn != null && t.yearly_price_ngn > 0 && <p className="mt-0.5 text-[11px] text-slate-600">{t.yearly_note}</p>}
+                    {t.yearly_price_ngn != null && t.yearly_price_ngn > 0 && <p className="mt-0.5 text-[13px] text-slate-600">{t.yearly_note}</p>}
                   </>
                 ) : (
                   <span className="font-display text-4xl font-bold text-white">Custom</span>

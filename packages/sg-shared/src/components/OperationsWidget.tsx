@@ -71,7 +71,7 @@ export default function OperationsWidget() {
               className="absolute bottom-full z-[80] mb-2 w-80 overflow-hidden rounded-2xl border border-phantix-700/40 bg-phantix-900/95 shadow-card backdrop-blur-xl"
             >
               <div className="flex items-center justify-between border-b border-phantix-700/40 px-4 py-2.5">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Operations</p>
+                <p className="text-[13px] font-semibold uppercase tracking-wider text-slate-400">Operations</p>
                 <button onClick={() => setOpen(false)} className="rounded p-1 text-slate-500 hover:text-slate-200" aria-label="Close">
                   <X size={14} />
                 </button>
@@ -99,7 +99,7 @@ export default function OperationsWidget() {
                       <StatusIcon status={op.status} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-slate-100">{op.label}</span>
-                        {op.detail && <span className="block truncate text-[11px] text-slate-500">{op.detail}</span>}
+                        {op.detail && <span className="block truncate text-[13px] text-slate-500">{op.detail}</span>}
                       </span>
                       <span className={cx("h-2 w-2 shrink-0 rounded-full", s.dot)} />
                       <button
@@ -139,7 +139,7 @@ export default function OperationsWidget() {
           <XCircle size={16} className="text-severity-critical" />
         )}
         <span className={cx("max-w-[220px] truncate text-sm font-medium", style.text)}>{label}</span>
-        <span className="rounded-md bg-phantix-800/70 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+        <span className="rounded-md bg-phantix-800/70 px-1.5 py-0.5 font-mono text-[12px] text-slate-400">
           {operations.length}
         </span>
       </button>

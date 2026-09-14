@@ -101,7 +101,7 @@ export function CreateProductModal({
               </button>
             ))}
           </div>
-          <p className="mt-2 text-[11px] text-slate-500">Stage shapes which threats the engine considers realistic.</p>
+          <p className="mt-2 text-[13px] text-slate-500">Stage shapes which threats the engine considers realistic.</p>
         </div>
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="btn-ghost text-xs !py-2">Cancel</button>
@@ -289,18 +289,18 @@ export function ProjectInputsModal({
                   )}
                   <div className="min-w-0">
                     <p className={cx("text-xs", item.met ? "text-slate-300" : "text-slate-400")}>{item.label}</p>
-                    <p className="text-[11px] leading-5 text-slate-600">{item.hint}</p>
+                    <p className="text-[13px] leading-5 text-slate-600">{item.hint}</p>
                   </div>
                 </div>
               ))}
               {!summary?.ready && (
-                <p className="mt-1 flex items-start gap-1.5 text-[11px] leading-5 text-severity-medium">
+                <p className="mt-1 flex items-start gap-1.5 text-[13px] leading-5 text-severity-medium">
                   <Info size={11} className="mt-0.5 shrink-0" />
                   A model needs at least one of product information, a parsed diagram or a requirements document before generation will produce anything.
                 </p>
               )}
               {summary && (
-                <p className="pt-1 text-[11px] text-slate-500">
+                <p className="pt-1 text-[13px] text-slate-500">
                   {summary.components} components · {summary.boundaries} boundaries · {summary.flows} flows ·{" "}
                   {summary.documents} document{summary.documents === 1 ? "" : "s"}
                 </p>
@@ -344,11 +344,11 @@ export function ProjectInputsModal({
                 />
               </div>
             ))}
-            <button onClick={() => setShowAdvanced((v) => !v)} className="text-[11px] text-gold-300 hover:text-gold-200">
+            <button onClick={() => setShowAdvanced((v) => !v)} className="text-[13px] text-gold-300 hover:text-gold-200">
               {showAdvanced ? "Show fewer fields" : `Show all ${PRODUCT_INFORMATION_FIELDS.length} fields`}
             </button>
             <div className="flex flex-wrap items-center justify-between gap-2 border-t border-phantix-800 pt-3">
-              <p className="text-[11px] text-slate-500">Saved as one product-information document the model can cite.</p>
+              <p className="text-[13px] text-slate-500">Saved as one product-information document the model can cite.</p>
               <button onClick={() => void saveProductInformation()} disabled={savingInfo} className="btn-primary text-xs !py-2">
                 {savingInfo ? <Loader2 size={13} className="mr-1.5 inline animate-spin" /> : <Plus size={13} className="mr-1.5 inline" />}
                 Save product information
@@ -359,7 +359,7 @@ export function ProjectInputsModal({
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-phantix-800 pt-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] text-slate-500">Stage</span>
+            <span className="text-[13px] text-slate-500">Stage</span>
             {PROJECT_STAGES.map((s) => (
               <button
                 key={s}
@@ -395,7 +395,7 @@ export function ProjectInputsModal({
               placeholder="Paste the requirements, design notes or user stories..."
               className="input mt-1 min-h-[200px] resize-y"
             />
-            <p className="mt-1 text-[11px] text-slate-500">Chunked for retrieval so the threat engine can cite it.</p>
+            <p className="mt-1 text-[13px] text-slate-500">Chunked for retrieval so the threat engine can cite it.</p>
           </div>
           <div className="flex justify-end gap-2">
             <button onClick={() => setDocOpen(false)} className="btn-ghost text-xs !py-2">Cancel</button>

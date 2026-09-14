@@ -86,7 +86,7 @@ function OperateCountdown({ expiresAt }: { expiresAt: number }) {
   const mm = String(Math.floor(left / 60)).padStart(1, "0");
   const ss = String(left % 60).padStart(2, "0");
   return (
-    <span className="inline-flex items-center gap-1 font-mono text-[11px] text-gold-300">
+    <span className="inline-flex items-center gap-1 font-mono text-[13px] text-gold-300">
       <Timer size={12} />
       {mm}:{ss}
     </span>
@@ -141,7 +141,7 @@ function CommandPalette({
                 placeholder="Jump to a surface..."
                 className="w-full bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-500"
               />
-              <kbd className="rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-slate-400">
+              <kbd className="rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[12px] font-semibold text-slate-400">
                 ESC
               </kbd>
             </div>
@@ -408,7 +408,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
               <p className="font-display text-[15px] font-bold leading-tight text-white">
                 SecureGraph
               </p>
-              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-gold-400">
+              <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-gold-400">
                 {subtitle}
               </p>
             </div>
@@ -420,7 +420,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           <div className="sg-hide-collapsed border-t border-phantix-700/60 p-2">
             <div className="rounded-md border border-phantix-700 bg-phantix-900 p-2">
               <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-slate-500">Dual control</p>
+                <p className="text-[13px] font-semibold text-slate-500">Dual control</p>
                 {operate.unlocked ? (
                   <Unlock size={13} className="text-emerald-400" />
                 ) : (
@@ -436,14 +436,14 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                     Operating as {shortName(operate.actingUser)}
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] capitalize text-slate-500">
+                    <span className="text-[13px] capitalize text-slate-500">
                       {operate.actingRole}
                     </span>
                     {operate.expiresAt && <OperateCountdown expiresAt={operate.expiresAt} />}
                   </div>
                   <button
                     onClick={lockOperate}
-                    className="mt-1 w-full rounded-md border border-phantix-700 bg-phantix-850 py-1 text-[11px] font-medium text-slate-300 hover:bg-phantix-800"
+                    className="mt-1 w-full rounded-md border border-phantix-700 bg-phantix-850 py-1 text-[13px] font-medium text-slate-300 hover:bg-phantix-800"
                   >
                     Lock session
                   </button>
@@ -452,7 +452,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                 <div className="mt-1">
                   {dualControl.configured ? (
                     <>
-                      <p className="text-[11px] leading-4 text-slate-500">
+                      <p className="text-[13px] leading-4 text-slate-500">
                         {session?.isInitiator || session?.isAuthorizer ? (
                           <>
                             Your role:{" "}
@@ -474,7 +474,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                               "Unlock operate mode to perform protected mutations.",
                             )
                           }
-                          className="btn-primary mt-1 w-full !px-3 !py-1 !text-[11px]"
+                          className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
                         >
                           <Unlock size={12} /> Unlock operate
                         </button>
@@ -482,13 +482,13 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                     </>
                   ) : (
                     <>
-                      <p className="text-[11px] leading-4 text-slate-500">Dual control not set up</p>
-                      <p className="mt-0.5 text-[10px] leading-4 text-slate-600">
+                      <p className="text-[13px] leading-4 text-slate-500">Dual control not set up</p>
+                      <p className="mt-0.5 text-[12px] leading-4 text-slate-600">
                         Reports &amp; views work without it. Mutations require setup on the Platform.
                       </p>
                       <a
                         href={PLATFORM_IDENTITY_URL}
-                        className="btn-secondary mt-1 w-full !px-3 !py-1 !text-[11px]"
+                        className="btn-secondary mt-1 w-full !px-3 !py-1 !text-[13px]"
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -535,9 +535,9 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                     >
                       <span>{card.label}</span>
                       {card.key === application ? (
-                        <span className="text-[10px] uppercase">current</span>
+                        <span className="text-[12px] uppercase">current</span>
                       ) : opening === card.key ? (
-                        <span className="text-[10px] uppercase text-slate-500">opening</span>
+                        <span className="text-[12px] uppercase text-slate-500">opening</span>
                       ) : !card.accessible ? (
                         <Lock size={11} className="shrink-0 text-slate-600" />
                       ) : null}
@@ -579,7 +579,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
             >
               <Search size={15} />
               <span>Search surfaces...</span>
-              <span className="ml-auto flex items-center gap-0.5 rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[10px] font-semibold">
+              <span className="ml-auto flex items-center gap-0.5 rounded-sm border border-phantix-600/60 bg-phantix-850 px-1.5 py-0.5 font-mono text-[12px] font-semibold">
                 <Command size={9} />K
               </span>
             </button>
@@ -599,7 +599,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                   className="relative rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
                 >
                   <FlaskConical size={16} />
-                  <span className="absolute -right-1 -top-1 rounded-full bg-gold-400 px-1 font-mono text-[8px] font-bold leading-[1.2] text-phantix-950">
+                  <span className="absolute -right-1 -top-1 rounded-full bg-gold-400 px-1 font-mono text-[11px] font-bold leading-[1.2] text-phantix-950">
                     β
                   </span>
                 </CoreLink>
@@ -633,7 +633,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                     <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight text-slate-200">
                       {session?.userName ?? me?.full_name ?? me?.email ?? "Guest"}
                     </span>
-                    <span className="block max-w-[120px] truncate text-[10px] leading-tight text-slate-500">
+                    <span className="block max-w-[120px] truncate text-[12px] leading-tight text-slate-500">
                       {org.name || me?.organization_name || APPLICATION_LABEL[application]}
                     </span>
                   </span>
@@ -655,7 +655,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                           {session?.userEmail ?? me?.email ?? "demo mode"}
                         </p>
                         {me?.effective_role && (
-                          <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-600">
+                          <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-slate-600">
                             {me.effective_role}
                           </p>
                         )}
@@ -739,7 +739,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                 <nav className="space-y-1.5 px-2.5 py-3">{renderNav(false)}</nav>
                 <div className="border-t border-phantix-700/40 px-2.5 pb-3">
                   <div className="rounded-md border border-phantix-700 bg-phantix-900 p-2">
-                    <p className="text-[11px] font-semibold text-slate-500">Dual control</p>
+                    <p className="text-[13px] font-semibold text-slate-500">Dual control</p>
                     {operate.unlocked ? (
                       <p className="mt-1 text-xs font-medium text-emerald-300">
                         Operating as {shortName(operate.actingUser)}
@@ -751,12 +751,12 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                             "Unlock operate mode to perform protected mutations.",
                           )
                         }
-                        className="btn-primary mt-1 w-full !px-3 !py-1 !text-[11px]"
+                        className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
                       >
                         <Unlock size={12} /> Unlock operate
                       </button>
                     ) : (
-                      <p className="mt-1 text-[11px] text-slate-500">
+                      <p className="mt-1 text-[13px] text-slate-500">
                         {dualControl.configured ? "Read-only — view and reports" : "Not set up"}
                       </p>
                     )}
@@ -805,7 +805,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
             </div>
           </main>
 
-          <footer className="flex items-center justify-between border-t border-phantix-700/60 px-6 py-4 text-[11px] text-slate-600 lg:px-8">
+          <footer className="flex items-center justify-between border-t border-phantix-700/60 px-6 py-4 text-[13px] text-slate-600 lg:px-8">
             <span>
               Phantix Security Solutions · Privacy-first by architecture --- security data never
               leaves your database

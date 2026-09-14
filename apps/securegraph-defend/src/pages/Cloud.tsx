@@ -259,7 +259,7 @@ export default function Cloud() {
               <EmptyState icon={<CloudIcon size={24} />} title="No connectors" body="Pick a provider to connect a webhook / log drain." />
             </Card>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {connectors.data.map((c) => (
                 <Card key={c.id} className="flex flex-col">
                   <div className="flex items-start justify-between gap-2">
@@ -267,18 +267,18 @@ export default function Cloud() {
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-phantix-800 text-phantix-300"><CloudIcon size={16} /></span>
                       <div className="min-w-0">
                         <p className="font-medium text-slate-100 truncate">{c.label || c.provider}</p>
-                        <p className="text-[11px] text-slate-500">{c.provider}</p>
+                        <p className="text-[13px] text-slate-500">{c.provider}</p>
                       </div>
                     </div>
-                    <span className={cx("chip shrink-0 text-[10px]", (c.is_active ?? c.active ?? true) ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
+                    <span className={cx("chip shrink-0 text-[12px]", (c.is_active ?? c.active ?? true) ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
                       {(c.is_active ?? c.active ?? true) ? <><CheckCircle2 size={10} /> Active</> : <><Pause size={10} /> Paused</>}
                     </span>
                   </div>
 
                   {cloudIngestUrl(c) && (
                     <div className="mt-3 rounded-lg bg-phantix-950/60 border border-phantix-700/40 p-2.5">
-                      <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Ingest URL</p>
-                      <p className="font-mono text-[10px] text-phantix-300 truncate">{cloudIngestUrl(c)}</p>
+                      <p className="text-[12px] uppercase tracking-wider text-slate-500 mb-1">Ingest URL</p>
+                      <p className="font-mono text-[12px] text-phantix-300 truncate">{cloudIngestUrl(c)}</p>
                     </div>
                   )}
 
@@ -291,9 +291,9 @@ export default function Cloud() {
 
                   {secretMap[c.id] && (
                     <div className="mt-2 rounded-lg border border-gold-400/30 bg-gold-400/8 p-2.5">
-                      <p className="text-[10px] font-semibold text-gold-300 mb-0.5">Webhook secret — copy now</p>
+                      <p className="text-[12px] font-semibold text-gold-300 mb-0.5">Webhook secret — copy now</p>
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 font-mono text-[10px] text-slate-200 break-all">{secretMap[c.id]}</code>
+                        <code className="flex-1 font-mono text-[12px] text-slate-200 break-all">{secretMap[c.id]}</code>
                         <button className="btn-ghost p-1" onClick={() => copy(secretMap[c.id], "Webhook secret")}><Copy size={12} /></button>
                       </div>
                     </div>
@@ -337,11 +337,11 @@ export default function Cloud() {
             <div>
               <label className="label">Ingest URL — enter into the provider (log drain / webhook)</label>
               <div className="flex items-center gap-2">
-                <code className="flex-1 rounded-lg bg-phantix-950/70 border border-phantix-700/40 px-3 py-2 font-mono text-[11px] text-phantix-300 break-all">{createdResult.url}</code>
+                <code className="flex-1 rounded-lg bg-phantix-950/70 border border-phantix-700/40 px-3 py-2 font-mono text-[13px] text-phantix-300 break-all">{createdResult.url}</code>
                 <button className="btn-secondary !px-3" onClick={() => copy(createdResult.url, "Ingest URL")}><Copy size={14} /></button>
               </div>
             </div>
-            <p className="text-[11px] leading-5 text-slate-500">Vercel: use the secret as the signing secret (<code className="font-mono">x-vercel-signature</code>). GitHub: <code className="font-mono">X-Hub-Signature-256</code>. Others: <code className="font-mono">X-SecureGraph-Signature: sha256=&lt;hmac&gt;</code>.</p>
+            <p className="text-[13px] leading-5 text-slate-500">Vercel: use the secret as the signing secret (<code className="font-mono">x-vercel-signature</code>). GitHub: <code className="font-mono">X-Hub-Signature-256</code>. Others: <code className="font-mono">X-SecureGraph-Signature: sha256=&lt;hmac&gt;</code>.</p>
             <button className="btn-primary w-full" onClick={() => { setAddOpen(false); setCreatedResult(null); setSelectedProvider(null); }}>Done</button>
           </div>
         ) : (
@@ -365,7 +365,7 @@ export default function Cloud() {
                   <button
                     type="button"
                     onClick={() => setProviderCategory("all")}
-                    className={cx("chip text-[11px]", providerCategory === "all" ? "border-phantix-400/50 bg-phantix-500/15 text-phantix-200" : "border-phantix-700/50 text-slate-400")}
+                    className={cx("chip text-[13px]", providerCategory === "all" ? "border-phantix-400/50 bg-phantix-500/15 text-phantix-200" : "border-phantix-700/50 text-slate-400")}
                   >
                     All ({providers.data.length})
                   </button>
@@ -374,7 +374,7 @@ export default function Cloud() {
                       key={category}
                       type="button"
                       onClick={() => setProviderCategory(category)}
-                      className={cx("chip text-[11px]", providerCategory === category ? "border-phantix-400/50 bg-phantix-500/15 text-phantix-200" : "border-phantix-700/50 text-slate-400")}
+                      className={cx("chip text-[13px]", providerCategory === category ? "border-phantix-400/50 bg-phantix-500/15 text-phantix-200" : "border-phantix-700/50 text-slate-400")}
                     >
                       {categoryLabel(category)} ({count})
                     </button>
@@ -387,18 +387,18 @@ export default function Cloud() {
                         <p className="flex items-center gap-2 text-sm font-medium text-slate-100">
                           <CloudIcon size={15} className="text-phantix-300" /> {p.name}
                         </p>
-                        {p.africa && <span className="chip shrink-0 text-[9px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Globe2 size={9} /> Africa</span>}
+                        {p.africa && <span className="chip shrink-0 text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Globe2 size={9} /> Africa</span>}
                       </div>
-                      {p.description && <p className="mt-1 text-[11px] leading-4 text-slate-500">{p.description}</p>}
+                      {p.description && <p className="mt-1 text-[13px] leading-4 text-slate-500">{p.description}</p>}
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="chip text-[9px] border-phantix-700/50 text-slate-400">{categoryLabel(p.category || p.kind)}</span>
+                        <span className="chip text-[11px] border-phantix-700/50 text-slate-400">{categoryLabel(p.category || p.kind)}</span>
                         {p.accountCapable ? (
-                          <span className="chip text-[9px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account</span>
+                          <span className="chip text-[11px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account</span>
                         ) : (
-                          <span className="chip text-[9px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook</span>
+                          <span className="chip text-[11px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook</span>
                         )}
                         {(p.engines ?? []).map((engine) => (
-                          <span key={engine} className="chip text-[9px] border-phantix-700/50 text-slate-500">{engine}</span>
+                          <span key={engine} className="chip text-[11px] border-phantix-700/50 text-slate-500">{engine}</span>
                         ))}
                       </div>
                     </button>
@@ -416,20 +416,20 @@ export default function Cloud() {
                 <div className="flex items-center justify-between gap-2 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
                   <div className="min-w-0">
                     <p className="flex items-center gap-2 text-sm font-medium text-slate-100"><CloudIcon size={15} className="text-phantix-300" /> {selectedProvider.name}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">{selectedProvider.description}</p>
+                    <p className="mt-0.5 text-[13px] text-slate-500">{selectedProvider.description}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="chip text-[9px] border-phantix-700/50 text-slate-400">{categoryLabel(selectedProvider.category || selectedProvider.kind)}</span>
+                    <span className="chip text-[11px] border-phantix-700/50 text-slate-400">{categoryLabel(selectedProvider.category || selectedProvider.kind)}</span>
                     {selectedProvider.accountCapable
-                      ? <span className="chip text-[9px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account + webhook</span>
-                      : <span className="chip text-[9px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook only</span>}
+                      ? <span className="chip text-[11px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account + webhook</span>
+                      : <span className="chip text-[11px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook only</span>}
                   </div>
                 </div>
                 <div><label className="label">Label</label><input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={`${selectedProvider.name} connector`} /></div>
                 {accountCredentialKeys.length > 0 && (
                   <div className="space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-950/40 p-3">
                     <p className="flex items-center gap-2 text-xs font-medium text-slate-200"><KeyRound size={13} className="text-gold-400" /> Account credentials <span className="font-normal text-slate-500">— optional, stored encrypted</span></p>
-                    <p className="text-[11px] leading-5 text-slate-500">
+                    <p className="text-[13px] leading-5 text-slate-500">
                       Add a read-only credential to pull the account&apos;s audit/monitoring events. Leave blank to use the webhook only.
                     </p>
                     {accountCredentialKeys.map((key) => (
@@ -448,7 +448,7 @@ export default function Cloud() {
                     ))}
                   </div>
                 )}
-                {selectedProvider.webhook && <p className="text-[11px] text-slate-500">Webhook: {selectedProvider.webhook.label}. {selectedProvider.webhook.ingestUrlHint && <>Setup hint: {selectedProvider.webhook.ingestUrlHint}.</>}</p>}
+                {selectedProvider.webhook && <p className="text-[13px] text-slate-500">Webhook: {selectedProvider.webhook.label}. {selectedProvider.webhook.ingestUrlHint && <>Setup hint: {selectedProvider.webhook.ingestUrlHint}.</>}</p>}
                 <button className="btn-primary w-full" onClick={create} disabled={creating}>{creating ? <Spinner className="h-4 w-4" /> : <><Plus size={14} /> Create connector</>}</button>
               </div>
             )}

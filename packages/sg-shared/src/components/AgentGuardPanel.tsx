@@ -97,7 +97,7 @@ export default function AgentGuardPanel({
 
       <div className="flex items-start gap-2.5 rounded-md border border-gold-400/25 bg-gold-400/[0.06] p-3">
         <UserRound size={14} className="mt-0.5 shrink-0 text-gold-300" />
-        <p className="text-[11px] leading-5 text-gold-100/90">
+        <p className="text-[13px] leading-5 text-gold-100/90">
           Acting as <span className="font-semibold">{session?.userName || session?.userEmail || "you"}</span>
           {session?.isAuthorizer ? " (authorizer)" : session?.isInitiator ? " (initiator)" : ""}. The agent can
           see and do only what your role allows, and every action that changes something needs a fresh
@@ -118,8 +118,8 @@ export default function AgentGuardPanel({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="font-mono text-[11px] text-slate-200">{row.action}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-500">
+                  <p className="font-mono text-[13px] text-slate-200">{row.action}</p>
+                  <p className="mt-0.5 text-[12px] text-slate-500">
                     {row.reason || "Requested by the agent"}
                     {row.analysis_id ? ` · run ${String(row.analysis_id).slice(0, 8)}` : ""}
                   </p>
@@ -128,7 +128,7 @@ export default function AgentGuardPanel({
                   <button
                     onClick={() => void decide(row, true)}
                     disabled={busy === row.approval_id}
-                    className="btn-secondary !px-2.5 !py-1 !text-[11px] disabled:opacity-50"
+                    className="btn-secondary !px-2.5 !py-1 !text-[13px] disabled:opacity-50"
                     title="Authorize once — the agent may take this action one time"
                   >
                     {busy === row.approval_id ? <Loader2 size={11} className="mr-1 inline animate-spin" /> : <Check size={11} className="mr-1 inline" />}
@@ -137,7 +137,7 @@ export default function AgentGuardPanel({
                   <button
                     onClick={() => void decide(row, false)}
                     disabled={busy === row.approval_id}
-                    className="btn-ghost !px-2 !py-1 !text-[11px] disabled:opacity-50"
+                    className="btn-ghost !px-2 !py-1 !text-[13px] disabled:opacity-50"
                   >
                     <X size={11} />
                   </button>
@@ -149,10 +149,10 @@ export default function AgentGuardPanel({
               <div className="space-y-1 pt-1">
                 {decided.map((row) => (
                   <div key={row.approval_id} className="flex items-center justify-between gap-2 px-1 py-1">
-                    <span className="truncate font-mono text-[10px] text-slate-500">{row.action}</span>
+                    <span className="truncate font-mono text-[12px] text-slate-500">{row.action}</span>
                     <span className="flex items-center gap-1.5">
                       {row.status === "approved" && (
-                        <span className="flex items-center gap-1 text-[10px] text-slate-500" title="An approved-but-unspent authorization still exists for this run">
+                        <span className="flex items-center gap-1 text-[12px] text-slate-500" title="An approved-but-unspent authorization still exists for this run">
                           <KeyRound size={10} className={row.authorized ? "text-emerald-400" : "text-slate-600"} />
                           {row.authorized ? "authorized now" : "spent"}
                         </span>

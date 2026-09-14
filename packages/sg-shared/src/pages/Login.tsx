@@ -830,7 +830,7 @@ function AppLoginFlow({
                         this browser your primary device — no additional code needed.
                       </p>
                       {(orgName || userName) && (
-                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
+                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-600">
                           {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
                           {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
                         </p>
@@ -859,7 +859,7 @@ function AppLoginFlow({
                         {maskedDest ? "A code was sent to " + maskedDest : "Enter the verification code from your email"}
                       </p>
                       {(orgName || userName) && (
-                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-600">
+                        <p className="mt-2 flex flex-wrap items-center justify-center gap-2 text-[12px] text-slate-600">
                           {orgName && <span className="flex items-center gap-1"><Building2 size={10} /> {orgName}</span>}
                           {userName && <span className="flex items-center gap-1"><User size={10} /> {userName}</span>}
                         </p>
@@ -873,7 +873,7 @@ function AppLoginFlow({
                     <button type="button" onClick={() => void resendInviteOtp()} disabled={busy || retryIn > 0} className="w-full text-center text-xs text-slate-500 hover:text-slate-300 disabled:opacity-50">
                       Resend code
                     </button>
-                    <p className="text-center text-[11px] text-slate-600">
+                    <p className="text-center text-[13px] text-slate-600">
                       No code? Check your inbox or spam.
                     </p>
                   </>
@@ -909,7 +909,7 @@ function NewsletterField() {
 
   return (
     <div className="border-t border-phantix-700/40 pt-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+      <p className="text-[13px] font-semibold uppercase tracking-wider text-slate-400">
         Security insights in your inbox
       </p>
       {subscribed ? (
@@ -1019,7 +1019,7 @@ function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
           }, 100);
         }}
       />
-      <div className="flex items-center justify-between text-[10px]">
+      <div className="flex items-center justify-between text-[12px]">
         <span className={cx(link.length > MAX_LINK_LENGTH * 0.9 ? "text-severity-medium" : "text-slate-600", link.length > 10 && "visible")}>
           {link.length > 10 ? `${link.length}/${MAX_LINK_LENGTH}` : ""}
         </span>
