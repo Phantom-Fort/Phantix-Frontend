@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Logs, Search, Filter, BarChart3, Activity } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
-import { searchSocLogs, loadLogPipelineStats } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, cx } from "@/lib/utils";
-import type { SocLogEntry, SocLogSearchResponse, SocLogPipelineStats } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
+import { searchSocLogs, loadLogPipelineStats } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { timeAgo, cx } from "@sg/utils";
+import type { SocLogEntry, SocLogSearchResponse, SocLogPipelineStats } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 export default function SocLogPipeline() {
   const [tab, setTab] = useState("search");

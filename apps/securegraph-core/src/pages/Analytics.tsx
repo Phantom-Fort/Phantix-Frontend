@@ -1,28 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, BarChart3, RefreshCw, TrendingUp } from "lucide-react";
-import { PageHeader, Card, EmptyState, PageSkeleton, StatCard } from "@/components/ui";
-import DocLink from "@/components/DocLink";
-import TrendChart from "@/components/TrendChart";
-import ChartFrame from "@/components/charts/ChartFrame";
-import ComparativeBars from "@/components/charts/ComparativeBars";
-import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
-import PostureDonut from "@/components/charts/PostureDonut";
-import SurfaceScoreRow from "@/components/charts/SurfaceScoreRow";
+import { PageHeader, Card, EmptyState, PageSkeleton, StatCard } from "@sg/ui";
+import DocLink from "@sg/components/DocLink";
+import TrendChart from "@sg/components/TrendChart";
+import ChartFrame from "@sg/charts/ChartFrame";
+import ComparativeBars from "@sg/charts/ComparativeBars";
+import FindingsBreakdown from "@sg/charts/FindingsBreakdown";
+import PostureDonut from "@sg/charts/PostureDonut";
+import SurfaceScoreRow from "@sg/charts/SurfaceScoreRow";
 import {
   LIFECYCLE_COLORS, SEVERITY_COLORS, SEVERITY_ORDER, SURFACES, SURFACE_LABELS,
   surfaceColor, type ChartTheme,
-} from "@/components/charts/palette";
-import MovementTimeline from "@/components/charts/MovementTimeline";
+} from "@sg/charts/palette";
+import MovementTimeline from "@sg/charts/MovementTimeline";
 import {
   loadAiUsage, loadComplianceBundle, loadPostureTrend, loadTrackerAnalytics, loadTrackerTimeline,
-} from "@/lib/data";
-import type { TrackerTimeline } from "@/lib/data";
-import { loadPostureSnapshot } from "@/lib/vaptOps";
-import type { PostureSnapshot } from "@/lib/vaptOps";
-import type { AiUsage, ComplianceAssessment, TrackerFinding, TrackerSummary } from "@/lib/types";
-import { useTheme } from "@/lib/theme";
-import { cx } from "@/lib/utils";
+} from "@sg/data";
+import type { TrackerTimeline } from "@sg/data";
+import { loadPostureSnapshot } from "@sg/vaptOps";
+import type { PostureSnapshot } from "@sg/vaptOps";
+import type { AiUsage, ComplianceAssessment, TrackerFinding, TrackerSummary } from "@sg/types";
+import { useTheme } from "@sg/theme";
+import { cx } from "@sg/utils";
 
 /*
  * Analytics — the org's security picture, live.

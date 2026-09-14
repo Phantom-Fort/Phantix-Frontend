@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, TrendingUp, BarChart3, CheckCircle, XCircle, FileText, Plus, Download } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
-import { loadAdvisorDashboard, loadAdvisorRecommendations, updateAdvisorRecommendation, loadAdvisorReports, generateAdvisorReport, publishAdvisorReport, deleteAdvisorReport } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { useStore } from "@/lib/store";
-import { timeAgo, cx } from "@/lib/utils";
-import type { SocAdvisorDashboard, SocAdvisorRecommendation, SocAdvisorReport } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
+import { loadAdvisorDashboard, loadAdvisorRecommendations, updateAdvisorRecommendation, loadAdvisorReports, generateAdvisorReport, publishAdvisorReport, deleteAdvisorReport } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { useStore } from "@sg/store";
+import { timeAgo, cx } from "@sg/utils";
+import type { SocAdvisorDashboard, SocAdvisorRecommendation, SocAdvisorReport } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 export default function SocAdvisor() {
   const [tab, setTab] = useState("dashboard");

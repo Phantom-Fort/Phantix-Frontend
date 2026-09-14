@@ -1,17 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Building2, Cloud, Globe, Loader2, Save, Sparkles } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, PageBodySkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
-import { ApiError } from "@/lib/api";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, PageBodySkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
+import { ApiError } from "@sg/api";
 import {
   loadFrameworkRecommendations,
   loadProfile,
   saveProfile,
   type BusinessProfile,
   type BusinessProfileUpdate,
-} from "@/lib/complianceGrc";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+} from "@sg/complianceGrc";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Business profile ─────────────────────────────────────────────────────────
 // The profile is what drives GET /compliance/recommendations: which frameworks

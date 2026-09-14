@@ -5,12 +5,12 @@ import {
   BellRing, FileText, Plus, RefreshCw, Search, UserCheck, XCircle, CheckCircle2,
   ArrowUpRight, MessageSquarePlus, Play, Pause, Trash2, BookOpen, ChevronRight, Radio, HeartPulse,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState, CardListSkeleton } from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import DocLink from "@/components/DocLink";
-import SocAvailability from "@/components/SocAvailability";
-import TrendChart from "@/components/TrendChart";
-import { useResource } from "@/lib/useResource";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Modal, Tabs, Spinner, StatCard, TableSkeleton, PageSkeleton, ErrorState, CardListSkeleton } from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import DocLink from "@sg/components/DocLink";
+import SocAvailability from "@sg/components/SocAvailability";
+import TrendChart from "@sg/components/TrendChart";
+import { useResource } from "@sg/useResource";
 import {
   loadSocStatus, loadSocDashboard, loadSocDetections, loadSocDetectionTrend,
   createSocDetection, patchSocDetection, escalateSocDetection,
@@ -19,14 +19,14 @@ import {
   loadSocAdapters, ingestSocWebhook,
   loadIntelligenceDashboard,
   type TrendSeriesPoint,
-} from "@/lib/data";
-import { useStore } from "@/lib/store";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
-import { useSseStream, type SseEvent } from "@/lib/useSse";
+} from "@sg/data";
+import { useStore } from "@sg/store";
+import { timeAgo, cx, titleCase } from "@sg/utils";
+import { useSseStream, type SseEvent } from "@sg/useSse";
 import type {
   SocStatus, SocDashboardScaffold, SocDetection, SocCase, SocRule, SocAdapter,
   IntelligenceDashboard, SocCaseNote,
-} from "@/lib/types";
+} from "@sg/types";
 
 const emptySoc: SocDashboardScaffold = { organizationId: 0, status: "implemented", generatedAt: "", panels: [], liveSubscribers: 0, message: "" };
 const emptyIntel: IntelligenceDashboard = { posture_score: 0, total_assets: 0, verified_count: 0, unscanned_count: 0 };

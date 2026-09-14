@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Loader2, Mail, KeyRound } from "lucide-react";
-import { api, ApiError } from "@/lib/api";
-import { BrandLogo } from "@/components/BrandLogo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { api, ApiError } from "@sg/api";
+import { BrandLogo } from "@sg/components/BrandLogo";
+import { ThemeToggle } from "@sg/components/ThemeToggle";
 
 /**
  * Request a password reset for an application (org) user.

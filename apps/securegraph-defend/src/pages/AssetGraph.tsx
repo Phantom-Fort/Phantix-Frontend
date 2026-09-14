@@ -3,15 +3,15 @@ import { Link } from "react-router-dom";
 import {
   ArrowLeft, Network, Search, Tag, Boxes, Link2, ExternalLink,
 } from "lucide-react";
-import AssetForceGraph from "@/components/AssetForceGraph";
-import { Card, CardHeader, PageHeader, RiskBadge, Spinner, EmptyState } from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadAssetsBundle, loadRelationshipGraph } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { cx, titleCase, timeAgo } from "@/lib/utils";
-import { RISK_COLORS, buildAssetGraph } from "@/lib/assetGraphData";
-import type { AssetGraphNode, GraphNodeKind } from "@/lib/assetGraphData";
-import DocLink from "@/components/DocLink";
+import AssetForceGraph from "@sg/components/AssetForceGraph";
+import { Card, CardHeader, PageHeader, RiskBadge, Spinner, EmptyState } from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import { loadAssetsBundle, loadRelationshipGraph } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { cx, titleCase, timeAgo } from "@sg/utils";
+import { RISK_COLORS, buildAssetGraph } from "@sg/assetGraphData";
+import type { AssetGraphNode, GraphNodeKind } from "@sg/assetGraphData";
+import DocLink from "@sg/components/DocLink";
 
 const RISK_FILTERS = ["all", "critical", "high", "medium", "low"] as const;
 

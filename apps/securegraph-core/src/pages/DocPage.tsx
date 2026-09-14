@@ -3,10 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { marked, type Tokens } from "marked";
 import { ArrowLeft, ArrowRight, ListTree, BookOpen } from "lucide-react";
-import { docs, getDoc, extractToc, slugify, docCategories, resolveDocHref } from "@/lib/docs";
-import { cx } from "@/lib/utils";
-import { renderMermaid } from "@/lib/mermaid";
-import { isFlowchart, renderFlowSvg } from "@/lib/flowChart";
+import { docs, getDoc, extractToc, slugify, docCategories, resolveDocHref } from "@sg/docs";
+import { cx } from "@sg/utils";
+import { renderMermaid } from "@sg/mermaid";
+import { isFlowchart, renderFlowSvg } from "@sg/flowChart";
 
 // Configure marked once: heading ids for anchor scroll. Link handling is done in
 // rewriteDocHtml so internal doc links resolve to /docs/:id and SPA-navigate.

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, GitBranch, Lightbulb, RefreshCw, Search, Workflow } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, SeverityBadge, Spinner, StatCard, Tabs, PageBodySkeleton } from "@/components/ui";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, SeverityBadge, Spinner, StatCard, Tabs, PageBodySkeleton } from "@sg/ui";
 import {
   asArray, listCorrelationRules, listMinedCandidates, listProcedures,
   procedureKey, procedureName,
   type CorrelationRule, type RuleCandidate, type VaptProcedure,
-} from "@/lib/vaptOps";
-import { cx } from "@/lib/utils";
-import type { Severity } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+} from "@sg/vaptOps";
+import { cx } from "@sg/utils";
+import type { Severity } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 // ── Procedure catalogue, correlation rules and mined candidates ──────────────
 // Read-only reference for what the testing engine can run and how it correlates

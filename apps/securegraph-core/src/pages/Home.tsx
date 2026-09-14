@@ -5,11 +5,11 @@ import {
   ShieldCheck, ArrowRight, PlayCircle, LogIn, CheckCircle2, Sparkles,
   Building2, Eye, Repeat2, BookOpen,
 } from "lucide-react";
-import { useStore } from "@/lib/store";
-import { loadPricing, pricingFootnote } from "@/lib/pricing";
-import type { PricingTier } from "@/lib/pricing";
-import { LANDING_URL, PLATFORM_URL } from "@/lib/links";
-import { cx } from "@/lib/utils";
+import { useStore } from "@sg/store";
+import { loadPricing, pricingFootnote } from "@sg/pricing";
+import type { PricingTier } from "@sg/pricing";
+import { LANDING_URL, PLATFORM_URL } from "@sg/links";
+import { cx } from "@sg/utils";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 22 },

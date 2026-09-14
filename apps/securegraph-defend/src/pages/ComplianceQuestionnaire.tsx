@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ClipboardList, Info, Loader2, RefreshCw, Search, UserCheck, Users,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, ProgressBar, RiskBadge, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
-import { ApiError } from "@/lib/api";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, ProgressBar, RiskBadge, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
+import { ApiError } from "@sg/api";
 import {
   ANSWER_CHOICES,
   EMPTY_PROGRESS,
@@ -14,9 +14,9 @@ import {
   submitAnswer,
   type QuestionnaireList,
   type QuestionnaireQuestion,
-} from "@/lib/complianceGrc";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+} from "@sg/complianceGrc";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Compliance questionnaire (self-attestation) ──────────────────────────────
 // The merged GRC question set for whichever frameworks apply to this org.

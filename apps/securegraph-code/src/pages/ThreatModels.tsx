@@ -2,17 +2,17 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ChevronDown, Download, FileText, HelpCircle, Info, Loader2, Play, Plus, RefreshCw, Search, Send, ShieldAlert, Sparkles, X,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { CreateProductModal, ProjectInputsModal } from "@/components/ThreatModelInputs";
-import { useStore } from "@/lib/store";
-import { ApiError } from "@/lib/api";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { CreateProductModal, ProjectInputsModal } from "@sg/components/ThreatModelInputs";
+import { useStore } from "@sg/store";
+import { ApiError } from "@sg/api";
 import {
   answerThreatClarification, deliverThreatModel, exportThreatModel, generateThreatModel, getContextSummary, getThreatModel, GRADE_TONE,
   listProjects, listThreatModels, patchThreat, regenerateThreatModel,
   type ProductContextSummary, type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
-} from "@/lib/productContext";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+} from "@sg/productContext";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Threat models ────────────────────────────────────────────────────────────
 // Generated from a product project's parsed context. Threats are graded by how

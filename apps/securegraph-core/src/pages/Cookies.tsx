@@ -1,7 +1,7 @@
 import React from "react";
 import { Cookie, ShieldCheck, RefreshCw } from "lucide-react";
-import { PageHeader, Card, CardHeader } from "@/components/ui";
-import { clearConsent, getConsent } from "@/lib/consent";
+import { PageHeader, Card, CardHeader } from "@sg/ui";
+import { clearConsent, getConsent } from "@sg/consent";
 
 // ── Cookies & analytics policy ───────────────────────────────────────────────
 // Public page (no auth) linked from the consent banner. States exactly what the

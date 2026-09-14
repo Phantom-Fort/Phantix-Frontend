@@ -6,17 +6,17 @@ import {
   Wifi, WifiOff, Radio, Network, ChevronDown, Crosshair, ShieldAlert, Tags as TagsIcon,
   Clock, CheckCircle2, CircleDot, GitBranch, ListChecks, HeartPulse, PlusCircle, Info,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
-import AssetForceGraph from "@/components/AssetForceGraph";
-import DocLink from "@/components/DocLink";
-import { useResource } from "@/lib/useResource";
-import { loadAssetsBundle, loadIntelligenceDashboard, loadRelationshipGraph, refreshIntelligence } from "@/lib/data";
-import { generateComprehensiveExplanation, type ComprehensiveExplanation } from "@/lib/aiExplain";
-import { buildAssetGraph } from "@/lib/assetGraphData";
-import { useStore } from "@/lib/store";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
-import { useSseStream, type SseEvent } from "@/lib/useSse";
-import type { IntelligenceDashboard, RealtimeEvent } from "@/lib/types";
+import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import AssetForceGraph from "@sg/components/AssetForceGraph";
+import DocLink from "@sg/components/DocLink";
+import { useResource } from "@sg/useResource";
+import { loadAssetsBundle, loadIntelligenceDashboard, loadRelationshipGraph, refreshIntelligence } from "@sg/data";
+import { generateComprehensiveExplanation, type ComprehensiveExplanation } from "@sg/aiExplain";
+import { buildAssetGraph } from "@sg/assetGraphData";
+import { useStore } from "@sg/store";
+import { timeAgo, cx, titleCase } from "@sg/utils";
+import { useSseStream, type SseEvent } from "@sg/useSse";
+import type { IntelligenceDashboard, RealtimeEvent } from "@sg/types";
 
 const emptyIntel: IntelligenceDashboard = { posture_score: 0, total_assets: 0, verified_count: 0, unscanned_count: 0 };
 

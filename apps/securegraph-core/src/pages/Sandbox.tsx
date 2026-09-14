@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { marked } from "marked";
 import { FlaskConical, Star, Megaphone, CheckCircle2, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
-import { PageHeader, Card, CardHeader, Modal, Spinner, EmptyState, StatusBadge, PageSkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
-import { PLATFORM_URL } from "@/lib/links";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
+import { PageHeader, Card, CardHeader, Modal, Spinner, EmptyState, StatusBadge, PageSkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
+import { PLATFORM_URL } from "@sg/links";
+import { timeAgo, cx, titleCase } from "@sg/utils";
 import {
   loadSandboxMe,
   loadSandboxUpdates,
@@ -16,8 +16,8 @@ import {
   type SandboxMe,
   type SandboxUpdate,
   type SandboxRating,
-} from "@/lib/sandbox";
-import DocLink from "@/components/DocLink";
+} from "@sg/sandbox";
+import DocLink from "@sg/components/DocLink";
 
 function severityChip(sev: string) {
   const s = (sev || "info").toLowerCase();

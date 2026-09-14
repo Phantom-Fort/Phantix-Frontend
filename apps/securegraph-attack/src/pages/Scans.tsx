@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronRight, ChevronDown, Github } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
-import { Pagination } from "@/components/Pagination";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import DocLink from "@/components/DocLink";
-import { loadScansBundle, verifyScanResult } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { useOperations } from "@/lib/operations";
-import { timeAgo, formatDateTime, cx, severityHex } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import type { VerificationStatus, ScanResult } from "@/lib/types";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { Pagination } from "@sg/components/Pagination";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import DocLink from "@sg/components/DocLink";
+import { loadScansBundle, verifyScanResult } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { useOperations } from "@sg/operations";
+import { timeAgo, formatDateTime, cx, severityHex } from "@sg/utils";
+import { useStore } from "@sg/store";
+import type { VerificationStatus, ScanResult } from "@sg/types";
 
 const DEFAULT_PAGE_SIZE = 20;
 

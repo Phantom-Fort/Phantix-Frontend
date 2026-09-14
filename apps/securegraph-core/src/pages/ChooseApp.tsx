@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowRight, Boxes, Code2, Crosshair, Lock, LogOut, ShieldCheck } from "lucide-react";
-import { useStore } from "@/lib/store";
-import { cx } from "@/lib/utils";
+import { useStore } from "@sg/store";
+import { cx } from "@sg/utils";
 import {
   accessibleApplications,
   applicationHandoffHref,
@@ -14,7 +14,7 @@ import {
   type ApplicationCard,
   type ApplicationKey,
   type ApplicationsSnapshot,
-} from "@/lib/applications";
+} from "@sg/applications";
 
 /**
  * Sign-in application picker — "Where do you want to work today?".

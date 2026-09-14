@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Activity, RefreshCw, RotateCcw, BookOpen, AlertTriangle, TrendingDown, Layers } from "lucide-react";
-import { PageHeader, Card, CardHeader, EmptyState, Spinner, StatCard, RiskBadge, PageBodySkeleton } from "@/components/ui";
-import { api } from "@/lib/api";
-import { loadPostureSnapshot, loadPostureReviewsDue, loadPostureDrift } from "@/lib/vaptOps";
-import { listProjects } from "@/lib/productContext";
-import { useStore } from "@/lib/store";
-import { cx, timeAgo } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, EmptyState, Spinner, StatCard, RiskBadge, PageBodySkeleton } from "@sg/ui";
+import { api } from "@sg/api";
+import { loadPostureSnapshot, loadPostureReviewsDue, loadPostureDrift } from "@sg/vaptOps";
+import { listProjects } from "@sg/productContext";
+import { useStore } from "@sg/store";
+import { cx, timeAgo } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Posture — continuous loop (W7 LOOP-01/02/03) ─────────────────────────────
 // Per-surface posture snapshot, product-context drift, and accepted risks due

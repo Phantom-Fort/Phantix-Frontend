@@ -5,7 +5,7 @@ import ReactMarkdown, { Components } from "react-markdown"
 import remarkBreaks from "remark-breaks"
 import remarkGfm from "remark-gfm"
 import { CodeBlock, CodeBlockCode } from "./code-block"
-import MermaidDiagram from "@/components/MermaidDiagram"
+import MermaidDiagram from "../components/MermaidDiagram"
 
 export type MarkdownProps = {
   children: string

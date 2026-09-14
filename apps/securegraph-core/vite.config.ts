@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "../../src"),
+        "@": path.resolve(__dirname, "./src"),
         "@app": path.resolve(__dirname, "./src"),
         "@sg": path.resolve(__dirname, "../../packages/sg-shared/src"),
       },

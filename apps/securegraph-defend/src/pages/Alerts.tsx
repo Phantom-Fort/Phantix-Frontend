@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info, Cable, ExternalLink } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import DocLink from "@/components/DocLink";
-import { loadAlertsBundle } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import DocLink from "@sg/components/DocLink";
+import { loadAlertsBundle } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { timeAgo, cx } from "@sg/utils";
+import { useStore } from "@sg/store";
 import { useNavigate } from "react-router-dom";
-import type { AlertSettings } from "@/lib/types";
+import type { AlertSettings } from "@sg/types";
 
 const emptySettings: AlertSettings = {
   alerts_enabled: false,

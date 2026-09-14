@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { setActiveApplication } from "@/lib/api";
+import { setActiveApplication } from "@sg/api";
 import { setApplication } from "@sg/shell/api";
 import App from "./App";
 import "./index.css";

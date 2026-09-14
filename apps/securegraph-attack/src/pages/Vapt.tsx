@@ -1,20 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import VaptPlanReview from "@/components/VaptPlanReview";
-import DocLink from "@/components/DocLink";
-import { loadVaptBundle } from "@/lib/data";
-import { api, isDemoMode, isPendingApproval } from "@/lib/api";
-import { useResource } from "@/lib/useResource";
-import { useOperations } from "@/lib/operations";
-import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import { executeVaptPlan, generateVaptPlan } from "@/lib/vaptOps";
-import type { VaptPlan } from "@/lib/vaptOps";
-import type { VaptCampaign, VaptFinding } from "@/lib/types";
-import { UpsellBanner } from "@/components/UpgradeGate";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import VaptPlanReview from "@sg/components/VaptPlanReview";
+import DocLink from "@sg/components/DocLink";
+import { loadVaptBundle } from "@sg/data";
+import { api, isDemoMode, isPendingApproval } from "@sg/api";
+import { useResource } from "@sg/useResource";
+import { useOperations } from "@sg/operations";
+import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@sg/utils";
+import { useStore } from "@sg/store";
+import { executeVaptPlan, generateVaptPlan } from "@sg/vaptOps";
+import type { VaptPlan } from "@sg/vaptOps";
+import type { VaptCampaign, VaptFinding } from "@sg/types";
+import { UpsellBanner } from "@sg/components/UpgradeGate";
 
 /** Multi-tool correlation chips from a web step's output_summary.multi_tool_correlation. */
 function CorrelationChips({ correlation }: { correlation: any }) {

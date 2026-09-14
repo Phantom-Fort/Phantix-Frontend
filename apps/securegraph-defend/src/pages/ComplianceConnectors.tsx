@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Download, Loader2, Plug, RefreshCw, Save, XCircle } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
 import {
   collectEvidence,
   connectorKey,
@@ -10,9 +10,9 @@ import {
   loadEvidenceSummary,
   saveConnectorConfig,
   type EvidenceConnector,
-} from "@/lib/complianceGrc";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+} from "@sg/complianceGrc";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Evidence connectors ──────────────────────────────────────────────────────
 // Connectors pull control evidence automatically. Readiness comes from

@@ -1,18 +1,18 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState, TableSkeleton } from "@/components/ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import DocLink from "@/components/DocLink";
-import MobileHandoffCard from "@/components/MobileHandoffCard";
-import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, titleCase, cx, severityMeta } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import { api, tokens, API_BASE, ApiError } from "@/lib/api";
-import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@/lib/assetTags";
-import type { Asset, AssetIntelligence, DiscoveryJob } from "@/lib/types";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState, TableSkeleton } from "@sg/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import DocLink from "@sg/components/DocLink";
+import MobileHandoffCard from "@sg/components/MobileHandoffCard";
+import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { timeAgo, titleCase, cx, severityMeta } from "@sg/utils";
+import { useStore } from "@sg/store";
+import { api, tokens, API_BASE, ApiError } from "@sg/api";
+import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@sg/assetTags";
+import type { Asset, AssetIntelligence, DiscoveryJob } from "@sg/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
   domain: <Globe size={15} />,

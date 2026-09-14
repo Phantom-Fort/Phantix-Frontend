@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, KeyRound, Loader2 } from "lucide-react";
-import { api, ApiError } from "@/lib/api";
-import { BrandLogo } from "@/components/BrandLogo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { api, ApiError } from "@sg/api";
+import { BrandLogo } from "@sg/components/BrandLogo";
+import { ThemeToggle } from "@sg/components/ThemeToggle";
 
 /**
  * Complete a password reset for an application (org) user using the token

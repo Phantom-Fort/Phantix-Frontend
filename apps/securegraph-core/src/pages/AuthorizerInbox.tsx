@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Shield, ShieldCheck, Crosshair, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
-import DocLink from "@/components/DocLink";
-import { useResource } from "@/lib/useResource";
-import { useStore } from "@/lib/store";
-import { api, delay, isDemoMode } from "@/lib/api";
-import * as demo from "@/lib/demo-data";
-import { cx } from "@/lib/utils";
+import { PageHeader, Card, CardHeader, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
+import DocLink from "@sg/components/DocLink";
+import { useResource } from "@sg/useResource";
+import { useStore } from "@sg/store";
+import { api, delay, isDemoMode } from "@sg/api";
+import * as demo from "@sg/demo-data";
+import { cx } from "@sg/utils";
 
 type InboxItem = {
   inboxId: string;

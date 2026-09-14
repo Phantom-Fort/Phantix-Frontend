@@ -6,16 +6,16 @@ import {
 } from "lucide-react";
 import {
   PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, EmptyState, Tabs, Spinner, StatCard, Modal, PageSkeleton, ErrorState,
-} from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import DocLink from "@/components/DocLink";
-import { useResource } from "@/lib/useResource";
+} from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import DocLink from "@sg/components/DocLink";
+import { useResource } from "@sg/useResource";
 import {
   loadIntelDashboard, loadIntelLookup, loadIntelEvents, startReputationScan, normalizeIntelSignals,
-} from "@/lib/data";
-import { useStore } from "@/lib/store";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
-import type { IntelDashboard, TiSignal, CloudEvent } from "@/lib/types";
+} from "@sg/data";
+import { useStore } from "@sg/store";
+import { timeAgo, cx, titleCase } from "@sg/utils";
+import type { IntelDashboard, TiSignal, CloudEvent } from "@sg/types";
 
 function sevOf(s: string | undefined): "critical" | "high" | "medium" | "low" | "info" {
   return (["critical", "high", "medium", "low", "info"] as const).includes(s as any) ? (s as any) : "info";

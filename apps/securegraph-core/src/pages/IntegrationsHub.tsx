@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, ExternalLink, Webhook, Bot, MessageSquare, Send, ChevronRight } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@/components/ui";
-import { useResource } from "@/lib/useResource";
-import { useStore } from "@/lib/store";
-import { isPendingApproval } from "@/lib/api";
-import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@/lib/data";
-import { timeAgo, cx } from "@/lib/utils";
-import type { IntegrationConnector, IntegrationInstallation } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
+import { useResource } from "@sg/useResource";
+import { useStore } from "@sg/store";
+import { isPendingApproval } from "@sg/api";
+import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@sg/data";
+import { timeAgo, cx } from "@sg/utils";
+import type { IntegrationConnector, IntegrationInstallation } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 const connectorIcons: Record<string, React.ReactNode> = {
   slack: <MessageSquare size={16} />,

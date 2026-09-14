@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Brain, Database, Info, Loader2, ShieldCheck } from "lucide-react";
-import { Card, CardHeader, ErrorState, PageHeader, Spinner, SettingsSkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
-import { AI_THRESHOLDS, loadVaptSettings, saveVaptSettings, type VaptSettings as Settings } from "@/lib/vaptOps";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+import { Card, CardHeader, ErrorState, PageHeader, Spinner, SettingsSkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
+import { AI_THRESHOLDS, loadVaptSettings, saveVaptSettings, type VaptSettings as Settings } from "@sg/vaptOps";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── VAPT engine settings ─────────────────────────────────────────────────────
 // Two org-level switches: whether your engagement data may feed correlation-rule

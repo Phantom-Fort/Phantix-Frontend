@@ -6,19 +6,19 @@ import {
 } from "lucide-react";
 import {
   PageHeader, Card, CardHeader, SeverityBadge, EmptyState, Modal, Spinner, StatCard, Tabs, PageSkeleton, ErrorState,
-} from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import CloudPosturePanel from "@/components/CloudPosturePanel";
-import DocLink from "@/components/DocLink";
-import { useResource } from "@/lib/useResource";
+} from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import CloudPosturePanel from "@sg/components/CloudPosturePanel";
+import DocLink from "@sg/components/DocLink";
+import { useResource } from "@sg/useResource";
 import {
   loadCloudProviders, loadCloudConnectors, createCloudConnector, patchCloudConnector,
   rotateCloudSecret, deleteCloudConnector, cloudIngestUrl, loadIntelDashboard, loadCloudPosture,
-} from "@/lib/data";
-import { useStore } from "@/lib/store";
-import { cx, timeAgo, titleCase } from "@/lib/utils";
-import type { CloudProvider, CloudConnector } from "@/lib/types";
-import { UpsellBanner } from "@/components/UpgradeGate";
+} from "@sg/data";
+import { useStore } from "@sg/store";
+import { cx, timeAgo, titleCase } from "@sg/utils";
+import type { CloudProvider, CloudConnector } from "@sg/types";
+import { UpsellBanner } from "@sg/components/UpgradeGate";
 
 // Human labels for the provider categories the backend registry emits.
 const CATEGORY_LABEL: Record<string, string> = {

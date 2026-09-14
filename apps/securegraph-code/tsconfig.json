@@ -16,7 +16,7 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["../../src/*"],
+      "@/*": ["./src/*"],
       "@app/*": ["./src/*"],
       "@sg": ["../../packages/sg-shared/src"],
       "@sg/*": ["../../packages/sg-shared/src/*"]

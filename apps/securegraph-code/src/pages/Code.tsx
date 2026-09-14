@@ -4,8 +4,8 @@ import {
   GitBranch, GitPullRequest, Wrench, ShieldCheck, RefreshCw, ExternalLink, Loader2, Send, Github, AlertTriangle,
   Gitlab, Plug, PlugZap, Key, Trash2, TestTube, Webhook, CheckCircle2,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Spinner, Tabs, Modal } from "@/components/ui";
-import { api, isPendingApproval } from "@/lib/api";
+import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Spinner, Tabs, Modal } from "@sg/ui";
+import { api, isPendingApproval } from "@sg/api";
 import {
   loadGithubInstallation,
   loadBranchReviewWallet,
@@ -13,7 +13,7 @@ import {
   loadBranchReviewEvents,
   loadAutofixStatus,
   loadGithubRepositories,
-} from "@/lib/codeOps";
+} from "@sg/codeOps";
 import {
   loadHubCatalog,
   loadHubInstallations,
@@ -21,12 +21,12 @@ import {
   startHubOAuth,
   uninstallHubIntegration,
   testHubInstallation,
-} from "@/lib/data";
-import type { IntegrationConnector, IntegrationInstallation } from "@/lib/types";
-import { useStore } from "@/lib/store";
-import { cx, timeAgo } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
-import { UpsellBanner } from "@/components/UpgradeGate";
+} from "@sg/data";
+import type { IntegrationConnector, IntegrationInstallation } from "@sg/types";
+import { useStore } from "@sg/store";
+import { cx, timeAgo } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
+import { UpsellBanner } from "@sg/components/UpgradeGate";
 
 // ── Code — AutoFix, Continuous PR, GitHub repositories & review runs ─────────
 // One place for everything code: connected repos, branch-review runs (the PR

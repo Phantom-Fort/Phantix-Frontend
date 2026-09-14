@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Scale, Play, FileUp, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import DocLink from "@/components/DocLink";
-import { loadComplianceBundle, runComplianceAssessment, addComplianceEvidence } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import { UpsellBanner } from "@/components/UpgradeGate";
+import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, Tabs, Modal, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import DocLink from "@sg/components/DocLink";
+import { loadComplianceBundle, runComplianceAssessment, addComplianceEvidence } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { timeAgo, cx } from "@sg/utils";
+import { useStore } from "@sg/store";
+import { UpsellBanner } from "@sg/components/UpgradeGate";
 
 const statusIcon = { pass: CheckCircle2, gap: XCircle, unknown: HelpCircle };
 

@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Monitor, Download, Terminal, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { PageHeader, Card, CardHeader, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge } from "@/components/ui";
-import { loadAgentFleet, loadSocAgentInstall, downloadSocAgent } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, cx } from "@/lib/utils";
-import type { SocAgentFleet, SocAgentInstallCatalog } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge } from "@sg/ui";
+import { loadAgentFleet, loadSocAgentInstall, downloadSocAgent } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { timeAgo, cx } from "@sg/utils";
+import type { SocAgentFleet, SocAgentInstallCatalog } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 export default function SocAgentManager() {
   const { data: fleet, loading: fl } = useResource<SocAgentFleet | null>(() => loadAgentFleet(), null, "agent-fleet");

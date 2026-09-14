@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import { ArrowUpRight, Boxes, Code2, Crosshair, ShieldCheck } from "lucide-react";
-import { PageHeader, Card, PageHeaderSkeleton, CardListSkeleton } from "@/components/ui";
-import { cx } from "@/lib/utils";
+import { PageHeader, Card, PageHeaderSkeleton, CardListSkeleton } from "@sg/ui";
+import { cx } from "@sg/utils";
 import { apiGet } from "@sg/shell/api";
 import { APPLICATION_LABEL, type ApplicationKey, type NavSection } from "@sg/shell/types";
 

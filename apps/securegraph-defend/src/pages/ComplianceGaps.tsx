@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { api, ApiError } from "@/lib/api";
-import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@/lib/complianceGrc";
-import { useStore } from "@/lib/store";
-import { cx } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { api, ApiError } from "@sg/api";
+import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@sg/complianceGrc";
+import { useStore } from "@sg/store";
+import { cx } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Compliance gap analysis ──────────────────────────────────────────────────
 // GET /compliance/gaps maps the org's current findings onto framework controls

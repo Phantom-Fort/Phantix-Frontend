@@ -5,25 +5,25 @@ import {
   Boxes, ShieldAlert, ArrowRight, BellRing,
   Zap, Activity, KanbanSquare, FileText, FlaskConical, HeartPulse,
 } from "lucide-react";
-import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@/components/ui";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import AppSwitcher from "@/components/AppSwitcher";
-import TrendChart from "@/components/TrendChart";
-import FindingsBreakdown from "@/components/charts/FindingsBreakdown";
-import PostureDonut from "@/components/charts/PostureDonut";
-import SurfaceScoreRow from "@/components/charts/SurfaceScoreRow";
-import { SURFACES } from "@/components/charts/palette";
-import { loadTrackerSummary } from "@/lib/data";
-import { loadPostureSnapshot } from "@/lib/vaptOps";
-import type { PostureSnapshot } from "@/lib/vaptOps";
-import type { TrackerSummary } from "@/lib/types";
-import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { useSmartPoll } from "@/lib/usePolling";
-import { useSseStream } from "@/lib/useSse";
-import { timeAgo, cx, titleCase } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import type { CommandCenter } from "@/lib/types";
+import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@sg/ui";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import AppSwitcher from "@sg/components/AppSwitcher";
+import TrendChart from "@sg/components/TrendChart";
+import FindingsBreakdown from "@sg/charts/FindingsBreakdown";
+import PostureDonut from "@sg/charts/PostureDonut";
+import SurfaceScoreRow from "@sg/charts/SurfaceScoreRow";
+import { SURFACES } from "@sg/charts/palette";
+import { loadTrackerSummary } from "@sg/data";
+import { loadPostureSnapshot } from "@sg/vaptOps";
+import type { PostureSnapshot } from "@sg/vaptOps";
+import type { TrackerSummary } from "@sg/types";
+import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { useSmartPoll } from "@sg/usePolling";
+import { useSseStream } from "@sg/useSse";
+import { timeAgo, cx, titleCase } from "@sg/utils";
+import { useStore } from "@sg/store";
+import type { CommandCenter } from "@sg/types";
 
 const emptyDash = {
   cc: null as CommandCenter | null,

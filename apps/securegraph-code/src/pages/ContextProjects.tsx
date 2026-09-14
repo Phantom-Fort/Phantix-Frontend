@@ -2,15 +2,15 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Share2, Upload,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
-import { ApiError } from "@/lib/api";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
+import { ApiError } from "@sg/api";
 import {
   createProject, ingestDocument, listProjects, projectGraph, PROJECT_STAGES,
   searchProjectDocuments, uploadDiagram,
   type DocumentHit, type ProductProject, type ProjectGraph, type ProjectStage,
-} from "@/lib/productContext";
-import { cx } from "@/lib/utils";
+} from "@sg/productContext";
+import { cx } from "@sg/utils";
 
 // ── Product context projects ─────────────────────────────────────────────────
 // The system model a threat model is generated from: components, trust

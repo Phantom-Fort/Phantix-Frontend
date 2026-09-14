@@ -5,34 +5,34 @@ import {
   Crosshair, Boxes, Globe2, Timer, Square, BrainCircuit, ChevronDown, ChevronRight,
   ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound,
 } from "lucide-react";
-import { PageHeader, Card } from "@/components/ui";
-import LottiePlayer from "@/components/LottiePlayer";
-import ModelPicker from "@/components/ModelPicker";
-import DocLink from "@/components/DocLink";
-import { Markdown } from "@/components/prompt-kit/markdown";
+import { PageHeader, Card } from "@sg/ui";
+import LottiePlayer from "@sg/components/LottiePlayer";
+import ModelPicker from "@sg/components/ModelPicker";
+import DocLink from "@sg/components/DocLink";
+import { Markdown } from "@sg/prompt-kit/markdown";
 import {
   ChatContainerRoot,
   ChatContainerContent,
   ChatContainerScrollAnchor,
-} from "@/components/prompt-kit/chat-container";
-import { ScrollButton } from "@/components/prompt-kit/scroll-button";
+} from "@sg/prompt-kit/chat-container";
+import { ScrollButton } from "@sg/prompt-kit/scroll-button";
 import {
   Steps,
   StepsItem,
   StepsTrigger,
   StepsContent,
-} from "@/components/prompt-kit/steps";
-import { Tool } from "@/components/prompt-kit/tool";
+} from "@sg/prompt-kit/steps";
+import { Tool } from "@sg/prompt-kit/tool";
 import {
   PromptInput,
   PromptInputTextarea,
   PromptInputActions,
   PromptInputAction,
-} from "@/components/prompt-kit/prompt-input";
-import chatbotData from "@/lib/animations/chatbot.json";
-import ghostData from "@/lib/animations/ghostsmart.json";
-import flowData from "@/lib/animations/ai-flow.json";
-import { AGI_ENABLED } from "@/lib/agi";
+} from "@sg/prompt-kit/prompt-input";
+import chatbotData from "@sg/animations/chatbot.json";
+import ghostData from "@sg/animations/ghostsmart.json";
+import flowData from "@sg/animations/ai-flow.json";
+import { AGI_ENABLED } from "@sg/agi";
 import {
   loadAiStatus,
   streamAgentChat,
@@ -42,15 +42,15 @@ import {
   setAgentSkillStatus,
   confirmAgentScope,
   type AgentDomainInfo,
-} from "@/lib/data";
-import AgentScopeGate, { type AgentScopeSelection } from "@/components/AgentScopeGate";
-import AgentGuardPanel from "@/components/AgentGuardPanel";
-import { isAuthorizationBlock, requestAgentApproval } from "@/lib/agentGuard";
-import { PLATFORM_AI_URL } from "@/lib/links";
-import { useStore } from "@/lib/store";
-import { cx } from "@/lib/utils";
-import { useChatSend } from "@/lib/useChatSend";
-import type { AiStatus, AgentSkill, AgentScopeCard, AgentScopeGrant } from "@/lib/types";
+} from "@sg/data";
+import AgentScopeGate, { type AgentScopeSelection } from "@sg/components/AgentScopeGate";
+import AgentGuardPanel from "@sg/components/AgentGuardPanel";
+import { isAuthorizationBlock, requestAgentApproval } from "@sg/agentGuard";
+import { PLATFORM_AI_URL } from "@sg/links";
+import { useStore } from "@sg/store";
+import { cx } from "@sg/utils";
+import { useChatSend } from "@sg/useChatSend";
+import type { AiStatus, AgentSkill, AgentScopeCard, AgentScopeGrant } from "@sg/types";
 
 type ChatMsg = {
   role: "user" | "agent";

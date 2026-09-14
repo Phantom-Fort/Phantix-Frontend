@@ -5,16 +5,16 @@ import {
   LifeBuoy, Plus, MessageSquare, ArrowLeft, Loader2, Send, BookOpen, Mail, Clock,
   ShieldCheck, ExternalLink, RefreshCw, AlertTriangle,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import DocLink from "@/components/DocLink";
-import { useStore } from "@/lib/store";
-import { timeAgo } from "@/lib/utils";
-import { cx } from "@/lib/utils";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import DocLink from "@sg/components/DocLink";
+import { useStore } from "@sg/store";
+import { timeAgo } from "@sg/utils";
+import { cx } from "@sg/utils";
 import {
   RESPONSE_TARGETS, TICKET_CATEGORIES, TICKET_PRIORITIES,
   createSupportTicket, getSupportTicket, loadSupportTickets, replySupportTicket, ticketAge,
   type SupportTicket, type TicketCategory, type TicketPriority,
-} from "@/lib/support";
+} from "@sg/support";
 
 // ── Support ──────────────────────────────────────────────────────────────────
 // Any operator can raise a ticket here; it is submitted **as the organization**,

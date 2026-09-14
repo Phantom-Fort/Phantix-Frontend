@@ -2,16 +2,16 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   CalendarClock, CalendarOff, CheckCircle2, Loader2, Moon, PauseCircle, Plus, RefreshCw,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@/components/ui";
-import { useStore } from "@/lib/store";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { useStore } from "@sg/store";
 import {
   addBlackout, asArray, CRON_PRESETS, createSchedule, listProcedures, listSchedules,
   procedureKey, procedureName, WEEKDAYS,
   type VaptProcedure, type VaptSchedule,
-} from "@/lib/vaptOps";
-import { cx } from "@/lib/utils";
-import ContinuousReassessmentCard from "@/components/ContinuousReassessmentCard";
-import DocLink from "@/components/DocLink";
+} from "@sg/vaptOps";
+import { cx } from "@sg/utils";
+import ContinuousReassessmentCard from "@sg/components/ContinuousReassessmentCard";
+import DocLink from "@sg/components/DocLink";
 
 // ── Recurring VAPT schedules ─────────────────────────────────────────────────
 // A schedule runs a procedure against a scope on a cadence. Blackout windows

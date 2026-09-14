@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@/components/ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
-import DocLink from "@/components/DocLink";
-import ReportSolutions from "@/components/ReportSolutions";
-import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerFinding } from "@/lib/data";
-import type { ReportTypeEntry } from "@/lib/types";
-import { api, ApiError } from "@/lib/api";
-import { useResource } from "@/lib/useResource";
-import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@/lib/utils";
-import { useStore } from "@/lib/store";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
+import DocLink from "@sg/components/DocLink";
+import ReportSolutions from "@sg/components/ReportSolutions";
+import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerFinding } from "@sg/data";
+import type { ReportTypeEntry } from "@sg/types";
+import { api, ApiError } from "@sg/api";
+import { useResource } from "@sg/useResource";
+import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@sg/utils";
+import { useStore } from "@sg/store";
 import { useSearchParams } from "react-router-dom";
-import { isDemoMode } from "@/lib/api";
+import { isDemoMode } from "@sg/api";
 import { marked } from "marked";
-import type { TrackerFinding, TrackerSummary } from "@/lib/types";
+import type { TrackerFinding, TrackerSummary } from "@sg/types";
 
 marked.setOptions({ breaks: true, gfm: true });
 

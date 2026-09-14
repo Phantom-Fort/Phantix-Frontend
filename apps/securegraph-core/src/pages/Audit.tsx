@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, Filter, X, Loader2 } from "lucide-react";
-import { PageHeader, Card, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import { loadAuditBundle } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { describeEndpoint } from "@/lib/auditExplain";
-import { timeAgo, titleCase, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import { api } from "@/lib/api";
-import type { AuditEvent } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { loadAuditBundle } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { describeEndpoint } from "@sg/auditExplain";
+import { timeAgo, titleCase, cx } from "@sg/utils";
+import { useStore } from "@sg/store";
+import { api } from "@sg/api";
+import type { AuditEvent } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 const ENGINE_MAP: Record<string, { label: string; color: string }> = {
   assets: { label: "Asset Engine", color: "text-blue-400" },

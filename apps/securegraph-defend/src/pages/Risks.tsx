@@ -1,16 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@/components/Pagination";
-import DocLink from "@/components/DocLink";
-import SecurityDbBanner from "@/components/SecurityDbBanner";
-import { loadRisksBundle } from "@/lib/data";
-import { api } from "@/lib/api";
-import { useResource } from "@/lib/useResource";
-import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import type { Risk } from "@/lib/types";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
+import DocLink from "@sg/components/DocLink";
+import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import { loadRisksBundle } from "@sg/data";
+import { api } from "@sg/api";
+import { useResource } from "@sg/useResource";
+import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx } from "@sg/utils";
+import { useStore } from "@sg/store";
+import type { Risk } from "@sg/types";
 
 export default function Risks() {
   const { toast, requireDualControl, dualControl } = useStore();

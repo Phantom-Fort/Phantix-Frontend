@@ -2,8 +2,8 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, BookOpen, ArrowRight, FileText } from "lucide-react";
-import { docs, docCategories } from "@/lib/docs";
-import { cx } from "@/lib/utils";
+import { docs, docCategories } from "@sg/docs";
+import { cx } from "@sg/utils";
 
 export default function Docs() {
   const [q, setQ] = useState("");

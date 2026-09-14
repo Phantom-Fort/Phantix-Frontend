@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Bot, ChevronLeft, ChevronRight, KeyRound, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
-import { PageHeader, Card, TableCardSkeleton, ErrorState, EmptyState } from "@/components/ui";
-import { isDenied, loadAgentActivity, type AgentAction } from "@/lib/agentActivity";
-import { cx, timeAgo, formatDateTime } from "@/lib/utils";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, TableCardSkeleton, ErrorState, EmptyState } from "@sg/ui";
+import { isDenied, loadAgentActivity, type AgentAction } from "@sg/agentActivity";
+import { cx, timeAgo, formatDateTime } from "@sg/utils";
+import DocLink from "@sg/components/DocLink";
 
 // ── Agent activity ───────────────────────────────────────────────────────────
 // The agent acts as the signed-in user and inherits no authority. Every tool call

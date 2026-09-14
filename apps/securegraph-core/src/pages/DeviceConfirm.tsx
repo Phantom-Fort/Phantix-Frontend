@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
-import { api } from "@/lib/api";
-import { notifyDeviceConfirmed } from "@/lib/deviceConfirm";
-import { BrandLogo } from "@/components/BrandLogo";
+import { api } from "@sg/api";
+import { notifyDeviceConfirmed } from "@sg/deviceConfirm";
+import { BrandLogo } from "@sg/components/BrandLogo";
 
 /**
  * Opens from the org-specific confirmation email link:

@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Users, Plus, ShieldCheck, Link2, KeyRound, UserPlus, AlertTriangle } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner, PageSkeleton, ErrorState } from "@/components/ui";
-import { loadPeopleBundle } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { emptyDualControl } from "@/lib/data";
-import { timeAgo, cx } from "@/lib/utils";
-import { useStore } from "@/lib/store";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { loadPeopleBundle } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { emptyDualControl } from "@sg/data";
+import { timeAgo, cx } from "@sg/utils";
+import { useStore } from "@sg/store";
+import DocLink from "@sg/components/DocLink";
 
 export default function People() {
   const { toast, requireDualControl, dualControl: storeDc } = useStore();

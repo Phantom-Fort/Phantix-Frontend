@@ -5,14 +5,14 @@ import {
   ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
   Link2, Building2, User, AlertOctagon, Check, Send, RefreshCw,
 } from "lucide-react";
-import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@/lib/api";
-import { useStore } from "@/lib/store";
-import { PLATFORM_URL } from "@/lib/links";
-import { cx } from "@/lib/utils";
-import { listenDeviceConfirmed } from "@/lib/deviceConfirm";
-import { BrandLogo } from "@/components/BrandLogo";
-import AuthShowcase from "@/components/AuthShowcase";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@sg/api";
+import { useStore } from "@sg/store";
+import { PLATFORM_URL } from "@sg/links";
+import { cx } from "@sg/utils";
+import { listenDeviceConfirmed } from "@sg/deviceConfirm";
+import { BrandLogo } from "@sg/components/BrandLogo";
+import AuthShowcase from "@sg/components/AuthShowcase";
+import { ThemeToggle } from "@sg/components/ThemeToggle";
 
 type Stage =
   | "email"

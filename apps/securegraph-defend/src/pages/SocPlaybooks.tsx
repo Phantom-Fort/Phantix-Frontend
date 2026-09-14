@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Shield, Search, Filter } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@/components/ui";
-import { loadPlaybooks, loadMitreMatrix, loadMitreStats } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import type { SocPlaybook, MitreMatrix, MitreStats } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
+import { loadPlaybooks, loadMitreMatrix, loadMitreStats } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import type { SocPlaybook, MitreMatrix, MitreStats } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 export default function SocPlaybooks() {
   const [tab, setTab] = useState("playbooks");

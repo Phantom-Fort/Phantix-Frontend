@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, Download, Send, Loader2, FileText } from "lucide-react";
-import { api } from "@/lib/api";
-import { useStore } from "@/lib/store";
-import { PageHeader, Card, CardHeader, EmptyState, Spinner } from "@/components/ui";
-import { cx } from "@/lib/utils";
+import { api } from "@sg/api";
+import { useStore } from "@sg/store";
+import { PageHeader, Card, CardHeader, EmptyState, Spinner } from "@sg/ui";
+import { cx } from "@sg/utils";
 
 // ── Settings → Privacy: NDPA §34–37 data-subject requests (staging-rollout §2) ──
 // POST/GET /api/v1/organizations/me/data-subject-request, beside the privacy

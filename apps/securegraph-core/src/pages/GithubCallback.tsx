@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Loader2, XCircle, ExternalLink } from "lucide-react";
-import { api } from "@/lib/api";
-import { BrandLogo } from "@/components/BrandLogo";
+import { api } from "@sg/api";
+import { BrandLogo } from "@sg/components/BrandLogo";
 
 /**
  * GitHub App setup/callback landing page (app.phantixlabs.com/integrations/github/callback).

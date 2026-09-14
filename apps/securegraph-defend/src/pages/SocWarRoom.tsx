@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Swords, Plus, ArrowRight, Check, Clock, AlertTriangle, FileText, ShieldAlert } from "lucide-react";
-import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, PageSkeleton, ErrorState, EmptyState, Modal } from "@/components/ui";
-import { loadSocWarRoom, loadWarRoomChecklist, updateChecklistStep, loadWarRoomEvidence, loadWarRoomKillChain, loadWarRoomSla, openSocWarRoomCase } from "@/lib/data";
-import { useResource } from "@/lib/useResource";
-import { useStore } from "@/lib/store";
-import { timeAgo, cx } from "@/lib/utils";
-import type { Severity, SocWarRoomCase, SocWarRoomResponse, SocPlaybook } from "@/lib/types";
-import DocLink from "@/components/DocLink";
+import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, PageSkeleton, ErrorState, EmptyState, Modal } from "@sg/ui";
+import { loadSocWarRoom, loadWarRoomChecklist, updateChecklistStep, loadWarRoomEvidence, loadWarRoomKillChain, loadWarRoomSla, openSocWarRoomCase } from "@sg/data";
+import { useResource } from "@sg/useResource";
+import { useStore } from "@sg/store";
+import { timeAgo, cx } from "@sg/utils";
+import type { Severity, SocWarRoomCase, SocWarRoomResponse, SocPlaybook } from "@sg/types";
+import DocLink from "@sg/components/DocLink";
 
 export default function SocWarRoom() {
   const { toast } = useStore();
