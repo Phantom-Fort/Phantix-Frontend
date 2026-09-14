@@ -7,7 +7,7 @@
 //
 // This module owns the browser-side resolution: the hosts, the "where do you
 // want to work today" picker, and the dashboard router.
-import { api, isDemoMode, delay } from "./api";
+import { api, getActiveApplication, isDemoMode, delay } from "./api";
 import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL, IS_DEV_HOSTS } from "./config";
 
 export type ApplicationKey = "core" | "attack" | "defend" | "code";
@@ -181,7 +181,10 @@ export interface AppTarget {
 
 /** Where an application's "Open" action should go. */
 export function applicationTarget(key: ApplicationKey, path = "/dashboard"): AppTarget {
-  if (key === "core") return { external: false, href: path || "/dashboard" };
+  // "Local" means this bundle's own application, whichever one it is. Assuming
+  // Core was always local was true while there was one bundle; each application
+  // is now its own origin, so a Core link from Defend is a cross-origin link.
+  if (key === getActiveApplication()) return { external: false, href: path || "/dashboard" };
   const base = APPLICATION_HOSTS[key] || "";
   return { external: true, href: `${base}${path && path !== "/dashboard" ? path : "/"}` };
 }
@@ -207,8 +210,11 @@ export async function applicationHandoffHref(
   key: ApplicationKey,
   path = "/",
 ): Promise<string> {
-  const fallback = applicationTarget(key, path).href;
-  if (key === "core" || isDemoMode()) return fallback;
+  const target = applicationTarget(key, path);
+  const fallback = target.href;
+  // Staying inside this application needs no handoff, and the demo has no
+  // session to hand over.
+  if (!target.external || isDemoMode()) return fallback;
   try {
     const minted = await api.post<HandoffMinted>("/app/auth/handoff", { application: key });
     // The backend's open_url is the deployed host; on a dev server that is the

@@ -238,7 +238,7 @@ export default function Agent({ initialMode = "agent", allowAgi = true }: { init
     <div className={cx("mx-auto", mode === "agi" ? "max-w-none" : "max-w-[900px]")}>
       <PageHeader
         title="SecureGraph Agent"
-        description="Chief Security Agent routes to specialists (SOC, GRC, VAPT, Threat Intel, Asset). AI orchestrates; engines execute — AI never discovers a vulnerability without a finding ID."
+        description="Ask about your security posture in plain language. The agent works across your assets, findings, scans and compliance — and every answer it gives is grounded in a real finding, never invented."
         actions={
           <span className="flex items-center gap-2">
             <DocLink docId="howto-app-13" label="Agent how-to" />

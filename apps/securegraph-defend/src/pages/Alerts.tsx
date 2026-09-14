@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info, Cable, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
 import DocLink from "@sg/components/DocLink";
+import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { loadAlertsBundle } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { timeAgo, cx } from "@sg/utils";
@@ -112,9 +113,13 @@ export default function Alerts() {
                     <p className="text-xs text-slate-400">Manage Slack, Teams, and other channel integrations from the Integrations Hub</p>
                   </div>
                 </div>
-                <button className="btn-secondary !px-3 !py-1.5" onClick={() => navigate("/integrations")}>
+                <CrossAppLink
+                  app="core"
+                  to="/integrations"
+                  className="btn-secondary !px-3 !py-1.5"
+                >
                   <ExternalLink size={12} /> Open Integrations Hub
-                </button>
+                </CrossAppLink>
               </div>
             </Card>
           </div>

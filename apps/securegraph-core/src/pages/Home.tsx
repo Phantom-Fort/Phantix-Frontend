@@ -24,10 +24,16 @@ export default function Home() {
   const [params] = useSearchParams();
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
 
-  // Redirect logged-in users straight to dashboard
+  // A signed-in operator belongs at the application picker, not in Core's
+  // dashboard: Core is one of four applications, not the default destination.
+  // The demo is the exception — it has one application and no choice to make.
   useEffect(() => {
-    if (session?.authenticated) { navigate("/dashboard", { replace: true }); }
-  }, [session, navigate]);
+    if (session?.authenticated && !demoActive) {
+      navigate("/choose-app", { replace: true });
+    } else if (session?.authenticated) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [session, demoActive, navigate]);
 
   // Load real pricing from API
   useEffect(() => { loadPricing().then(setPricingTiers); }, []);
@@ -67,7 +73,7 @@ export default function Home() {
           <div className="ml-auto flex items-center gap-2.5">
             <ThemeToggle />
             {session?.authenticated ? (
-              <Link to="/dashboard" className="btn-primary !py-2">Open console <ArrowRight size={15} /></Link>
+              <Link to="/choose-app" className="btn-primary !py-2">Open console <ArrowRight size={15} /></Link>
             ) : (
               <>
                 <Link to="/login" className="btn-ghost !py-2"><LogIn size={15} /> Sign in</Link>

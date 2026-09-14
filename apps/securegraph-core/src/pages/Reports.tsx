@@ -394,7 +394,9 @@ export default function Reports() {
     if (genOpen && !fetchedCampaigns.current && api) {
       fetchedCampaigns.current = true;
       setCampaignsLoading(true);
-      api.get<any>("/vapt/campaigns?limit=50").then((r) => {
+      // Reporting answers "what can I report on?" — Core must not call Attack's
+      // engine routes, and the application boundary now refuses if it tries.
+      api.get<any>("/reports/subjects?report_type=vapt_campaign&limit=50").then((r) => {
         setCampaigns(r.items ?? r.campaigns ?? r ?? []);
       }).catch(() => {}).finally(() => setCampaignsLoading(false));
     }
@@ -931,7 +933,7 @@ export default function Reports() {
                     <option value="">{fromAgi ? "Agent session (no VAPT campaign)" : "Select campaign..."}</option>
                     {campaigns.map((c: any) => (
                       <option key={c.id} value={c.id}>
-                        #{c.id} --- {c.campaign_name ?? c.name} ({c.status ?? "unknown"})
+                        #{c.id} --- {c.label ?? c.campaign_name ?? c.name} ({c.status ?? "unknown"})
                       </option>
                     ))}
                   </select>

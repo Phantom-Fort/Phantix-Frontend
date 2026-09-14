@@ -9,6 +9,7 @@ import {
 import { PageHeader, Card, CardHeader, StatCard, AnimatedNumber, SeverityBadge, RiskBadge, ProgressRing, TableSkeleton, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import AssetForceGraph from "@sg/components/AssetForceGraph";
 import DocLink from "@sg/components/DocLink";
+import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { useResource } from "@sg/useResource";
 import { loadAssetsBundle, loadIntelligenceDashboard, loadRelationshipGraph, refreshIntelligence } from "@sg/data";
 import { generateComprehensiveExplanation, type ComprehensiveExplanation } from "@sg/aiExplain";
@@ -732,10 +733,10 @@ export default function AssetIntelligenceDashboard() {
           <Activity size={20} className="shrink-0 text-phantix-400" />
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">SOC Monitor</p><p className="truncate text-xs text-slate-400">Live monitoring</p></div>
         </Link>
-        <Link to="/scans" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
+        <CrossAppLink app="attack" to="/scans" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
           <Search size={20} className="shrink-0 text-phantix-400" />
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Scans</p><p className="truncate text-xs text-slate-400">Run scans</p></div>
-        </Link>
+        </CrossAppLink>
         <Link to="/risks" className="card flex min-w-0 items-center gap-3 overflow-hidden p-4 hover:border-phantix-500/60 transition-colors">
           <AlertTriangle size={20} className="shrink-0 text-phantix-400" />
           <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-white">Risk Register</p><p className="truncate text-xs text-slate-400">Risk management</p></div>

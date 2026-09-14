@@ -1,5 +1,6 @@
 export { useSidebarCollapsed } from "./useSidebarCollapsed";
 export { ThemeToggle } from "./ThemeToggle";
+export { CrossAppLink } from "./components/CrossAppLink";
 export { useTheme, type Theme, type ThemeMode } from "./theme";
 export { ApplicationShell } from "./shell/ApplicationShell";
 export type { ApplicationShellProps } from "./shell/ApplicationShell";

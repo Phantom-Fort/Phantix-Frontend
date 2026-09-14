@@ -56,7 +56,7 @@ export default function PublicChrome() {
           <div className="ml-auto flex items-center gap-2.5">
             <ThemeToggle />
             {session?.authenticated ? (
-              <Link to="/dashboard" className="btn-primary !py-2">
+              <Link to="/choose-app" className="btn-primary !py-2">
                 Open console <ArrowRight size={15} />
               </Link>
             ) : (

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
 import { api } from "@sg/api";
@@ -95,9 +96,13 @@ export default function IntegrationOAuthCallback() {
               <Link to="/integrations" className="btn-primary mt-6 inline-flex w-full items-center justify-center !py-3">
                 Back to Integrations
               </Link>
-              <Link to="/code" className="mt-3 inline-block text-xs text-slate-400 underline">
+              <CrossAppLink
+                app="code"
+                to="/code-review"
+                className="mt-3 inline-block text-xs text-slate-400 underline"
+              >
                 Open the Code page
-              </Link>
+              </CrossAppLink>
             </div>
           )}
 
