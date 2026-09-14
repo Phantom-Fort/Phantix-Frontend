@@ -1,6 +1,7 @@
 import React from "react";
 import {
   BookOpen,
+  Bot,
   CalendarClock,
   Crosshair,
   FileSignature,
@@ -19,6 +20,7 @@ export const NAV: NavSection[] = [
       { to: "/", label: "Overview", icon: <LayoutDashboard size={17} /> },
       { to: "/targets", label: "Targets", icon: <Target size={17} /> },
       { to: "/pentest-scope", label: "Pentest scope", icon: <FileSignature size={17} /> },
+      { to: "/pentest-agent", label: "Pentest agent", icon: <Bot size={17} /> },
     ],
   },
   {

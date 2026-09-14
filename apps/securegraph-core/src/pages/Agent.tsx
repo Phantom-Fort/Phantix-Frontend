@@ -186,12 +186,12 @@ function clarifyRequest(raw: string): ClarifyResult {
   };
 }
 
-export default function Agent() {
+export default function Agent({ initialMode = "agent", allowAgi = true }: { initialMode?: "agent" | "agi"; allowAgi?: boolean }) {
   const { toast, operate, requireDualControl } = useStore();
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"chat" | "skills">("chat");
-  const [mode, setMode] = useState<"agent" | "agi">("agent");
+  const [mode, setMode] = useState<"agent" | "agi">(allowAgi ? initialMode : "agent");
 
   useEffect(() => {
     let cancelled = false;
@@ -253,6 +253,7 @@ export default function Agent() {
       />
 
       {/* Mode switch — SecureGraph Agent vs Autonomous Pentest Agent */}
+      {allowAgi && (
       <div className="mb-4 flex items-center gap-1.5 rounded-xl border border-phantix-700/40 bg-phantix-900/40 p-1">
         <button
           onClick={() => {
@@ -275,6 +276,7 @@ export default function Agent() {
           </button>
         )}
       </div>
+      )}
 
       {mode === "agi" && AGI_ENABLED ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>

@@ -67,7 +67,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/integrations" element={<IntegrationsHub />} />
           <Route path="/audit" element={<Audit />} />
-          <Route path="/agent" element={<Agent />} />
+          <Route path="/agent" element={<Agent allowAgi={false} />} />
           <Route path="/agent-activity" element={<AgentActivity />} />
           <Route path="/people" element={<People />} />
           <Route path="/authorizations" element={<AuthorizerInbox />} />

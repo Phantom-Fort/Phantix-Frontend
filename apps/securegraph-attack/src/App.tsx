@@ -10,6 +10,8 @@ import Overview from "./pages/Overview";
 import Targets from "./pages/Targets";
 import Scans from "./pages/Scans";
 import PentestScope from "./pages/PentestScope";
+import Agent from "./pages/Agent";
+import AgiDrawer from "@/components/AgiDrawer";
 import Vapt from "./pages/Vapt";
 import VaptSchedules from "./pages/VaptSchedules";
 import VaptProcedures from "./pages/VaptProcedures";
@@ -32,6 +34,7 @@ export default function App() {
           <Route path="/" element={<Overview application={"attack" as ApplicationKey} nav={NAV} />} />
           <Route path="/targets" element={<Targets />} />
           <Route path="/pentest-scope" element={<PentestScope />} />
+          <Route path="/pentest-agent" element={<Agent initialMode="agi" />} />
           <Route path="/vapt" element={<Vapt />} />
           <Route path="/vapt/schedules" element={<VaptSchedules />} />
           <Route path="/vapt/procedures" element={<VaptProcedures />} />
@@ -42,6 +45,7 @@ export default function App() {
       </Routes>
       <ToastViewport />
       <DualControlOverlay />
+      <AgiDrawer />
     </StoreProvider>
   );
 }
