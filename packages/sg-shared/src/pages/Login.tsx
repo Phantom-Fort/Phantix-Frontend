@@ -97,7 +97,10 @@ export default function Login() {
 
   const org = searchParams.get("org") ?? "";
   const userId = searchParams.get("u") ?? "";
-  const loginToken = searchParams.get("t") ?? "";
+  const loginToken =
+    searchParams.get("t") ??
+    new URLSearchParams(window.location.hash.replace(/^#/, "")).get("t") ??
+    "";
   const isInvite = Boolean(loginToken);
 
   useEffect(() => { if (API_BASE && isDemoFlagSet()) exitDemoMode(); }, []);
