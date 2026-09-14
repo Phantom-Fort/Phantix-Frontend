@@ -242,11 +242,11 @@ export default function Agent({ initialMode = "agent", allowAgi = false }: { ini
   const streamEnabled = status?.agent?.stream?.enabled ?? true;
 
   return (
-    // Fills the space the shell leaves: the conversation scrolls inside the
-    // console, the page itself does not.
+    // Fills the space the shell leaves between header and footer, and no more:
+    // the conversation scrolls inside the console rather than growing the page.
     <div
       className={cx(
-        "mx-auto flex h-full min-h-[420px] w-full flex-col overflow-hidden",
+        "mx-auto flex h-[calc(100vh-190px)] min-h-[420px] w-full flex-col overflow-hidden",
         mode === "agi" ? "max-w-none" : "max-w-[900px]",
       )}
     >

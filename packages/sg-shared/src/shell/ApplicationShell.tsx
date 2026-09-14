@@ -550,7 +550,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         </aside>
 
         <div
-          className={`flex h-screen flex-1 flex-col overflow-hidden ${
+          className={`flex min-h-screen flex-1 flex-col ${
             collapsed ? "lg:ml-[72px]" : "lg:ml-[248px]"
           }`}
         >
@@ -792,16 +792,14 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           )}
 
           {/* Content */}
-          {/* The page scrolls here, not the window: the footer stays on screen
-              and a page that asks for h-full gets the space that is actually
-              left rather than guessing at header and footer heights. */}
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-            {/* Pages declare their own measure — a table wants 1400-1500px, a
-                form wants 900px. The old 7xl cap sat below both, so wide pages
-                were cramped while their rows scrolled off the bottom. This is
-                only a backstop so an ultrawide display does not stretch a table
-                across a metre of glass. */}
-            <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col">
+          {/* The window scrolls, so the footer sits after the content instead of
+              being pinned to the viewport. A page that asks for h-full still
+              fills the space left between the header and the footer. */}
+          <main className="flex flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+            {/* The one content measure, defined here so page, skeleton and
+                shell cannot drift apart. 1600px is a backstop: an ultrawide
+                display should not stretch a table across a metre of glass. */}
+            <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
               {session?.authenticated && !demoActive && <SandboxBanner />}
               <Outlet />
             </div>

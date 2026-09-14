@@ -5,6 +5,7 @@ import { ArrowUpRight, Boxes, Code2, Crosshair, ShieldCheck } from "lucide-react
 import { PageHeader, Card, PageHeaderSkeleton, CardListSkeleton } from "@sg/ui";
 import { cx } from "@sg/utils";
 import { apiGet } from "@sg/shell/api";
+import { useStore } from "@sg/store";
 import { APPLICATION_LABEL, type ApplicationKey, type NavSection } from "@sg/shell/types";
 
 /**
@@ -64,15 +65,22 @@ export default function Overview({
   application: ApplicationKey;
   nav?: NavSection[];
 }) {
+  const { toast } = useStore();
   const [card, setCard] = useState<LauncherCard | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
     apiGet<Snapshot>("/app/auth/applications")
       .then((s) => alive && setCard(s.applications.find((a) => a.key === application) ?? null))
-      .catch((e: unknown) => alive && setError(e instanceof Error ? e.message : "Failed to load"))
+      // The hero text is decoration here — the launchpad is built from this
+      // app's own nav and needs nothing from the API. A backend message
+      // (expired session, gateway error) belongs in a toast, not printed across
+      // a page that is working.
+      .catch((e: unknown) => {
+        if (!alive) return;
+        toast("error", "Could not load application details", e instanceof Error ? e.message : "");
+      })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
@@ -104,12 +112,6 @@ export default function Overview({
         title={`${card?.label || APPLICATION_LABEL[application]}`}
         description={card?.description || undefined}
       />
-
-      {error && (
-        <p className="mb-5 text-sm text-severity-critical">
-          {error} — the launchpad below still works.
-        </p>
-      )}
 
       {/* Hero: what this application is for. */}
       <motion.div
