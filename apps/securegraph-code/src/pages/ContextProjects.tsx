@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Share2, Upload,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
 import { useStore } from "@sg/store";
 import { ApiError } from "@sg/api";
 import {

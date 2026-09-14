@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Brain, Database, Info, Loader2, ShieldCheck } from "lucide-react";
-import { Card, CardHeader, ErrorState, PageHeader, Spinner, SettingsSkeleton } from "@sg/ui";
+import { Card, CardHeader, ErrorState, PageHeader, SettingsSkeleton } from "@sg/ui";
 import { useStore } from "@sg/store";
 import { AI_THRESHOLDS, loadVaptSettings, saveVaptSettings, type VaptSettings as Settings } from "@sg/vaptOps";
 import { cx } from "@sg/utils";

@@ -5,7 +5,7 @@ import {
   LifeBuoy, Plus, MessageSquare, ArrowLeft, Loader2, Send, BookOpen, Mail, Clock,
   ShieldCheck, ExternalLink, RefreshCw, AlertTriangle,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import DocLink from "@sg/components/DocLink";
 import { useStore } from "@sg/store";
 import { timeAgo } from "@sg/utils";

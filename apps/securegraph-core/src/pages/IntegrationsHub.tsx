@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, ExternalLink, Webhook, Bot, MessageSquare, Send, ChevronRight } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
 import { isPendingApproval } from "@sg/api";

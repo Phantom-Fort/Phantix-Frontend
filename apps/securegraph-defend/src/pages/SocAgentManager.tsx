@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Monitor, Download, Terminal, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { PageHeader, Card, CardHeader, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge } from "@sg/ui";
+import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState, EmptyState, StatusBadge } from "@sg/ui";
 import { loadAgentFleet, loadSocAgentInstall, downloadSocAgent } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { timeAgo, cx } from "@sg/utils";

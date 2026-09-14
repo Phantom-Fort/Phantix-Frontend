@@ -5,7 +5,7 @@ import {
   GitBranch, GitPullRequest, Wrench, ShieldCheck, RefreshCw, ExternalLink, Loader2, Send, Github, AlertTriangle,
   Gitlab, Plug, PlugZap, Key, Trash2, TestTube, Webhook, CheckCircle2,
 } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Spinner, Tabs, Modal } from "@sg/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Tabs, Modal, CardListSkeleton } from "@sg/ui";
 import { api, isPendingApproval } from "@sg/api";
 import CodeReview from "@sg/components/CodeReview";
 import {
@@ -333,7 +333,7 @@ export default function Code() {
         <Card>
           <CardHeader title="Connected repositories" subtitle="Repositories the GitHub App can read and review" action={<GitBranch size={16} className="text-gold-300" />} />
           {loading ? (
-            <div className="p-4"><Spinner /></div>
+            <CardListSkeleton rows={4} className="p-4" />
           ) : reposError ? (
             <EmptyState icon={<AlertTriangle size={22} />} title="Repositories unavailable" body={reposError} action={<button className="btn-secondary" onClick={() => void load()}>Retry</button>} />
           ) : repos.length === 0 ? (
@@ -395,7 +395,7 @@ export default function Code() {
         <Card>
           <CardHeader title="Recent branch-review runs" subtitle="Every push the reviewer processed — PR safety before merge" action={<GitPullRequest size={16} className="text-gold-300" />} />
           {loading ? (
-            <div className="p-4"><Spinner /></div>
+            <CardListSkeleton rows={4} className="p-4" />
           ) : events.length === 0 ? (
             <EmptyState icon={<GitPullRequest size={22} />} title="No runs yet" body="Runs appear here as pushes land on watched branches. PRs are reviewed before merge." />
           ) : (
@@ -469,7 +469,7 @@ export default function Code() {
               action={<Webhook size={16} className="text-gold-300" />}
             />
             {loading ? (
-              <div className="p-4"><Spinner /></div>
+              <CardListSkeleton rows={3} className="p-4" />
             ) : (
               <>
                 <div className="overflow-x-auto">

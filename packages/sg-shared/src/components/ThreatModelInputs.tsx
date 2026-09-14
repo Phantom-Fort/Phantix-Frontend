@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, CheckCircle2, ExternalLink, FileText, Info, Loader2, Plus, Upload, XCircle } from "lucide-react";
-import { Card, CardHeader, Modal, Spinner } from "../ui";
+import { Card, CardHeader, Modal, SkeletonBlock } from "../ui";
 import { useStore } from "../store";
 import { ApiError } from "../api";
 import {
@@ -262,7 +262,7 @@ export function ProjectInputsModal({
             subtitle="What the model reasons over, and what is still missing"
             action={
               loadingSummary ? (
-                <Spinner className="h-3.5 w-3.5 text-slate-500" />
+                <SkeletonBlock className="h-4 w-20 rounded-full" />
               ) : summary?.ready ? (
                 <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-400">
                   <CheckCircle2 size={11} className="mr-1 inline" /> Ready to generate

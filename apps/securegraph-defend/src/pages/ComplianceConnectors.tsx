@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, Download, Loader2, Plug, RefreshCw, Save, XCircle } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
 import { useStore } from "@sg/store";
 import {
   collectEvidence,

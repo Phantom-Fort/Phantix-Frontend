@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Logs, Search, Filter, BarChart3, Activity } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, Spinner, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
+import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
 import { searchSocLogs, loadLogPipelineStats } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { timeAgo, cx } from "@sg/utils";

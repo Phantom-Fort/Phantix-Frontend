@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   CalendarClock, CalendarOff, CheckCircle2, Loader2, Moon, PauseCircle, Plus, RefreshCw,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
 import { useStore } from "@sg/store";
 import {
   addBlackout, asArray, CRON_PRESETS, createSchedule, listProcedures, listSchedules,

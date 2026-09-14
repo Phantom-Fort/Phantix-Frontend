@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info, Cable, ExternalLink } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, PageSkeleton, ErrorState } from "@sg/ui";
 import DocLink from "@sg/components/DocLink";
 import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { loadAlertsBundle } from "@sg/data";

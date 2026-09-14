@@ -674,7 +674,7 @@ export default function Assets() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-400">
               {activeJobs.length > 0 ? (
-                <span className="flex items-center gap-2"><Spinner className="h-3 w-3" /> {activeJobs.length} active job{activeJobs.length > 1 ? "s" : ""}</span>
+                <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> {activeJobs.length} active job{activeJobs.length > 1 ? "s" : ""}</span>
               ) : (
                 `${discoveryJobs.length} discovery job${discoveryJobs.length !== 1 ? "s" : ""}`
               )}

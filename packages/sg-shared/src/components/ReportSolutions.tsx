@@ -2,7 +2,7 @@ import React from "react";
 import {
   Clipboard, Crosshair, Eye, FileText, Gauge, ListChecks, Scale, Shield, Terminal, Loader2, Play,
 } from "lucide-react";
-import { Card, EmptyState, Spinner } from "../ui";
+import { Card, EmptyState, CardListSkeleton } from "../ui";
 import type { ReportTypeEntry } from "../types";
 import { cx } from "../utils";
 
@@ -127,9 +127,7 @@ export default function ReportSolutions({
   if (loading) {
     return (
       <Card>
-        <div className="p-6">
-          <Spinner />
-        </div>
+        <CardListSkeleton rows={4} className="p-4" />
       </Card>
     );
   }

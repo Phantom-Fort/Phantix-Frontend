@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, ScanLine, ShieldCheck, Target } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, Spinner, StatCard, PageBodySkeleton } from "@sg/ui";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
 import { api, ApiError } from "@sg/api";
 import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "@sg/complianceGrc";
 import { useStore } from "@sg/store";

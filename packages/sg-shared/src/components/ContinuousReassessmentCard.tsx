@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, GitBranch, Loader2, Play, RefreshCw, CalendarClock } from "lucide-react";
-import { Card, CardHeader, EmptyState, Spinner } from "../ui";
+import { Card, CardHeader, EmptyState, CardListSkeleton } from "../ui";
 import { api } from "../api";
 import { useStore } from "../store";
 import { cx, timeAgo } from "../utils";
@@ -158,7 +158,7 @@ export default function ContinuousReassessmentCard() {
       </AnimatePresence>
 
       {loading ? (
-        <div className="flex justify-center py-6"><Spinner /></div>
+        <CardListSkeleton rows={3} className="py-2" />
       ) : error ? (
         <EmptyState
           icon={<AlertTriangle size={20} />}

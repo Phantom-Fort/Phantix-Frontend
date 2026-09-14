@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Activity, RefreshCw, RotateCcw, BookOpen, AlertTriangle, TrendingDown, Layers } from "lucide-react";
-import { PageHeader, Card, CardHeader, EmptyState, Spinner, StatCard, RiskBadge, PageBodySkeleton } from "@sg/ui";
+import { PageHeader, Card, CardHeader, EmptyState, StatCard, RiskBadge, PageBodySkeleton, CardListSkeleton } from "@sg/ui";
 import { api } from "@sg/api";
 import { loadPostureSnapshot, loadPostureReviewsDue, loadPostureDrift } from "@sg/vaptOps";
 import { listProjects } from "@sg/productContext";
@@ -207,7 +207,7 @@ export default function Posture() {
               </select>
             </div>
             {driftLoading ? (
-              <Spinner />
+              <CardListSkeleton rows={2} />
             ) : !drift ? (
               <p className="text-xs text-slate-500">Select a project to compute drift.</p>
             ) : (drift.drift?.length ?? 0) === 0 ? (

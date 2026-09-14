@@ -4,7 +4,7 @@ import {
   ArrowLeft, Network, Search, Tag, Boxes, Link2, ExternalLink,
 } from "lucide-react";
 import AssetForceGraph from "@sg/components/AssetForceGraph";
-import { Card, CardHeader, PageHeader, RiskBadge, Spinner, EmptyState } from "@sg/ui";
+import { Card, CardHeader, PageHeader, RiskBadge, EmptyState, SkeletonBlock } from "@sg/ui";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import { loadAssetsBundle, loadRelationshipGraph } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -198,7 +198,7 @@ export default function AssetGraph() {
                 ))}
               </div>
               <div className="relative z-10 rounded-xl border border-phantix-700/40 bg-phantix-950/70 px-4 py-3 text-center">
-                <Spinner className="mx-auto h-5 w-5" />
+                <SkeletonBlock className="mx-auto h-2 w-40 rounded-full" />
                 <p className="mt-2 text-xs text-slate-400">Mapping your attack surface…</p>
               </div>
             </div>

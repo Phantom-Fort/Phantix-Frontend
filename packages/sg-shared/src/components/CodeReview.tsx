@@ -4,7 +4,7 @@ import {
   AlertTriangle, ChevronRight, ExternalLink, FileCode2, GitPullRequest, Loader2, RefreshCw,
   ShieldCheck, Sparkles, Wrench, EyeOff, Undo2, ShieldAlert, Lock,
 } from "lucide-react";
-import { Card, CardHeader, EmptyState, SeverityBadge, Spinner } from "../ui";
+import { Card, CardHeader, EmptyState, SeverityBadge, CardListSkeleton, DetailSkeleton, SkeletonBlock } from "../ui";
 import { highlightCode } from "../highlighter";
 import {
   loadCodeBlob, loadCodeFinding, loadCodeFindingFiles, loadCodeFindings,
@@ -293,7 +293,7 @@ function FindingDetail({
   if (loading) {
     return (
       <Card>
-        <div className="p-6"><Spinner /></div>
+        <DetailSkeleton paragraphs={3} className="p-6" />
       </Card>
     );
   }
@@ -360,7 +360,11 @@ function FindingDetail({
         </div>
 
         {blobLoading ? (
-          <div className="rounded-md border border-phantix-700/50 bg-phantix-900/40 p-6"><Spinner /></div>
+          <div className="space-y-2 rounded-md border border-phantix-700/50 bg-phantix-900/40 p-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SkeletonBlock key={i} className={i % 3 === 2 ? "h-3 w-2/5" : "h-3 w-4/5"} />
+            ))}
+          </div>
         ) : blob?.ok ? (
           <BlobView blob={blob} />
         ) : (
@@ -560,7 +564,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
       </div>
 
       {loading ? (
-        <Card><div className="p-6"><Spinner /></div></Card>
+        <Card><CardListSkeleton rows={5} className="p-4" /></Card>
       ) : error ? (
         <Card>
           <EmptyState
@@ -634,7 +638,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
                           className="overflow-hidden bg-phantix-900/40"
                         >
                           {pathLoading ? (
-                            <div className="px-3 py-3"><Spinner /></div>
+                            <CardListSkeleton rows={2} className="px-3 py-3" />
                           ) : (
                             pathFindings.map((fd, i) => {
                               const isLast = i === pathFindings.length - 1;

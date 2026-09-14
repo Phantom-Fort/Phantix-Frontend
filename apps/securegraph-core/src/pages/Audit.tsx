@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ScrollText, Download, Filter, X, Loader2 } from "lucide-react";
-import { PageHeader, Card, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, PageSkeleton, ErrorState } from "@sg/ui";
 import { loadAuditBundle } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { describeEndpoint } from "@sg/auditExplain";

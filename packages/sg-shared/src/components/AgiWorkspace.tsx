@@ -4,7 +4,7 @@ import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert, Sparkles,
 } from "lucide-react";
-import { Modal, Spinner } from "../ui";
+import { Modal, SkeletonBlock } from "../ui";
 import DocLink from "./DocLink";
 import MarkdownView from "./MarkdownView";
 import AgiConsole from "./AgiConsole";
@@ -690,7 +690,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     return (
       <div className="flex min-h-[30vh] items-center justify-center">
         <div className="text-center">
-          <Spinner className="mx-auto h-6 w-6" />
+          <SkeletonBlock className="mx-auto h-2 w-44 rounded-full" />
           <p className="mt-3 text-xs text-slate-500">Checking AGI availability...</p>
         </div>
       </div>

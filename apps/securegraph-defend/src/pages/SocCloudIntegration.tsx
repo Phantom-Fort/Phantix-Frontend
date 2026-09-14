@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Cloud, Plus, Trash2, RefreshCw, CheckCircle, XCircle, Cable } from "lucide-react";
-import { PageHeader, Card, CardHeader, Spinner, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
+import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
 import { loadCloudProviderCatalog, loadCloudConnections, connectCloudProvider, deleteCloudConnection, syncCloudConnection } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { ShieldAlert, Download, ChevronDown, Info } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, Spinner, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, Modal, ProgressBar, Tabs, PageSkeleton, ErrorState } from "@sg/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
 import DocLink from "@sg/components/DocLink";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";

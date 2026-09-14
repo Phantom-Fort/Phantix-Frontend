@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, GitBranch, Lightbulb, RefreshCw, Search, Workflow } from "lucide-react";
-import { Card, CardHeader, EmptyState, ErrorState, PageHeader, SeverityBadge, Spinner, StatCard, Tabs, PageBodySkeleton } from "@sg/ui";
+import { Card, CardHeader, EmptyState, ErrorState, PageHeader, SeverityBadge, StatCard, Tabs, PageBodySkeleton } from "@sg/ui";
 import {
   asArray, listCorrelationRules, listMinedCandidates, listProcedures,
   procedureKey, procedureName,

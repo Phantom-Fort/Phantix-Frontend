@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, Download, Send, Loader2, FileText } from "lucide-react";
 import { api } from "@sg/api";
 import { useStore } from "@sg/store";
-import { PageHeader, Card, CardHeader, EmptyState, Spinner } from "@sg/ui";
+import { PageHeader, Card, CardHeader, EmptyState, DetailSkeleton, CardListSkeleton } from "@sg/ui";
 import { cx } from "@sg/utils";
 
 // ── Settings → Privacy: NDPA §34–37 data-subject requests (staging-rollout §2) ──
@@ -145,7 +145,7 @@ export default function Privacy() {
           </button>
         } />
         {loadingNotice ? (
-          <div className="flex justify-center py-8"><Spinner /></div>
+          <DetailSkeleton paragraphs={2} className="px-5 pb-5" />
         ) : notice?.summary ? (
           <div className="space-y-3 px-5 pb-5">
             <p className="text-sm leading-6 text-slate-400">{notice.summary}</p>
@@ -213,7 +213,7 @@ export default function Privacy() {
         <CardHeader title="Your requests" subtitle="Reference · type · status" />
         <div className="px-5 pb-5">
           {requests === null ? (
-            <div className="flex justify-center py-6"><Spinner /></div>
+            <CardListSkeleton rows={3} />
           ) : requests.length === 0 ? (
             <EmptyState icon={<FileText size={20} />} title="No requests yet" body="Raise a request above and track its status here." />
           ) : (
