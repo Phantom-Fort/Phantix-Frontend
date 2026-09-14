@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     publicDir: path.resolve(__dirname, "../../public"),
     resolve: {
+      // One React/router instance across app + packages/sg-shared.
+      dedupe: ["react", "react-dom", "react-router-dom", "lucide-react", "framer-motion"],
       alias: {
         "@": path.resolve(__dirname, "./src"),
         "@app": path.resolve(__dirname, "./src"),
