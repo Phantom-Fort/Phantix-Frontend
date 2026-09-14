@@ -215,7 +215,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
       if (!demo && !appToken()) {
         const handed = await consumeHandoff(application);
         if (!handed) {
-          window.location.assign("/login");
+          window.location.assign(coreLoginUrl(application));
           return;
         }
       }
@@ -341,9 +341,16 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
     ));
   }
 
+  /** Core owns sign-in. Send an unauthenticated visitor there, remembering the
+   *  application they wanted so Core hands the session back after login. */
+  function coreLoginUrl(next?: ApplicationKey): string {
+    const base = (hosts.core || "").replace(/\/+$/, "");
+    return `${base}/login${next ? `?next=${next}` : ""}`;
+  }
+
   function signOut() {
     clearStoredSession();
-    window.location.assign("/login");
+    window.location.assign(coreLoginUrl());
   }
 
   return (

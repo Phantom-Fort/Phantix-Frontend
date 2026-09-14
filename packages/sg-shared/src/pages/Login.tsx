@@ -14,6 +14,14 @@ import { BrandLogo } from "@sg/components/BrandLogo";
 import AuthShowcase from "@sg/components/AuthShowcase";
 import { ThemeToggle } from "@sg/ThemeToggle";
 
+/** After sign-in, go to the picker — remembering the application the operator
+ *  was sent here from (`?next=`) so RBAC can hand the session straight back. */
+function chooseAppHref(): string {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next ? `/choose-app?next=${encodeURIComponent(next)}` : "/choose-app";
+}
+
+
 type Stage =
   | "email"
   | "password"
@@ -240,7 +248,7 @@ function ReturningLogin({
     const isAuth = res.is_authorizer === true || res.dual_control?.is_authorizer === true;
     completeAppLogin(emailAddr, name, isInit, isAuth);
     toast("success", rotated ? "Device confirmed" : "Signed in", rotated ? "Welcome" + (name ? " " + name : "") + " — this browser is now your primary device." : "Welcome" + (name ? " " + name : " back"));
-    navigate("/choose-app");
+    navigate(chooseAppHref());
   };
 
   const verify = async () => {
@@ -614,7 +622,7 @@ function AppLoginFlow({
       const canOperate = res.can_operate === true || res.dual_control?.can_operate === true;
       const dcInfo = canOperate && isInit && !isAuth ? " · operate as initiator" : canOperate && isAuth && !isInit ? " · operate as authorizer" : "";
       toast("success", "Signed in", "Welcome" + (name ? " " + name : " back") + dcInfo);
-      navigate("/choose-app");
+      navigate(chooseAppHref());
     } catch (err) {
       const sk = serviceKeyMessage(err);
       if (sk) { setBlocked(sk); setStage("service_key_blocked"); }
@@ -645,7 +653,7 @@ function AppLoginFlow({
       const isAuth = res.dual_control?.is_authorizer === true;
       completeAppLogin(email, name, isInit, isAuth);
       toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
-      navigate("/choose-app");
+      navigate(chooseAppHref());
       return true;
     } catch {
       return false;

@@ -165,6 +165,18 @@ export default function ChooseApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, reachable.length]);
 
+  // Arriving from an app that bounced here for sign-in (`?next=attack`): open it
+  // as soon as we know this role may reach it. RBAC still decides — an app the
+  // operator cannot enter simply leaves the picker on screen.
+  useEffect(() => {
+    if (loading) return;
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (!next) return;
+    const app = reachable.find((a) => a.key === next);
+    if (app) void open(app);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, reachable.length]);
+
   // 1–4 opens the nth application, so a returning operator never reaches for
   // the mouse. The order matches what is on screen.
   useEffect(() => {
