@@ -9,6 +9,7 @@ import { NAV } from "./nav";
 import Overview from "./pages/Overview";
 import Assets from "./pages/Assets";
 import AssetIntelligence from "./pages/AssetIntelligence";
+import AssetGraph from "./pages/AssetGraph";
 import Risks from "./pages/Risks";
 import ThreatIntel from "./pages/ThreatIntel";
 import Cloud from "./pages/Cloud";
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/" element={<Overview application={"defend" as ApplicationKey} />} />
           <Route path="/assets" element={<Assets />} />
           <Route path="/assets/intelligence" element={<AssetIntelligence />} />
+          <Route path="/assets/intelligence/graph" element={<AssetGraph />} />
           <Route path="/posture" element={<Posture />} />
           <Route path="/cloud" element={<Cloud />} />
           <Route path="/risks" element={<Risks />} />
