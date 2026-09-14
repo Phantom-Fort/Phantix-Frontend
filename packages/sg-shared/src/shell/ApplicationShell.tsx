@@ -215,7 +215,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
       if (!demo && !appToken()) {
         const handed = await consumeHandoff(application);
         if (!handed) {
-          window.location.assign(hosts.core ? `${hosts.core}/login` : "/login");
+          window.location.assign("/login");
           return;
         }
       }
@@ -343,7 +343,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
 
   function signOut() {
     clearStoredSession();
-    window.location.assign(hosts.core ? `${hosts.core}/login` : "/login");
+    window.location.assign("/login");
   }
 
   return (

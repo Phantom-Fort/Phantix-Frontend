@@ -2,6 +2,11 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
 import type { ApplicationKey } from "@sg/shell/types";
+import Login from "@sg/pages/Login";
+import ChooseApp from "@sg/pages/ChooseApp";
+import DeviceConfirm from "@sg/pages/DeviceConfirm";
+import PasswordResetRequest from "@sg/pages/auth/PasswordResetRequest";
+import PasswordResetComplete from "@sg/pages/auth/PasswordResetComplete";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
 import { StoreProvider, ToastViewport } from "@sg/store";
@@ -23,6 +28,12 @@ export default function App() {
   return (
     <StoreProvider>
       <Routes>
+        {/* Sign-in — each application can authenticate on its own origin. */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/choose-app" element={<ChooseApp />} />
+        <Route path="/device-confirm" element={<DeviceConfirm />} />
+        <Route path="/password-reset" element={<PasswordResetRequest />} />
+        <Route path="/reset-password" element={<PasswordResetComplete />} />
         <Route
           element={
             <ApplicationShell
