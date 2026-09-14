@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   GitBranch, GitPullRequest, Wrench, ShieldCheck, RefreshCw, ExternalLink, Loader2, Send, Github, AlertTriangle,
@@ -6,6 +7,7 @@ import {
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Spinner, Tabs, Modal } from "@sg/ui";
 import { api, isPendingApproval } from "@sg/api";
+import CodeReview from "@sg/components/CodeReview";
 import {
   loadGithubInstallation,
   loadBranchReviewWallet,
@@ -102,9 +104,28 @@ function asArray<T>(value: unknown): T[] {
   return v?.items ?? v?.connectors ?? v?.installations ?? [];
 }
 
+/** Each section of Code is its own page; the tab strip is the router. */
+const SECTIONS = [
+  { id: "review", label: "Security review", path: "/code-review" },
+  { id: "repositories", label: "Repositories", path: "/code-review/repositories" },
+  { id: "pull-requests", label: "Pull requests", path: "/code-review/pull-requests" },
+  { id: "providers", label: "Providers", path: "/code-review/providers" },
+  { id: "autofix", label: "AutoFix", path: "/code-review/autofix" },
+  { id: "continuous-pr", label: "Continuous PR", path: "/code-review/continuous-pr" },
+] as const;
+
 export default function Code() {
   const { toast, requireDualControl } = useStore();
-  const [tab, setTab] = useState("repositories");
+  const navigate = useNavigate();
+  const params = useParams<{ section?: string }>();
+  // The section lives in the URL, so each one is linkable, bookmarkable and its
+  // own entry in the sidebar — the review is the default because it is the
+  // point of the page; connecting repositories is setup.
+  const tab = SECTIONS.some((s) => s.id === params.section)
+    ? (params.section as string)
+    : "review";
+  const setTab = (id: string) =>
+    navigate(SECTIONS.find((s) => s.id === id)?.path ?? "/code-review");
   const [loading, setLoading] = useState(true);
   const [reposError, setReposError] = useState<string | null>(null);
   const [installation, setInstallation] = useState<any>(null);
@@ -227,80 +248,85 @@ export default function Code() {
         ))}
       </div>
 
-      <Card className="mb-4">
-        <CardHeader
-          title="Source control"
-          subtitle="Providers that feed repositories and pull / merge-request reviews"
-          action={<GitBranch size={16} className="text-gold-300" />}
-        />
-        <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-lg border border-phantix-700/40 bg-phantix-900/40 p-3">
-            <div className="flex items-center gap-2">
-              <span className={cx("flex h-8 w-8 items-center justify-center rounded-md border", connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
-                <Github size={15} />
-              </span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-200">GitHub</p>
-                <p className="text-[11px] text-slate-500">GitHub App · push + pull_request</p>
-              </div>
-              {connected ? <CheckCircle2 size={14} className="text-emerald-400" /> : null}
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <span className={cx("chip text-[10px]", connected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-600/40 text-slate-400")}>
-                {connected ? "connected" : "not connected"}
-              </span>
-              {connected ? (
-                <a href="/integrations" className="btn-ghost !px-2 !py-1 !text-xs">Manage</a>
-              ) : (
-                <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => void connectGithub()}>Connect</button>
+      {/* Source control, compact: one icon per provider with its state. The
+          full cards live on the Providers page — this strip exists so the
+          section you actually came for is not pushed below the fold. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-phantix-700/40 bg-phantix-900/40 px-3 py-2">
+        <span className="mr-1 font-mono text-[10px] uppercase tracking-[0.18em] text-slate-500">
+          Source control
+        </span>
+        <button
+          type="button"
+          onClick={() => setTab("providers")}
+          title={connected ? "GitHub — connected" : "GitHub — not connected"}
+          aria-label={connected ? "GitHub connected" : "GitHub not connected"}
+          className={cx(
+            "relative flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
+            connected
+              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+              : "border-phantix-600/40 bg-phantix-800/50 text-slate-400 hover:text-slate-200",
+          )}
+        >
+          <Github size={15} />
+          {connected && (
+            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />
+          )}
+        </button>
+        {scmCatalog.map((c) => {
+          const install = scmInstalls.find((i) => i.connector_id === c.connector_id);
+          const active = install?.status === "active";
+          return (
+            <button
+              key={c.connector_id}
+              type="button"
+              onClick={() => (active ? setTab("providers") : setConnectId(c.connector_id))}
+              title={`${c.name || c.connector_id} — ${active ? "connected" : install ? install.status : "not connected"}`}
+              aria-label={c.name || c.connector_id}
+              className={cx(
+                "relative flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
+                active
+                  ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                  : "border-phantix-600/40 bg-phantix-800/50 text-slate-400 hover:text-slate-200",
               )}
-            </div>
-          </div>
-
-          {scmCatalog.map((c) => {
-            const install = scmInstalls.find((i) => i.connector_id === c.connector_id);
-            const active = install?.status === "active";
-            return (
-              <div key={c.connector_id} className="rounded-lg border border-phantix-700/40 bg-phantix-900/40 p-3">
-                <div className="flex items-center gap-2">
-                  <span className={cx("flex h-8 w-8 items-center justify-center rounded-md border", active ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-gold-400/30 bg-gold-400/10 text-gold-300")}>
-                    {scmIcon(c.connector_id)}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-200">{c.name || c.connector_id}</p>
-                    <p className="text-[11px] text-slate-500">{(c.auth_modes || []).join(" · ")}</p>
-                  </div>
-                </div>
-                <p className="mt-2 text-[11px] leading-4 text-slate-500">{c.description}</p>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className={cx("chip text-[10px]", providerTone(install?.status))}>
-                    {active ? "connected" : install ? install.status : "not connected"}
-                  </span>
-                  {active ? (
-                    <a href="/integrations" className="btn-ghost !px-2 !py-1 !text-xs">Manage</a>
-                  ) : install?.status === "pending_auth" ? (
-                    <button className="btn-secondary !px-2 !py-1 !text-xs" onClick={() => void resumeScmOAuth(install.installation_id)}>Finish auth</button>
-                  ) : (
-                    <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => setConnectId(c.connector_id)}>Connect</button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+            >
+              {scmIcon(c.connector_id)}
+              {active && (
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400" />
+              )}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setTab("providers")}
+          className="ml-auto text-[11px] text-slate-500 transition-colors hover:text-slate-300"
+        >
+          Manage providers
+        </button>
+      </div>
 
       <Tabs
-        tabs={[
-          { id: "repositories", label: "Repositories", count: repos.length || undefined },
-          { id: "pull-requests", label: "Pull requests", count: events.length || undefined },
-          { id: "providers", label: "Providers", count: scmCatalog.length || undefined },
-          { id: "autofix", label: "AutoFix" },
-          { id: "continuous-pr", label: "Continuous PR" },
-        ]}
+        tabs={SECTIONS.map((s) => ({
+          id: s.id,
+          label: s.label,
+          count:
+            s.id === "repositories"
+              ? repos.length || undefined
+              : s.id === "pull-requests"
+                ? events.length || undefined
+                : s.id === "providers"
+                  ? scmCatalog.length || undefined
+                  : undefined,
+        }))}
         active={tab}
         onChange={setTab}
       />
+
+      {tab === "review" && (
+        // The GitHub-style review: the block that is wrong, why, how to fix it,
+        // and the AutoFix draft PR that closes it.
+        <CodeReview repos={repos} />
+      )}
 
       {tab === "repositories" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>

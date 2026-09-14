@@ -29,6 +29,8 @@ import { ThemeToggle } from "../ThemeToggle";
 import { BrandLogo } from "../components/BrandLogo";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
 import AgentAssistant from "../components/AgentAssistant";
+import OperationsWidget from "../components/OperationsWidget";
+import { OperationsProvider } from "../operations";
 import SandboxBanner from "../components/SandboxBanner";
 import { useStore } from "../store";
 import { shortName } from "../utils";
@@ -358,7 +360,8 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   }
 
   return (
-    <NotificationProvider>
+    <OperationsProvider>
+      <NotificationProvider>
       <div className="flex min-h-screen">
         <aside
           data-collapsed={collapsed ? "" : undefined}
@@ -781,6 +784,11 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           desk from any application. It was mounted by the Command Centre layout
           and was lost when the shells replaced it. */}
       <AgentAssistant />
-    </NotificationProvider>
+
+      {/* Running operations tray — pages start long jobs through useOperations,
+          so the provider has to wrap the shell or they throw on mount. */}
+      <OperationsWidget />
+      </NotificationProvider>
+    </OperationsProvider>
   );
 }

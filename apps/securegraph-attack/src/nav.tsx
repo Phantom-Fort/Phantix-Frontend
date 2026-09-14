@@ -36,4 +36,8 @@ export const NAV: NavSection[] = [
       { to: "/vapt/settings", label: "Engine settings", icon: <SlidersHorizontal size={17} /> },
     ],
   },
+  {
+    label: "Help",
+    items: [{ to: "/assistant", label: "Assistant", icon: <Bot size={17} /> }],
+  },
 ];

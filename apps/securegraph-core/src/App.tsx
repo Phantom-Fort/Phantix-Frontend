@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
+import Assistant from "@sg/pages/Assistant";
 import type { ApplicationKey } from "@sg/shell/types";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/authorizations" element={<AuthorizerInbox />} />
           <Route path="/support" element={<Support />} />
           <Route path="/sandbox" element={<Sandbox />} />
+          <Route path="/assistant" element={<Assistant application={"core" as ApplicationKey} />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

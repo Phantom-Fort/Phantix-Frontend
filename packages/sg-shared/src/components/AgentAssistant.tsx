@@ -40,6 +40,14 @@ function loadChat(email: string): Msg[] {
   return [{ role: "agent", text: DEFAULT_GREETING }];
 }
 
+/** Event any surface can fire to open the assistant panel. */
+export const ASSISTANT_OPEN_EVENT = "sg:assistant:open";
+
+/** Open the floating assistant, optionally straight into support. */
+export function openAssistant(mode?: "agent" | "support"): void {
+  window.dispatchEvent(new CustomEvent(ASSISTANT_OPEN_EVENT, { detail: { mode } }));
+}
+
 export default function AgentAssistant() {
   const { toast, requireDualControl, session } = useStore();
   const navigate = useNavigate();
@@ -85,6 +93,19 @@ export default function AgentAssistant() {
 
   const onScroll = stick.onScroll;
   const scrollToBottom = stick.jump;
+
+  // Anything in the product can ask for the assistant — the Assistant page in
+  // the sidebar does, so an operator who went looking for it in the nav gets
+  // the same panel as the floating button rather than a second chat.
+  useEffect(() => {
+    const openFn = (e: Event) => {
+      const detail = (e as CustomEvent<{ mode?: "agent" | "support" }>).detail;
+      if (detail?.mode) setMode(detail.mode);
+      setOpen(true);
+    };
+    window.addEventListener(ASSISTANT_OPEN_EVENT, openFn);
+    return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, openFn);
+  }, []);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };

@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  Bot,
   Activity,
   AlertTriangle,
   Boxes,
@@ -68,5 +69,9 @@ export const NAV: NavSection[] = [
       { to: "/threat-intel", label: "Threat intel", icon: <Fingerprint size={17} /> },
       { to: "/alerts", label: "Incidents", icon: <AlertTriangle size={17} /> },
     ],
+  },
+  {
+    label: "Help",
+    items: [{ to: "/assistant", label: "Assistant", icon: <Bot size={17} /> }],
   },
 ];

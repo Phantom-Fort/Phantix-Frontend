@@ -161,12 +161,24 @@ export async function apiRequest<T>(path: string, opts: ApiOptions = {}): Promis
     } catch {
       /* not JSON — keep the raw text */
     }
-    const message =
-      (detail && typeof detail === "object" && "message" in detail
+    // A gateway error page is HTML written for whoever runs the server, not for
+    // the operator reading this screen. Keep structured API errors verbatim and
+    // replace anything else with what actually happened.
+    const structured =
+      detail && typeof detail === "object" && "message" in detail
         ? String((detail as { message?: unknown }).message)
-        : typeof detail === "string"
-          ? detail
-          : "") || `HTTP ${res.status}`;
+        : "";
+    const plain = typeof detail === "string" ? detail.trim() : "";
+    const looksLikeGatewayPage =
+      !structured && (/<html|<!doctype|cloudflare|error code:/i.test(plain) || plain.length > 300);
+    const message =
+      structured ||
+      (looksLikeGatewayPage
+        ? res.status >= 500
+          ? `The API is not responding (HTTP ${res.status}). It may be restarting or down.`
+          : `Request failed (HTTP ${res.status}).`
+        : plain) ||
+      `HTTP ${res.status}`;
     throw new ApiError(res.status, detail, message);
   }
   if (res.status === 204) return undefined as T;

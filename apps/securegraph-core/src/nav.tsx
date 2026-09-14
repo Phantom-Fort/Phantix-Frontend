@@ -52,4 +52,8 @@ export const NAV: NavSection[] = [
       { to: "/sandbox", label: "Sandbox", icon: <FlaskConical size={17} /> },
     ],
   },
+  {
+    label: "Help",
+    items: [{ to: "/assistant", label: "Assistant", icon: <Bot size={17} /> }],
+  },
 ];
