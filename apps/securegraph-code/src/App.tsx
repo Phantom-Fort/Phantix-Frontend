@@ -8,6 +8,8 @@ import { HOSTS } from "./hosts";
 import { NAV } from "./nav";
 import Overview from "./pages/Overview";
 import Code from "./pages/Code";
+import ThreatModels from "./pages/ThreatModels";
+import ContextProjects from "./pages/ContextProjects";
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
         >
           <Route path="/" element={<Overview application={"code" as ApplicationKey} />} />
           <Route path="/code-review" element={<Code />} />
+          <Route path="/threat-models" element={<ThreatModels />} />
+          <Route path="/context" element={<ContextProjects />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

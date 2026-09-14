@@ -1,5 +1,5 @@
 import React from "react";
-import { Boxes, GitBranch, LayoutDashboard, ShieldQuestion, Workflow } from "lucide-react";
+import { GitBranch, LayoutDashboard, ShieldQuestion, Workflow } from "lucide-react";
 import type { NavSection } from "@sg/shell/types";
 
 /** Code — secure code review and the design-time context. */
@@ -9,7 +9,6 @@ export const NAV: NavSection[] = [
     items: [
       { to: "/", label: "Overview", icon: <LayoutDashboard size={17} /> },
       { to: "/code-review", label: "Code review", icon: <GitBranch size={17} /> },
-      { to: "/repositories", label: "Repositories", icon: <Boxes size={17} /> },
     ],
   },
   {
