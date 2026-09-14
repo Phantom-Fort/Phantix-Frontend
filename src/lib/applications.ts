@@ -12,6 +12,12 @@ import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL } from "./config";
 
 export type ApplicationKey = "core" | "attack" | "defend" | "code";
 
+export interface ApplicationSurface {
+  path: string;
+  label: string;
+  group: string;
+}
+
 export interface ApplicationCard {
   key: ApplicationKey;
   label: string;
@@ -24,6 +30,8 @@ export interface ApplicationCard {
   accessible: boolean;
   reason: string | null;
   open_url: string;
+  /** The pages this application owns, as the backend reports them. */
+  surfaces?: ApplicationSurface[];
 }
 
 export interface ApplicationsSnapshot {

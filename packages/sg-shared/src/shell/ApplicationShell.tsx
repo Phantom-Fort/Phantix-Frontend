@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, Lock, LogOut } from "lucide-react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  KeyRound,
+  LayoutGrid,
+  Lock,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
 import { useSidebarCollapsed } from "../useSidebarCollapsed";
+import { ThemeToggle } from "../ThemeToggle";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
 import { consumeHandoff, handoffUrl } from "./session";
 import {
@@ -10,6 +22,15 @@ import {
   type ApplicationKey,
   type NavSection,
 } from "./types";
+
+/** The signed-in operator, as /app/auth/me reports them. */
+interface AppPrincipal {
+  full_name?: string;
+  email?: string;
+  organization_name?: string;
+  organization_slug?: string;
+  effective_role?: string;
+}
 
 /** One launcher card as the backend reports it. */
 interface ApplicationCard {
@@ -38,7 +59,10 @@ export interface ApplicationShellProps {
 export function ApplicationShell({ application, subtitle, nav, hosts }: ApplicationShellProps) {
   const { collapsed, toggle } = useSidebarCollapsed();
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [me, setMe] = useState<{ full_name?: string; email?: string } | null>(null);
+  const [me, setMe] = useState<AppPrincipal | null>(null);
+  const [userMenu, setUserMenu] = useState(false);
+  const [mobileNav, setMobileNav] = useState(false);
+  const location = useLocation();
   const [cards, setCards] = useState<ApplicationCard[] | null>(null);
   const [opening, setOpening] = useState<ApplicationKey | "">("");
 
@@ -60,7 +84,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         }
       }
       if (!alive) return;
-      apiGet<{ full_name?: string; email?: string }>("/app/auth/me")
+      apiGet<AppPrincipal>("/app/auth/me")
         .then((v) => alive && setMe(v))
         .catch(() => alive && setMe(null));
       apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications")
@@ -71,6 +95,13 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
       alive = false;
     };
   }, [application, hosts.core]);
+
+  // A route change closes whatever is open over the page.
+  useEffect(() => {
+    setMobileNav(false);
+    setUserMenu(false);
+    setSwitcherOpen(false);
+  }, [location.pathname]);
 
   // Backend truth when we have it; the static order until then.
   const switcherItems: ApplicationCard[] =
@@ -93,6 +124,32 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
     setSwitcherOpen(false);
     setOpening("");
     if (url) window.location.assign(url);
+  }
+
+  // One nav definition, two chromes: the rail (which hides labels when
+  // collapsed) and the mobile drawer (which never does).
+  function renderNav(collapsible: boolean) {
+    return nav.map((section) => (
+      <div key={section.label}>
+        <p className={collapsible ? "nav-section-label sg-hide-collapsed" : "nav-section-label"}>
+          {section.label}
+        </p>
+        <div className="space-y-0.5">
+          {section.items.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === "/"}
+              title={item.label}
+              className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+            >
+              {item.icon}
+              {collapsible ? <span className="sg-hide-collapsed">{item.label}</span> : item.label}
+            </NavLink>
+          ))}
+        </div>
+      </div>
+    ));
   }
 
   function signOut() {
@@ -126,26 +183,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1.5 overflow-y-auto px-2.5 pb-3">
-          {nav.map((section) => (
-            <div key={section.label}>
-              <p className="nav-section-label sg-hide-collapsed">{section.label}</p>
-              <div className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-                  >
-                    {item.icon}
-                    <span className="sg-hide-collapsed">{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          ))}
-        </nav>
+        <nav className="flex-1 space-y-1.5 overflow-y-auto px-2.5 pb-3">{renderNav(true)}</nav>
 
         {/* Application switcher */}
         <div className="border-t border-phantix-700/60 p-2">
@@ -201,22 +239,134 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         }`}
       >
         <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-phantix-700/60 bg-phantix-950 px-4 py-3 sm:px-6">
+          <button
+            onClick={() => setMobileNav((v) => !v)}
+            aria-label={mobileNav ? "Close navigation" : "Open navigation"}
+            className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white lg:hidden"
+          >
+            {mobileNav ? <X size={18} /> : <Menu size={18} />}
+          </button>
+
+          <button
+            onClick={toggle}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white lg:inline-flex"
+          >
+            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+
           <span className="text-sm font-semibold text-slate-100">
             {APPLICATION_LABEL[application]}
           </span>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="hidden text-xs text-slate-500 sm:inline">
-              {me?.full_name || me?.email || ""}
-            </span>
-            <button
-              onClick={signOut}
-              title="Sign out"
-              className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
-            >
-              <LogOut size={15} />
-            </button>
+
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
+            <ThemeToggle />
+            {me?.organization_slug && (
+              <span className="chip hidden border-phantix-700 bg-phantix-900 font-mono text-slate-300 md:inline-flex">
+                <KeyRound size={12} className="text-gold-400" /> {me.organization_slug}
+              </span>
+            )}
+
+            <div className="relative">
+              <button
+                onClick={() => setUserMenu((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={userMenu}
+                className="flex items-center gap-2.5 rounded-md border border-phantix-700 bg-phantix-900 py-1.5 pl-1.5 pr-2.5 transition-colors hover:border-phantix-600"
+              >
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gold-400/40 bg-phantix-850 font-display text-xs font-bold text-gold-300">
+                  {(me?.full_name || me?.email || "A").slice(0, 1).toUpperCase()}
+                </span>
+                <span className="hidden text-left sm:block">
+                  <span className="block max-w-[120px] truncate text-xs font-semibold leading-tight text-slate-200">
+                    {me?.full_name || me?.email || "Operator"}
+                  </span>
+                  <span className="block max-w-[120px] truncate text-[10px] leading-tight text-slate-500">
+                    {me?.organization_name || APPLICATION_LABEL[application]}
+                  </span>
+                </span>
+                <ChevronDown size={14} className="text-slate-500" />
+              </button>
+              <AnimatePresence>
+                {userMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-md border border-phantix-700 bg-phantix-900 shadow-card"
+                  >
+                    <div className="border-b border-phantix-700/40 px-4 py-3">
+                      <p className="truncate text-sm font-semibold text-slate-100">
+                        {me?.full_name || "Operator"}
+                      </p>
+                      <p className="truncate text-xs text-slate-500">{me?.email || ""}</p>
+                      {me?.effective_role && (
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-slate-600">
+                          {me.effective_role}
+                        </p>
+                      )}
+                    </div>
+                    <div className="p-1.5">
+                      <button
+                        onClick={() => {
+                          setUserMenu(false);
+                          setSwitcherOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
+                      >
+                        <LayoutGrid size={15} /> Switch application
+                      </button>
+                      <button
+                        onClick={signOut}
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-severity-critical hover:bg-severity-critical/10"
+                      >
+                        <LogOut size={15} /> Sign out
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </header>
+
+        {/* Mobile nav drawer — below lg the rail is hidden, so this is the nav. */}
+        <AnimatePresence>
+          {mobileNav && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="fixed inset-x-0 top-[57px] z-40 max-h-[calc(100vh-57px)] overflow-y-auto border-b border-phantix-700/60 bg-phantix-950 shadow-card lg:hidden"
+            >
+              <nav className="space-y-1.5 px-2.5 py-3">{renderNav(false)}</nav>
+              <div className="border-t border-phantix-700/40 px-2.5 py-3">
+                <p className="nav-section-label">Applications</p>
+                <div className="space-y-0.5">
+                  {switcherItems
+                    .filter((card) => card.key !== application)
+                    .map((card) => (
+                      <button
+                        key={card.key}
+                        onClick={() => void openApp(card)}
+                        disabled={!card.accessible}
+                        className={`nav-item w-full justify-between ${
+                          card.accessible ? "" : "cursor-not-allowed opacity-50"
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <LayoutGrid size={16} />
+                          {card.label}
+                        </span>
+                        {!card.accessible && <Lock size={12} className="text-slate-600" />}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <main className="flex-1 px-4 py-6 sm:px-6">
           <Outlet />
         </main>
