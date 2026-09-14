@@ -26,8 +26,9 @@ import Agent from "./pages/Agent";
 import AgentActivity from "./pages/AgentActivity";
 import People from "./pages/People";
 import AuthorizerInbox from "./pages/AuthorizerInbox";
-import Docs from "./pages/Docs";
-import DocPage from "./pages/DocPage";
+import PublicChrome from "./components/PublicChrome";
+import Docs from "@sg/pages/Docs";
+import DocPage from "@sg/pages/DocPage";
 import Support from "./pages/Support";
 import Sandbox from "./pages/Sandbox";
 
@@ -50,9 +51,11 @@ export default function App() {
         <Route path="/cookies" element={<Cookies />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
-        {/* Documentation renders full-width, without the application sidebar. */}
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/docs/:docId" element={<DocPage />} />
+        {/* Documentation is public: its own chrome, not the operator sidebar. */}
+        <Route element={<PublicChrome />}>
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/:docId" element={<DocPage />} />
+        </Route>
 
         {/* Authenticated Core shell */}
         <Route
