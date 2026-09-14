@@ -162,6 +162,27 @@ type RequestOpts = {
   timeoutMs?: number;
 };
 
+/**
+ * Which application this bundle is running as (`core` / `attack` / `defend` /
+ * `code`), declared on every call as `X-Application`.
+ *
+ * The backend enforces that the declared application owns the route *and* that
+ * the operator may enter it, so the Defend shell cannot drive an Attack route
+ * just because the operator's role happens to include Attack. The four shells
+ * set this once at boot; the Core monolith leaves it at "core".
+ */
+let activeApplication: ApplicationDeclaration = "core";
+
+export type ApplicationDeclaration = "core" | "attack" | "defend" | "code";
+
+export function setActiveApplication(app: ApplicationDeclaration): void {
+  activeApplication = app;
+}
+
+export function getActiveApplication(): ApplicationDeclaration {
+  return activeApplication;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -187,6 +208,10 @@ async function request<T>(
     if (realm === "application" && tokens.device) headers["X-Device-Token"] = tokens.device!;
     // Per 03_APPLICATION_IMPLEMENTATION.md §2.4: every app API call carries X-Device-Id
     if (realm === "application") headers["X-Device-Id"] = deviceId();
+    // Which of the four applications this call comes from (see the applications
+    // contract §4). Only the application realm is app-gated; declaring it on a
+    // platform/staff call would be noise.
+    if (realm === "application") headers["X-Application"] = activeApplication;
     // Dual-control operate session: attach on ALL mutations when a token exists so
     // the SecureGraph Agent, Pentest Agent, and platform mutations share ONE operate
     // session. Stale/expired tokens are handled separately (the backend rejects the
@@ -372,6 +397,7 @@ export const api = {
     const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
     if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
     if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    headers["X-Application"] = activeApplication;
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
@@ -394,6 +420,7 @@ export const api = {
     if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
     if (tokens.device) headers["X-Device-Token"] = tokens.device;
     headers["X-Device-Id"] = deviceId();
+    headers["X-Application"] = activeApplication;
     if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
     headers["Content-Type"] = "application/json";
 
