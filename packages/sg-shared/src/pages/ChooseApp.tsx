@@ -118,7 +118,7 @@ export default function ChooseApp() {
     let alive = true;
     setLoading(true);
     loadApplications()
-      .then((s) => {
+      .then((s: ApplicationsSnapshot) => {
         if (!alive) return;
         setSnap(s);
         setError(null);
