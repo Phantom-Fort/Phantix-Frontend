@@ -25,7 +25,7 @@ export default function App() {
             />
           }
         >
-          <Route path="/" element={<Overview application={"code" as ApplicationKey} />} />
+          <Route path="/" element={<Overview application={"code" as ApplicationKey} nav={NAV} />} />
           <Route path="/code-review" element={<Code />} />
           <Route path="/threat-models" element={<ThreatModels />} />
           <Route path="/context" element={<ContextProjects />} />

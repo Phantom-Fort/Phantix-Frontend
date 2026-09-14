@@ -29,7 +29,7 @@ export default function App() {
             />
           }
         >
-          <Route path="/" element={<Overview application={"attack" as ApplicationKey} />} />
+          <Route path="/" element={<Overview application={"attack" as ApplicationKey} nav={NAV} />} />
           <Route path="/targets" element={<Targets />} />
           <Route path="/pentest-scope" element={<PentestScope />} />
           <Route path="/vapt" element={<Vapt />} />
