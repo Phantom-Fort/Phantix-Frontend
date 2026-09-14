@@ -1,1 +1,1 @@
-export * from "@sg/ThemeToggle";
+export * from "@sg/components/ThemeToggle";
