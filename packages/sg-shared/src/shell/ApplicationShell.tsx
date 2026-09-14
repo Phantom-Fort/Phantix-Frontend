@@ -38,7 +38,7 @@ import { loadSandboxMe } from "../sandbox";
 import { PLATFORM_IDENTITY_URL } from "../links";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
 import { isDemoFlagSet, setActiveApplication } from "../api";
-import { consumeHandoff, handoffUrl } from "./session";
+import { consumeHandoff, handoffUrl, signOutEverywhere } from "./session";
 import { IS_DEV_HOSTS } from "../config";
 import {
   APPLICATION_LABEL,
@@ -355,8 +355,9 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   }
 
   function signOut() {
-    clearStoredSession();
-    window.location.assign(coreLoginUrl());
+    // Revokes on the backend, empties every token store, and lands on Core's
+    // login — the same from all four applications, and from the demo.
+    void signOutEverywhere(hosts.core);
   }
 
   return (

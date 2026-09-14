@@ -11,8 +11,9 @@
  * The code is not a second credential: it carries the session that already
  * exists, so signing out or rotating the device kills it too.
  */
-import { apiRequest, setStoredSession, type ApplicationKey } from "./api";
-import { enterDemoMode, isDemoFlagSet } from "../api";
+import { apiRequest, clearStoredSession, setStoredSession, type ApplicationKey } from "./api";
+import { APP_URL } from "../config";
+import { enterDemoMode, exitDemoMode, isDemoFlagSet, tokens } from "../api";
 
 /** URL fragment key carrying a handoff code, e.g. `https://attack…/#sg=abc`. */
 const HANDOFF_FRAGMENT_KEY = "sg";
@@ -128,4 +129,45 @@ export async function consumeHandoff(application: ApplicationKey): Promise<boole
   } catch {
     return false;
   }
+}
+
+
+/**
+ * Sign out from any application.
+ *
+ * Core owns sign-in, so it owns sign-out: whichever application the operator is
+ * in, the session is revoked on the backend, every token store on this origin is
+ * emptied, and they land on Core's login. Clearing storage alone would leave a
+ * live session behind that anything holding the token could keep using.
+ *
+ * The demo has no session to revoke — leaving it is just dropping the flag —
+ * but it ends in the same place, so "sign out" means one thing everywhere.
+ */
+export async function signOutEverywhere(coreHost?: string): Promise<void> {
+  const demo = isDemoFlagSet();
+  if (!demo) {
+    try {
+      // Best-effort: a failed revoke must not strand the operator in a session
+      // they have asked to leave.
+      await apiRequest("/app/auth/logout", { method: "POST" });
+    } catch {
+      /* revoked locally regardless */
+    }
+  }
+  exitDemoMode();
+  clearStoredSession();
+  // The Command Centre client keeps its own stores (org-user, dual control,
+  // staff); leaving any of them behind is a half sign-out.
+  try {
+    tokens.platform = null;
+    tokens.orgUser = null;
+    tokens.dualControl = null;
+    tokens.appSession = null;
+    tokens.device = null;
+    tokens.staff = null;
+  } catch {
+    /* storage may be unavailable */
+  }
+  const base = (coreHost || APP_URL || "").replace(/\/+$/, "");
+  window.location.assign(base ? `${base}/login` : "/login");
 }

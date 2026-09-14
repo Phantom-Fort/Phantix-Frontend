@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
 import { ArrowRight, Boxes, Code2, Crosshair, Lock, LogOut, ShieldCheck, BookOpen } from "lucide-react";
+import { signOutEverywhere } from "@sg/shell/session";
 import { useStore } from "@sg/store";
 import { ThemeToggle } from "@sg/ThemeToggle";
 import { cx } from "@sg/utils";
@@ -192,8 +193,11 @@ export default function ChooseApp() {
   }
 
   const signOut = () => {
+    // The picker can be open in any application, so it cannot navigate to a
+    // local /login — only Core has one. Clear the client state, then hand off
+    // to the shared sign-out, which revokes and sends the operator to Core.
     logout();
-    navigate("/login", { replace: true });
+    void signOutEverywhere();
   };
 
   return (
