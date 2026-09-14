@@ -4,7 +4,6 @@ import {
   BarChart3,
   BookOpen,
   Bot,
-  Building2,
   FileText,
   FlaskConical,
   LayoutDashboard,
@@ -42,7 +41,6 @@ export const NAV: NavSection[] = [
   {
     label: "Organization",
     items: [
-      { to: "/people", label: "People", icon: <Building2 size={17} /> },
       { to: "/authorizations", label: "Authorizations", icon: <UserCheck size={17} /> },
     ],
   },

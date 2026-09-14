@@ -1,21 +1,25 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { setActiveApplication } from "@sg/api";
-import { setApplication } from "@sg/shell/api";
+import { MotionConfig } from "framer-motion";
+import { bootstrapTheme } from "@sg/theme";
+import { initAnalytics } from "@sg/analytics";
+import { loadBrandTokens } from "@sg/branding";
+import "@fontsource-variable/geist";
+import "@fontsource-variable/geist-mono";
 import App from "./App";
 import "./index.css";
 
-// Declare which application this bundle is before anything can call the API:
-// every request carries X-Application, and the backend refuses a route this
-// application does not own.
-setActiveApplication("code");
-setApplication("code");
+bootstrapTheme();
+initAnalytics();
+loadBrandTokens();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </MotionConfig>
   </React.StrictMode>,
 );

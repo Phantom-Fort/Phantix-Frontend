@@ -24,7 +24,6 @@ import IntegrationsHub from "./pages/IntegrationsHub";
 import Audit from "./pages/Audit";
 import Agent from "./pages/Agent";
 import AgentActivity from "./pages/AgentActivity";
-import People from "./pages/People";
 import AuthorizerInbox from "./pages/AuthorizerInbox";
 import PublicChrome from "./components/PublicChrome";
 import Docs from "@sg/pages/Docs";
@@ -75,7 +74,6 @@ export default function App() {
           <Route path="/audit" element={<Audit />} />
           <Route path="/agent" element={<Agent allowAgi={false} />} />
           <Route path="/agent-activity" element={<AgentActivity />} />
-          <Route path="/people" element={<People />} />
           <Route path="/authorizations" element={<AuthorizerInbox />} />
           <Route path="/support" element={<Support />} />
           <Route path="/sandbox" element={<Sandbox />} />
