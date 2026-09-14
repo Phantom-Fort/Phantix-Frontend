@@ -95,8 +95,6 @@ export default function Overview({
     }))
     .filter((section) => section.items.length > 0);
 
-  const pageCount = sections.reduce((n, s) => n + s.items.length, 0);
-
   if (loading) {
     return (
       <div>
@@ -108,10 +106,7 @@ export default function Overview({
 
   return (
     <div>
-      <PageHeader
-        title={`${card?.label || APPLICATION_LABEL[application]}`}
-        description={card?.description || undefined}
-      />
+      <PageHeader title={`${card?.label || APPLICATION_LABEL[application]}`} />
 
       {/* Hero: what this application is for. */}
       <motion.div
@@ -133,10 +128,11 @@ export default function Overview({
               <p className={cx("text-xs font-semibold", ACCENT[application].split(" ")[0])}>
                 {card?.tagline || "Application"}
               </p>
-              <p className="mt-0.5 text-sm text-slate-400">
-                {pageCount > 0
-                  ? `${pageCount} pages in this application`
-                  : "This application has no pages yet."}
+              {/* What this application does and why it exists, from the backend
+                  catalog — the same words the picker and launcher use. Counting
+                  the pages said nothing the sidebar was not already showing. */}
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
+                {card?.description || ""}
               </p>
             </div>
             {card?.capabilities?.length ? (
