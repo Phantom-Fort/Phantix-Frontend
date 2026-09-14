@@ -46,13 +46,15 @@ export const NAV: NavSection[] = [
   {
     label: "System",
     items: [
-      { to: "/docs", label: "Documentation", icon: <BookOpen size={17} /> },
       { to: "/support", label: "Support", icon: <LifeBuoy size={17} /> },
       { to: "/sandbox", label: "Sandbox", icon: <FlaskConical size={17} /> },
     ],
   },
   {
     label: "Help",
-    items: [{ to: "/assistant", label: "Assistant", icon: <Bot size={17} /> }],
+    items: [
+      { to: "/assistant", label: "Assistant", icon: <Bot size={17} /> },
+      { to: "/docs", label: "Documentation", icon: <BookOpen size={17} /> },
+    ],
   },
 ];

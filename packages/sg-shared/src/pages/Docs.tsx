@@ -5,6 +5,7 @@ import { Search, BookOpen, ArrowRight, FileText } from "lucide-react";
 import {
   APPLICATION_SECTIONS,
   docs,
+  type DocApplication,
   type DocEntry,
 } from "@sg/docs";
 import type { ApplicationKey } from "@sg/shell/types";
@@ -12,7 +13,7 @@ import { cx } from "@sg/utils";
 
 export interface DocsProps {
   /** Which application's documentation to show first. "all" shows every section. */
-  application?: ApplicationKey | "all";
+  application?: DocApplication | "all";
 }
 
 /**
@@ -22,7 +23,7 @@ export interface DocsProps {
  */
 export default function Docs({ application = "all" }: DocsProps) {
   const [q, setQ] = useState("");
-  const [app, setApp] = useState<ApplicationKey | "all">(application);
+  const [app, setApp] = useState<DocApplication | "all">(application);
 
   const results = useMemo(() => {
     const needle = q.toLowerCase().trim();

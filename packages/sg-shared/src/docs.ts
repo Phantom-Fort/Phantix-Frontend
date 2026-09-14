@@ -45,21 +45,42 @@ export interface DocEntry {
   content: string;
   badge?: string;
   /** The application this documentation belongs to. */
-  application: ApplicationKey;
+  application: DocApplication;
 }
 
+/**
+ * Documentation sections. Platform is not one of the four operator
+ * applications — it is the control plane — but it has its own documentation,
+ * and filing it under Core meant Core's help centre answered questions about a
+ * product the operator was not in.
+ */
+export type DocApplication = ApplicationKey | "platform";
+
 /** Documentation is arranged by the application it documents. */
-export const APPLICATION_SECTIONS: { id: ApplicationKey; label: string; blurb: string }[] = [
+export const APPLICATION_SECTIONS: { id: DocApplication; label: string; blurb: string }[] = [
   { id: "core", label: "Core", blurb: "Setup, security graph, reports, billing and the AI assistant" },
   { id: "attack", label: "Attack", blurb: "Targets, VAPT campaigns, web/API scans and the pentest agent" },
   { id: "defend", label: "Defend", blurb: "Assets, exposure, cloud, compliance, risk, SOC and threat intel" },
   { id: "code", label: "Code", blurb: "Code review, repositories, threat models and product context" },
+  { id: "platform", label: "Platform", blurb: "Company setup, people and roles, service keys, billing and applications" },
 ];
 
 /** Best-effort application for a document from its id/title/description. */
-function classifyDoc(d: Omit<DocEntry, "application">): ApplicationKey {
+function classifyDoc(d: Omit<DocEntry, "application">): DocApplication {
   const s = `${d.id} ${d.title} ${d.description ?? ""}`.toLowerCase();
   const has = (...ws: string[]) => ws.some((w) => s.includes(w));
+  // Platform first: it is the control plane, not an operator application, and
+  // its documents otherwise fall through to Core.
+  if (
+    d.category === "how-to-platform" ||
+    has(
+      "platform", "company setup", "organization setup", "org setup", "service key",
+      "login link", "billing", "invoice", "subscription", "plan and pricing", "pricing",
+      "people & control", "roles and permissions", "user management", "dual control",
+      "identity & keys", "credit top-up", "payment",
+    )
+  )
+    return "platform";
   if (
     has(
       "github", "repositor", "branch", "code review", "code security", "threat model",

@@ -517,7 +517,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         </aside>
 
         <div
-          className={`flex min-h-screen flex-1 flex-col ${
+          className={`flex h-screen flex-1 flex-col overflow-hidden ${
             collapsed ? "lg:ml-[72px]" : "lg:ml-[248px]"
           }`}
         >
@@ -759,8 +759,11 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           )}
 
           {/* Content */}
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-7xl">
+          {/* The page scrolls here, not the window: the footer stays on screen
+              and a page that asks for h-full gets the space that is actually
+              left rather than guessing at header and footer heights. */}
+          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+            <div className="mx-auto flex h-full max-w-7xl flex-col">
               {session?.authenticated && !demoActive && <SandboxBanner />}
               <Outlet />
             </div>

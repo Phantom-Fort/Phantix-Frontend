@@ -186,7 +186,14 @@ function clarifyRequest(raw: string): ClarifyResult {
   };
 }
 
-export default function Agent({ initialMode = "agent", allowAgi = true }: { initialMode?: "agent" | "agi"; allowAgi?: boolean }) {
+/**
+ * The SecureGraph Agent console, shared by every application.
+ *
+ * `allowAgi` is off by default: the Autonomous Pentest Agent is an offensive
+ * capability and belongs to Attack, which opts in. Anywhere else the mode
+ * switch would offer something the application cannot run.
+ */
+export default function Agent({ initialMode = "agent", allowAgi = false }: { initialMode?: "agent" | "agi"; allowAgi?: boolean }) {
   const { toast, operate, requireDualControl } = useStore();
   const [status, setStatus] = useState<AiStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -235,12 +242,11 @@ export default function Agent({ initialMode = "agent", allowAgi = true }: { init
   const streamEnabled = status?.agent?.stream?.enabled ?? true;
 
   return (
-    // The console fills the viewport: the conversation scrolls inside it, the
-    // page itself does not. The shell's header is 57px and its main padding is
-    // 24px top and bottom.
+    // Fills the space the shell leaves: the conversation scrolls inside the
+    // console, the page itself does not.
     <div
       className={cx(
-        "mx-auto flex h-[calc(100vh-105px)] min-h-[420px] flex-col overflow-hidden",
+        "mx-auto flex h-full min-h-[420px] w-full flex-col overflow-hidden",
         mode === "agi" ? "max-w-none" : "max-w-[900px]",
       )}
     >
@@ -570,19 +576,20 @@ function AgentChat({
 
   const streaming = busy && (phase === "streaming" || phase === "synthesizing");
 
-  // Merge the backend catalog with per-domain icon/label metadata; fall back to
-  // the static roster only if the catalog could not be loaded at all.
-  const specialists = domains.length
-    ? domains.map((d) => {
-        const meta = DOMAINS.find((x) => x.id === d.domain);
-        return {
-          id: d.domain,
-          label: meta?.label ?? d.display_name,
-          icon: meta?.icon ?? <Sparkles size={14} />,
-          desc: d.call_when || d.description || meta?.desc || "",
-        };
-      })
-    : DOMAINS;
+  // The catalog is the only authority on who may be invoked here: the backend
+  // filters it by X-Application, so Defend never lists the pentest agent and
+  // Code never lists SOC. DOMAINS supplies icons and short labels only — it is
+  // deliberately *not* a fallback roster, because showing every specialist when
+  // the catalog is unreachable offers agents this application cannot run.
+  const specialists = domains.map((d) => {
+    const meta = DOMAINS.find((x) => x.id === d.domain);
+    return {
+      id: d.domain,
+      label: meta?.label ?? d.display_name,
+      icon: meta?.icon ?? <Sparkles size={14} />,
+      desc: d.call_when || d.description || meta?.desc || "",
+    };
+  });
 
   return (
     <motion.div
@@ -617,7 +624,10 @@ function AgentChat({
           <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
-        {/* Domain specialists — driven by GET /ai/agent/domains */}
+        {/* Domain specialists — driven by GET /ai/agent/domains, scoped to this
+            application by the backend. Absent when the catalog is unavailable:
+            the chief still answers, and an empty strip beats a wrong one. */}
+        {specialists.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 border-b border-phantix-700/30 px-5 py-2">
           <span className="text-[10px] uppercase tracking-wider text-slate-600 mr-1">Specialists</span>
           {specialists.map((d) => (
@@ -632,6 +642,7 @@ function AgentChat({
             </button>
           ))}
         </div>
+        )}
 
         {/* Agent guard — appears only while something needs authorization, so
             it never sits here empty, taking up room above the chat. */}

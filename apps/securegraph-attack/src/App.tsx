@@ -35,13 +35,13 @@ export default function App() {
           <Route path="/" element={<Overview application={"attack" as ApplicationKey} nav={NAV} />} />
           <Route path="/targets" element={<Targets />} />
           <Route path="/pentest-scope" element={<PentestScope />} />
-          <Route path="/pentest-agent" element={<Agent initialMode="agi" />} />
+          <Route path="/pentest-agent" element={<Agent initialMode="agi" allowAgi />} />
           <Route path="/vapt" element={<Vapt />} />
           <Route path="/vapt/schedules" element={<VaptSchedules />} />
           <Route path="/vapt/procedures" element={<VaptProcedures />} />
           <Route path="/vapt/settings" element={<VaptSettings />} />
           <Route path="/scans" element={<Scans />} />
-          <Route path="/assistant" element={<Agent />} />
+          <Route path="/assistant" element={<Agent allowAgi />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
         {/* Documentation renders full-width, without the application sidebar. */}

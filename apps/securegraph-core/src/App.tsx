@@ -52,7 +52,7 @@ export default function App() {
         <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
         {/* Documentation is public: its own chrome, not the operator sidebar. */}
         <Route element={<PublicChrome />}>
-          <Route path="/docs" element={<Docs />} />
+          <Route path="/docs" element={<Docs application="core" />} />
           <Route path="/docs/:docId" element={<DocPage />} />
         </Route>
 
