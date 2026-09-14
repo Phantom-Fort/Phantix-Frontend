@@ -1,6 +1,6 @@
 import React from "react";
-import { Link, NavLink, Outlet } from "react-router-dom";
-import { ArrowRight, BookOpen, LogIn } from "lucide-react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, BookOpen, LogIn } from "lucide-react";
 import { useStore } from "@sg/store";
 import { ThemeToggle } from "@sg/ThemeToggle";
 import { PLATFORM_URL } from "@sg/links";
@@ -15,6 +15,7 @@ import { cx } from "@sg/utils";
  */
 export default function PublicChrome() {
   const { session } = useStore();
+  const navigate = useNavigate();
 
   const link = ({ isActive }: { isActive: boolean }) =>
     cx("transition-colors hover:text-white", isActive ? "text-white" : "text-slate-400");
@@ -23,6 +24,18 @@ export default function PublicChrome() {
     <div className="relative min-h-screen">
       <header className="sticky top-0 z-30 border-b border-phantix-700/60 bg-phantix-950/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-5 py-3.5 sm:px-6">
+          <button
+            onClick={() => navigate(-1)}
+            title="Back"
+            aria-label="Back"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-phantix-700 bg-phantix-900 px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:border-phantix-600 hover:text-white"
+          >
+            <ArrowLeft size={16} />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+
+          <span className="h-6 w-px bg-phantix-700/60" aria-hidden="true" />
+
           <Link to="/" className="flex items-center gap-3">
             <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
             <span className="leading-tight">
@@ -69,7 +82,9 @@ export default function PublicChrome() {
       </header>
 
       <main className="px-5 py-8 sm:px-6">
-        <Outlet />
+        <div className="mx-auto w-full max-w-[1200px]">
+          <Outlet />
+        </div>
       </main>
 
       <footer className="border-t border-phantix-700/40 px-5 py-6 sm:px-6">

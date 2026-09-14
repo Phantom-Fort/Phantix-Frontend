@@ -5,6 +5,7 @@ import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
+import DocsChrome from "@sg/pages/DocsChrome";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
 import { HOSTS } from "./hosts";
@@ -44,9 +45,11 @@ export default function App() {
           <Route path="/assistant" element={<Agent allowAgi />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
-        {/* Documentation renders full-width, without the application sidebar. */}
-        <Route path="/docs" element={<Docs application="attack" />} />
-        <Route path="/docs/:docId" element={<DocPage />} />
+        {/* Documentation renders outside the sidebar with its own top bar. */}
+        <Route element={<DocsChrome />}>
+          <Route path="/docs" element={<Docs application="attack" />} />
+          <Route path="/docs/:docId" element={<DocPage />} />
+        </Route>
 
       </Routes>
       <ToastViewport />
