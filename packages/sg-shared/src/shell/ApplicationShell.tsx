@@ -205,6 +205,9 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   const location = useLocation();
   const [cards, setCards] = useState<ApplicationCard[] | null>(null);
   const [opening, setOpening] = useState<ApplicationKey | "">("");
+  // Nothing (not even the shell) renders until identity + this application's
+  // access are verified — no flash of the app before the redirect.
+  const [authReady, setAuthReady] = useState(false);
 
   // Every call from this shell declares which application it comes from — both
   // the shell's own client and the shared @sg/api client used by pages.
@@ -213,6 +216,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
 
   useEffect(() => {
     let alive = true;
+    setAuthReady(false);
     (async () => {
       let demo = isDemoFlagSet();
       if (!demo && !appToken()) {
@@ -221,22 +225,39 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         const handed = await consumeHandoff(application);
         demo = isDemoFlagSet();
         if (!handed && !demo) {
-          window.location.assign(coreLoginUrl(application));
+          // Replace (not push) so Back cannot land on the gated page.
+          window.location.replace(coreLoginUrl(application));
           return;
         }
       }
       if (demo) {
         setMe(null);
+        if (alive) setAuthReady(true);
         return;
       }
+      // Verify identity AND this application's access before rendering anything.
+      const [meRes, appsRes] = await Promise.all([
+        apiGet<AppPrincipal>("/app/auth/me").catch(() => null),
+        apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications").catch(() => null),
+      ]);
       if (!alive) return;
-      apiGet<AppPrincipal>("/app/auth/me")
-        .then((v) => alive && setMe(v))
-        .catch(() => alive && setMe(null));
-      apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications")
-        .then((v) => alive && setCards(v?.applications || []))
-        .catch(() => alive && setCards(null));
+      if (!meRes) {
+        // Session invalid/expired — go to login without flashing the app.
+        window.location.replace(coreLoginUrl());
+        return;
+      }
+      setMe(meRes);
+      const list = appsRes?.applications || [];
+      setCards(list);
+      const current = list.find((c) => c.key === application);
+      if (current && !current.accessible) {
+        // Authenticated but not authorized for this application.
+        const base = (hosts.core || "").replace(/\/+$/, "");
+        window.location.replace(`${base}/choose-app`);
+        return;
+      }
       void loadSandboxMe().then((m) => alive && setSandboxEnrolled(!!m?.enrolled));
+      setAuthReady(true);
     })();
     return () => {
       alive = false;
@@ -358,6 +379,17 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
     // Revokes on the backend, empties every token store, and lands on Core's
     // login — the same from all four applications, and from the demo.
     void signOutEverywhere(hosts.core);
+  }
+
+  if (!authReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-phantix-950">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-phantix-600 border-t-gold-400" />
+          <p className="mt-3 text-sm text-slate-500">Verifying access…</p>
+        </div>
+      </div>
+    );
   }
 
   return (
