@@ -14,7 +14,7 @@ import {
   formatDuration, loadSocAgentInstall, downloadSocAgent, loadSocAgentWalkthrough,
 } from "../data";
 import type { AvailabilityCheck, AvailabilityIncident, AvailabilitySummary, SocAgentInstallCatalog } from "../types";
-import { Link } from "react-router-dom";
+import { PLATFORM_URL } from "../links";
 
 const CHECK_TYPES = ["http", "https", "tcp", "tls", "dns"];
 
@@ -387,7 +387,7 @@ export default function SocAvailability() {
           {" — "}
           {agentCatalog?.authHint ?? "Mint a service key on Platform. Never paste a user JWT on the server."}
           {" "}
-          <Link to="/platform" className="font-semibold text-gold-400 hover:text-gold-300">Platform →</Link>
+          <a href={PLATFORM_URL} className="font-semibold text-gold-400 hover:text-gold-300">Platform →</a>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {(agentCatalog?.downloads ?? [

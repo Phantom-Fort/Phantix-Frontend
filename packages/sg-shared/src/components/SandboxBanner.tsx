@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { CrossAppLink } from "./CrossAppLink";
 import { FlaskConical, X } from "lucide-react";
 import { loadSandboxMe, type SandboxMe } from "../sandbox";
 import { PLATFORM_URL } from "../links";
@@ -55,9 +55,9 @@ export default function SandboxBanner() {
           </p>
         )}
       </div>
-      <Link to="/sandbox" className="btn-secondary !py-1.5 !text-xs">
+      <CrossAppLink app="core" to="/sandbox" className="btn-secondary !py-1.5 !text-xs">
         App sandbox
-      </Link>
+      </CrossAppLink>
       <a href={`${PLATFORM_URL}/sandbox`} className="btn-ghost !py-1.5 !text-xs text-gold-300" target="_blank" rel="noreferrer">
         Platform sandbox
       </a>

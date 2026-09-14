@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Send, Square, Sparkles, X, Trash2, ArrowRight, ArrowDown, BrainCircuit, BookOpen, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { applicationHandoffHref, applicationTarget } from "../applications";
 import { streamAgentChat } from "../data";
 import { useStore } from "../store";
 import { cx } from "../utils";
@@ -48,6 +49,19 @@ export default function AgentAssistant() {
   // the support desk. The switch makes the second one explicit, because a user
   // with an issue should not have to know which one is which.
   const [mode, setMode] = useState<"agent" | "support">("agent");
+
+  // Support is a Core surface. From Attack / Defend / Code the desk is on
+  // another origin, so it needs the application's host and a session handoff —
+  // an in-app route would fall into that app's catch-all.
+  const goSupport = async (path: string) => {
+    setOpen(false);
+    const target = applicationTarget("core", path);
+    if (!target.external) {
+      navigate(path);
+      return;
+    }
+    window.location.assign(await applicationHandoffHref("core", path));
+  };
   const [messages, setMessages] = useState<Msg[]>(() => loadChat(emailKey));
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -234,7 +248,7 @@ export default function AgentAssistant() {
                     organization, and the thread is answered here and by email.
                   </p>
                   <button
-                    onClick={() => { setOpen(false); navigate("/support?new=1"); }}
+                    onClick={() => void goSupport("/support?new=1")}
                     className="flex items-start gap-3 rounded-xl border border-gold-400/30 bg-gold-400/[0.08] px-3.5 py-3 text-left transition-colors hover:bg-gold-400/[0.14]"
                   >
                     <Sparkles size={15} className="mt-0.5 shrink-0 text-gold-300" />
@@ -244,7 +258,7 @@ export default function AgentAssistant() {
                     </span>
                   </button>
                   <button
-                    onClick={() => { setOpen(false); navigate("/support"); }}
+                    onClick={() => void goSupport("/support")}
                     className="flex items-start gap-3 rounded-xl border border-phantix-700/50 px-3.5 py-3 text-left transition-colors hover:bg-phantix-800/40"
                   >
                     <ArrowRight size={15} className="mt-0.5 shrink-0 text-slate-400" />

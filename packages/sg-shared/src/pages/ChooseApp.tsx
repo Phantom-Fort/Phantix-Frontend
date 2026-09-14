@@ -5,7 +5,6 @@ import { ArrowRight, Boxes, Code2, Crosshair, Lock, LogOut, ShieldCheck } from "
 import { useStore } from "@sg/store";
 import { cx } from "@sg/utils";
 import {
-  accessibleApplications,
   applicationHandoffHref,
   applicationTarget,
   loadApplications,
@@ -140,7 +139,6 @@ export default function ChooseApp() {
   );
   const core = all.find((a) => a.key === "core") || null;
   const specialized = all.filter((a) => a.key !== "core");
-  const reachable = accessibleApplications(snap);
   const last = lastApp();
 
   const open = useCallback(
@@ -159,23 +157,9 @@ export default function ChooseApp() {
     [navigate, opening],
   );
 
-  // Single application: no choice to make — go straight in.
-  useEffect(() => {
-    if (!loading && reachable.length === 1) void open(reachable[0]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, reachable.length]);
-
-  // Arriving from an app that bounced here for sign-in (`?next=attack`): open it
-  // as soon as we know this role may reach it. RBAC still decides — an app the
-  // operator cannot enter simply leaves the picker on screen.
-  useEffect(() => {
-    if (loading) return;
-    const next = new URLSearchParams(window.location.search).get("next");
-    if (!next) return;
-    const app = reachable.find((a) => a.key === next);
-    if (app) void open(app);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, reachable.length]);
+  // Deliberately no auto-forward when only one application is reachable: the
+  // picker is where an operator sees the whole product, including what their
+  // organization or role does not include and why. Skipping it hides that.
 
   // 1–4 opens the nth application, so a returning operator never reaches for
   // the mouse. The order matches what is on screen.

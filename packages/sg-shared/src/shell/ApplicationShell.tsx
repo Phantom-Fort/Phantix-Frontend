@@ -28,6 +28,7 @@ import { useSidebarCollapsed } from "../useSidebarCollapsed";
 import { ThemeToggle } from "../ThemeToggle";
 import { BrandLogo } from "../components/BrandLogo";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
+import AgentAssistant from "../components/AgentAssistant";
 import SandboxBanner from "../components/SandboxBanner";
 import { useStore } from "../store";
 import { shortName } from "../utils";
@@ -775,6 +776,11 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
       </div>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} index={searchIndex} />
+
+      {/* SecureGraph Agent — the floating assistant, and the way to the support
+          desk from any application. It was mounted by the Command Centre layout
+          and was lost when the shells replaced it. */}
+      <AgentAssistant />
     </NotificationProvider>
   );
 }
