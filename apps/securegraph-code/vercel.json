@@ -1,7 +1,10 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "npm run build",
+  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && npm run build:code",
   "outputDirectory": "dist",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- . ../../packages ../../docs ../../public ../../package.json ../../package-lock.json",
   "rewrites": [
     {
       "source": "/api/v1/:path*",

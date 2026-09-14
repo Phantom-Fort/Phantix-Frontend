@@ -663,8 +663,10 @@ export function PageSkeleton({
   actions?: boolean;
   className?: string;
 }) {
+  // Fills the space the page will occupy. A fixed width here made every load
+  // jump: the skeleton sat at one measure and the page arrived at another.
   return (
-    <div className={cx("mx-auto max-w-[1400px]", className)}>
+    <div className={cx("mx-auto w-full", className)}>
       <PageHeaderSkeleton actions={actions} />
       {variant === "dashboard" && (
         <>

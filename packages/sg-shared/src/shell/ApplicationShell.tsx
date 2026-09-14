@@ -764,7 +764,12 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
               and a page that asks for h-full gets the space that is actually
               left rather than guessing at header and footer heights. */}
           <main className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mx-auto flex h-full max-w-7xl flex-col">
+            {/* Pages declare their own measure — a table wants 1400-1500px, a
+                form wants 900px. The old 7xl cap sat below both, so wide pages
+                were cramped while their rows scrolled off the bottom. This is
+                only a backstop so an ultrawide display does not stretch a table
+                across a metre of glass. */}
+            <div className="mx-auto flex h-full w-full max-w-[1600px] flex-col">
               {session?.authenticated && !demoActive && <SandboxBanner />}
               <Outlet />
             </div>

@@ -3,12 +3,21 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Phantix Security Solutions — Product Delivery Command Centre frontend",
+  "description": "Phantix Security Solutions \u2014 Product Delivery Command Centre frontend",
   "scripts": {
     "dev": "cd apps/securegraph-core && npm run dev",
     "build": "cd apps/securegraph-core && npm run build",
     "preview": "cd apps/securegraph-core && npm run preview",
-    "typecheck": "cd apps/securegraph-core && npm run typecheck"
+    "typecheck": "cd apps/securegraph-core && npm run typecheck",
+    "build:core": "npm run build --workspace @phantix/securegraph-core",
+    "dev:core": "npm run dev --workspace @phantix/securegraph-core",
+    "build:attack": "npm run build --workspace @phantix/securegraph-attack",
+    "dev:attack": "npm run dev --workspace @phantix/securegraph-attack",
+    "build:defend": "npm run build --workspace @phantix/securegraph-defend",
+    "dev:defend": "npm run dev --workspace @phantix/securegraph-defend",
+    "build:code": "npm run build --workspace @phantix/securegraph-code",
+    "dev:code": "npm run dev --workspace @phantix/securegraph-code",
+    "typecheck:all": "npm run typecheck --workspaces --if-present"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -61,5 +70,9 @@
   },
   "allowScripts": {
     "esbuild@0.21.5": true
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

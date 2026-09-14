@@ -46,9 +46,32 @@ module load before reading any source. `tsc --noEmit` is fine either way.
 
 ## Deploying
 
-Each app is its own Vercel project with **Root Directory** set to
-`apps/securegraph-<app>`; `vercel.json` in that directory carries the build, the
-SPA rewrite and the API proxy.
+One repository, four Vercel projects, four domains. Nothing is shared between
+the projects except the code.
+
+| Vercel project | Root Directory | Domain |
+|---|---|---|
+| securegraph-core | `apps/securegraph-core` | `app.phantixlabs.com` |
+| securegraph-attack | `apps/securegraph-attack` | `attack.phantixlabs.com` |
+| securegraph-defend | `apps/securegraph-defend` | `defend.phantixlabs.com` |
+| securegraph-code | `apps/securegraph-code` | `code.phantixlabs.com` |
+
+Create each project against this repository and set:
+
+1. **Root Directory** to the app's folder.
+2. **Include source files outside of the Root Directory** — **on**. The app
+   imports `packages/sg-shared` and reads the product docs from `docs/`; without
+   this the build cannot see either.
+
+Everything else is in that app's `vercel.json` and needs no dashboard setting:
+
+- `installCommand` / `buildCommand` run from the repo root, so the npm
+  workspace link to `packages/sg-shared` resolves the same way it does locally.
+- `ignoreCommand` skips the build when a push touched neither this app, the
+  shared package, the docs, nor the lockfile — otherwise every push rebuilds all
+  four.
+- `rewrites` carry the SPA fallback and the API proxy; `headers` the cache and
+  frame policy.
 
 **The API proxy is not optional.** The shells call the API same-origin at
 `/api/v1`, so a host without the rewrite has no backend at all. Point
@@ -61,6 +84,9 @@ SPA rewrite and the API proxy.
 
 Vercel does not expand environment variables inside `vercel.json`, so this is a
 per-environment edit, not a dashboard setting.
+
+Locally the same layout works through npm workspaces: `npm install` once at the
+root, then `npm run dev:attack` (or `build:attack`, `typecheck:all`).
 
 ## Session across the four hosts
 
