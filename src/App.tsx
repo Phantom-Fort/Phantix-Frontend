@@ -117,6 +117,9 @@ export default function App() {
           <Route path="/demo" element={<DemoEntry />} />
           {/* Public sandbox application — no auth (entry from phantixlabs.com) */}
           <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
+          {/* Documentation renders full-width, without the application sidebar. */}
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/docs/:docId" element={<DocPage />} />
 
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
@@ -161,8 +164,6 @@ export default function App() {
             <Route path="/settings/privacy" element={<RequireAuth><Privacy /></RequireAuth>} />
             <Route path="/support" element={<RequireAuth><Support /></RequireAuth>} />
             <Route path="/authorizations" element={<RequireAuth><AuthorizerInbox /></RequireAuth>} />
-            <Route path="/docs" element={<Docs />} />
-            <Route path="/docs/:docId" element={<DocPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

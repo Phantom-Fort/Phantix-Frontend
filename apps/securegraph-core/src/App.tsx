@@ -50,6 +50,9 @@ export default function App() {
         <Route path="/cookies" element={<Cookies />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/sandbox-apply" element={<SandboxApplyPublic />} />
+        {/* Documentation renders full-width, without the application sidebar. */}
+        <Route path="/docs" element={<Docs />} />
+        <Route path="/docs/:docId" element={<DocPage />} />
 
         {/* Authenticated Core shell */}
         <Route
@@ -71,8 +74,6 @@ export default function App() {
           <Route path="/agent-activity" element={<AgentActivity />} />
           <Route path="/people" element={<People />} />
           <Route path="/authorizations" element={<AuthorizerInbox />} />
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/docs/:docId" element={<DocPage />} />
           <Route path="/support" element={<Support />} />
           <Route path="/sandbox" element={<Sandbox />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
