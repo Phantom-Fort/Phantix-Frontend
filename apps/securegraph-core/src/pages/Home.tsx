@@ -10,6 +10,7 @@ import { loadPricing, pricingFootnote } from "@sg/pricing";
 import type { PricingTier } from "@sg/pricing";
 import { LANDING_URL, PLATFORM_URL } from "@sg/links";
 import { cx } from "@sg/utils";
+import { ThemeToggle } from "@sg/ThemeToggle";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 22 },
@@ -60,9 +61,11 @@ export default function Home() {
           <nav className="ml-10 hidden items-center gap-6 text-sm text-slate-400 md:flex">
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <Link to="/docs" className="transition-colors hover:text-white">Docs</Link>
+            <Link to="/sandbox-apply" className="transition-colors hover:text-white">Sandbox</Link>
             <a href={PLATFORM_URL} className="transition-colors hover:text-white">Platform</a>
           </nav>
           <div className="ml-auto flex items-center gap-2.5">
+            <ThemeToggle />
             {session?.authenticated ? (
               <Link to="/dashboard" className="btn-primary !py-2">Open console <ArrowRight size={15} /></Link>
             ) : (

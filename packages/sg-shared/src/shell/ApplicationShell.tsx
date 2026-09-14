@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BookOpen,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  FlaskConical,
   KeyRound,
   LayoutGrid,
   Lock,
@@ -17,6 +19,7 @@ import { ThemeToggle } from "../ThemeToggle";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
 import { consumeHandoff, handoffUrl } from "./session";
 import { IS_DEV_HOSTS } from "../config";
+import { isDemoFlagSet } from "../api";
 import {
   APPLICATION_LABEL,
   APPLICATION_ORDER,
@@ -77,12 +80,20 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   useEffect(() => {
     let alive = true;
     (async () => {
-      if (!appToken()) {
+      // The guided demo has no session by design — it runs entirely in the
+      // browser against fixtures. Bouncing it to a login is exactly the wrong
+      // answer for a visitor who asked to look around without signing in.
+      const demo = isDemoFlagSet();
+      if (!demo && !appToken()) {
         const handed = await consumeHandoff(application);
         if (!handed) {
           window.location.assign(hosts.core ? `${hosts.core}/login` : "/login");
           return;
         }
+      }
+      if (demo) {
+        setMe(null);
+        return;
       }
       if (!alive) return;
       apiGet<AppPrincipal>("/app/auth/me")
@@ -129,6 +140,40 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
     setSwitcherOpen(false);
     setOpening("");
     if (url) window.location.assign(url);
+  }
+
+  // Documentation and the sandbox are Core surfaces. Inside Core they are
+  // routes; from Attack / Defend / Code they are links to Core's host, which is
+  // where the operator already has a session.
+  function coreHref(path: string): string {
+    if (application === "core") return path;
+    const base = (hosts.core || "").replace(/\/+$/, "");
+    return base ? `${base}${path}` : path;
+  }
+
+  function CoreLink({
+    path,
+    title,
+    className,
+    children,
+  }: {
+    path: string;
+    title: string;
+    className?: string;
+    children: React.ReactNode;
+  }) {
+    if (application === "core") {
+      return (
+        <NavLink to={path} title={title} className={className}>
+          {children}
+        </NavLink>
+      );
+    }
+    return (
+      <a href={coreHref(path)} title={title} className={className}>
+        {children}
+      </a>
+    );
   }
 
   // One nav definition, two chromes: the rail (which hides labels when
@@ -266,6 +311,20 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
           </span>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2.5">
+            <CoreLink
+              path="/docs"
+              title="Documentation"
+              className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
+            >
+              <BookOpen size={16} />
+            </CoreLink>
+            <CoreLink
+              path="/sandbox"
+              title="Sandbox"
+              className="hidden rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white sm:inline-flex"
+            >
+              <FlaskConical size={16} />
+            </CoreLink>
             <ThemeToggle />
             {me?.organization_slug && (
               <span className="chip hidden border-phantix-700 bg-phantix-900 font-mono text-slate-300 md:inline-flex">
@@ -322,6 +381,20 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                       >
                         <LayoutGrid size={15} /> Switch application
                       </button>
+                      <CoreLink
+                        path="/docs"
+                        title="Documentation"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
+                      >
+                        <BookOpen size={15} /> Documentation
+                      </CoreLink>
+                      <CoreLink
+                        path="/sandbox"
+                        title="Sandbox"
+                        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-slate-300 hover:bg-phantix-800"
+                      >
+                        <FlaskConical size={15} /> Sandbox
+                      </CoreLink>
                       <button
                         onClick={signOut}
                         className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm text-severity-critical hover:bg-severity-critical/10"

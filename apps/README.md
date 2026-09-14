@@ -17,6 +17,33 @@ application's `open_url` in the launcher, and allows them as CORS origins, from
 Changing a host means changing that setting too, or the switcher will send
 operators to the old one.
 
+## Running locally
+
+```bash
+cd apps/securegraph-core && npm run dev     # 5173 — start this one first
+cd apps/securegraph-attack && npm run dev   # 5175
+cd apps/securegraph-defend && npm run dev   # 5176
+cd apps/securegraph-code && npm run dev     # 5177
+```
+
+Under `vite dev` the four hosts resolve to these local ports, not the deployed
+origins, so switching application and the "not signed in" bounce both stay on
+localhost. `VITE_CORE_URL` / `VITE_ATTACK_URL` / `VITE_DEFEND_URL` /
+`VITE_CODE_URL` override that if you want a local shell to talk to a deployed
+sibling.
+
+**Start Core first and sign in there.** Core owns the sign-in handshake; the
+other three have no login of their own and will send you to Core's. The dev
+server proxies `/api` to staging, so you sign in with a real staging account.
+Once signed in, the switcher carries that session across to the other ports.
+
+To look around without an account, use the guided demo from Core's home page —
+it runs against fixtures in the browser and never asks for a session.
+
+**On WSL:** run the dev servers and builds from Windows. `node_modules` is
+installed for win32, so rollup has no Linux binary and `vite build` dies on
+module load before reading any source. `tsc --noEmit` is fine either way.
+
 ## Deploying
 
 Each app is its own Vercel project with **Root Directory** set to
