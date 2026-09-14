@@ -11,41 +11,20 @@ import { api } from "@sg/api";
 import type { AuditEvent } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
-const ENGINE_MAP: Record<string, { label: string; color: string }> = {
-  assets: { label: "Asset Engine", color: "text-blue-400" },
-  scans: { label: "Scanner Engine", color: "text-cyan-400" },
-  vapt: { label: "VAPT Engine", color: "text-purple-400" },
-  risks: { label: "Risk Engine", color: "text-red-400" },
-  reports: { label: "Reporting Engine", color: "text-emerald-400" },
-  compliance: { label: "Compliance Engine", color: "text-amber-400" },
-  alerts: { label: "Alert Engine", color: "text-orange-400" },
-  audit: { label: "Audit Engine", color: "text-gray-400" },
-  "db-connections": { label: "DB Connections", color: "text-teal-400" },
-  "org-users": { label: "Org Users", color: "text-indigo-400" },
-  organizations: { label: "Organization", color: "text-pink-400" },
-  auth: { label: "Auth", color: "text-yellow-400" },
-  ai: { label: "AI Engine", color: "text-fuchsia-400" },
-  support: { label: "Support", color: "text-lime-400" },
-  engines: { label: "Engines", color: "text-slate-300" },
+// The trail reads by application, the way the operator uses the product —
+// engines are how the backend is built and mean nothing to the reader. The
+// backend labels each event (shared and control-plane activity is unlabelled).
+const APPLICATION_META: Record<string, { label: string; color: string }> = {
+  core: { label: "Core", color: "text-gold-300" },
+  attack: { label: "Attack", color: "text-severity-critical" },
+  defend: { label: "Defend", color: "text-severity-low" },
+  code: { label: "Code", color: "text-severity-info" },
 };
 
-function parseEngine(path: string): string {
-  if (!path) return "unknown";
-  const parts = path.replace("/api/v1/", "").split("/");
-  return parts[0] || "unknown";
+function applicationMeta(key?: string | null) {
+  if (!key) return { label: "Platform", color: "text-slate-400" };
+  return APPLICATION_META[key] ?? { label: titleCase(key), color: "text-slate-400" };
 }
-
-function engineMeta(engine: string) {
-  return ENGINE_MAP[engine] ?? { label: titleCase(engine.replace(/-/g, " ")), color: "text-slate-400" };
-}
-
-const METHOD_COLORS: Record<string, string> = {
-  GET: "border-blue-400/40 bg-blue-400/10 text-blue-300",
-  POST: "border-emerald-400/40 bg-emerald-400/10 text-emerald-300",
-  PATCH: "border-amber-400/40 bg-amber-400/10 text-amber-300",
-  PUT: "border-purple-400/40 bg-purple-400/10 text-purple-300",
-  DELETE: "border-red-400/40 bg-red-400/10 text-red-300",
-};
 
 export default function Audit() {
   const { toast } = useStore();
@@ -72,30 +51,25 @@ export default function Audit() {
   };
   const { data, loading, error, reload } = useResource(loadAuditBundle, { events: [] }, "audit");
   const auditEvents = data.events as AuditEvent[];
-  const [engineFilter, setEngineFilter] = useState<string>("all");
+  const [appFilter, setAppFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
 
-  const engines = useMemo(() => {
+  const applications = useMemo(() => {
     const set = new Set<string>();
-    auditEvents.forEach((e) => {
-      const path = e.details?.path ?? e.action_label ?? "";
-      set.add(parseEngine(path));
-    });
+    auditEvents.forEach((e) => set.add(e.application ?? "platform"));
     return Array.from(set).sort();
   }, [auditEvents]);
 
   const filtered = useMemo(() => {
     return auditEvents.filter((e) => {
-      const path = e.details?.path ?? e.action_label ?? "";
-      const engine = parseEngine(path);
-      if (engineFilter !== "all" && engine !== engineFilter) return false;
+      if (appFilter !== "all" && (e.application ?? "platform") !== appFilter) return false;
       if (actionFilter !== "all") {
         if (actionFilter === "mutations" && e.details?.passive !== false) return false;
         if (actionFilter === "access" && e.details?.passive !== true) return false;
       }
       return true;
     });
-  }, [auditEvents, engineFilter, actionFilter]);
+  }, [auditEvents, appFilter, actionFilter]);
 
   if (loading) {
     return <PageSkeleton variant="table" rows={8} cols={5} actions />;
@@ -114,7 +88,7 @@ export default function Audit() {
     <div className="mx-auto max-w-[1400px]">
       <PageHeader
         title="Audit trail"
-        description="Immutable dual-control trail --- every action carries initiator and authorizer snapshots, IP, and token type. Grouped by engine for compliance export."
+        description="Who did what, and when. Every action carries the person who initiated it, the person who authorised it, and where from — grouped by application."
         actions={<>
             <DocLink docId="howto-app-27" label="Audit how-to" />
           <button className="btn-secondary" onClick={() => void handleExport()} disabled={exporting}>
@@ -129,12 +103,12 @@ export default function Audit() {
             <Filter size={14} className="text-slate-500" />
             <select
               className="input !w-auto !py-1.5 text-xs"
-              value={engineFilter}
-              onChange={(e) => setEngineFilter(e.target.value)}
+              value={appFilter}
+              onChange={(e) => setAppFilter(e.target.value)}
             >
-              <option value="all">All engines ({auditEvents.length})</option>
-              {engines.map((eng) => (
-                <option key={eng} value={eng}>{engineMeta(eng).label}</option>
+              <option value="all">All applications ({auditEvents.length})</option>
+              {applications.map((key) => (
+                <option key={key} value={key}>{applicationMeta(key === "platform" ? null : key).label}</option>
               ))}
             </select>
             <select
@@ -142,12 +116,12 @@ export default function Audit() {
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value)}
             >
-              <option value="all">All actions</option>
-              <option value="access">GETs / reads</option>
-              <option value="mutations">POST / PATCH / DELETE</option>
+              <option value="all">All activity</option>
+              <option value="access">Viewed</option>
+              <option value="mutations">Changed</option>
             </select>
-            {(engineFilter !== "all" || actionFilter !== "all") && (
-              <button onClick={() => { setEngineFilter("all"); setActionFilter("all"); }} className="flex items-center gap-1 rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 text-xs text-slate-400 hover:text-slate-200">
+            {(appFilter !== "all" || actionFilter !== "all") && (
+              <button onClick={() => { setAppFilter("all"); setActionFilter("all"); }} className="flex items-center gap-1 rounded-lg border border-phantix-700/50 bg-phantix-950/70 px-2 py-1 text-xs text-slate-400 hover:text-slate-200">
                 <X size={12} /> Clear
               </button>
             )}
@@ -160,8 +134,7 @@ export default function Audit() {
                 <tr className="border-b border-phantix-700/40">
                   <th className="th w-10" />
                   <th className="th">Action</th>
-                  <th className="th">Method</th>
-                  <th className="th">Engine</th>
+                  <th className="th">Application</th>
                   <th className="th">Initiator</th>
                   <th className="th">Authorizer</th>
                   <th className="th">IP</th>
@@ -170,11 +143,13 @@ export default function Audit() {
               </thead>
               <tbody>
                 {filtered.map((e, i) => {
-                  const path = e.details?.path ?? e.action_label ?? "";
-                  const method = e.details?.method ?? "GET";
-                  const engine = parseEngine(path);
-                  const em = engineMeta(engine);
-                  const desc = describeEndpoint(method, path);
+                  // The description is written for the person reading it; the
+                  // route and method that produced it stay in the staff trail.
+                  const desc = describeEndpoint(
+                    e.details?.method ?? "GET",
+                    e.details?.path ?? e.action_label ?? "",
+                  );
+                  const am = applicationMeta(e.application);
                   return (
                     <motion.tr
                       key={e.id}
@@ -188,7 +163,7 @@ export default function Audit() {
                           "inline-flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold",
                           e.details?.passive !== false ? "bg-blue-400/15 text-blue-400" : "bg-emerald-400/15 text-emerald-400"
                         )}>
-                          {e.details?.passive !== false ? "R" : "W"}
+                          {e.details?.passive !== false ? "V" : "C"}
                         </span>
                       </td>
                       <td className="td max-w-[340px]">
@@ -196,13 +171,7 @@ export default function Audit() {
                         <p className="text-[11px] leading-5 text-slate-400">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</p>
                       </td>
                       <td className="td">
-                        <span className={cx("rounded-md border px-1.5 py-0.5 font-mono text-[9px] font-bold", METHOD_COLORS[method] ?? "border-slate-500/50 bg-slate-800/50 text-slate-400")}>
-                          {method}
-                        </span>
-                      </td>
-                      <td className="td">
-                        <span className={cx("text-[11px] font-medium", em.color)}>{em.label}</span>
-                        {e.details?.token_type && <p className="text-[9px] text-slate-600">{e.details.token_type}</p>}
+                        <span className={cx("text-[11px] font-medium", am.color)}>{am.label}</span>
                       </td>
                       <td className="td">
                         <div className="flex items-center gap-1.5">

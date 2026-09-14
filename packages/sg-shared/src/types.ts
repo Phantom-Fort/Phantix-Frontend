@@ -865,6 +865,8 @@ export interface AuditEvent {
   id: number;
   action_key: string;
   action_label: string;
+  /** Operator application the action happened in; null for control-plane work. */
+  application?: string | null;
   category: string;
   status: string;
   summary: string;

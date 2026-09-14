@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion, type Variants } from "framer-motion";
-import { ArrowRight, Boxes, Code2, Crosshair, Lock, LogOut, ShieldCheck } from "lucide-react";
+import { ArrowRight, Boxes, Code2, Crosshair, Lock, LogOut, ShieldCheck, BookOpen } from "lucide-react";
 import { useStore } from "@sg/store";
+import { ThemeToggle } from "@sg/ThemeToggle";
 import { cx } from "@sg/utils";
 import {
   applicationHandoffHref,
@@ -190,8 +191,50 @@ export default function ChooseApp() {
     return opening === key ? { scale: 1.02 } : { opacity: 0.25, scale: 0.97 };
   }
 
+  const signOut = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-12 sm:px-6">
+    // The picker renders outside the application shell, so it carries its own
+    // chrome: an operator who lands here still needs the theme control, a way
+    // to the docs, and a way out.
+    <div className="flex min-h-screen flex-col">
+      <header className="relative z-20 flex items-center gap-3 border-b border-phantix-700/60 px-5 py-3.5 sm:px-6">
+        <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
+        <span className="leading-tight">
+          <span className="block font-display text-[15px] font-bold text-white">SecureGraph</span>
+          <span className="block text-[9px] font-semibold uppercase tracking-[0.22em] text-gold-400">
+            Applications
+          </span>
+        </span>
+        <div className="ml-auto flex items-center gap-2.5">
+          <Link
+            to="/docs"
+            title="Documentation"
+            className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
+          >
+            <BookOpen size={16} />
+          </Link>
+          <ThemeToggle />
+          {(session?.userName || session?.userEmail) && (
+            <span className="hidden max-w-[180px] truncate text-xs text-slate-500 sm:inline">
+              {session.userName || session.userEmail}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={signOut}
+            title="Sign out"
+            className="rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+      </header>
+
+      <main className="relative flex flex-1 items-center justify-center overflow-hidden px-5 py-10 sm:px-6">
       {/* Ambient: two slow glows and a breathing graph. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(212,164,76,0.10),transparent)]" />
       {!calm && (
@@ -517,21 +560,29 @@ export default function ChooseApp() {
             </kbd>{" "}
             to open
           </span>
-          <Link to="/docs" className="hover:text-slate-300">
-            Documentation
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              navigate("/login", { replace: true });
-            }}
-            className="flex items-center gap-1.5 hover:text-slate-300"
-          >
-            <LogOut size={12} /> Sign out
-          </button>
         </motion.div>
       </motion.div>
+
+      </main>
+
+      <footer className="relative z-20 flex flex-wrap items-center gap-x-5 gap-y-1.5 border-t border-phantix-700/60 px-5 py-3.5 text-[11px] text-slate-600 sm:px-6">
+        <span>SecureGraph</span>
+        <Link to="/docs" className="transition-colors hover:text-slate-400">
+          Documentation
+        </Link>
+        <Link to="/privacy" className="transition-colors hover:text-slate-400">
+          Privacy
+        </Link>
+        <Link to="/cookies" className="transition-colors hover:text-slate-400">
+          Cookies
+        </Link>
+        <button type="button" onClick={signOut} className="transition-colors hover:text-slate-400">
+          Sign out
+        </button>
+        <span className="ml-auto hidden sm:inline">
+          Your organization decides which applications appear here.
+        </span>
+      </footer>
 
       {/* Handoff is a full page navigation — cover the wait with a progress sweep. */}
       <AnimatePresence>
