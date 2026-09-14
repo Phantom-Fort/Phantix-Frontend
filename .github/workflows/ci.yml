@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feature/ui-overhaul-vercel]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apps:
+    name: ${{ matrix.app }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [core, attack, defend, code]
+    defaults:
+      run:
+        working-directory: apps/securegraph-${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: securegraph-${{ matrix.app }}
+          path: apps/securegraph-${{ matrix.app }}/dist
+          if-no-files-found: error

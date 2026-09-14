@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Apply the saved theme before first paint (mirrors @sg/theme bootstrapTheme).
+      (function () {
+        try {
+          var stored = localStorage.getItem("phantix_theme");
+          var dark;
+          if (stored === "light") dark = false;
+          else if (stored === "system")
+            dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          else dark = true;
+          if (dark) {
+            document.documentElement.removeAttribute("data-theme");
+            document.documentElement.classList.add("dark");
+          } else {
+            document.documentElement.setAttribute("data-theme", "light");
+            document.documentElement.classList.remove("dark");
+          }
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", dark ? "#000000" : "#F4F6FA");
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="referrer" content="no-referrer" />
+    <title>SecureGraph Code — AI-Powered Security Operations</title>
+    <meta name="description" content="SecureGraph Code — AI-powered, end-to-end security operations by Phantix Security Solutions." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="SecureGraph" />
+    <meta property="og:url" content="https://code.phantixlabs.com/" />
+    <meta property="og:title" content="SecureGraph Code — AI-Powered Security Operations" />
+    <meta property="og:image" content="https://code.phantixlabs.com/logo-transparent.png" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

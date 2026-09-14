@@ -1,0 +1,296 @@
+// ── Documentation catalog (public) ────────────────────────────────────────────
+// Renders the client-facing help centre + public guides shipped in this repo
+// under docs/ (marketing) and docs/user-docs/ (help centre). Engineering
+// internals are intentionally not exposed here.
+
+// Top-level public / marketing docs
+import whatIsSecureGraph from "@docs/docs/01-what-is-securegraph.md?raw";
+import businessLeaders from "@docs/docs/02-for-business-leaders.md?raw";
+import securityIt from "@docs/docs/03-for-security-and-it.md?raw";
+import investorsPartners from "@docs/docs/04-for-investors-and-partners.md?raw";
+import capabilities from "@docs/docs/05-product-capabilities.md?raw";
+import privacyTrust from "@docs/docs/06-privacy-and-trust.md?raw";
+import pricingPlans from "@docs/docs/07-pricing-and-plans.md?raw";
+import howItWorks from "@docs/docs/08-how-it-works.md?raw";
+import aiAccountability from "@docs/docs/09-ai-with-accountability.md?raw";
+import forDevelopers from "@docs/docs/10-for-developers.md?raw";
+import faq from "@docs/docs/11-faq.md?raw";
+import gettingStarted from "@docs/docs/12-getting-started.md?raw";
+
+// Help centre / setup docs
+import hcGettingStarted from "@docs/docs/user-docs/01-getting-started.md?raw";
+import hcSecurityDb from "@docs/docs/user-docs/02-security-database.md?raw";
+import hcEmail from "@docs/docs/user-docs/03-email-and-smtp.md?raw";
+import hcAlerts from "@docs/docs/user-docs/04-alert-channels.md?raw";
+import hcGithub from "@docs/docs/user-docs/05-github-connection.md?raw";
+import hcBilling from "@docs/docs/user-docs/06-plans-and-billing.md?raw";
+import hcDaily from "@docs/docs/user-docs/07-daily-activities.md?raw";
+import hcFeatures from "@docs/docs/user-docs/08-features-overview.md?raw";
+import hcUsers from "@docs/docs/user-docs/09-users-and-approvals.md?raw";
+import hcAiAgent from "@docs/docs/user-docs/10-ai-agent-api.md?raw";
+import hcPrivacy from "@docs/docs/user-docs/11-privacy-and-security.md?raw";
+import hcTroubleshoot from "@docs/docs/user-docs/12-troubleshooting.md?raw";
+import hcComplianceFrameworks from "@docs/docs/user-docs/13-compliance-frameworks.md?raw";
+
+// In-app user manuals + task how-tos (Command Centre help centre)
+import type { ApplicationKey } from "./shell/types";
+import { manualDocs } from "./manualDocs";
+import { howToDocs } from "./howToDocs";
+
+export interface DocEntry {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  content: string;
+  badge?: string;
+  /** The application this documentation belongs to. */
+  application: DocApplication;
+}
+
+/**
+ * Documentation sections. Platform is not one of the four operator
+ * applications — it is the control plane — but it has its own documentation,
+ * and filing it under Core meant Core's help centre answered questions about a
+ * product the operator was not in.
+ */
+export type DocApplication = ApplicationKey | "platform";
+
+/** Documentation is arranged by the application it documents. */
+export const APPLICATION_SECTIONS: { id: DocApplication; label: string; blurb: string }[] = [
+  { id: "core", label: "Core", blurb: "Setup, security graph, reports, billing and the AI assistant" },
+  { id: "attack", label: "Attack", blurb: "Targets, VAPT campaigns, web/API scans and the pentest agent" },
+  { id: "defend", label: "Defend", blurb: "Assets, exposure, cloud, compliance, risk, SOC and threat intel" },
+  { id: "code", label: "Code", blurb: "Code review, repositories, threat models and product context" },
+  { id: "platform", label: "Platform", blurb: "Company setup, people and roles, service keys, billing and applications" },
+];
+
+/** Best-effort application for a document from its id/title/description. */
+function classifyDoc(d: Omit<DocEntry, "application">): DocApplication {
+  const s = `${d.id} ${d.title} ${d.description ?? ""}`.toLowerCase();
+  const has = (...ws: string[]) => ws.some((w) => s.includes(w));
+  // Platform first: it is the control plane, not an operator application, and
+  // its documents otherwise fall through to Core.
+  if (
+    d.category === "how-to-platform" ||
+    has(
+      "platform", "company setup", "organization setup", "org setup", "service key",
+      "login link", "billing", "invoice", "subscription", "plan and pricing", "pricing",
+      "people & control", "roles and permissions", "user management", "dual control",
+      "identity & keys", "credit top-up", "payment",
+    )
+  )
+    return "platform";
+  if (
+    has(
+      "github", "repositor", "branch", "code review", "code security", "threat model",
+      "product context", "sast", "secret", "dependenc", "merge request", "pull request",
+      "source code",
+    )
+  )
+    return "code";
+  if (
+    has(
+      "vapt", "pentest", "exploit", "scan", "target", "recon", "mobile", "external scope",
+      "autonomous", "red team", "nmap", "nuclei", "web application", "api security",
+    )
+  )
+    return "attack";
+  if (
+    has(
+      "soc", "compliance", "risk", "cloud", "threat intel", "asset", "availability",
+      "posture", "incident", "exposure", "discovery", "framework",
+    )
+  )
+    return "defend";
+  return "core";
+}
+
+export const docCategories = [
+  { id: "help", label: "Help Centre", blurb: "Setup, day-to-day use and integrations" },
+  { id: "how-to-platform", label: "How-to · Platform", blurb: "Step-by-step org admin tasks with process flows" },
+  { id: "how-to-app", label: "How-to · Command Centre", blurb: "Operator activities: scans, SOC, reports, tracker" },
+  { id: "how-to", label: "How-to index", blurb: "Platform and Command Centre at a glance" },
+  { id: "guides", label: "Guides", blurb: "Public guides by audience and topic" },
+  { id: "manuals", label: "User manuals", blurb: "Screenshotted guides for each product surface" },
+] as const;
+
+const RAW_DOCS: Omit<DocEntry, "application">[] = [
+  // Help Centre
+  { id: "hc-getting-started", title: "Getting started", description: "Register your organization, complete setup, and take your first security actions.", category: "help", content: hcGettingStarted, badge: "Start here" },
+  { id: "hc-security-database", title: "Connect a security database", description: "Set up PostgreSQL (Supabase, Neon, RDS, DigitalOcean, Railway) — SecureGraph-hosted coming soon.", category: "help", content: hcSecurityDb },
+  { id: "hc-email-smtp", title: "Email & SMTP", description: "Configure SES, Brevo, Mailgun, SendGrid, Google, or Microsoft 365 for OTPs and alerts.", category: "help", content: hcEmail },
+  { id: "hc-alert-channels", title: "Alert channels", description: "Set up WhatsApp (Meta) and Telegram Bot alerts for security events.", category: "help", content: hcAlerts },
+  { id: "hc-github", title: "Connect GitHub", description: "Install the SecureGraph GitHub App and analyze public or private repositories.", category: "help", content: hcGithub },
+  { id: "hc-plans-billing", title: "Plans & billing", description: "Understand Free, Starter, Growth, Enterprise, and the public AI Agent API plan.", category: "help", content: hcBilling },
+  { id: "hc-daily-activities", title: "Daily activities", description: "Recommended day/week/month workflows to keep your posture current.", category: "help", content: hcDaily },
+  { id: "hc-features", title: "Features overview", description: "The public feature set — assets, scans, VAPT, risks, compliance, reporting.", category: "help", content: hcFeatures },
+  { id: "hc-users-approvals", title: "Users & approvals", description: "Invite users, set up dual-control initiator/authorizer, and approve sensitive actions.", category: "help", content: hcUsers },
+  { id: "hc-ai-agent", title: "AI Agent API", description: "Use the public SecureGraph Agent API for programmatic security investigations.", category: "help", content: hcAiAgent },
+  { id: "hc-privacy", title: "Privacy & security", description: "How your security data stays under your keys with the hybrid database model.", category: "help", content: hcPrivacy },
+  { id: "hc-troubleshooting", title: "Troubleshooting", description: "Common setup and connection issues and how to fix them.", category: "help", content: hcTroubleshoot },
+  { id: "hc-compliance-frameworks", title: "Compliance frameworks", description: "The framework catalog — international, application-security, and the Nigerian fintech set.", category: "help", content: hcComplianceFrameworks },
+
+  // Public guides
+  { id: "what-is-securegraph", title: "What is SecureGraph", description: "The one-liner, positioning, and value for organizations.", category: "guides", content: whatIsSecureGraph },
+  { id: "for-business-leaders", title: "For business leaders", description: "Board-level outcomes: continuity, trust, and faster audits.", category: "guides", content: businessLeaders },
+  { id: "for-security-it", title: "For security & IT", description: "What CISOs, IT managers, and security engineers get.", category: "guides", content: securityIt },
+  { id: "for-investors-partners", title: "For investors & partners", description: "Investor, MSSP, and reseller perspective on the platform.", category: "guides", content: investorsPartners },
+  { id: "product-capabilities", title: "Product capabilities", description: "Product depth across surfaces and modules.", category: "guides", content: capabilities },
+  { id: "privacy-trust", title: "Privacy & trust", description: "The privacy model, NDPA, and dual-control safeguards.", category: "guides", content: privacyTrust },
+  { id: "pricing-plans", title: "Pricing & plans", description: "Free, Starter, Growth, Enterprise, and engagements — priced in NGN.", category: "guides", content: pricingPlans },
+  { id: "how-it-works", title: "How it works", description: "The journey from signup to board-ready report.", category: "guides", content: howItWorks },
+  { id: "ai-accountability", title: "AI with accountability", description: "AI that advises — it never invents security facts.", category: "guides", content: aiAccountability },
+  { id: "for-developers", title: "For developers", description: "Public API overview and the AI Agent API plan.", category: "guides", content: forDevelopers },
+  { id: "faq", title: "FAQ", description: "Answers for first contact and common questions.", category: "guides", content: faq },
+  { id: "getting-started", title: "Getting started", description: "CTAs and the onboarding path for new organizations.", category: "guides", content: gettingStarted },
+  ...(manualDocs as Omit<DocEntry, "application">[]),
+  ...(howToDocs as Omit<DocEntry, "application">[]),
+];
+
+export function getDoc(id: string): DocEntry | undefined {
+  return docs.find((d) => d.id === id);
+}
+
+export const docs: DocEntry[] = RAW_DOCS.map((d) => ({ ...d, application: classifyDoc(d) }));
+
+/** Documents for one application (its own section of the help centre). */
+export function docsForApplication(app: ApplicationKey): DocEntry[] {
+  return docs.filter((d) => d.application === app);
+}
+
+// ── Doc cross-linking ────────────────────────────────────────────────────────
+// The markdown source files link to each other with relative file paths
+// (e.g. `[01-sign-in.md](./01-sign-in.md)`). Those break in the web UI, so we
+// map the source filename → the `/docs/:id` route and rewrite them on render.
+
+const DOC_ID_BY_FILE: Record<string, string> = {
+  // Public guides (docs/)
+  "01-what-is-securegraph.md": "what-is-securegraph",
+  "02-for-business-leaders.md": "for-business-leaders",
+  "03-for-security-and-it.md": "for-security-it",
+  "04-for-investors-and-partners.md": "for-investors-partners",
+  "05-product-capabilities.md": "product-capabilities",
+  "06-privacy-and-trust.md": "privacy-trust",
+  "07-pricing-and-plans.md": "pricing-plans",
+  "08-how-it-works.md": "how-it-works",
+  "09-ai-with-accountability.md": "ai-accountability",
+  "10-for-developers.md": "for-developers",
+  "11-faq.md": "faq",
+  "12-getting-started.md": "getting-started",
+  // Help centre (docs/user-docs)
+  "01-getting-started.md": "hc-getting-started",
+  "02-security-database.md": "hc-security-database",
+  "03-email-and-smtp.md": "hc-email-smtp",
+  "04-alert-channels.md": "hc-alert-channels",
+  "05-github-connection.md": "hc-github",
+  "06-plans-and-billing.md": "hc-plans-billing",
+  "07-daily-activities.md": "hc-daily-activities",
+  "08-features-overview.md": "hc-features",
+  "09-users-and-approvals.md": "hc-users-approvals",
+  "10-ai-agent-api.md": "hc-ai-agent",
+  "11-privacy-and-security.md": "hc-privacy",
+  "12-troubleshooting.md": "hc-troubleshooting",
+  "13-compliance-frameworks.md": "hc-compliance-frameworks",
+  // Platform how-tos (docs/how-to/platform)
+  "README.md": "howto-platform-index",
+  "01-register-and-sign-in.md": "howto-platform-01",
+  "02-complete-setup-wizard.md": "howto-platform-02",
+  "03-add-a-user.md": "howto-platform-03",
+  "04-assign-dual-control.md": "howto-platform-04",
+  "05-issue-app-login-link.md": "howto-platform-05",
+  "06-connect-security-database.md": "howto-platform-06",
+  "07-connect-config-database.md": "howto-platform-07",
+  "08-identity-keys-branding.md": "howto-platform-08",
+  "09-unlock-operate.md": "howto-platform-09",
+  "10-connect-github.md": "howto-platform-10",
+  "11-billing-and-subscribe.md": "howto-platform-11",
+  "12-configure-alerts.md": "howto-platform-12",
+  "13-sandbox-feedback.md": "howto-platform-13",
+  // Command Centre how-tos (docs/how-to/command-centre)
+  "01-sign-in.md": "howto-app-01",
+  "02-unlock-operate.md": "howto-app-02",
+  "03-add-and-verify-assets.md": "howto-app-03",
+  "04-run-discovery.md": "howto-app-04",
+  "05-launch-a-scan.md": "howto-app-05",
+  "06-run-vapt-campaign.md": "howto-app-06",
+  "07-triage-soc.md": "howto-app-07",
+  "08-availability-monitoring.md": "howto-app-08",
+  "09-manage-risks.md": "howto-app-09",
+  "10-compliance-assessment.md": "howto-app-10",
+  "11-generate-reports.md": "howto-app-11",
+  "12-findings-tracker.md": "howto-app-12",
+  "13-use-phantix-agent.md": "howto-app-13",
+  "14-authorizer-approvals.md": "howto-app-14",
+  "15-support-ticket.md": "howto-app-15",
+  "16-threat-models.md": "howto-app-16",
+  "17-autonomous-pentest.md": "howto-app-17",
+  "18-cloud-security.md": "howto-app-18",
+  "19-threat-intel.md": "howto-app-19",
+  "20-agent-activity.md": "howto-app-20",
+  "21-code-security.md": "howto-app-21",
+  "22-posture.md": "howto-app-22",
+  "23-vapt-schedules.md": "howto-app-23",
+  "24-compliance-review.md": "howto-app-24",
+  "25-soc-operations.md": "howto-app-25",
+  "26-pentest-scope.md": "howto-app-26",
+  "27-admin-and-audit.md": "howto-app-27",
+  "28-analytics.md": "howto-app-28",
+};
+
+/**
+ * Map a markdown cross-reference (e.g. `./01-sign-in.md`, `./platform/`) to a
+ * `/docs/:id` route so in-content doc links navigate in-app instead of 404ing.
+ * `currentId` disambiguates the shared `README.md` basename across namespaces.
+ */
+export function resolveDocHref(href: string, currentId?: string): string {
+  if (!href) return href;
+  if (/^https?:\/\//i.test(href) || href.startsWith("#") || /^\/docs\//.test(href)) return href;
+  const lower = href.toLowerCase();
+  // Directory links to how-to surfaces → their index docs.
+  if (/\.\/(platform|command-centre)\/?$/.test(lower)) {
+    return lower.includes("command-centre") ? "/docs/howto-app-index" : "/docs/howto-platform-index";
+  }
+  if (/\.md$/i.test(lower)) {
+    const base = href.split("/").pop() ?? "";
+    // README.md is ambiguous across namespaces — resolve by the current doc.
+    if (/^README\.md$/i.test(base) && currentId) {
+      if (currentId.startsWith("howto-app-")) return "/docs/howto-app-index";
+      if (currentId.startsWith("howto-platform-")) return "/docs/howto-platform-index";
+      if (currentId === "howto-index") return "/docs/howto-index";
+    }
+    const target = DOC_ID_BY_FILE[base] ?? DOC_ID_BY_FILE[base.toLowerCase()];
+    if (target) return `/docs/${target}`;
+  }
+  return href;
+}
+
+export interface TocItem {
+  depth: number;
+  text: string;
+  id: string;
+}
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+export function extractToc(markdown: string): TocItem[] {
+  const items: TocItem[] = [];
+  let inFence = false;
+  for (const line of markdown.split("\n")) {
+    if (line.trim().startsWith("```")) inFence = !inFence;
+    if (inFence) continue;
+    const m = /^(#{2,3})\s+(.+)$/.exec(line);
+    if (m) {
+      const text = m[2].replace(/\*\*/g, "").replace(/`/g, "").trim();
+      items.push({ depth: m[1].length, text, id: slugify(text) });
+    }
+  }
+  return items;
+}
