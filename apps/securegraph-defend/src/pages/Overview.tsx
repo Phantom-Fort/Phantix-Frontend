@@ -38,11 +38,13 @@ const ICONS: Record<ApplicationKey, React.ReactNode> = {
   code: <Code2 size={22} />,
 };
 
+// One brand accent across every application. Per-application colour is reserved
+// for the sign-in ChooseApp picker.
 const ACCENT: Record<ApplicationKey, string> = {
   core: "text-gold-300 border-gold-400/30",
-  attack: "text-severity-critical border-severity-critical/30",
-  defend: "text-severity-low border-severity-low/30",
-  code: "text-severity-info border-severity-info/30",
+  attack: "text-gold-300 border-gold-400/30",
+  defend: "text-gold-300 border-gold-400/30",
+  code: "text-gold-300 border-gold-400/30",
 };
 
 const grid: Variants = {
