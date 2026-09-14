@@ -5,34 +5,34 @@ import {
   Crosshair, Boxes, Globe2, Timer, Square, BrainCircuit, ChevronDown, ChevronRight,
   ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound,
 } from "lucide-react";
-import { PageHeader, Card } from "@sg/ui";
-import LottiePlayer from "@sg/components/LottiePlayer";
-import ModelPicker from "@sg/components/ModelPicker";
-import DocLink from "@sg/components/DocLink";
-import { Markdown } from "@sg/prompt-kit/markdown";
+import { PageHeader, Card } from "../ui";
+import LottiePlayer from "../components/LottiePlayer";
+import ModelPicker from "../components/ModelPicker";
+import DocLink from "../components/DocLink";
+import { Markdown } from "../prompt-kit/markdown";
 import {
   ChatContainerRoot,
   ChatContainerContent,
   ChatContainerScrollAnchor,
-} from "@sg/prompt-kit/chat-container";
-import { ScrollButton } from "@sg/prompt-kit/scroll-button";
+} from "../prompt-kit/chat-container";
+import { ScrollButton } from "../prompt-kit/scroll-button";
 import {
   Steps,
   StepsItem,
   StepsTrigger,
   StepsContent,
-} from "@sg/prompt-kit/steps";
-import { Tool } from "@sg/prompt-kit/tool";
+} from "../prompt-kit/steps";
+import { Tool } from "../prompt-kit/tool";
 import {
   PromptInput,
   PromptInputTextarea,
   PromptInputActions,
   PromptInputAction,
-} from "@sg/prompt-kit/prompt-input";
-import chatbotData from "@sg/animations/chatbot.json";
-import ghostData from "@sg/animations/ghostsmart.json";
-import flowData from "@sg/animations/ai-flow.json";
-import { AGI_ENABLED } from "@sg/agi";
+} from "../prompt-kit/prompt-input";
+import chatbotData from "../animations/chatbot.json";
+import ghostData from "../animations/ghostsmart.json";
+import flowData from "../animations/ai-flow.json";
+import { AGI_ENABLED } from "../agi";
 import {
   loadAiStatus,
   streamAgentChat,
@@ -42,15 +42,15 @@ import {
   setAgentSkillStatus,
   confirmAgentScope,
   type AgentDomainInfo,
-} from "@sg/data";
-import AgentScopeGate, { type AgentScopeSelection } from "@sg/components/AgentScopeGate";
-import AgentGuardPanel from "@sg/components/AgentGuardPanel";
-import { isAuthorizationBlock, requestAgentApproval } from "@sg/agentGuard";
-import { PLATFORM_AI_URL } from "@sg/links";
-import { useStore } from "@sg/store";
-import { cx } from "@sg/utils";
-import { useChatSend } from "@sg/useChatSend";
-import type { AiStatus, AgentSkill, AgentScopeCard, AgentScopeGrant } from "@sg/types";
+} from "../data";
+import AgentScopeGate, { type AgentScopeSelection } from "../components/AgentScopeGate";
+import AgentGuardPanel from "../components/AgentGuardPanel";
+import { isAuthorizationBlock, requestAgentApproval } from "../agentGuard";
+import { PLATFORM_AI_URL } from "../links";
+import { useStore } from "../store";
+import { cx } from "../utils";
+import { useChatSend } from "../useChatSend";
+import type { AiStatus, AgentSkill, AgentScopeCard, AgentScopeGrant } from "../types";
 
 type ChatMsg = {
   role: "user" | "agent";
@@ -235,10 +235,18 @@ export default function Agent({ initialMode = "agent", allowAgi = true }: { init
   const streamEnabled = status?.agent?.stream?.enabled ?? true;
 
   return (
-    <div className={cx("mx-auto", mode === "agi" ? "max-w-none" : "max-w-[900px]")}>
+    // The console fills the viewport: the conversation scrolls inside it, the
+    // page itself does not. The shell's header is 57px and its main padding is
+    // 24px top and bottom.
+    <div
+      className={cx(
+        "mx-auto flex h-[calc(100vh-105px)] min-h-[420px] flex-col overflow-hidden",
+        mode === "agi" ? "max-w-none" : "max-w-[900px]",
+      )}
+    >
       <PageHeader
         title="SecureGraph Agent"
-        description="Ask about your security posture in plain language. The agent works across your assets, findings, scans and compliance — and every answer it gives is grounded in a real finding, never invented."
+        description="Your security assistant."
         actions={
           <span className="flex items-center gap-2">
             <DocLink docId="howto-app-13" label="Agent how-to" />
@@ -309,7 +317,15 @@ export default function Agent({ initialMode = "agent", allowAgi = true }: { init
         </div>
       )}
 
-      {mode === "agent" && (tab === "chat" ? <AgentChat streamEnabled={streamEnabled} operate={operate} requireDualControl={requireDualControl} toast={toast} /> : <SkillsLibrary toast={toast} />)}
+      {mode === "agent" && (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {tab === "chat" ? (
+            <AgentChat streamEnabled={streamEnabled} operate={operate} requireDualControl={requireDualControl} toast={toast} />
+          ) : (
+            <SkillsLibrary toast={toast} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -569,14 +585,24 @@ function AgentChat({
     : DOMAINS;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="flex h-[66vh] flex-col !p-0 overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex min-h-0 flex-1 flex-col"
+    >
+      {/* h-full, not a fixed vh: the console is sized by the page, which is
+          sized by the viewport, so nothing below it falls off the screen. */}
+      <Card className="flex h-full min-h-0 flex-col !p-0 overflow-hidden">
         <div className="flex items-center gap-3 border-b border-phantix-700/40 px-5 py-3.5">
           <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-gold-400/30 bg-gold-400/10"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
           <div>
             <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
             <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-              Chief Agent · routes to specialists
+              {specialists.length > 0
+                ? `Works across ${specialists.slice(0, 3).map((x) => x.label).join(", ")}${
+                    specialists.length > 3 ? ` +${specialists.length - 3}` : ""
+                  }`
+                : "Works across your security data"}
               {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
             </p>
           </div>
@@ -818,8 +844,12 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
           : <span className="chip border-phantix-600/40 bg-phantix-800/50 text-slate-400">Retired</span>;
 
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-      <Card className="!p-0 overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex min-h-0 flex-1 flex-col"
+    >
+      <Card className="flex h-full min-h-0 flex-col !p-0 overflow-hidden">
         <div className="flex flex-wrap items-center gap-2 border-b border-phantix-700/40 px-5 py-3.5">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400"><BrainCircuit size={18} /></span>
           <div className="mr-auto">
@@ -839,7 +869,7 @@ function SkillsLibrary({ toast }: { toast: (kind: "success" | "error" | "info" |
           </div>
         </div>
 
-        <div className="max-h-[56vh] space-y-2.5 overflow-y-auto p-5">
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto p-5">
           {loading && <div className="skeleton h-24 rounded-xl" />}
           {!loading && filtered.length === 0 && (
             <p className="py-10 text-center text-sm text-slate-500">No skills in this bucket.</p>

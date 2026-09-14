@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Assistant from "@sg/pages/Assistant";
+import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
@@ -23,7 +23,6 @@ import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import IntegrationsHub from "./pages/IntegrationsHub";
 import Audit from "./pages/Audit";
-import Agent from "./pages/Agent";
 import AgentActivity from "./pages/AgentActivity";
 import AuthorizerInbox from "./pages/AuthorizerInbox";
 import PublicChrome from "./components/PublicChrome";
@@ -73,12 +72,12 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/integrations" element={<IntegrationsHub />} />
           <Route path="/audit" element={<Audit />} />
-          <Route path="/agent" element={<Agent allowAgi={false} />} />
+          <Route path="/agent" element={<Navigate to="/assistant" replace />} />
           <Route path="/agent-activity" element={<AgentActivity />} />
           <Route path="/authorizations" element={<AuthorizerInbox />} />
           <Route path="/support" element={<Support />} />
           <Route path="/sandbox" element={<Sandbox />} />
-          <Route path="/assistant" element={<Assistant application={"core" as ApplicationKey} />} />
+          <Route path="/assistant" element={<Agent />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

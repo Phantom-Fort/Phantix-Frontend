@@ -34,7 +34,6 @@ export const NAV: NavSection[] = [
   {
     label: "Assistant",
     items: [
-      { to: "/agent", label: "SecureGraph Agent", icon: <Bot size={17} /> },
       { to: "/agent-activity", label: "Agent activity", icon: <Activity size={17} /> },
     ],
   },

@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Assistant from "@sg/pages/Assistant";
+import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
@@ -13,7 +13,6 @@ import Overview from "./pages/Overview";
 import Targets from "./pages/Targets";
 import Scans from "./pages/Scans";
 import PentestScope from "./pages/PentestScope";
-import Agent from "./pages/Agent";
 import AgiDrawer from "@sg/components/AgiDrawer";
 import Vapt from "./pages/Vapt";
 import VaptSchedules from "./pages/VaptSchedules";
@@ -42,7 +41,7 @@ export default function App() {
           <Route path="/vapt/procedures" element={<VaptProcedures />} />
           <Route path="/vapt/settings" element={<VaptSettings />} />
           <Route path="/scans" element={<Scans />} />
-          <Route path="/assistant" element={<Assistant application={"attack" as ApplicationKey} />} />
+          <Route path="/assistant" element={<Agent />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
         {/* Documentation renders full-width, without the application sidebar. */}

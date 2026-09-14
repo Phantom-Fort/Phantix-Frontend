@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Assistant from "@sg/pages/Assistant";
+import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
@@ -32,7 +32,7 @@ export default function App() {
           <Route path="/code-review/:section" element={<Code />} />
           <Route path="/threat-models" element={<ThreatModels />} />
           <Route path="/context" element={<ContextProjects />} />
-          <Route path="/assistant" element={<Assistant application={"code" as ApplicationKey} />} />
+          <Route path="/assistant" element={<Agent />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
         {/* Documentation renders full-width, without the application sidebar. */}

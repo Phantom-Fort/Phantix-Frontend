@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Assistant from "@sg/pages/Assistant";
+import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
@@ -65,7 +65,7 @@ export default function App() {
           <Route path="/soc/logs" element={<SocLogPipeline />} />
           <Route path="/soc/agents" element={<SocAgentManager />} />
           <Route path="/soc/cloud" element={<SocCloudIntegration />} />
-          <Route path="/assistant" element={<Assistant application={"defend" as ApplicationKey} />} />
+          <Route path="/assistant" element={<Agent />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
         {/* Documentation renders full-width, without the application sidebar. */}
