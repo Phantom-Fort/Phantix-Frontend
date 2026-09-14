@@ -131,6 +131,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const dcMfaToken = useRef("");
   const dcDeviceToken = useRef("");
 
+  // Apply a dual-control snapshot and derive the session's dual-control
+  // eligibility from the assignment emails. Application-realm users sign in via
+  // app_session and GET /app/auth/me may omit the is_initiator/is_authorizer
+  // flags — the assigned initiator/authorizer must still be recognized so they
+  // can request an operate session from any application (authz parity with the
+  // platform realm). The backend remains the enforcement point: only assigned
+  // emails actually receive the dual-control OTP.
+  const applyDualControlSnapshot = useCallback((raw: Record<string, unknown>) => {
+    const dc = normalizeDualControl(raw);
+    setDualControl(dc);
+    const initName = String((raw.initiator as Record<string, unknown> | undefined)?.full_name ?? dc.initiator?.full_name ?? "Initiator");
+    const authName = String((raw.authorizer as Record<string, unknown> | undefined)?.full_name ?? dc.authorizer?.full_name ?? "Authorizer");
+    setSession((s) => {
+      if (!s) return s;
+      const email = s.userEmail.trim().toLowerCase();
+      const matchInit = !!dc.initiator?.email && dc.initiator.email.trim().toLowerCase() === email;
+      const matchAuth = !!dc.authorizer?.email && dc.authorizer.email.trim().toLowerCase() === email;
+      return {
+        ...s,
+        initiatorName: initName,
+        authorizerName: authName,
+        isInitiator: s.isInitiator || matchInit,
+        isAuthorizer: s.isAuthorizer || matchAuth,
+      };
+    });
+    return dc;
+  }, []);
+
   const toast = useCallback((kind: ToastKind, title: string, body?: string) => {
     const id = ++toastId.current;
     setToasts((t) => [...t, { id, kind, title, body }]);
@@ -225,11 +253,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             setSession((s) => s ? { ...s, userEmail: String(u.email ?? s.userEmail), userName: String(u.full_name ?? u.name ?? s.userName), isInitiator: isInit, isAuthorizer: isAuth, initiatorName: "", authorizerName: "" } : s);
           }
           if (appIdentity?.dual_control) {
-            const dc = appIdentity.dual_control as Record<string, unknown>;
-            setDualControl(normalizeDualControl(dc));
-            const initName = String((dc.initiator as Record<string, unknown> | undefined)?.full_name ?? "Initiator");
-            const authName = String((dc.authorizer as Record<string, unknown> | undefined)?.full_name ?? "Authorizer");
-            setSession((s) => s ? { ...s, initiatorName: initName, authorizerName: authName } : s);
+            applyDualControlSnapshot(appIdentity.dual_control as Record<string, unknown>);
           }
           setSecurityDbReady(true);
         } catch { /* keep demo/empty */ }
@@ -238,10 +262,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         try {
           const dc = await api.get<Record<string, unknown>>("/org-users/dual-control", { realm: "application" });
           if (dc && !dualControl.configured) {
-            setDualControl(normalizeDualControl(dc));
-            const initName = String((dc.initiator as Record<string, unknown> | undefined)?.full_name ?? "Initiator");
-            const authName = String((dc.authorizer as Record<string, unknown> | undefined)?.full_name ?? "Authorizer");
-            setSession((s) => s ? { ...s, initiatorName: initName, authorizerName: authName } : s);
+            applyDualControlSnapshot(dc);
           }
         } catch { /* backend may not support this */ }
         await bootstrapBilling("application");
@@ -423,20 +444,59 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setOperate({ unlocked: true, actingUser: session?.userName ?? "Operate user", actingRole: session?.isInitiator ? "initiator" : "authorizer", expiresAt: Date.now() + 30 * 60_000 });
         return Promise.resolve(true);
       }
-      if (!dualControl.configured && !isDemoMode()) {
-        toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control --- set up initiator + authorizer on the Platform to unlock writes.");
-        return Promise.resolve(false);
+
+      const openOverlay = () =>
+        new Promise<boolean>((resolve) => {
+          dcPromptResolve.current = resolve;
+          setDualControlPrompt({ open: true, reason });
+        });
+
+      let configured = dualControl.configured;
+      // Derive eligibility from the org's dual-control assignment when the login
+      // bootstrap could not confirm it (application-realm app_session users,
+      // /app/auth/me without user flags). Whoever the org assigned as initiator
+      // or authorizer must be able to request operate from any application —
+      // same as on the platform.
+      const email = (session?.userEmail ?? "").trim().toLowerCase();
+      const matchInit = !!dualControl.initiator?.email && dualControl.initiator.email.trim().toLowerCase() === email;
+      const matchAuth = !!dualControl.authorizer?.email && dualControl.authorizer.email.trim().toLowerCase() === email;
+      if (matchInit || matchAuth) {
+        if (!session?.isInitiator || !session?.isAuthorizer) {
+          setSession((s) => (s ? { ...s, isInitiator: s.isInitiator || matchInit, isAuthorizer: s.isAuthorizer || matchAuth } : s));
+        }
       }
-      if (dualControl.configured && !session?.isInitiator && !session?.isAuthorizer && !isDemoMode()) {
-        toast("warning", "Read-only access", `You have view/report access. Contact ${session?.initiatorName || "the initiator"} or ${session?.authorizerName || "the authorizer"} to perform this action.`);
-        return Promise.resolve(false);
+
+      if (!configured) {
+        // Bootstrap may have missed the dual-control snapshot (transient failure,
+        // endpoint hiccup at mount). Re-fetch on demand — the request() client
+        // auto-selects the application realm for app_session users — before
+        // declaring dual control unconfigured. Never lock an org out because a
+        // bootstrap request failed.
+        return (async () => {
+          try {
+            const dc = await api.get<Record<string, unknown>>("/org-users/dual-control");
+            const norm = normalizeDualControl(dc);
+            if (norm.configured) {
+              configured = true;
+              applyDualControlSnapshot(dc);
+            }
+          } catch { /* genuinely unconfigured, or the realm cannot read it */ }
+          if (!configured) {
+            toast("warning", "Dual control not set up", "Only dual-control configured users can perform this operation. Viewing and downloading reports is still available without dual control --- set up initiator + authorizer on the Platform to unlock writes.");
+            return false;
+          }
+          return openOverlay();
+        })();
       }
-      return new Promise<boolean>((resolve) => {
-        dcPromptResolve.current = resolve;
-        setDualControlPrompt({ open: true, reason });
-      });
+
+      // Every authenticated user may REQUEST dual control: the overlay collects
+      // the initiator/authorizer email + OTP (purpose=dual_control) and the
+      // backend enforces who is allowed — non-assigned emails never receive an
+      // OTP or fail the challenge. No client-side hard block: application users
+      // get the same request path as platform users.
+      return openOverlay();
     },
-    [operate.unlocked, operate.expiresAt, dualControl.configured, session?.isInitiator, session?.isAuthorizer, session?.initiatorName, session?.authorizerName, toast],
+    [operate.unlocked, operate.expiresAt, dualControl.configured, dualControl.initiator, dualControl.authorizer, session?.userEmail, session?.isInitiator, session?.isAuthorizer, session?.userName, toast, applyDualControlSnapshot],
   );
 
   const withOperate = useCallback(
