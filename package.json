@@ -5,10 +5,10 @@
   "type": "module",
   "description": "Phantix Security Solutions — Product Delivery Command Centre frontend",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit"
+    "dev": "cd apps/securegraph-core && npm run dev",
+    "build": "cd apps/securegraph-core && npm run build",
+    "preview": "cd apps/securegraph-core && npm run preview",
+    "typecheck": "cd apps/securegraph-core && npm run typecheck"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

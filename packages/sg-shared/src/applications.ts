@@ -8,7 +8,7 @@
 // This module owns the browser-side resolution: the hosts, the "where do you
 // want to work today" picker, and the dashboard router.
 import { api, isDemoMode, delay } from "./api";
-import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL } from "./config";
+import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL, IS_DEV_HOSTS } from "./config";
 
 export type ApplicationKey = "core" | "attack" | "defend" | "code";
 
@@ -211,7 +211,12 @@ export async function applicationHandoffHref(
   if (key === "core" || isDemoMode()) return fallback;
   try {
     const minted = await api.post<HandoffMinted>("/app/auth/handoff", { application: key });
-    const base = (minted?.open_url || APPLICATION_HOSTS[key] || "").replace(/\/+$/, "");
+    // The backend's open_url is the deployed host; on a dev server that is the
+    // wrong machine, so the local host wins there.
+    const preferred = IS_DEV_HOSTS
+      ? APPLICATION_HOSTS[key] || minted?.open_url
+      : minted?.open_url || APPLICATION_HOSTS[key];
+    const base = (preferred || "").replace(/\/+$/, "");
     if (!minted?.code || !base) return fallback;
     const suffix = path && path !== "/dashboard" ? path : "/";
     return `${base}${suffix}#sg=${encodeURIComponent(minted.code)}`;

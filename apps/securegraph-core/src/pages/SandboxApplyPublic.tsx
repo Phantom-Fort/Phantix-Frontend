@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FlaskConical, CheckCircle2, Loader2, ArrowLeft, KeyRound } from "lucide-react";
-import { ThemeToggle } from "@sg/components/ThemeToggle";
+import { ThemeToggle } from "@sg/ThemeToggle";
 import { LANDING_URL, PLATFORM_URL, SANDBOX_PROGRAM_SLUG } from "@sg/config";
 import { api, tokens, type ApiError } from "@sg/api";
 import { cx } from "@sg/utils";

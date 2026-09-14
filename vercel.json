@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-"rewrites": [
+  "buildCommand": "cd apps/securegraph-core && npm install && npm run build",
+  "outputDirectory": "apps/securegraph-core/dist",
+  "rewrites": [
     {
       "source": "/api/v1/:path*",
       "destination": "https://staging.phantix.site/api/v1/:path*"

@@ -11,11 +11,15 @@ export default defineConfig(({ mode }) => {
   const port = Number(env.DEV_PORT || process.env.DEV_PORT || 5173);
   return {
     plugins: [react()],
+    publicDir: path.resolve(__dirname, "../../public"),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
         "@app": path.resolve(__dirname, "./src"),
         "@sg": path.resolve(__dirname, "../../packages/sg-shared/src"),
+        // Shared modules read the product docs as raw markdown; the alias is
+        // the repo root, exactly as the Command Centre defines it.
+        "@docs": path.resolve(__dirname, "../.."),
       },
     },
     server: {

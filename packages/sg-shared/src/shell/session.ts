@@ -63,7 +63,9 @@ export async function handoffUrl(target: ApplicationKey, fallbackHost: string): 
       method: "POST",
       body: { application: target },
     });
-    const base = (minted.open_url || fallbackHost || "").replace(/\/+$/, "");
+    // The caller already resolved the right host for this environment; the
+    // minted open_url only fills in when it did not.
+    const base = (fallbackHost || minted.open_url || "").replace(/\/+$/, "");
     if (!base || !minted.code) return fallbackHost;
     return `${base}/#${HANDOFF_FRAGMENT_KEY}=${encodeURIComponent(minted.code)}`;
   } catch {

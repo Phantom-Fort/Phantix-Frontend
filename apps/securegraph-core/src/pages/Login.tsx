@@ -12,7 +12,7 @@ import { cx } from "@sg/utils";
 import { listenDeviceConfirmed } from "@sg/deviceConfirm";
 import { BrandLogo } from "@sg/components/BrandLogo";
 import AuthShowcase from "@sg/components/AuthShowcase";
-import { ThemeToggle } from "@sg/components/ThemeToggle";
+import { ThemeToggle } from "@sg/ThemeToggle";
 
 type Stage =
   | "email"

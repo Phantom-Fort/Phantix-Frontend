@@ -16,6 +16,7 @@ import { useSidebarCollapsed } from "../useSidebarCollapsed";
 import { ThemeToggle } from "../ThemeToggle";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
 import { consumeHandoff, handoffUrl } from "./session";
+import { IS_DEV_HOSTS } from "../config";
 import {
   APPLICATION_LABEL,
   APPLICATION_ORDER,
@@ -119,8 +120,12 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
     if (card.key === application || !card.accessible) return;
     setOpening(card.key);
     // Mint the handoff before leaving: the target origin cannot see this
-    // session, and the code is single-use and expires in seconds.
-    const url = await handoffUrl(card.key, card.open_url || hosts[card.key] || "");
+    // session, and the code is single-use and expires in seconds. The card's
+    // open_url is the deployed host, which is the wrong machine in dev.
+    const base = IS_DEV_HOSTS
+      ? hosts[card.key] || card.open_url
+      : card.open_url || hosts[card.key];
+    const url = await handoffUrl(card.key, base || "");
     setSwitcherOpen(false);
     setOpening("");
     if (url) window.location.assign(url);

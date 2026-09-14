@@ -2,7 +2,7 @@
 import typography from "@tailwindcss/typography";
 
 export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}", "../../packages/sg-shared/src/**/*.{ts,tsx}", "../../src/**/*.{ts,tsx}"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}", "../../packages/sg-shared/src/**/*.{ts,tsx}"],
   darkMode: "class",
   theme: {
     extend: {
