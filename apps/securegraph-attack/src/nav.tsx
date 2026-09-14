@@ -1,5 +1,14 @@
 import React from "react";
-import { Crosshair, FileSignature, LayoutDashboard, Radar, Target } from "lucide-react";
+import {
+  BookOpen,
+  CalendarClock,
+  Crosshair,
+  FileSignature,
+  LayoutDashboard,
+  Radar,
+  SlidersHorizontal,
+  Target,
+} from "lucide-react";
 import type { NavSection } from "@sg/shell/types";
 
 /** Attack — offensive workflows. */
@@ -14,9 +23,15 @@ export const NAV: NavSection[] = [
   },
   {
     label: "Test",
+    items: [{ to: "/scans", label: "Web & API", icon: <Radar size={17} /> }],
+  },
+  {
+    label: "VAPT",
     items: [
-      { to: "/vapt", label: "VAPT campaigns", icon: <Crosshair size={17} /> },
-      { to: "/scans", label: "Web & API", icon: <Radar size={17} /> },
+      { to: "/vapt", label: "Campaigns", icon: <Crosshair size={17} /> },
+      { to: "/vapt/schedules", label: "Schedules", icon: <CalendarClock size={17} /> },
+      { to: "/vapt/procedures", label: "Procedures & rules", icon: <BookOpen size={17} /> },
+      { to: "/vapt/settings", label: "Engine settings", icon: <SlidersHorizontal size={17} /> },
     ],
   },
 ];

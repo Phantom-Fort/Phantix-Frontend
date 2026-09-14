@@ -14,6 +14,18 @@ import ThreatIntel from "./pages/ThreatIntel";
 import Cloud from "./pages/Cloud";
 import Posture from "./pages/Posture";
 import Alerts from "./pages/Alerts";
+import Compliance from "./pages/Compliance";
+import ComplianceQuestionnaire from "./pages/ComplianceQuestionnaire";
+import ComplianceGaps from "./pages/ComplianceGaps";
+import ComplianceProfile from "./pages/ComplianceProfile";
+import ComplianceConnectors from "./pages/ComplianceConnectors";
+import SocDashboard from "./pages/SocDashboard";
+import SocWarRoom from "./pages/SocWarRoom";
+import SocPlaybooks from "./pages/SocPlaybooks";
+import SocAdvisor from "./pages/SocAdvisor";
+import SocLogPipeline from "./pages/SocLogPipeline";
+import SocAgentManager from "./pages/SocAgentManager";
+import SocCloudIntegration from "./pages/SocCloudIntegration";
 
 export default function App() {
   return (
@@ -37,6 +49,18 @@ export default function App() {
           <Route path="/risks" element={<Risks />} />
           <Route path="/threat-intel" element={<ThreatIntel />} />
           <Route path="/alerts" element={<Alerts />} />
+          <Route path="/compliance" element={<Compliance />} />
+          <Route path="/compliance/questionnaire" element={<ComplianceQuestionnaire />} />
+          <Route path="/compliance/gaps" element={<ComplianceGaps />} />
+          <Route path="/compliance/profile" element={<ComplianceProfile />} />
+          <Route path="/compliance/connectors" element={<ComplianceConnectors />} />
+          <Route path="/soc" element={<SocDashboard />} />
+          <Route path="/soc/war-room" element={<SocWarRoom />} />
+          <Route path="/soc/playbooks" element={<SocPlaybooks />} />
+          <Route path="/soc/advisor" element={<SocAdvisor />} />
+          <Route path="/soc/logs" element={<SocLogPipeline />} />
+          <Route path="/soc/agents" element={<SocAgentManager />} />
+          <Route path="/soc/cloud" element={<SocCloudIntegration />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
