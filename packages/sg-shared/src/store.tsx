@@ -234,31 +234,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         if (credits) setCreditsBalance(credits);
       };
 
-      // App login: use GET /app/auth/me (tenant-safe identity via app_session)
+      // App login: use GET /app/auth/me (tenant-safe identity via app_session).
+      // The endpoint returns a FLAT principal (email, full_name, is_initiator,
+      // is_authorizer, dual_control_configured, ...) — not nested objects.
       if (tokens.appSession && !tokens.platform) {
         try {
           const appIdentity = await api.get<{
-            organization?: Record<string, unknown>;
-            user?: Record<string, unknown>;
-            dual_control?: Record<string, unknown>;
+            organization_id?: number;
+            organization_slug?: string;
+            organization_name?: string;
+            creator_user_id?: number | null;
+            parent_organization_id?: number | null;
+            email?: string;
+            full_name?: string;
+            role?: string;
+            effective_role?: string;
+            is_initiator?: boolean;
+            is_authorizer?: boolean;
           }>("/app/auth/me", { realm: "application" });
           if (cancelled) return;
-          if (appIdentity?.organization) {
-            setOrg(normalizeOrganization(appIdentity.organization));
+          if (appIdentity?.organization_id) {
+            setOrg(normalizeOrganization({
+              id: appIdentity.organization_id,
+              slug: appIdentity.organization_slug ?? "",
+              name: appIdentity.organization_name ?? "",
+              creator_user_id: appIdentity.creator_user_id ?? null,
+              parent_organization_id: appIdentity.parent_organization_id ?? null,
+            }));
           }
-          if (appIdentity?.user) {
-            const u = appIdentity.user as Record<string, unknown>;
-            const isInit = u.is_initiator === true || u.role === "initiator";
-            const isAuth = u.is_authorizer === true || u.role === "authorizer";
-            setSession((s) => s ? { ...s, userEmail: String(u.email ?? s.userEmail), userName: String(u.full_name ?? u.name ?? s.userName), isInitiator: isInit, isAuthorizer: isAuth, initiatorName: "", authorizerName: "" } : s);
-          }
-          if (appIdentity?.dual_control) {
-            applyDualControlSnapshot(appIdentity.dual_control as Record<string, unknown>);
-          }
+          // Populate the session email/name + dual-control role flags from the
+          // flat shape so the shell and the dual-control overlay have an email
+          // to send the OTP to (the overlay must never open with an empty email).
+          setSession((s) => (s ? {
+            ...s,
+            userEmail: String(appIdentity?.email ?? s.userEmail),
+            userName: String(appIdentity?.full_name ?? s.userName),
+            isInitiator: s.isInitiator || appIdentity?.is_initiator === true,
+            isAuthorizer: s.isAuthorizer || appIdentity?.is_authorizer === true,
+            initiatorName: s.initiatorName,
+            authorizerName: s.authorizerName,
+          } : s));
           setSecurityDbReady(true);
         } catch { /* keep demo/empty */ }
 
-        // Fallback: also try fetching dual control directly (if auth/me didn't include it)
+        // Fallback: fetch the full dual-control assignment (initiator/authorizer
+        // names + emails) for the widget and the overlay pre-fill.
         try {
           const dc = await api.get<Record<string, unknown>>("/org-users/dual-control", { realm: "application" });
           if (dc && !dualControl.configured) {
