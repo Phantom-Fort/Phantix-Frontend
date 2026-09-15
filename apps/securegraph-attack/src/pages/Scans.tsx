@@ -5,10 +5,11 @@ import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationB
 import { Pagination } from "@sg/components/Pagination";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import DocLink from "@sg/components/DocLink";
-import { loadScansBundle, verifyScanResult } from "@sg/data";
+import { loadScansBundle, verifyScanResult, startScan, scanConsentRequired, type ScanConsentDocument } from "@sg/data";
+import ScanConsentModal from "@sg/components/ScanConsentModal";
 import { useResource } from "@sg/useResource";
 import { useOperations } from "@sg/operations";
-import { timeAgo, formatDateTime, cx, severityHex } from "@sg/utils";
+import { timeAgo, formatDateTime, cx, severityHex, humanize } from "@sg/utils";
 import { useStore } from "@sg/store";
 import type { VerificationStatus, ScanResult } from "@sg/types";
 
@@ -29,6 +30,10 @@ export default function Scans() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [newOpen, setNewOpen] = useState(false);
+  const [newTools, setNewTools] = useState<Record<string, boolean>>({ nmap: true, nuclei: true, apk: false });
+  const [newFilter, setNewFilter] = useState("tags:external");
+  const [scanBusy, setScanBusy] = useState(false);
+  const [consent, setConsent] = useState<{ documents: ScanConsentDocument[]; missing: string[] } | null>(null);
   const [selected, setSelected] = useState<ScanResult | null>(null);
   const [note, setNote] = useState("");
   const [verifyBusy, setVerifyBusy] = useState<VerificationStatus | null>(null);
@@ -39,6 +44,36 @@ export default function Scans() {
   const runningFilter = (j: { status?: string }) => j.status === "running" || j.status === "queued";
   const active = scanJobs.find((j) => runningFilter(j) && !isGithubAnalysis(j));
   const githubActive = scanJobs.find((j) => runningFilter(j) && isGithubAnalysis(j));
+
+  const filterToTargetFilter = (v: string): Record<string, unknown> => {
+    if (v.startsWith("tags:")) return { tags: [v.slice(5)] };
+    if (v.startsWith("types:")) return { asset_types: v.slice(6).split(",") };
+    return {};
+  };
+
+  const runNewScan = async () => {
+    if (!(await requireDualControl("Launching scans requires a dual-control operate session."))) return;
+    setScanBusy(true);
+    try {
+      const tools = Object.entries(newTools).filter(([, on]) => on).map(([t]) => t);
+      await startScan({
+        job_type: "vulnerability_scan",
+        tools: tools.length ? tools : ["nmap"],
+        target_filter: filterToTargetFilter(newFilter),
+        run_inline: false,
+      });
+      setNewOpen(false);
+      toast("success", "Scan job created", "The job is queued and starts automatically.");
+      reload();
+    } catch (e) {
+      // 428: an ownership-attested target needs AUP + generic RoE acceptance.
+      const gate = scanConsentRequired(e);
+      if (gate) { setNewOpen(false); setConsent(gate); return; }
+      toast("error", "Scan failed", e instanceof Error ? e.message : "");
+    } finally {
+      setScanBusy(false);
+    }
+  };
 
   // Surface the running scan job in the global operations tray (Coolify-style).
   const { register, update } = useOperations();
@@ -138,7 +173,7 @@ export default function Scans() {
             onClick={() =>
               void (async () => {
                 if (!(await requireDualControl("Launching scans requires a dual-control operate session."))) return;
-                if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${active.status} --- wait or cancel it first.`);
+                if (active) return toast("error", "Scan slot locked", `Job #${active.id} is ${humanize(active.status)} --- wait or cancel it first.`);
                 setNewOpen(true);
               })()
             }
@@ -415,9 +450,9 @@ export default function Scans() {
               <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Verification</p>
               <div className="space-y-1.5 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  <span className="text-slate-500">Status: <span className="font-medium text-slate-200">{selected.verification_status}</span></span>
+                  <span className="text-slate-500">Status: <span className="font-medium text-slate-200">{humanize(selected.verification_status)}</span></span>
                   {selVer.confidence && <span className="text-slate-500">Confidence: <span className="font-mono text-slate-200">{selVer.confidence}</span></span>}
-                  {selVer.method && <span className="text-slate-500">Method: <span className="font-mono text-slate-200">{selVer.method}</span></span>}
+                  {selVer.method && <span className="text-slate-500">Request type: <span className="font-mono text-slate-200">{selVer.method}</span></span>}
                 </div>
                 {selVer.verification_reason && <p className="text-slate-400">{selVer.verification_reason}</p>}
                 {selVer.verified_by && <p className="text-[13px] text-slate-500">Reviewed by {selVer.verified_by}{selVer.verified_at ? ` · ${formatDateTime(selVer.verified_at)}` : ""}</p>}
@@ -488,8 +523,7 @@ export default function Scans() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            setNewOpen(false);
-            toast("success", "Scan job created", "The job is queued and starts automatically. Repeating the same request returns the existing job.");
+            void runNewScan();
           }}
         >
           <div>
@@ -497,7 +531,12 @@ export default function Scans() {
             <div className="flex gap-2">
               {["nmap", "nuclei", "apk"].map((t) => (
                 <label key={t} className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/50 py-2.5 text-sm text-slate-300">
-                  <input type="checkbox" defaultChecked={t !== "apk"} className="peer h-3.5 w-3.5 accent-gold-400" />
+                  <input
+                    type="checkbox"
+                    checked={!!newTools[t]}
+                    onChange={(e) => setNewTools((p) => ({ ...p, [t]: e.target.checked }))}
+                    className="peer h-3.5 w-3.5 accent-gold-400"
+                  />
                   <span className="font-mono transition-colors peer-checked:text-gold-300">{t}</span>
                 </label>
               ))}
@@ -505,7 +544,7 @@ export default function Scans() {
           </div>
           <div>
             <label className="label">Target filter</label>
-            <select className="input">
+            <select className="input" value={newFilter} onChange={(e) => setNewFilter(e.target.value)}>
               <option value="tags:external">tags = external</option>
               <option value="tags:pci-scope">tags = pci-scope</option>
               <option value="types:web_app,api">types = web_app, api</option>
@@ -516,10 +555,28 @@ export default function Scans() {
             <Lock size={12} className="mr-1.5 inline text-gold-400" />
             SSRF-guarded: http/https only, private ranges and cloud metadata blocked, DNS rebinding defense.
             Tool execution prefers Docker isolation with a per-org asyncio lock.
+            <span className="mt-1 block">
+              Targets you have only <strong className="text-slate-400">confirmed ownership</strong> of
+              will ask you to accept the Acceptable Use Policy and Rules of Engagement first.
+            </span>
           </div>
-          <button className="btn-primary w-full">Create job</button>
+          <button className="btn-primary w-full" disabled={scanBusy}>
+            {scanBusy ? <Spinner className="h-4 w-4" /> : null} Create job
+          </button>
         </form>
       </Modal>
+
+      <ScanConsentModal
+        open={!!consent}
+        documents={consent?.documents ?? []}
+        missing={consent?.missing ?? []}
+        onClose={() => setConsent(null)}
+        onAccepted={() => {
+          setConsent(null);
+          setNewOpen(true);
+          toast("info", "Consents accepted", "Create the scan again to run it.");
+        }}
+      />
     </div>
   );
 }

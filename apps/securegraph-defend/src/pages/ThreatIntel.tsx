@@ -12,7 +12,9 @@ import DocLink from "@sg/components/DocLink";
 import { useResource } from "@sg/useResource";
 import {
   loadIntelDashboard, loadIntelLookup, loadIntelEvents, startReputationScan, normalizeIntelSignals,
+  scanConsentRequired, type ScanConsentDocument,
 } from "@sg/data";
+import ScanConsentModal from "@sg/components/ScanConsentModal";
 import { useStore } from "@sg/store";
 import { timeAgo, cx, titleCase } from "@sg/utils";
 import type { IntelDashboard, TiSignal, CloudEvent } from "@sg/types";
@@ -60,6 +62,7 @@ export default function ThreatIntel() {
   const [lookupResult, setLookupResult] = useState<{ new: string[]; matched: number } | null>(null);
   const [openIoc, setOpenIoc] = useState<TiSignal | null>(null);
   const [runScan, setRunScan] = useState(false);
+  const [consent, setConsent] = useState<{ documents: ScanConsentDocument[]; missing: string[] } | null>(null);
 
   const runLookup = async () => {
     const ioc = lookup.trim();
@@ -107,6 +110,10 @@ export default function ThreatIntel() {
       });
       toast("success", "Reputation scan queued", "Refresh the Reputation tab once the scan job completes.");
     } catch (e) {
+      // 428: the target is ownership-attested (not auto-verified) — ask the
+      // operator to accept the AUP + generic RoE, then retry automatically.
+      const gate = scanConsentRequired(e);
+      if (gate) { setConsent(gate); return; }
       toast("error", "Scan failed", e instanceof Error ? e.message : "");
     } finally {
       setRunScan(false);
@@ -192,10 +199,10 @@ export default function ThreatIntel() {
         </div>
         {lookupResult && lookupResult.new.length > 0 && (
           <p className="mt-2 text-xs text-emerald-400">
-            <strong>{lookupResult.new.length}</strong> new signal(s) upserted for this lookup{lookupResult.matched > 0 ? `, ${lookupResult.matched} matched to assets` : ""}.
+            <strong>{lookupResult.new.length}</strong> new signal(s) recorded for this lookup{lookupResult.matched > 0 ? `, ${lookupResult.matched} matched to assets` : ""}.
           </p>
         )}
-        <p className="mt-2 text-[13px] text-slate-500">Lookup is treated as a write — it upserts a correlation signal for this org (rate-limited 30/min).</p>
+        <p className="mt-2 text-[13px] text-slate-500">Running a lookup records a correlation signal for your organization.</p>
       </Card>
 
       <Tabs
@@ -320,7 +327,7 @@ export default function ThreatIntel() {
                 <EmptyState
                   icon={<FileSearch size={24} />}
                   title="No reputation results"
-                  body="Run a threat_intel_scan to get VirusTotal reputation hits (requires a server VT API key)."
+                  body="Run a threat intelligence scan to get VirusTotal reputation hits (requires a server VT API key)."
                 />
               ) : (
                 <div className="overflow-x-auto">
@@ -390,6 +397,17 @@ export default function ThreatIntel() {
           </div>
         )}
       </Modal>
+
+      <ScanConsentModal
+        open={!!consent}
+        documents={consent?.documents ?? []}
+        missing={consent?.missing ?? []}
+        onClose={() => setConsent(null)}
+        onAccepted={() => {
+          setConsent(null);
+          void doReputationScan();
+        }}
+      />
     </div>
   );
 }

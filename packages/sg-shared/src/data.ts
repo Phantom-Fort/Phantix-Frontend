@@ -985,7 +985,7 @@ export async function loadSocAgentInstall(): Promise<SocAgentInstallCatalog | nu
       version: "1.0.0-demo",
       supportedOs: ["linux", "macos", "windows"],
       authHeader: "X-Org-Api-Key",
-      authHint: "Mint a service key on Platform → Connections. Never paste a user JWT on the host.",
+      authHint: "Create a service key on Platform → Connections. Never paste a personal sign-in token on the host.",
       endpoint: "/api/v1/soc/availability/heartbeat",
       walkthrough: "/api/v1/soc/availability/agent/walkthrough",
       downloads: [
@@ -1007,8 +1007,8 @@ export async function loadSocAgentInstall(): Promise<SocAgentInstallCatalog | nu
         },
       ],
       afterInstall: [
-        "Agent appears as check_type=agent with target agent://<hostname>",
-        "last_status should become up within one interval",
+        "The agent appears in Availability once installed",
+        "Its status becomes healthy within one check interval",
       ],
       docs: [],
     };
@@ -1043,10 +1043,10 @@ export async function loadSocAgentWalkthrough(): Promise<string> {
       "",
       "Install on the host. SecureGraph does **not** VPN in.",
       "",
-      "1. Mint an org service key on Platform (not a user JWT).",
+      "1. Create an organization service key on Platform.",
       "2. Download the installer for your OS.",
-      "3. Run install with `X-Org-Api-Key`.",
-      "4. Confirm the check appears under Availability with `check_type: agent`.",
+      "3. Run the installer, passing your service key.",
+      "4. Confirm the check appears under Availability.",
     ].join("\n");
   }
   return api.fetchText("/soc/availability/agent/walkthrough");
@@ -2519,9 +2519,92 @@ export function loadIntelEvents(): Promise<IntelEventsResponse> {
   return api.get<IntelEventsResponse>("/cloud-security/events?limit=50&offset=0");
 }
 
-export async function startReputationScan(body: Record<string, unknown>): Promise<ScanJob> {
-  if (isDemoMode()) { await delay(300); return { id: 9100, job_type: "threat_intel_scan", tools: ["threat_intel_scan"], status: "queued", target_filter: body.target_filter ?? {}, progress: 0, findings_count: 0, initiated_by: "demo", idempotency_key: "", created_at: new Date().toISOString(), started_at: null, finished_at: null } as ScanJob; }
+// ── Scan authorization consent (Acceptable Use Policy + generic RoE) ─────────
+// Required before active testing of an ownership-attested (not auto-verified)
+// asset. The backend returns HTTP 428 `consent_required` from POST /scans/jobs
+// with the documents to show; accept them here, then retry the scan.
+export interface ScanConsentDocument {
+  key: string;
+  title?: string;
+  version?: string;
+  effective?: string;
+  summary?: string;
+  sections?: Array<{ id?: string; title?: string; body?: string; items?: string[] }>;
+  acceptance_required_copy?: string;
+  links?: Array<{ id?: string; label?: string; path?: string }>;
+}
+
+export interface ScanConsentStatus {
+  label?: string;
+  accepted: boolean;
+  accepted_version?: string | null;
+  accepted_at?: string | null;
+  current_version?: string | null;
+}
+
+export interface ScanConsentState {
+  required_for_attested_assets: boolean;
+  missing: string[];
+  status: Record<string, ScanConsentStatus>;
+  documents: ScanConsentDocument[];
+}
+
+export async function loadScanConsent(): Promise<ScanConsentState> {
+  if (isDemoMode()) {
+    await delay(150);
+    return { required_for_attested_assets: true, missing: [], status: {}, documents: [] };
+  }
+  return api.get<ScanConsentState>("/scans/consent");
+}
+
+/** Accept the named documents (defaults to everything still missing). */
+export async function acceptScanConsent(
+  documents: string[],
+): Promise<{ ok: boolean; missing: string[] }> {
+  if (isDemoMode()) {
+    await delay(250);
+    return { ok: true, missing: [] };
+  }
+  const res = await api.post<{ ok?: boolean; missing?: string[] }>("/scans/consent", { documents });
+  return { ok: res?.ok !== false, missing: res?.missing ?? [] };
+}
+
+/** True when a thrown error is the scan-authorization 428 from POST /scans/jobs. */
+export function scanConsentRequired(err: unknown): { documents: ScanConsentDocument[]; missing: string[] } | null {
+  const e = err as { status?: number; detail?: unknown } | null;
+  const detail = (e?.detail ?? null) as { error?: string; documents?: ScanConsentDocument[]; missing?: string[] } | null;
+  if (e?.status === 428 && detail?.error === "consent_required") {
+    return { documents: detail.documents ?? [], missing: detail.missing ?? [] };
+  }
+  return null;
+}
+
+/** Start any scan job (POST /scans/jobs). Throws ApiError 428
+ *  (`consent_required`) when the target is ownership-attested — use
+ *  `scanConsentRequired(err)` to surface the AUP/RoE acceptance modal. */
+export async function startScan(body: Record<string, unknown>): Promise<ScanJob> {
+  if (isDemoMode()) {
+    await delay(300);
+    return {
+      id: 9100,
+      job_type: String(body.job_type ?? "vulnerability_scan"),
+      tools: (body.tools as string[]) ?? [],
+      status: "queued",
+      target_filter: body.target_filter ?? {},
+      progress: 0,
+      findings_count: 0,
+      initiated_by: "demo",
+      idempotency_key: "",
+      created_at: new Date().toISOString(),
+      started_at: null,
+      finished_at: null,
+    } as ScanJob;
+  }
   return api.post<ScanJob>("/scans/jobs", body);
+}
+
+export async function startReputationScan(body: Record<string, unknown>): Promise<ScanJob> {
+  return startScan(body);
 }
 
 // ── Orchestration: External pentest scope + ROE loaders ──────────────────────

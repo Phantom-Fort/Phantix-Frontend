@@ -460,9 +460,8 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                           </>
                         ) : (
                           <>
-                            Read-only view. Request an operate session —{" "}
-                            {session?.initiatorName || "the initiator"} or{" "}
-                            {session?.authorizerName || "the authorizer"} approves by OTP.
+                            Unlock operate to act with your role's privileges. Only the
+                            authorizer approves protected actions.
                           </>
                         )}
                       </p>
@@ -474,10 +473,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                         }
                         className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
                       >
-                        <Unlock size={12} />{" "}
-                        {session?.isInitiator || session?.isAuthorizer
-                          ? "Unlock operate"
-                          : "Request dual control"}
+                        <Unlock size={12} /> Unlock operate
                       </button>
                     </>
                   ) : (
@@ -656,7 +652,9 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                         </p>
                         {me?.effective_role && (
                           <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-slate-600">
-                            {me.effective_role}
+                            {me.effective_role === "no_session"
+                              ? "view only · no operate session"
+                              : me.effective_role}
                           </p>
                         )}
                       </div>
@@ -752,10 +750,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                         }
                         className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
                       >
-                        <Unlock size={12} />{" "}
-                        {session?.isInitiator || session?.isAuthorizer
-                          ? "Unlock operate"
-                          : "Request dual control"}
+                        <Unlock size={12} /> Unlock operate
                       </button>
                     ) : (
                       <p className="mt-1 text-[13px] text-slate-500">
