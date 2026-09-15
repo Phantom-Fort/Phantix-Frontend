@@ -12,6 +12,7 @@
  * because the operator's role happens to include Attack.
  */
 import type { ApplicationKey } from "./types";
+import { deviceId as sharedDeviceId } from "../api";
 
 export type { ApplicationKey };
 
@@ -65,28 +66,14 @@ export function dualControlSession(): string {
   return read(STORAGE.dualControl);
 }
 
-/** A stable per-browser id, created once and reused on every host. */
-export function deviceId(): string {
-  // Same key + storage as the shared @sg/api client so the shell and page
-  // clients always present ONE device identity (device binding depends on it).
-  let existing = "";
-  try {
-    existing = localStorage.getItem(STORAGE.deviceId) || "";
-  } catch {
-    /* storage unavailable */
-  }
-  if (existing) return existing;
-  const generated =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `dev-${Math.random().toString(36).slice(2)}-${Date.now()}`;
-  try {
-    localStorage.setItem(STORAGE.deviceId, generated);
-  } catch {
-    /* storage unavailable */
-  }
-  return generated;
-}
+/**
+ * A stable per-browser id, created once and reused on every host.
+ *
+ * Single implementation: the shared `@sg/api` client owns it (same
+ * `phantix_device_id` key + localStorage) so the shell and the page clients
+ * always present ONE device identity — device binding depends on it.
+ */
+export const deviceId = sharedDeviceId;
 
 export interface StoredSession {
   accessToken: string;

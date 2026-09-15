@@ -656,7 +656,9 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                         </p>
                         {me?.effective_role && (
                           <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-slate-600">
-                            {me.effective_role}
+                            {me.effective_role === "no_session"
+                              ? "view only · no operate session"
+                              : me.effective_role}
                           </p>
                         )}
                       </div>
