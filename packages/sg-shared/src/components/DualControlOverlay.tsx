@@ -43,14 +43,14 @@ export default function DualControlOverlay() {
   useEffect(() => {
     if (!open) return;
     setStage("email");
-    setEmail(session?.userEmail ?? "");
+    setEmail(initiator?.email || authorizer?.email || session?.userEmail || "");
     setCode("");
     setMasked("");
     setError(null);
     setDevOtp(null);
     setBusy(false);
     setDeviceWait(false);
-  }, [open, session?.userEmail]);
+  }, [open, initiator?.email, authorizer?.email, session?.userEmail]);
 
   useEffect(() => {
     if (!open || !demoActive) return;
@@ -247,17 +247,19 @@ export default function DualControlOverlay() {
               {stage === "email" && (
                 <>
                   <div>
-                    <label className="label">Signing in as</label>
+                    <label className="label">Initiator or authorizer email</label>
                     <div className="relative">
                       <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                       <input
-                        className="input !pl-10 !opacity-70"
-                        value={email || session?.userEmail || "..."}
-                        readOnly
+                        className="input !pl-10"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@company.com"
                         autoFocus
+                        onKeyDown={(e) => e.key === "Enter" && void sendCode()}
                       />
                     </div>
-                    <p className="mt-1 text-[13px] text-slate-500">Your email from the login link --- no re-entry needed.</p>
+                    <p className="mt-1 text-[13px] text-slate-500">Assigned initiator or authorizer work email — the code goes to this address.</p>
                   </div>
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
                   <button type="button" className="btn-primary w-full !py-3" disabled={busy} onClick={() => void sendCode()}>

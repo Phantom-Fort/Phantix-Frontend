@@ -296,12 +296,30 @@ async function request<T>(
     if (res.status === 403 && serviceKeyRequired) {
       window.dispatchEvent(new CustomEvent("phantix:service-key-required"));
     }
+    // Explicit main-session invalidation: the backend is saying the org/app JWT
+    // itself is dead. Only this should tear down the signed-in session.
+    const explicitMainSessionInvalid =
+      relogin ||
+      /session_invalid|invalid session|sign in again|re-?authenticate/i.test(msg);
+
+    // Main-session authentication failure phrasings (narrow on purpose — a bare
+    // "expired" must NOT clear the app session, because it is equally likely to
+    // describe the short-lived dual-control operate session).
+    const mainSessionAuthFailure =
+      /session expired|token expired|authentication expired|jwt expired|bearer token|not authenticated|unauthorized/i.test(msg);
+
     // A missing/expired dual-control operate session is NOT a dropped org/app
-    // session. It only blocks sensitive actions; the user stays signed in.
+    // session. Match both the structured operate-middleware shape and the human
+    // message. As long as the main session is still valid, a 401 on a mutation
+    // that carried a dual-control token is treated as dual-control expiry so the
+    // operator can request a fresh operate session without signing in again.
     const dcSessionIssue =
-      (detailObj?.error === "dual_control_session_required" ||
-       (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||
-       /authenticator session|dual.?control session|X-Dual-Control-Session/i.test(msg));
+      detailObj?.error === "dual_control_session_required" ||
+      detailObj?.error === "dual_control_session_expired" ||
+      (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||
+      /authenticator session|dual.?control|operate session|operate mode|X-Dual-Control-Session/i.test(msg) ||
+      (res.status === 401 && sentDualControl && !explicitMainSessionInvalid && !mainSessionAuthFailure);
+
     // The backend is authoritative for the operate idle window: if it rejected
     // a mutation because the dual-control session is gone/expired, tell the store
     // to lock so the next action prompts cleanly (instead of the FE guessing).
@@ -314,9 +332,7 @@ async function request<T>(
       window.dispatchEvent(new CustomEvent("phantix:operate-required", { detail: msg || undefined }));
     }
     const superseded = detailObj?.error === "session_superseded" || /superseded by renewal/i.test(msg);
-    const sessionInvalid =
-      relogin ||
-      /session_invalid|invalid session|session expired|token expired|not authenticated|authentication expired|expired/i.test(msg);
+    const sessionInvalid = explicitMainSessionInvalid || mainSessionAuthFailure;
     if (res.status === 401) {
       if (sessionInvalid && !dcSessionIssue && !superseded) {
         if (realm === "staff") tokens.staff = null;
@@ -381,6 +397,23 @@ async function isSessionSuperseded(res: Response): Promise<boolean> {
   }
 }
 
+/** Common auth headers for the auxiliary (non-request) helpers. */
+function buildAuthHeaders(method: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const realm: Realm = tokens.appSession ? "application" : "platform";
+  const bearer = realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;
+  if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+  if (realm === "application") {
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    headers["X-Device-Id"] = deviceId();
+    headers["X-Application"] = activeApplication;
+  }
+  if (method !== "GET" && tokens.dualControl) {
+    headers["X-Dual-Control-Session"] = tokens.dualControl;
+  }
+  return headers;
+}
+
 export const api = {
   get: <T>(path: string, opts?: RequestOpts) =>
     dedupedRequest("GET", path, opts?.body, () => request<T>("GET", path, opts)),
@@ -393,11 +426,7 @@ export const api = {
 
   /** Fetch binary/raw content with auth headers, returns a Blob. */
   async download(path: string): Promise<Blob> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Application"] = activeApplication;
+    const headers = buildAuthHeaders("GET");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
@@ -415,13 +444,7 @@ export const api = {
 
   /** POST that returns a file (e.g. threat-model export) — auth + JSON body. */
   async postDownload(path: string, body?: unknown): Promise<Blob> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Device-Id"] = deviceId();
-    headers["X-Application"] = activeApplication;
-    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+    const headers = buildAuthHeaders("POST");
     headers["Content-Type"] = "application/json";
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: JSON.stringify(body ?? {}) });
@@ -440,10 +463,7 @@ export const api = {
 
   /** Fetch text content with auth headers (e.g. markdown). */
   async fetchText(path: string): Promise<string> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    const headers = buildAuthHeaders("GET");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
@@ -461,12 +481,7 @@ export const api = {
 
   /** Upload a file with FormData --- sends all auth headers. */
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Device-Id"] = deviceId();
-    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+    const headers = buildAuthHeaders("POST");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
     applyTokenRenewal(res);

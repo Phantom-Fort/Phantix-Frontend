@@ -461,20 +461,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const matchInit = !!dualControl.initiator?.email && dualControl.initiator.email.trim().toLowerCase() === email;
       const matchAuth = !!dualControl.authorizer?.email && dualControl.authorizer.email.trim().toLowerCase() === email;
       if (matchInit || matchAuth) {
-        if (!session?.isInitiator || !session?.isAuthorizer) {
-          setSession((s) => (s ? { ...s, isInitiator: s.isInitiator || matchInit, isAuthorizer: s.isAuthorizer || matchAuth } : s));
-        }
+        setSession((s) => {
+          if (!s) return s;
+          const nextInit = s.isInitiator || matchInit;
+          const nextAuth = s.isAuthorizer || matchAuth;
+          if (nextInit === s.isInitiator && nextAuth === s.isAuthorizer) return s;
+          return { ...s, isInitiator: nextInit, isAuthorizer: nextAuth };
+        });
       }
 
       if (!configured) {
         // Bootstrap may have missed the dual-control snapshot (transient failure,
-        // endpoint hiccup at mount). Re-fetch on demand — the request() client
-        // auto-selects the application realm for app_session users — before
+        // endpoint hiccup at mount). Re-fetch on demand — explicitly in the
+        // application realm, the same realm the bootstrap uses — before
         // declaring dual control unconfigured. Never lock an org out because a
         // bootstrap request failed.
         return (async () => {
           try {
-            const dc = await api.get<Record<string, unknown>>("/org-users/dual-control");
+            const dc = await api.get<Record<string, unknown>>("/org-users/dual-control", { realm: "application" });
             const norm = normalizeDualControl(dc);
             if (norm.configured) {
               configured = true;
@@ -527,20 +531,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // The backend reports the operate session is gone/expired (401/403 dual-control).
-  // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY and prompt
-  // the user to re-unlock — never sign them out of the app.
+  // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY — never
+  // sign the operator out. Flip the header back to "Unlock operate" and let the
+  // next gated action prompt for a fresh operate session.
   useEffect(() => {
-    const onExpired = (e: Event) => {
-      const msg = (e as CustomEvent).detail;
+    const onExpired = () => {
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      // Auto-open the unlock overlay so the user can continue without re-navigating.
-      void requireDualControl(msg || "Operate session ended. Unlock to continue — you stay signed in.");
+      // Do NOT auto-open the overlay here. The operator is re-prompted only when
+      // they next attempt an action that requires operate access.
+      toast("info", "Operate session ended", "You stay signed in. Unlock operate when you need to make changes.");
     };
     window.addEventListener("phantix:operate-expired", onExpired);
     return () => window.removeEventListener("phantix:operate-expired", onExpired);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requireDualControl]);
+  }, [toast]);
 
   // 403 dual-control (header missing, session still fine): open the unlock overlay.
   useEffect(() => {
@@ -596,7 +600,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         email,
         purpose: "dual_control",
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (res.access_token || res.session_token || res.dual_control_session) {
         applyOperateSession(res);
         return { destinationMasked: res.destination_masked || email, devOtp: "" };
@@ -643,7 +647,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         mfa_token: dcMfaToken.current,
         code,
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (res.device_verification_required && res.device_token) {
         dcDeviceToken.current = res.device_token;
         return { deviceRequired: true };
@@ -680,7 +684,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }>("/org-users/auth/device-status", {
         challenge: dcDeviceToken.current,
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (!res || res.confirmed === false || !res.access_token) return { done: false };
       applyOperateSession(res);
       if (!tokens.dualControl) throw new Error("Operate session was not issued");

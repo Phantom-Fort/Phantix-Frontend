@@ -21,8 +21,8 @@ const STORAGE = {
   accessToken: "app_session_token",
   platformToken: "platform_access_token",
   deviceToken: "app_device_token",
-  deviceId: "app_device_id",
-  dualControl: "app_dual_control_session",
+  deviceId: "phantix_device_id",
+  dualControl: "platform_dual_control",
 } as const;
 
 /** The application this shell is — set once at boot by ApplicationShell. */
@@ -67,13 +67,24 @@ export function dualControlSession(): string {
 
 /** A stable per-browser id, created once and reused on every host. */
 export function deviceId(): string {
-  const existing = read(STORAGE.deviceId);
+  // Same key + storage as the shared @sg/api client so the shell and page
+  // clients always present ONE device identity (device binding depends on it).
+  let existing = "";
+  try {
+    existing = localStorage.getItem(STORAGE.deviceId) || "";
+  } catch {
+    /* storage unavailable */
+  }
   if (existing) return existing;
   const generated =
     typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `dev-${Math.random().toString(36).slice(2)}-${Date.now()}`;
-  write(STORAGE.deviceId, generated);
+  try {
+    localStorage.setItem(STORAGE.deviceId, generated);
+  } catch {
+    /* storage unavailable */
+  }
   return generated;
 }
 
