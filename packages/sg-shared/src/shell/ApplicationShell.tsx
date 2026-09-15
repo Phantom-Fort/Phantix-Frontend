@@ -27,6 +27,7 @@ import {
 import { useSidebarCollapsed } from "../useSidebarCollapsed";
 import { ThemeToggle } from "../ThemeToggle";
 import { BrandLogo } from "../components/BrandLogo";
+import { BrandLoader } from "../components/BrandLoader";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
 import AgentAssistant from "../components/AgentAssistant";
 import OperationsWidget from "../components/OperationsWidget";
@@ -395,14 +396,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
   }
 
   if (!authReady) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-phantix-950">
-        <div className="text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-phantix-600 border-t-gold-400" />
-          <p className="mt-3 text-sm text-slate-500">Verifying access…</p>
-        </div>
-      </div>
-    );
+    return <BrandLoader label={subtitle} />;
   }
 
   return (
