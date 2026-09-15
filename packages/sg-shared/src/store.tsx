@@ -531,20 +531,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // The backend reports the operate session is gone/expired (401/403 dual-control).
-  // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY and prompt
-  // the user to re-unlock — never sign them out of the app.
+  // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY — never
+  // sign the operator out. Flip the header back to "Unlock operate" and let the
+  // next gated action prompt for a fresh operate session.
   useEffect(() => {
-    const onExpired = (e: Event) => {
-      const msg = (e as CustomEvent).detail;
+    const onExpired = () => {
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      // Auto-open the unlock overlay so the user can continue without re-navigating.
-      void requireDualControl(msg || "Operate session ended. Unlock to continue — you stay signed in.");
+      // Do NOT auto-open the overlay here. The operator is re-prompted only when
+      // they next attempt an action that requires operate access.
+      toast("info", "Operate session ended", "You stay signed in. Unlock operate when you need to make changes.");
     };
     window.addEventListener("phantix:operate-expired", onExpired);
     return () => window.removeEventListener("phantix:operate-expired", onExpired);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requireDualControl]);
+  }, [toast]);
 
   // 403 dual-control (header missing, session still fine): open the unlock overlay.
   useEffect(() => {
