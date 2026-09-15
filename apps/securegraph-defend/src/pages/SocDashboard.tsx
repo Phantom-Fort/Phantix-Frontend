@@ -761,7 +761,7 @@ export default function SocDashboard() {
           </Card>
 
           <Card>
-            <CardHeader title="Webhook ingest" subtitle="POST /soc/adapters/webhook — normalized enrichment (test / future relays)" />
+            <CardHeader title="Webhook ingest" subtitle="Normalized enrichment from external relays" />
             <div className="space-y-3">
               <textarea
                 className="input resize-none font-mono text-xs min-h-[96px]"

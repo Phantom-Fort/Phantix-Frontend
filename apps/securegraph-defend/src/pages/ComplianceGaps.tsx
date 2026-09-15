@@ -116,7 +116,7 @@ export default function ComplianceGaps() {
             <button onClick={() => void load(campaignId)} className="btn-secondary text-xs !py-2">
               <ScanLine size={13} className="mr-1.5 inline" /> Run
             </button>
-            <button onClick={() => void runMapping()} disabled={mappingBusy} className="btn-ghost text-xs !py-2" title="Map findings to controls (POST /compliance/map)">
+            <button onClick={() => void runMapping()} disabled={mappingBusy} className="btn-ghost text-xs !py-2" title="Map findings to controls">
               {mappingBusy ? <RefreshCw size={13} className="mr-1.5 inline animate-spin" /> : <Target size={13} className="mr-1.5 inline" />} Map findings
             </button>
             <button onClick={() => void load(campaignId)} className="btn-ghost text-xs !py-2" title="Refresh">

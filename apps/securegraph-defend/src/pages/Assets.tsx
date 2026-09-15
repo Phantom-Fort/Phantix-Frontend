@@ -846,7 +846,7 @@ export default function Assets() {
                   : `GitHub analysis job #${githubAnalysisJob.id} · ${githubAnalysisJob.status ?? "queued"}. Track in Scans.`}
               </a>
             )}
-            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/integrations/github · GET /github/installation</p>
+            <p className="mt-2 text-[12px] text-slate-500">Connect your GitHub organization to import repositories as assets.</p>
           </Card>
 
           <Card hover className="flex flex-col">
@@ -856,7 +856,7 @@ export default function Assets() {
             <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("API import requires a dual-control operate session.")) setShowApiModal(true); })(); }}>
               Import Spec
             </button>
-            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/import/api</p>
+            <p className="mt-2 text-[12px] text-slate-500">Import assets in bulk from an API inventory export.</p>
           </Card>
 
           <Card hover className="flex flex-col">
@@ -885,7 +885,7 @@ export default function Assets() {
             }})(); }}>
               Upload APK
             </button>
-            <p className="mt-2 font-mono text-[12px] text-slate-500">POST /assets/upload/apk</p>
+            <p className="mt-2 text-[12px] text-slate-500">Upload a mobile build (APK) to register it as an asset.</p>
           </Card>
 
           <MobileHandoffCard />
@@ -979,7 +979,7 @@ export default function Assets() {
                 onClick={() =>
                   void (async () => {
                     if (!(await requireDualControl("Asset verification requires a dual-control operate session."))) return;
-                    toast("success", "Verification queued", `POST /assets/${selected.id}/verify`);
+                    toast("success", "Verification queued", "This asset is queued for ownership verification.");
                   })()
                 }
               >

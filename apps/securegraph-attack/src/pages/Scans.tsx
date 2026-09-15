@@ -177,7 +177,7 @@ export default function Scans() {
                 onClick={() =>
                   void (async () => {
                     if (!(await requireDualControl("Cancelling a scan requires a dual-control operate session."))) return;
-                    toast("info", "Cancel requested", `POST /scans/jobs/${active.id}/cancel`);
+                    toast("info", "Cancel requested", "The scan is being stopped — its status updates shortly.");
                   })()
                 }
               >
@@ -475,7 +475,7 @@ export default function Scans() {
               </div>
               <p className="mt-2 text-[12px] text-slate-500">
                 <Lock size={10} className="mr-1 inline text-gold-400" />
-                Decision persists via PATCH /scans/results/{selected.id}/verification and is picked up by the reporting gate.
+                Decision persists for this finding and is picked up by the reporting gate.
               </p>
             </div>
           </div>
@@ -489,7 +489,7 @@ export default function Scans() {
           onSubmit={(e) => {
             e.preventDefault();
             setNewOpen(false);
-            toast("success", "Scan job created", "POST /scans/jobs ? run with /jobs/{id}/run. Duplicate idempotency keys return the existing job.");
+            toast("success", "Scan job created", "The job is queued and starts automatically. Repeating the same request returns the existing job.");
           }}
         >
           <div>
