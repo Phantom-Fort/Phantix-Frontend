@@ -296,12 +296,30 @@ async function request<T>(
     if (res.status === 403 && serviceKeyRequired) {
       window.dispatchEvent(new CustomEvent("phantix:service-key-required"));
     }
+    // Explicit main-session invalidation: the backend is saying the org/app JWT
+    // itself is dead. Only this should tear down the signed-in session.
+    const explicitMainSessionInvalid =
+      relogin ||
+      /session_invalid|invalid session|sign in again|re-?authenticate/i.test(msg);
+
+    // Main-session authentication failure phrasings (narrow on purpose — a bare
+    // "expired" must NOT clear the app session, because it is equally likely to
+    // describe the short-lived dual-control operate session).
+    const mainSessionAuthFailure =
+      /session expired|token expired|authentication expired|jwt expired|bearer token|not authenticated|unauthorized/i.test(msg);
+
     // A missing/expired dual-control operate session is NOT a dropped org/app
-    // session. It only blocks sensitive actions; the user stays signed in.
+    // session. Match both the structured operate-middleware shape and the human
+    // message. As long as the main session is still valid, a 401 on a mutation
+    // that carried a dual-control token is treated as dual-control expiry so the
+    // operator can request a fresh operate session without signing in again.
     const dcSessionIssue =
-      (detailObj?.error === "dual_control_session_required" ||
-       (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||
-       /authenticator session|dual.?control session|X-Dual-Control-Session/i.test(msg));
+      detailObj?.error === "dual_control_session_required" ||
+      detailObj?.error === "dual_control_session_expired" ||
+      (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||
+      /authenticator session|dual.?control|operate session|operate mode|X-Dual-Control-Session/i.test(msg) ||
+      (res.status === 401 && sentDualControl && !explicitMainSessionInvalid && !mainSessionAuthFailure);
+
     // The backend is authoritative for the operate idle window: if it rejected
     // a mutation because the dual-control session is gone/expired, tell the store
     // to lock so the next action prompts cleanly (instead of the FE guessing).
@@ -314,9 +332,7 @@ async function request<T>(
       window.dispatchEvent(new CustomEvent("phantix:operate-required", { detail: msg || undefined }));
     }
     const superseded = detailObj?.error === "session_superseded" || /superseded by renewal/i.test(msg);
-    const sessionInvalid =
-      relogin ||
-      /session_invalid|invalid session|session expired|token expired|not authenticated|authentication expired|expired/i.test(msg);
+    const sessionInvalid = explicitMainSessionInvalid || mainSessionAuthFailure;
     if (res.status === 401) {
       if (sessionInvalid && !dcSessionIssue && !superseded) {
         if (realm === "staff") tokens.staff = null;
