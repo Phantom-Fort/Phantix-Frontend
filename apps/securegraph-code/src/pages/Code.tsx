@@ -26,7 +26,7 @@ import {
 } from "@sg/data";
 import type { IntegrationConnector, IntegrationInstallation } from "@sg/types";
 import { useStore } from "@sg/store";
-import { cx, timeAgo } from "@sg/utils";
+import { cx, timeAgo, humanize } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
 import { UpsellBanner } from "@sg/components/UpgradeGate";
 
@@ -418,7 +418,7 @@ export default function Code() {
                       <td className="td text-xs font-mono text-slate-400">{e.ref}</td>
                       <td className="td text-xs font-mono text-slate-500">{e.sha?.slice(0, 10)}</td>
                       <td className="td text-xs text-slate-300">{e.size_tier}</td>
-                      <td className="td"><span className={cx("chip text-[12px]", statusTone(e.status))}>{e.status}</span></td>
+                      <td className="td"><span className={cx("chip text-[12px]", statusTone(e.status))}>{humanize(e.status)}</span></td>
                       <td className="td text-xs text-slate-500">{e.created_at ? timeAgo(e.created_at) : "—"}</td>
                     </tr>
                   ))}
@@ -465,7 +465,7 @@ export default function Code() {
           <Card>
             <CardHeader
               title="Source-control providers"
-              subtitle="GitHub App plus Integrations Hub SCM connectors — all feed the same verified-only merge gate"
+              subtitle="GitHub App plus Integrations Hub SCM connectors — all feed the same verified-only review flow"
               action={<Webhook size={16} className="text-gold-300" />}
             />
             {loading ? (
@@ -618,7 +618,7 @@ function ScmConnectModal({ connector, onClose, onDone }: { connector: Integratio
             <label className="label">Authentication</label>
             <select className="input" value={mode} onChange={(e) => setMode(e.target.value)}>
               {connector.auth_modes.map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>{humanize(m)}</option>
               ))}
             </select>
           </div>
@@ -633,7 +633,7 @@ function ScmConnectModal({ connector, onClose, onDone }: { connector: Integratio
               onChange={(e) => setToken(e.target.value)}
             />
             <p className="mt-1 text-[13px] text-slate-500">
-              Stored encrypted and projected to the Asset Engine; the API never returns it.
+              Stored encrypted and never shown again.
             </p>
           </div>
         ) : (
@@ -759,8 +759,8 @@ function ContinuousPrForm({ repos, onDone }: { repos: Repo[]; onDone: () => void
           </button>
         </div>
         <p className="text-[13px] leading-4 text-slate-500">
-          Dual-controlled: the request is parked for an authorizer before it runs. It never forks (the GitHub App
-          token pushes a branch to the same repo) and never merges — the PR opens as a draft.
+          Dual-controlled: the request is parked for an authorizer before it runs. It never forks and never
+          merges — the pull request opens as a draft.
         </p>
       </div>
     </Card>

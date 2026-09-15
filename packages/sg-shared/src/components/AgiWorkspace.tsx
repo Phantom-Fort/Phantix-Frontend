@@ -40,7 +40,7 @@ import {
   answerAgiClarification,
 } from "../agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk, AiUsage } from "../types";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 import { useStore } from "../store";
 import { useStickToBottom } from "../useStickToBottom";
 import { useChatSend } from "../useChatSend";
@@ -301,9 +301,9 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         toast(
           "error",
           "Start failed at the gateway",
-          "The connection was cut off while the workspace was provisioning. The backend may still be starting the session — " +
-          "wait a minute and reload this page before retrying (retrying immediately can create a duplicate session). " +
-          "If it persists, the AGI runner is likely unreachable — contact support with the correlation ID.",
+          "The session may still be starting. Wait a minute and reload this page before retrying — " +
+          "retrying immediately can create a duplicate session. If it persists, contact support and " +
+          "include the reference shown above.",
         );
       }
       else toast("error", "Start failed", e instanceof Error ? e.message : "");
@@ -872,7 +872,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                               />
                               <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", a.criticality === "critical" ? "bg-severity-critical" : a.criticality === "high" ? "bg-severity-high" : a.criticality === "medium" ? "bg-severity-medium" : "bg-severity-low")} />
                               <span className="wb-xs min-w-0 flex-1 truncate font-mono text-slate-200">{a.value}</span>
-                              <span className="wb-2xs shrink-0 uppercase tracking-wider text-slate-500">{a.asset_type}</span>
+                              <span className="wb-2xs shrink-0 uppercase tracking-wider text-slate-500">{humanize(a.asset_type)}</span>
                             </label>
                           ))}
                       </div>
@@ -917,7 +917,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       <div className="flex items-center gap-2">
                         <Globe2 size={13} className="shrink-0 text-gold-400" />
                         <span className="wb-sm min-w-0 truncate font-semibold text-slate-200">{e.name}</span>
-                        <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{e.status}</span>
+                        <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{humanize(e.status)}</span>
                       </div>
                       <p className="wb-2xs mt-1 truncate font-mono text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
                     </button>

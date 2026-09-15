@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AlertTriangle, ChevronDown, Clock, Gauge, Lock, ShieldCheck, Target } from "lucide-react";
 import type { AgiAccess, AgiSession, AiUsage } from "../types";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 
 /*
  * Pentest agent metrics — the standard strip every view of this module carries.
@@ -246,7 +246,7 @@ export default function AgiMetrics({
         )}
         {usage?.mode && (
           <p className="mt-1 text-[12px] text-slate-600">
-            mode <span className="font-mono text-slate-500">{usage.mode}</span>
+            mode <span className="font-mono text-slate-500">{humanize(usage.mode)}</span>
           </p>
         )}
       </section>

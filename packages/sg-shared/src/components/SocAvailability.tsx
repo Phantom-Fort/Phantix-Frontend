@@ -385,7 +385,7 @@ export default function SocAvailability() {
         <div className="mb-3 rounded-xl border border-gold-400/20 bg-gold-400/5 px-3.5 py-2.5 text-xs leading-5 text-slate-400">
           Auth header: <span className="font-mono text-gold-300">{agentCatalog?.authHeader ?? "X-Org-Api-Key"}</span>
           {" — "}
-          {agentCatalog?.authHint ?? "Mint a service key on Platform. Never paste a user JWT on the server."}
+          {agentCatalog?.authHint ?? "Create a service key on Platform. Never paste a personal sign-in token on the server."}
           {" "}
           <a href={PLATFORM_URL} className="font-semibold text-gold-400 hover:text-gold-300">Platform →</a>
         </div>
@@ -460,8 +460,8 @@ export default function SocAvailability() {
             <p className="mt-1 leading-5">Any tool (Uptime Kuma, Healthchecks, Alertmanager) can open/close MTTR-tracked incidents. Point the tool at your organization's availability webhook and authenticate with your organization API key — both are available from the Integrations hub.</p>
           </div>
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
-            <p className="font-semibold text-slate-200">Heartbeat endpoint</p>
-            <p className="mt-1 leading-5">Agents post to the availability heartbeat address with the organization API key (not a user token). Missed heartbeats open downtime automatically.</p>
+            <p className="font-semibold text-slate-200">Heartbeat address</p>
+            <p className="mt-1 leading-5">Agents send heartbeats to your availability address using the organization API key. Missed heartbeats open downtime automatically.</p>
           </div>
         </div>
       </Card>

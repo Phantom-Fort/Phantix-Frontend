@@ -11,7 +11,7 @@ import { linkify } from "../linkify";
 import { normalizeAgiMarkdown } from "../agiMarkdown";
 import { personaForChunk, PHASE_ACTIVITY, PHASE_ACTIVITY_BY_ID, activityFor, type AgentPersona, type AttackPhase } from "../agiGraph";
 import type { AgiTranscriptChunk, Severity } from "../types";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 
 // ── Shared live-stream primitives for the Autonomous Pentest Agent console ────
 // Used by the fullscreen operator console (AgiConsole) and the compact drawer
@@ -146,8 +146,8 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
           </span>
           <span className={cx("block text-[12px] text-slate-500", dense ? "hidden" : "")}>
             {b.turn ? `Turn ${b.turn}${b.total ? ` of ${b.total}` : ""}` : "Turn"}
-            {b.phase ? ` · ${b.phase}` : ""}
-            {b.status ? ` · ${b.status}` : ""}
+            {b.phase ? ` · ${humanize(b.phase)}` : ""}
+            {b.status ? ` · ${humanize(b.status)}` : ""}
             {b.totals ? ` · ${b.totals}` : ""}
           </span>
         </span>

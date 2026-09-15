@@ -9,7 +9,7 @@ import { loadVaptBundle } from "@sg/data";
 import { api, isDemoMode, isPendingApproval } from "@sg/api";
 import { useResource } from "@sg/useResource";
 import { useOperations } from "@sg/operations";
-import { timeAgo, titleCase, cx, isReportable, impactLevelRank, formatDateTime } from "@sg/utils";
+import { timeAgo, titleCase, cx, humanize, isReportable, impactLevelRank, formatDateTime } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { executeVaptPlan, generateVaptPlan } from "@sg/vaptOps";
 import type { VaptPlan } from "@sg/vaptOps";
@@ -459,7 +459,7 @@ export default function Vapt() {
                     {c.status === "active" && (
                       <div className="mt-3">
                         <div className="mb-1 flex justify-between text-[13px] text-slate-500">
-                          <span>{c.phase}</span><span className="font-mono">{c.progress}%</span>
+                          <span>{humanize(c.phase)}</span><span className="font-mono">{c.progress}%</span>
                         </div>
                         <ProgressBar value={c.progress} />
                       </div>
@@ -956,7 +956,7 @@ export default function Vapt() {
             {findingSelected.verification_status && (
               <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 text-xs">
                 <p className="text-slate-500">
-                  Verification: <span className="font-medium text-slate-200">{findingSelected.verification_status}</span>
+                  Verification: <span className="font-medium text-slate-200">{humanize(findingSelected.verification_status)}</span>
                   {findingSelected.confidence != null && <> · Confidence: <span className="font-mono text-slate-200">{findingSelected.confidence}</span></>}
                 </p>
                 <p className="mt-1 text-[12px] text-slate-500">
@@ -1033,12 +1033,12 @@ export default function Vapt() {
             <div>
               <label className="label">Procedure</label>
               <select className="input" value={createForm.procedure_key} onChange={(e) => setCreateForm((f) => ({ ...f, procedure_key: e.target.value }))}>
-                <option value="web_scan">web_scan --- full web pipeline</option>
-                <option value="web_app_scan_only">web_app_scan_only</option>
-                <option value="full_vapt">full_vapt (infra + web + gates)</option>
-                <option value="infra_scan">infra_scan</option>
-                <option value="api_scan">api_scan</option>
-                <option value="caido">caido --- advanced proxy (history, Replay, workflows)</option>
+                <option value="web_scan">Web scan</option>
+                <option value="web_app_scan_only">Web application scan</option>
+                <option value="full_vapt">Full VAPT</option>
+                <option value="infra_scan">Infrastructure scan</option>
+                <option value="api_scan">API scan</option>
+                <option value="caido">CAIDO proxy</option>
               </select>
             </div>
           </div>
@@ -1058,7 +1058,7 @@ export default function Vapt() {
                   <label className={cx("flex cursor-pointer items-start gap-2 rounded-lg border px-3 py-2", createForm.researchDepth === "poc" ? "border-gold-400/40 bg-gold-400/8" : "border-phantix-700/40 bg-phantix-900/50")}>
                     <input type="radio" name="researchDepth" className="mt-0.5 accent-gold-400" checked={createForm.researchDepth === "poc"} onChange={() => setCreateForm((f) => ({ ...f, researchDepth: "poc" }))} />
                     <span className="text-xs leading-5">
-                      <strong className="text-slate-200">Extended PoC</strong> <span className="text-slate-500">(allow_poc=true)</span>
+                      <strong className="text-slate-200">Extended proof-of-concept</strong>
                     </span>
                   </label>
                   {createForm.researchDepth === "poc" && (
@@ -1070,7 +1070,7 @@ export default function Vapt() {
               </div>
               <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
                 <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.bruteforceAcked} onChange={(e) => setCreateForm((f) => ({ ...f, bruteforceAcked: e.target.checked }))} />
-                Authorize login bruteforce <span className="text-slate-500">(acknowledge_bruteforce=true)</span>
+                Authorize login bruteforce
               </label>
               <details className="text-[13px]">
                 <summary className="cursor-pointer text-slate-400 hover:text-slate-200">Credentials panel (optional)</summary>
@@ -1091,7 +1091,7 @@ export default function Vapt() {
                       <input className="input !py-1.5 text-xs" placeholder="token / bearer / jwt" value={altCreds.token} onChange={(e) => setAltCreds((c) => ({ ...c, token: e.target.value }))} />
                     </div>
                   </div>
-                  <p className="text-[12px] text-slate-600">Secrets are never echoed back by the API --- findings show only credentials_provided.</p>
+                  <p className="text-[12px] text-slate-600">Secrets are never shown back --- findings only record that credentials were provided.</p>
                 </div>
               </details>
             </div>

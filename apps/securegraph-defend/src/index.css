@@ -530,6 +530,46 @@ p {
     border: 1px solid rgb(var(--border-subtle));
   }
 
+  /* One dropdown treatment everywhere: native selects keep their behaviour,
+     but share the input surface and a crisp custom chevron. */
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2.5rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.85rem center;
+    background-size: 0.95rem;
+  }
+  select.input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  select.input option {
+    background-color: rgb(var(--surface-card));
+    color: rgb(var(--slate-100));
+  }
+  select.chip {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 1.6rem;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 0.7rem;
+  }
+  select.chip option {
+    background-color: rgb(var(--surface-card));
+    color: rgb(var(--slate-100));
+  }
+  :root[data-theme="light"] select.input option,
+  :root[data-theme="light"] select.chip option {
+    background-color: #ffffff;
+    color: rgb(9 9 11);
+  }
+
   .label {
     @apply block text-xs font-medium uppercase tracking-wider text-slate-400 mb-1.5;
   }

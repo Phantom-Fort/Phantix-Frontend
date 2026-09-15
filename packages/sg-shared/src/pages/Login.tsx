@@ -3,12 +3,12 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, KeyRound, Mail, ShieldCheck, Smartphone, Loader2, PlayCircle,
-  Link2, Building2, User, AlertOctagon, Check, Send, RefreshCw,
+  Link2, Building2, User, AlertOctagon, AlertTriangle, Check, Send, RefreshCw,
 } from "lucide-react";
 import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BASE, deviceId } from "@sg/api";
 import { useStore } from "@sg/store";
 import { PLATFORM_URL } from "@sg/links";
-import { cx } from "@sg/utils";
+import { cx, humanize } from "@sg/utils";
 import { listenDeviceConfirmed } from "@sg/deviceConfirm";
 import { BrandLogo } from "@sg/components/BrandLogo";
 import AuthShowcase from "@sg/components/AuthShowcase";
@@ -158,6 +158,18 @@ function LoginBrand({ subtitle, note, children }: { subtitle: string; note?: str
       </p>
       {note && <p className="mt-1 text-xs text-slate-500">{note}</p>}
       {children}
+    </div>
+  );
+}
+
+/** Sign-in errors belong at the top of the card with an alert icon, in plain
+ *  language — never a raw backend code with underscores. */
+function AuthErrorBanner({ message }: { message: string | null | undefined }) {
+  if (!message) return null;
+  return (
+    <div role="alert" className="mb-4 flex items-start gap-2.5 rounded-md border border-severity-critical/30 bg-severity-critical/10 px-3.5 py-3">
+      <AlertTriangle size={15} className="mt-0.5 shrink-0 text-severity-critical" />
+      <p className="text-sm leading-5 text-severity-critical">{humanize(message)}</p>
     </div>
   );
 }
@@ -338,6 +350,7 @@ function ReturningLogin({
       <motion.div initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="w-full max-w-[420px]">
         <LoginBrand subtitle="Application sign-in" note="Returning user? Sign in with your email and password." />
         <div className="card p-7">
+          <AuthErrorBanner message={error} />
           {showInvite ? (
             <motion.div key="invite" initial={{ opacity: 0, x: 14 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
               <p className="text-center text-xs text-slate-500">First time? Paste your invite link from the platform below, or sign in with your email.</p>
@@ -373,7 +386,6 @@ function ReturningLogin({
                     <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
                   </div>
                 </div>
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !email.trim() || !password}>
                   {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Signing in...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
@@ -392,7 +404,6 @@ function ReturningLogin({
                   </p>
                 </div>
                 <OtpInput value={code} onChange={setCode} onEnter={() => retryIn === 0 && code.length === 6 && void verify()} />
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || code.length !== 6} onClick={() => void verify()}>
                   {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : <>Verify & sign in</>}
                 </button>
@@ -415,7 +426,6 @@ function ReturningLogin({
                   {deviceWait ? <Loader2 size={14} className="animate-spin text-gold-400" /> : <Mail size={14} className="text-gold-400" />}
                   <span>{deviceWait ? "Waiting for you to open the link…" : "Check your inbox and click the link."}</span>
                 </div>
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button
                   type="button"
                   disabled={busy}
@@ -763,6 +773,7 @@ function AppLoginFlow({
         </LoginBrand>
 
         <div className="card p-7">
+          <AuthErrorBanner message={error} />
           <AnimatePresence mode="wait">
             {/* Service key blocked */}
             {blocked && stage === "service_key_blocked" && (
@@ -793,7 +804,6 @@ function AppLoginFlow({
                     <input type="password" className="input !pl-10" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Repeat password" autoComplete="new-password" />
                   </div>
                 </div>
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !password || !confirmPassword}>
                   {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Saving...</> : <>Set password & continue <ArrowRight size={15} /></>}
                 </button>
@@ -810,7 +820,6 @@ function AppLoginFlow({
                     <input type="password" className="input !pl-10" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoFocus />
                   </div>
                 </div>
-                {error && <p className="text-sm text-severity-critical">{error}</p>}
                 <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || !password}>
                   {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Checking...</> : <>Continue <ArrowRight size={15} /></>}
                 </button>
@@ -840,7 +849,6 @@ function AppLoginFlow({
                       {deviceWait ? <Loader2 size={14} className="animate-spin text-gold-400" /> : <Mail size={14} className="text-gold-400" />}
                       <span>{deviceWait ? "Waiting for you to open the link…" : "Check your inbox and click the link."}</span>
                     </div>
-                    {error && <p className="text-sm text-severity-critical">{error}</p>}
                     <button
                       type="button"
                       disabled={busy}
@@ -866,7 +874,6 @@ function AppLoginFlow({
                       )}
                     </div>
                     <OtpInput value={code} onChange={setCode} onEnter={() => retryIn === 0 && code.length === 6 && void verifyMfa()} />
-                    {error && <p className="text-sm text-severity-critical">{error}</p>}
                     <button className="btn-primary w-full !py-3" disabled={busy || retryIn > 0 || code.length !== 6} onClick={() => void verifyMfa()}>
                       {retryIn > 0 ? `Try again in ${retryIn}s` : busy ? <><Loader2 size={14} className="mr-1.5 inline animate-spin" /> Verifying...</> : "Verify & sign in"}
                     </button>
@@ -1027,7 +1034,11 @@ function PasteLinkBox({ onCancel }: { onCancel?: () => void }) {
           <button type="button" onClick={onCancel} className="text-slate-500 hover:text-slate-300">Back to email sign-in</button>
         )}
       </div>
-      {error && <p className="text-xs text-severity-critical">{error}</p>}
+      {error && (
+        <p className="flex items-start gap-1.5 text-xs text-severity-critical">
+          <AlertTriangle size={12} className="mt-0.5 shrink-0" /> {humanize(error)}
+        </p>
+      )}
       <button onClick={validateAndGo} disabled={!link.trim()} className="btn-secondary w-full text-sm">
         Continue with link <ArrowRight size={14} />
       </button>

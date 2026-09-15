@@ -5,7 +5,7 @@ import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, PageSke
 import { loadSocWarRoom, loadWarRoomChecklist, updateChecklistStep, loadWarRoomEvidence, loadWarRoomKillChain, loadWarRoomSla, openSocWarRoomCase } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import type { Severity, SocWarRoomCase, SocWarRoomResponse, SocPlaybook } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
@@ -84,7 +84,7 @@ export default function SocWarRoom() {
                 <EmptyState icon={<FileText size={32} />} title="No playbooks" body="Playbooks define the checklist steps for each case type." />
               ) : playbookCatalog.map((pb) => (
                 <Card key={pb.id} className="!p-4">
-                  <CardHeader title={pb.title} subtitle={pb.category} />
+                  <CardHeader title={pb.title} subtitle={humanize(pb.category)} />
                   <p className="mt-2 text-xs text-slate-400">{pb.phases?.length || 0} phases</p>
                 </Card>
               ))}
@@ -147,7 +147,7 @@ function CaseDetailView({ caseId, onBack }: { caseId: number; onBack: () => void
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-200">{step.title}</p>
-                  <p className="text-xs text-slate-500">{step.phase}</p>
+                  <p className="text-xs text-slate-500">{humanize(step.phase)}</p>
                 </div>
                 {step.status !== "completed" && step.status !== "skipped" && (
                   <button
@@ -175,7 +175,7 @@ function CaseDetailView({ caseId, onBack }: { caseId: number; onBack: () => void
           ) : (evidence?.timeline ?? []).map((evt, i) => (
             <Card key={`${evt.id}-${i}`} className="!p-3">
               <p className="text-sm text-slate-200">{evt.title}</p>
-              <p className="text-xs text-slate-500">{evt.event_type} &middot; {timeAgo(evt.created_at)}</p>
+              <p className="text-xs text-slate-500">{humanize(evt.event_type)} &middot; {timeAgo(evt.created_at)}</p>
             </Card>
           ))}
         </div>

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Layers, ShieldCheck, Lock } from "lucide-react";
 import { Modal } from "../ui";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 import type { AgentScopeCard, AgentScopeGroup, AgentScopeOption } from "../types";
 
 export type AgentScopeSelection = { asset_ids: number[]; resource_ids: number[] };
@@ -176,8 +176,8 @@ export default function AgentScopeGate({
                           )}
                         </span>
                         <span className="flex shrink-0 items-center gap-1">
-                          {o.asset_type && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">{o.asset_type}</span>}
-                          {o.environment && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-500">{o.environment}</span>}
+                          {o.asset_type && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">{humanize(o.asset_type)}</span>}
+                          {o.environment && <span className="chip border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-500">{humanize(o.environment)}</span>}
                           {o.criticality && (
                             <span className={cx("chip text-[12px] capitalize",
                               o.criticality === "critical" ? "border-severity-critical/40 bg-severity-critical/10 text-severity-critical"

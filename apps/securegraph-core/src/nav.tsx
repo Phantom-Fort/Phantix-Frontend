@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookOpen,
   Bot,
+  Boxes,
   FileText,
   FlaskConical,
   LayoutDashboard,
@@ -26,6 +27,7 @@ export const NAV: NavSection[] = [
   {
     label: "Security graph",
     items: [
+      { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
       { to: "/reports", label: "Report solutions", icon: <FileText size={17} /> },
       { to: "/integrations", label: "Integrations hub", icon: <Plug size={17} /> },
       { to: "/audit", label: "Audit trail", icon: <ScrollText size={17} /> },

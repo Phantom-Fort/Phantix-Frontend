@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ScrollText, Shield, Search, Filter } from "lucide-react";
 import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState } from "@sg/ui";
 import { loadPlaybooks, loadMitreMatrix, loadMitreStats } from "@sg/data";
+import { humanize } from "@sg/utils";
 import { useResource } from "@sg/useResource";
 import type { SocPlaybook, MitreMatrix, MitreStats } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
@@ -37,7 +38,7 @@ export default function SocPlaybooks() {
           ) : playbooks.map((pb, i) => (
             <motion.div key={pb.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
               <Card className="!p-4">
-                <CardHeader title={pb.title} subtitle={`${pb.category} &middot; v${pb.version}`} />
+                <CardHeader title={pb.title} subtitle={`${humanize(pb.category)} · v${pb.version}`} />
                 <p className="mt-2 text-xs text-slate-400">{pb.phases?.length || 0} phases</p>
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {pb.mitre_id && <span className="chip border-phantix-700 bg-phantix-800 text-slate-300">{pb.mitre_id}</span>}

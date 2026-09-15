@@ -106,29 +106,46 @@ export async function handoffUrl(target: ApplicationKey, fallbackHost: string): 
  * Returns true when a session was established, so the caller can skip its
  * "not signed in" redirect. Runs before any other API call on boot.
  */
-export async function consumeHandoff(application: ApplicationKey): Promise<boolean> {
-  if (takeFlagFromFragment(DEMO_FRAGMENT_KEY)) {
-    enterDemoMode();
-    return true;
-  }
-  const code = takeCodeFromFragment();
-  if (!code) return false;
-  try {
-    const session = await apiRequest<HandoffRedeemed>("/app/auth/handoff/redeem", {
-      method: "POST",
-      body: { code, application },
-      anonymous: true,
-    });
-    if (!session?.access_token) return false;
-    setStoredSession({
-      accessToken: session.access_token,
-      deviceToken: session.device_token || "",
-      dualControlSession: session.dual_control_session || "",
-    });
-    return true;
-  } catch {
-    return false;
-  }
+/**
+ * A handoff redeem already in flight for this page load. React StrictMode
+ * mounts effects twice in development: without this, the second invocation
+ * finds the fragment already consumed, returns false, and bounces the operator
+ * to the Core login before the first redeem finishes. Concurrent callers share
+ * one attempt instead.
+ */
+let handoffInflight: Promise<boolean> | null = null;
+
+export function consumeHandoff(application: ApplicationKey): Promise<boolean> {
+  if (handoffInflight) return handoffInflight;
+  handoffInflight = (async () => {
+    if (takeFlagFromFragment(DEMO_FRAGMENT_KEY)) {
+      enterDemoMode();
+      return true;
+    }
+    const code = takeCodeFromFragment();
+    if (!code) return false;
+    try {
+      const session = await apiRequest<HandoffRedeemed>("/app/auth/handoff/redeem", {
+        method: "POST",
+        body: { code, application },
+        anonymous: true,
+      });
+      if (!session?.access_token) return false;
+      setStoredSession({
+        accessToken: session.access_token,
+        deviceToken: session.device_token || "",
+        dualControlSession: session.dual_control_session || "",
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+  // Do not cache the result: a later navigation can carry a fresh code.
+  void handoffInflight.finally(() => {
+    handoffInflight = null;
+  });
+  return handoffInflight;
 }
 
 

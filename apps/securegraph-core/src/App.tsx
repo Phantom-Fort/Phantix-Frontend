@@ -19,6 +19,7 @@ import SandboxApplyPublic from "./pages/SandboxApplyPublic";
 import PasswordResetRequest from "@sg/pages/auth/PasswordResetRequest";
 import PasswordResetComplete from "@sg/pages/auth/PasswordResetComplete";
 import Dashboard from "./pages/Dashboard";
+import Assets from "./pages/Assets";
 import Analytics from "./pages/Analytics";
 import Reports from "./pages/Reports";
 import IntegrationsHub from "./pages/IntegrationsHub";
@@ -68,6 +69,7 @@ export default function App() {
           }
         >
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/assets" element={<Assets title="Assets" />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/integrations" element={<IntegrationsHub />} />

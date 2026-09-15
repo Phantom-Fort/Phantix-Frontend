@@ -5,7 +5,7 @@ import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState, EmptyState, Sta
 import { loadCloudProviderCatalog, loadCloudConnections, connectCloudProvider, deleteCloudConnection, syncCloudConnection } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import type { SocCloudConnection, SocCloudProviderCatalog } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
@@ -45,7 +45,7 @@ export default function SocCloudIntegration() {
                 <Cloud size={16} className="text-gold-400" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-slate-200">{conn.display_name}</p>
-                  <p className="text-xs text-slate-500">{conn.provider} &middot; {conn.integration_type}</p>
+                  <p className="text-xs text-slate-500">{humanize(conn.provider)} &middot; {humanize(conn.integration_type)}</p>
                 </div>
                 <StatusBadge status={conn.status} />
                 <div className="flex gap-1.5">

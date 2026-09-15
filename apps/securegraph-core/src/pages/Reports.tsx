@@ -9,7 +9,7 @@ import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerF
 import type { ReportTypeEntry } from "@sg/types";
 import { api, ApiError } from "@sg/api";
 import { useResource } from "@sg/useResource";
-import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@sg/utils";
+import { timeAgo, formatBytes, titleCase, cx, humanize, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { useSearchParams } from "react-router-dom";
 import { isDemoMode } from "@sg/api";
@@ -703,8 +703,8 @@ export default function Reports() {
             Retention is <strong className="text-slate-400">per report type</strong>: each type keeps
             its own {retention?.max_versions_per_type ?? 3} most recent versions and archives its own
             oldest with a ReportArchived alert — generating an overview never displaces a VAPT report.
-            Prefer run_inline=false for large campaigns to avoid gateway timeouts; poll GET
-            /reports/{"{id}"} until status=complete.
+            For large campaigns, generate in the background to avoid timeouts, then check back as
+            the report completes.
           </p>
         </motion.div>
       )}
@@ -716,8 +716,9 @@ export default function Reports() {
             <p className="text-xs leading-5 text-slate-400">
               Living remediation board (not a download). Statuses:{" "}
               <strong className="text-slate-200">open → in_progress → fixed</strong> (or{" "}
-              <strong className="text-slate-200">accepted</strong>). Backend sets{" "}
-              <strong className="text-severity-critical">regressed</strong> when a fixed finding reappears. PATCH needs dual-control when configured.
+              <strong className="text-slate-200">accepted</strong>). A fixed finding is marked{" "}
+              <strong className="text-severity-critical">regressed</strong> when it reappears. Changing status needs
+              dual-control when configured.
             </p>
           </div>
 
@@ -780,7 +781,7 @@ export default function Reports() {
                           <p className="text-xs text-slate-500 truncate">
                             {f.campaign_name}
                             {f.priority ? ` · ${f.priority}` : ""}
-                            {f.surface ? ` · ${f.surface}` : ""}
+                            {f.surface ? ` · ${humanize(f.surface)}` : ""}
                           </p>
                         </td>
                         <td className="td"><SeverityBadge severity={f.severity} /></td>
@@ -987,7 +988,7 @@ export default function Reports() {
                     <p className="mt-2 rounded-lg border border-severity-medium/30 bg-severity-medium/10 px-2.5 py-2 text-[13px] leading-5 text-severity-medium">
                       {gate.unverified_pending} finding(s) still need verification and will be excluded (or appendix-only).
                       {" "}{gate.reportable} auto/manual-verified will be included.{" "}
-                      <strong>Generate verified-only</strong> sends acknowledge_unverified=true.
+                      <strong>Generate verified-only</strong> excludes findings that are still unverified.
                     </p>
                   )}
                   {gate.message && !gate.needs_acknowledgement && (
@@ -1031,7 +1032,7 @@ export default function Reports() {
             Reports include only auto- or manually verified findings. Each verified finding is analyzed for business and technical impact (CIA triad, blast radius) before it is added to the deliverable. PDF/DOCX follow the standard VAPT template.
           </div>
           <p className="text-[13px] text-slate-500">
-            Generate report with <strong>run_inline=true</strong> for immediate delivery; use <strong>run_inline=false</strong> for large campaigns to avoid gateway timeouts, then check back as the report completes.
+            Generate immediately for quick delivery, or run large campaigns in the background to avoid timeouts and check back as the report completes.
           </p>
           <button className="btn-primary w-full" disabled={genSubmitting}>
             {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating...</> : <><Download size={15} /> Generate</>}
@@ -1266,7 +1267,7 @@ export default function Reports() {
                 <label className="label">Tool override (optional)</label>
                 <input
                   className="input"
-                  placeholder="nmap · nuclei · api_scan · apk ..."
+                  placeholder="nmap · nuclei · web · mobile ..."
                   value={retestForm.tool}
                   onChange={(e) => setRetestForm((f) => ({ ...f, tool: e.target.value }))}
                 />

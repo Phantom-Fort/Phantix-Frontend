@@ -256,6 +256,10 @@ async function request<T>(
   };
 
   const sentDualControl = !!tokens.dualControl && (opts.dualControl || ["POST", "PUT", "PATCH", "DELETE"].includes(method));
+  // A request that is *about* the operate session (the authorizer inbox, the
+  // approval queue, any mutation) must never be read as a dead main session.
+  // 401s from these mean "no live operate session", not "sign in again".
+  const dualControlScoped = !!opts.dualControl || sentDualControl;
 
   let res = await doFetch();
 
@@ -318,7 +322,7 @@ async function request<T>(
       detailObj?.error === "dual_control_session_expired" ||
       (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||
       /authenticator session|dual.?control|operate session|operate mode|X-Dual-Control-Session/i.test(msg) ||
-      (res.status === 401 && sentDualControl && !explicitMainSessionInvalid && !mainSessionAuthFailure);
+      (res.status === 401 && dualControlScoped && !explicitMainSessionInvalid);
 
     // The backend is authoritative for the operate idle window: if it rejected
     // a mutation because the dual-control session is gone/expired, tell the store
@@ -326,13 +330,18 @@ async function request<T>(
     if ((res.status === 401 || res.status === 403) && sentDualControl && dcSessionIssue) {
       tokens.dualControl = null;
       window.dispatchEvent(new CustomEvent("phantix:operate-expired", { detail: msg || "Operate session ended." }));
-    } else if (res.status === 403 && dcSessionIssue) {
-      // Dual-control header missing (not a broken session). 00-shared-auth… §1/§8:
-      // open the unlock overlay so the user can operate and retry.
+    } else if ((res.status === 401 || res.status === 403) && dualControlScoped && dcSessionIssue) {
+      // Dual-control header missing or expired (not a broken main session).
+      // Open the unlock overlay so the user can operate and retry instead of
+      // being signed out; the inbox shows its own error state meanwhile.
       window.dispatchEvent(new CustomEvent("phantix:operate-required", { detail: msg || undefined }));
     }
     const superseded = detailObj?.error === "session_superseded" || /superseded by renewal/i.test(msg);
-    const sessionInvalid = explicitMainSessionInvalid || mainSessionAuthFailure;
+    // Never let a dual-control-scoped 401 tear down the main session on a
+    // generic "unauthorized" message — only an explicit session_invalid/relogin
+    // (or a clear main-session expiry on a non-operate request) does that.
+    const sessionInvalid =
+      explicitMainSessionInvalid || (mainSessionAuthFailure && !dualControlScoped);
     if (res.status === 401) {
       if (sessionInvalid && !dcSessionIssue && !superseded) {
         if (realm === "staff") tokens.staff = null;

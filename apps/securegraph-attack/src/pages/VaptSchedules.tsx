@@ -234,7 +234,7 @@ function CreateScheduleModal({
                 ))}
               </select>
             ) : (
-              <input id="sch-proc" value={procedure} onChange={(e) => setProcedure(e.target.value)} placeholder="procedure_key" className="input mt-1 font-mono" />
+              <input id="sch-proc" value={procedure} onChange={(e) => setProcedure(e.target.value)} placeholder="Search procedures" className="input mt-1 font-mono" />
             )}
           </div>
           <div>
