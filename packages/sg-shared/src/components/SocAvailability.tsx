@@ -457,13 +457,11 @@ export default function SocAvailability() {
         <div className="grid grid-cols-1 gap-3 text-xs text-slate-400 md:grid-cols-2">
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
             <p className="font-semibold text-slate-200">External tool events</p>
-            <p className="mt-1 leading-5">Any tool (Uptime Kuma, Healthchecks, Alertmanager) can open/close MTTR-tracked incidents:</p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[12px] text-slate-300">{"POST /api/v1/soc/availability/events\n{ \"event\": \"down\", \"target\": \"https://app/client.com\", \"title\": \"API production\", \"source\": \"uptime_kuma\" }"}</pre>
+            <p className="mt-1 leading-5">Any tool (Uptime Kuma, Healthchecks, Alertmanager) can open/close MTTR-tracked incidents. Point the tool at your organization's availability webhook and authenticate with your organization API key — both are available from the Integrations hub.</p>
           </div>
           <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
             <p className="font-semibold text-slate-200">Heartbeat endpoint</p>
-            <p className="mt-1 leading-5">Agent posts with org API key (not user JWT). Missed heartbeats open downtime automatically.</p>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-phantix-950/80 p-2.5 font-mono text-[12px] text-slate-300">{agentCatalog?.endpoint ?? "POST /api/v1/soc/availability/heartbeat"}\nHeader: X-Org-Api-Key</pre>
+            <p className="mt-1 leading-5">Agents post to the availability heartbeat address with the organization API key (not a user token). Missed heartbeats open downtime automatically.</p>
           </div>
         </div>
       </Card>

@@ -537,6 +537,8 @@ export function describeEndpoint(method: string, path: string): EndpointDesc | n
   if (module && MODULE_FALLBACK[module]) return MODULE_FALLBACK[module];
   return {
     label: "Platform action",
-    detail: `An API action was performed (${method || "GET"} on ${path || "an endpoint"}).`,
+    // Never echo the route or method back to the reader — the trail is meant to
+    // explain what happened, not how the request was addressed.
+    detail: "An action was performed on your organization.",
   };
 }
