@@ -460,23 +460,25 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                           </>
                         ) : (
                           <>
-                            Read-only --- contact {session?.initiatorName || "the initiator"} or{" "}
-                            {session?.authorizerName || "the authorizer"} for actions
+                            Read-only view. Request an operate session —{" "}
+                            {session?.initiatorName || "the initiator"} or{" "}
+                            {session?.authorizerName || "the authorizer"} approves by OTP.
                           </>
                         )}
                       </p>
-                      {(session?.isInitiator || session?.isAuthorizer) && (
-                        <button
-                          onClick={() =>
-                            void requireDualControl(
-                              "Unlock operate mode to perform protected mutations.",
-                            )
-                          }
-                          className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
-                        >
-                          <Unlock size={12} /> Unlock operate
-                        </button>
-                      )}
+                      <button
+                        onClick={() =>
+                          void requireDualControl(
+                            "Unlock operate mode to perform protected mutations.",
+                          )
+                        }
+                        className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
+                      >
+                        <Unlock size={12} />{" "}
+                        {session?.isInitiator || session?.isAuthorizer
+                          ? "Unlock operate"
+                          : "Request dual control"}
+                      </button>
                     </>
                   ) : (
                     <>
@@ -741,7 +743,7 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                       <p className="mt-1 text-xs font-medium text-emerald-300">
                         Operating as {shortName(operate.actingUser)}
                       </p>
-                    ) : dualControl.configured && (session?.isInitiator || session?.isAuthorizer) ? (
+                    ) : dualControl.configured ? (
                       <button
                         onClick={() =>
                           void requireDualControl(
@@ -750,11 +752,14 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
                         }
                         className="btn-primary mt-1 w-full !px-3 !py-1 !text-[13px]"
                       >
-                        <Unlock size={12} /> Unlock operate
+                        <Unlock size={12} />{" "}
+                        {session?.isInitiator || session?.isAuthorizer
+                          ? "Unlock operate"
+                          : "Request dual control"}
                       </button>
                     ) : (
                       <p className="mt-1 text-[13px] text-slate-500">
-                        {dualControl.configured ? "Read-only — view and reports" : "Not set up"}
+                        Not set up — configure on the Platform
                       </p>
                     )}
                   </div>

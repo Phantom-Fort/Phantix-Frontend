@@ -40,6 +40,7 @@ export default function DualControlOverlay() {
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [deviceWait, setDeviceWait] = useState(false);
 
+  // Full reset when the overlay opens.
   useEffect(() => {
     if (!open) return;
     setStage("email");
@@ -50,6 +51,17 @@ export default function DualControlOverlay() {
     setDevOtp(null);
     setBusy(false);
     setDeviceWait(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Late-arriving identity: the bootstrap may land AFTER the overlay opened
+  // (e.g. a 403 operate-required fired before GET /app/auth/me resolved). Fill
+  // the email field without disturbing the flow — never wipe what the user has
+  // already typed or reset the stage they reached.
+  useEffect(() => {
+    if (!open) return;
+    const prefill = initiator?.email || authorizer?.email || session?.userEmail || "";
+    if (prefill) setEmail((prev) => (prev.trim() ? prev : prefill));
   }, [open, initiator?.email, authorizer?.email, session?.userEmail]);
 
   useEffect(() => {
