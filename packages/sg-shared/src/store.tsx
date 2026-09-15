@@ -461,20 +461,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const matchInit = !!dualControl.initiator?.email && dualControl.initiator.email.trim().toLowerCase() === email;
       const matchAuth = !!dualControl.authorizer?.email && dualControl.authorizer.email.trim().toLowerCase() === email;
       if (matchInit || matchAuth) {
-        if (!session?.isInitiator || !session?.isAuthorizer) {
-          setSession((s) => (s ? { ...s, isInitiator: s.isInitiator || matchInit, isAuthorizer: s.isAuthorizer || matchAuth } : s));
-        }
+        setSession((s) => {
+          if (!s) return s;
+          const nextInit = s.isInitiator || matchInit;
+          const nextAuth = s.isAuthorizer || matchAuth;
+          if (nextInit === s.isInitiator && nextAuth === s.isAuthorizer) return s;
+          return { ...s, isInitiator: nextInit, isAuthorizer: nextAuth };
+        });
       }
 
       if (!configured) {
         // Bootstrap may have missed the dual-control snapshot (transient failure,
-        // endpoint hiccup at mount). Re-fetch on demand — the request() client
-        // auto-selects the application realm for app_session users — before
+        // endpoint hiccup at mount). Re-fetch on demand — explicitly in the
+        // application realm, the same realm the bootstrap uses — before
         // declaring dual control unconfigured. Never lock an org out because a
         // bootstrap request failed.
         return (async () => {
           try {
-            const dc = await api.get<Record<string, unknown>>("/org-users/dual-control");
+            const dc = await api.get<Record<string, unknown>>("/org-users/dual-control", { realm: "application" });
             const norm = normalizeDualControl(dc);
             if (norm.configured) {
               configured = true;
@@ -596,7 +600,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         email,
         purpose: "dual_control",
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (res.access_token || res.session_token || res.dual_control_session) {
         applyOperateSession(res);
         return { destinationMasked: res.destination_masked || email, devOtp: "" };
@@ -643,7 +647,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         mfa_token: dcMfaToken.current,
         code,
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (res.device_verification_required && res.device_token) {
         dcDeviceToken.current = res.device_token;
         return { deviceRequired: true };
@@ -680,7 +684,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }>("/org-users/auth/device-status", {
         challenge: dcDeviceToken.current,
         device_id: deviceId(),
-      });
+      }, { realm: "application" });
       if (!res || res.confirmed === false || !res.access_token) return { done: false };
       applyOperateSession(res);
       if (!tokens.dualControl) throw new Error("Operate session was not issued");

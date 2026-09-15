@@ -381,6 +381,23 @@ async function isSessionSuperseded(res: Response): Promise<boolean> {
   }
 }
 
+/** Common auth headers for the auxiliary (non-request) helpers. */
+function buildAuthHeaders(method: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const realm: Realm = tokens.appSession ? "application" : "platform";
+  const bearer = realm === "application" ? tokens.appSession : tokens.orgUser ?? tokens.platform;
+  if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
+  if (realm === "application") {
+    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    headers["X-Device-Id"] = deviceId();
+    headers["X-Application"] = activeApplication;
+  }
+  if (method !== "GET" && tokens.dualControl) {
+    headers["X-Dual-Control-Session"] = tokens.dualControl;
+  }
+  return headers;
+}
+
 export const api = {
   get: <T>(path: string, opts?: RequestOpts) =>
     dedupedRequest("GET", path, opts?.body, () => request<T>("GET", path, opts)),
@@ -393,11 +410,7 @@ export const api = {
 
   /** Fetch binary/raw content with auth headers, returns a Blob. */
   async download(path: string): Promise<Blob> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Application"] = activeApplication;
+    const headers = buildAuthHeaders("GET");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
@@ -415,13 +428,7 @@ export const api = {
 
   /** POST that returns a file (e.g. threat-model export) — auth + JSON body. */
   async postDownload(path: string, body?: unknown): Promise<Blob> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Device-Id"] = deviceId();
-    headers["X-Application"] = activeApplication;
-    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+    const headers = buildAuthHeaders("POST");
     headers["Content-Type"] = "application/json";
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: JSON.stringify(body ?? {}) });
@@ -440,10 +447,7 @@ export const api = {
 
   /** Fetch text content with auth headers (e.g. markdown). */
   async fetchText(path: string): Promise<string> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
+    const headers = buildAuthHeaders("GET");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "GET", headers });
     applyTokenRenewal(res);
@@ -461,12 +465,7 @@ export const api = {
 
   /** Upload a file with FormData --- sends all auth headers. */
   async upload<T>(path: string, formData: FormData): Promise<T> {
-    const headers: Record<string, string> = {};
-    const bearer = tokens.appSession || tokens.orgUser || tokens.platform;
-    if (bearer) headers["Authorization"] = `Bearer ${bearer}`;
-    if (tokens.device) headers["X-Device-Token"] = tokens.device;
-    headers["X-Device-Id"] = deviceId();
-    if (tokens.dualControl) headers["X-Dual-Control-Session"] = tokens.dualControl;
+    const headers = buildAuthHeaders("POST");
 
     const res = await fetch(`${API_BASE}${path}`, { method: "POST", headers, body: formData });
     applyTokenRenewal(res);
