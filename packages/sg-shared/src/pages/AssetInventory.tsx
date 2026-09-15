@@ -103,6 +103,8 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   const [tagForm, setTagForm] = useState({ name: "", color: TAG_COLORS[0], description: "" });
   const [savingTag, setSavingTag] = useState(false);
   const [deletingTag, setDeletingTag] = useState<number | null>(null);
+  /** Discovery job id currently being re-queued (Retry action). */
+  const [retryingJob, setRetryingJob] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   /** Map an asset to the discovery job spec the backend expects. */
@@ -196,6 +198,21 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
     if (fail > 0) toast("error", "Some jobs failed", `${fail} asset(s) could not start discovery.`);
     setChecked(new Set());
     setTab("discovery");
+  };
+
+  /** Re-queue a failed discovery job (e.g. the security DB was restarting). */
+  const retryDiscovery = async (jobId: number) => {
+    if (!(await requireDualControl("Retrying discovery needs an operate session."))) return;
+    setRetryingJob(jobId);
+    try {
+      await api.post(`/assets/discovery/jobs/${jobId}/retry`, {});
+      toast("success", "Discovery re-queued", `Job #${jobId} will run again.`);
+      reload();
+    } catch (e) {
+      toast("error", "Retry failed", e instanceof Error ? e.message : undefined);
+    } finally {
+      setRetryingJob(null);
+    }
   };
 
   useEffect(() => {
@@ -715,6 +732,16 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
                 <div className="text-right shrink-0">
                   <div className="text-xs text-slate-500">{timeAgo(j.created_at)}</div>
                   {j.completed_at && <div className="text-[12px] text-slate-600">Completed {timeAgo(j.completed_at)}</div>}
+                  {(j.status === "failed" || j.status === "cancelled") && (
+                    <button
+                      className="btn-secondary mt-1 !px-2.5 !py-1 !text-[12px]"
+                      disabled={retryingJob === j.id}
+                      onClick={() => void retryDiscovery(j.id)}
+                    >
+                      <RefreshCw size={11} className={retryingJob === j.id ? "mr-1 inline animate-spin" : "mr-1 inline"} />
+                      Retry
+                    </button>
+                  )}
                 </div>
               </div>
 
