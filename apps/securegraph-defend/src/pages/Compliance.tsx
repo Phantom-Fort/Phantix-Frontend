@@ -337,7 +337,7 @@ export default function Compliance() {
             </label>
           </div>
           <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[13px] leading-5 text-slate-500">
-            POST /compliance/assessments — runs the merge engine per control and writes a scored assessment you can review under Control results.
+            Runs the merge engine per control and writes a scored assessment you can review under Control results.
           </p>
           <button className="btn-primary w-full" type="submit" disabled={assessBusy}>
             {assessBusy ? <Spinner className="h-4 w-4" /> : <Play size={14} />} Run assessment

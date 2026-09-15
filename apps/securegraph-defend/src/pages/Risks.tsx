@@ -61,11 +61,11 @@ export default function Risks() {
         strategy: "mitigate",
       });
       const treatmentId = treatment.id ?? treatment.treatment_id;
-      toast("success", "Treatment created", `POST /risks/${selected.id}/treatments`);
+      toast("success", "Treatment created", "The treatment is recorded against this risk.");
 
       if (treatmentId) {
         await api.post(`/risks/treatments/${treatmentId}/submit`, {});
-        toast("success", "Submitted for approval", `POST /risks/treatments/${treatmentId}/submit --- awaiting authorizer`);
+        toast("success", "Submitted for approval", "Awaiting the authorizer's decision.");
       }
     } catch (err: any) {
       toast("error", "Failed", err.message ?? "Treatment proposal failed");
@@ -90,7 +90,7 @@ export default function Risks() {
     }));
     try {
       await api.patch(`/risks/${selected.id}`, { owner });
-      toast("success", "Owner updated", `PATCH /risks/${selected.id} --- ${owner}`);
+      toast("success", "Owner updated", `${owner} now owns this risk.`);
       setAssignedOwner("");
     } catch (err: any) {
       setData(previous);

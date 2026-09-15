@@ -139,8 +139,8 @@ export default function CloudPosturePanel({
         </p>
         {network_exposure.schema_upgrade_required ? (
           <p className="rounded-md border border-gold-400/25 bg-gold-400/[0.06] p-3 text-[13px] leading-5 text-gold-200">
-            The exposure inventory is created when the security schema is bootstrapped. Re-run
-            <span className="mx-1 font-mono">POST /db-connections/&#123;id&#125;/bootstrap</span> to enable it.
+            The exposure inventory is created when the security schema is bootstrapped. Complete the
+            bootstrap on your security database connection to enable it.
           </p>
         ) : (
           <>

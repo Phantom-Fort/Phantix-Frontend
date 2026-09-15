@@ -147,7 +147,7 @@ export default function ThreatModels() {
             <span>
               A model comes from a product's information. Add <strong className="font-semibold">product information</strong>, an architecture diagram
               or requirements under <span className="mx-1 font-mono">Inputs</span>, then generate. Models load from the
-              project-scoped index (<span className="mx-1 font-mono">GET /threat-models?project_id=</span>).
+              project-scoped index.
             </span>
           </p>
 
@@ -610,7 +610,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                           <select
                             value={t.status ?? "open"}
                             onChange={(e) => void patchThreatField(t, { status: e.target.value })}
-                            title="Disposition (PATCH /threats/{id})"
+                            title="Disposition"
                             className="chip cursor-pointer border-phantix-700 bg-transparent capitalize text-slate-400 outline-none"
                           >
                             {["open", "accepted", "mitigated", "dismissed"].map((s) => (

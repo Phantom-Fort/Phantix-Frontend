@@ -437,7 +437,7 @@ export default function Reports() {
       ...(fromAgi ? { source: "phantix_agi", session_id: agiSession ? Number(agiSession) : undefined } : {}),
     });
     setGenOpen(false);
-    toast("success", "Report queued", fromAgi ? "Autonomous agent findings submitted to the report engine." : "Poll GET /reports until status=complete. Large PDF/DOCX may take minutes.");
+    toast("success", "Report queued", fromAgi ? "Autonomous agent findings submitted to the report engine." : "Large PDF/DOCX exports can take a few minutes — the report status updates as it progresses.");
     setTimeout(() => reload(), 800);
   }, [genForm, toast, reload, fromAgi, agiSession, params, setData]);
 
@@ -748,7 +748,7 @@ export default function Reports() {
               <EmptyState
                 icon={<KanbanSquare size={24} />}
                 title="No tracker findings"
-                body="Findings appear here from GET /reports/tracker, or from completed report sessions when the tracker API is empty. Never render PDF/HTML in this tab."
+                body="Findings appear here from completed report sessions. Never render PDF/HTML in this tab."
               />
             ) : (
               <div className="max-h-[min(70vh,720px)] overflow-auto">
@@ -1031,7 +1031,7 @@ export default function Reports() {
             Reports include only auto- or manually verified findings. Each verified finding is analyzed for business and technical impact (CIA triad, blast radius) before it is added to the deliverable. PDF/DOCX follow the standard VAPT template.
           </div>
           <p className="text-[13px] text-slate-500">
-            Generate report with <strong>run_inline=true</strong> for immediate delivery; use <strong>run_inline=false</strong> for large campaigns to avoid gateway timeouts. Poll GET /reports/{"{id}"} until status=complete.
+            Generate report with <strong>run_inline=true</strong> for immediate delivery; use <strong>run_inline=false</strong> for large campaigns to avoid gateway timeouts, then check back as the report completes.
           </p>
           <button className="btn-primary w-full" disabled={genSubmitting}>
             {genSubmitting ? <><RefreshCw size={15} className="animate-spin" /> Generating...</> : <><Download size={15} /> Generate</>}
@@ -1285,7 +1285,7 @@ export default function Reports() {
               </button>
               <p className="text-[12px] text-slate-500">
                 <Lock size={10} className="mr-1 inline text-gold-400" />
-                POST /reports/tracker/{retestTarget.finding_key}/retest — needs dual-control when configured.
+                Retesting this finding needs an operate session when dual control is configured.
               </p>
             </form>
           </div>

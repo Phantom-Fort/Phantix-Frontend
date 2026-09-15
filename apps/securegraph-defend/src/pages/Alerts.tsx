@@ -54,7 +54,7 @@ export default function Alerts() {
             onClick={() =>
               void (async () => {
                 if (!(await requireDualControl("Sending a test alert requires a dual-control operate session."))) return;
-                toast("success", "Test alert queued", "POST /alerts/test");
+                toast("success", "Test alert queued", "A test alert is on its way to the configured channels.");
               })()
             }
           >
@@ -145,7 +145,7 @@ export default function Alerts() {
                 onClick={() =>
                   void (async () => {
                     if (!(await requireDualControl("Updating alert settings requires a dual-control operate session."))) return;
-                    toast("info", "SMTP settings", "PUT /alerts/settings");
+                    toast("info", "SMTP settings", "Your SMTP settings were saved.");
                   })()
                 }
               >
