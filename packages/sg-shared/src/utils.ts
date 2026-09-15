@@ -124,6 +124,15 @@ export function titleCase(s: string | null | undefined): string {
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Backend values arrive as snake_case; render them as normal words. Unlike
+ *  titleCase, the rest of the casing is kept and only the first word is
+ *  capitalized, so "security_data_storage" reads as "Security data storage". */
+export function humanize(s: string | null | undefined): string {
+  if (!s) return "";
+  const spaced = String(s).replace(/_/g, " ").replace(/\s+/g, " ").trim();
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 /** First name + last-initial ("Ada Okonkwo" -> "Ada O.") — for name display in
  *  narrow, fixed-width chrome (sidebar widgets, chips) where a full name can
  *  overflow or wrap. Single-word names pass through unchanged. */
