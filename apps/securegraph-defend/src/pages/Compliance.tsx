@@ -6,7 +6,7 @@ import { PageHeader, Card, CardHeader, StatusBadge, ProgressRing, ProgressBar, T
 import DocLink from "@sg/components/DocLink";
 import { loadComplianceBundle, runComplianceAssessment, addComplianceEvidence } from "@sg/data";
 import { useResource } from "@sg/useResource";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { UpsellBanner } from "@sg/components/UpgradeGate";
 
@@ -183,7 +183,7 @@ export default function Compliance() {
                     <Scale size={15} className="text-gold-400" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-slate-200">{f.name} <span className="text-xs text-slate-500">v{f.version}</span></p>
-                      <p className="text-xs text-slate-500">{f.category} · {f.control_count} controls</p>
+                      <p className="text-xs text-slate-500">{humanize(f.category)} · {f.control_count} controls</p>
                     </div>
                     <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300">active</span>
                   </div>
@@ -210,7 +210,7 @@ export default function Compliance() {
                 <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
                   <span>v{f.version}</span>
                   <span>{f.control_count} controls</span>
-                  <span>{f.category}</span>
+                  <span>{humanize(f.category)}</span>
                 </div>
               </Card>
             </motion.div>
@@ -240,12 +240,12 @@ export default function Compliance() {
                     <tr key={c.control_id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
                       <td className="td font-mono text-xs text-gold-300">{c.control_id}</td>
                       <td className="td font-medium text-slate-200">{c.title}</td>
-                      <td className="td text-xs text-slate-400">{c.category}</td>
+                      <td className="td text-xs text-slate-400">{humanize(c.category)}</td>
                       <td className="td text-xs text-slate-500">{c.source}</td>
                       <td className="td text-xs text-slate-400">{c.evidence_count}</td>
                       <td className="td">
                         <span className={cx("inline-flex items-center gap-1.5 text-xs font-semibold", c.status === "pass" ? "text-emerald-400" : c.status === "gap" ? "text-severity-critical" : "text-slate-500")}>
-                          <Icon size={13} /> {c.status}
+                          <Icon size={13} /> {humanize(c.status)}
                         </span>
                       </td>
                       <td className="td max-w-[260px] text-xs leading-5 text-slate-400">{c.recommendation}</td>
@@ -288,7 +288,7 @@ export default function Compliance() {
                     <p className="font-medium text-slate-200">{e.title}</p>
                     <p className="text-xs text-slate-500">{e.summary} · {timeAgo(e.collected_at)}</p>
                   </div>
-                  <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{e.evidence_type}</span>
+                  <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{humanize(e.evidence_type)}</span>
                   <StatusBadge status={e.status} />
                 </div>
               </Card>
@@ -337,7 +337,7 @@ export default function Compliance() {
             </label>
           </div>
           <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[13px] leading-5 text-slate-500">
-            Runs the merge engine per control and writes a scored assessment you can review under Control results.
+            Scores each control and writes a reviewable assessment under Control results.
           </p>
           <button className="btn-primary w-full" type="submit" disabled={assessBusy}>
             {assessBusy ? <Spinner className="h-4 w-4" /> : <Play size={14} />} Run assessment
@@ -405,7 +405,7 @@ export default function Compliance() {
                 onChange={(e) => setEvidenceForm((f) => ({ ...f, evidence_type: e.target.value }))}
               >
                 {["policy", "attestation", "scan_report", "training_record", "contract", "other"].map((t) => (
-                  <option key={t} value={t}>{t.replace("_", " ")}</option>
+                  <option key={t} value={t}>{humanize(t)}</option>
                 ))}
               </select>
             </div>
@@ -417,7 +417,7 @@ export default function Compliance() {
                 onChange={(e) => setEvidenceForm((f) => ({ ...f, status: e.target.value }))}
               >
                 {["unknown", "pass", "gap"].map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>{humanize(s)}</option>
                 ))}
               </select>
             </div>

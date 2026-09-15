@@ -6,7 +6,7 @@ import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
 import { isPendingApproval } from "@sg/api";
 import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@sg/data";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import type { IntegrationConnector, IntegrationInstallation } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
@@ -69,7 +69,7 @@ export default function IntegrationsHub() {
                     <p className="text-xs text-slate-400">{conn.description}</p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {conn.auth_modes.map((mode) => (
-                        <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[12px] text-slate-400">{mode}</span>
+                        <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[12px] text-slate-400">{humanize(mode)}</span>
                       ))}
                       <StatusBadge status={conn.status} />
                     </div>
@@ -101,7 +101,7 @@ export default function IntegrationsHub() {
                   </span>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-slate-200">{inst.label}</p>
-                    <p className="text-xs text-slate-500">{inst.connector_id} &middot; {inst.auth_mode}</p>
+                    <p className="text-xs text-slate-500">{humanize(inst.connector_id)} · {humanize(inst.auth_mode)}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void testHubInstallation(inst.installation_id); toast("info", "Test sent", "Integration health check completed."); }}>

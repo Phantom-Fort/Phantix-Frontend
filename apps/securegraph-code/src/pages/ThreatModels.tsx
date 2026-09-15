@@ -11,7 +11,7 @@ import {
   listProjects, listThreatModels, patchThreat, regenerateThreatModel,
   type ProductContextSummary, type ProductProject, type RememberedModel, type Threat, type ThreatModelDetail,
 } from "@sg/productContext";
-import { cx } from "@sg/utils";
+import { cx, humanize } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
 
 // ── Threat models ────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ export default function ThreatModels() {
         "error",
         "Could not start generation",
         e instanceof ApiError && e.status === 503
-          ? "No background worker is available, and threat generation never runs on the request thread."
+          ? "Threat generation is temporarily unavailable. Please try again shortly."
           : e instanceof Error ? e.message : undefined,
       );
     } finally {
@@ -176,7 +176,7 @@ export default function ThreatModels() {
                 <Card>
                   <CardHeader
                     title={p.name}
-                    subtitle={`#${p.id} · ${p.stage}`}
+                    subtitle={`#${p.id} · ${humanize(p.stage)}`}
                     action={
                       <button onClick={() => setCreating(true)} className="btn-ghost text-xs !py-1.5" title="Add another product">
                         <Plus size={12} className="mr-1.5 inline" /> Add product
@@ -216,7 +216,7 @@ export default function ThreatModels() {
                     <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
                       <div className="min-w-0">
                         <p className="text-sm text-slate-200">{p.name}</p>
-                        <p className="mt-0.5 text-[13px] text-slate-500">#{p.id} · {p.stage}</p>
+                        <p className="mt-0.5 text-[13px] text-slate-500">#{p.id} · {humanize(p.stage)}</p>
                         <ReadinessChips summary={summary} />
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -427,7 +427,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
       toast(
         "error",
         "Could not regenerate",
-        e instanceof ApiError && e.status === 503 ? "No background worker is available." : e instanceof Error ? e.message : undefined,
+        e instanceof ApiError && e.status === 503 ? "Threat generation is temporarily unavailable." : e instanceof Error ? e.message : undefined,
       );
     } finally {
       setRegenerating(false);
@@ -606,7 +606,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                         <p className="text-sm text-slate-200">{t.title ?? "Untitled threat"}</p>
                         {t.impact && <p className="mt-1 text-xs leading-5 text-slate-400">{t.impact}</p>}
                         <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {t.category && <span className="chip border-phantix-700 text-phantix-300">{t.category}</span>}
+                          {t.category && <span className="chip border-phantix-700 text-phantix-300">{humanize(t.category)}</span>}
                           <select
                             value={t.status ?? "open"}
                             onChange={(e) => void patchThreatField(t, { status: e.target.value })}
@@ -614,7 +614,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                             className="chip cursor-pointer border-phantix-700 bg-transparent capitalize text-slate-400 outline-none"
                           >
                             {["open", "accepted", "mitigated", "dismissed"].map((s) => (
-                              <option key={s} value={s} className="bg-phantix-900 text-slate-300">{s}</option>
+                              <option key={s} value={s} className="bg-phantix-900 text-slate-300">{humanize(s)}</option>
                             ))}
                           </select>
                           <select
@@ -625,7 +625,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
                           >
                             <option value="">owner: unassigned</option>
                             {["user", "team", "component", "external"].map((s) => (
-                              <option key={s} value={s} className="bg-phantix-900 text-slate-300">{s}</option>
+                              <option key={s} value={s} className="bg-phantix-900 text-slate-300">{humanize(s)}</option>
                             ))}
                           </select>
                           <input

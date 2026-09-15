@@ -7,7 +7,7 @@ import {
   loadAgentApprovals,
   type AgentApprovalRow,
 } from "../agentGuard";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 
 // ── Agent guard ──────────────────────────────────────────────────────────────
 // The agent is not a system superuser: it acts as the signed-in user and can do
@@ -118,7 +118,7 @@ export default function AgentGuardPanel({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-phantix-700 bg-phantix-900/60 px-3 py-2"
               >
                 <div className="min-w-0">
-                  <p className="font-mono text-[13px] text-slate-200">{row.action}</p>
+                  <p className="font-mono text-[13px] text-slate-200">{humanize(row.action)}</p>
                   <p className="mt-0.5 text-[12px] text-slate-500">
                     {row.reason || "Requested by the agent"}
                     {row.analysis_id ? ` · run ${String(row.analysis_id).slice(0, 8)}` : ""}
@@ -149,7 +149,7 @@ export default function AgentGuardPanel({
               <div className="space-y-1 pt-1">
                 {decided.map((row) => (
                   <div key={row.approval_id} className="flex items-center justify-between gap-2 px-1 py-1">
-                    <span className="truncate font-mono text-[12px] text-slate-500">{row.action}</span>
+                    <span className="truncate font-mono text-[12px] text-slate-500">{humanize(row.action)}</span>
                     <span className="flex items-center gap-1.5">
                       {row.status === "approved" && (
                         <span className="flex items-center gap-1 text-[12px] text-slate-500" title="An approved-but-unspent authorization still exists for this run">
@@ -157,7 +157,7 @@ export default function AgentGuardPanel({
                           {row.authorized ? "authorized now" : "spent"}
                         </span>
                       )}
-                      <span className={cx("chip capitalize", statusTone(row.status))}>{row.status}</span>
+                      <span className={cx("chip capitalize", statusTone(row.status))}>{humanize(row.status)}</span>
                     </span>
                   </div>
                 ))}

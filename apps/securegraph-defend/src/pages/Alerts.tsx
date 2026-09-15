@@ -6,7 +6,7 @@ import DocLink from "@sg/components/DocLink";
 import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { loadAlertsBundle } from "@sg/data";
 import { useResource } from "@sg/useResource";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { useNavigate } from "react-router-dom";
 import type { AlertSettings } from "@sg/types";
@@ -84,7 +84,7 @@ export default function Alerts() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-200">{a.title}</p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">{a.event_type} · {timeAgo(a.created_at)}</p>
+                    <p className="mt-0.5 font-mono text-xs text-slate-500">{humanize(a.event_type)} · {timeAgo(a.created_at)}</p>
                   </div>
                   <div className="flex gap-1.5">
                     {(a.channels ?? []).map((c) => (
@@ -138,7 +138,7 @@ export default function Alerts() {
                 </div>
               ))}
               <p className="text-[13px] leading-4 text-slate-500">
-                Passwords are Fernet-encrypted on the platform DB and never re-displayed.
+                Passwords are stored encrypted and never shown again.
               </p>
               <button
                 className="btn-secondary w-full"
@@ -159,8 +159,8 @@ export default function Alerts() {
               <CardHeader title="Critical-only channels" subtitle="Never fire for non-critical severities" />
               <div className="space-y-2.5">
                 {[
-                  { icon: <MessageSquare size={15} />, name: "WhatsApp", cfg: s.whatsapp, note: "provider=log (stub until real API)" },
-                  { icon: <Send size={15} />, name: "Telegram", cfg: s.telegram, note: "provider=log (stub until real API)" },
+                  { icon: <MessageSquare size={15} />, name: "WhatsApp", cfg: s.whatsapp, note: "Logging only for now" },
+                  { icon: <Send size={15} />, name: "Telegram", cfg: s.telegram, note: "Logging only for now" },
                 ].map((c) => (
                   <div key={c.name} className="flex items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-4 py-3">
                     <span className={cx("flex h-9 w-9 items-center justify-center rounded-lg", c.cfg.enabled ? "bg-emerald-400/12 text-emerald-400" : "bg-phantix-800/70 text-slate-500")}>
@@ -191,9 +191,8 @@ export default function Alerts() {
             <div className="flex items-start gap-3 rounded-2xl border border-phantix-700/50 bg-phantix-900/50 px-4 py-3">
               <Info size={15} className="mt-0.5 shrink-0 text-gold-400" />
               <p className="text-xs leading-5 text-slate-400">
-                Delivery runs via the alert daemon (python -m app.workers.alert_daemon), Celery beat every 30s,
-                or per-event processing. VAPT completion mail requires alerts_enabled + SMTP recipients (or org
-                primary email fallback).
+                Alerts are delivered automatically. VAPT completion mail goes to your configured recipients
+                (or the organization's primary email).
               </p>
             </div>
           </div>

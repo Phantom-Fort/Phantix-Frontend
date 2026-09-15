@@ -1116,23 +1116,27 @@ export async function loadSupportTickets(): Promise<SupportTicket[]> {
     return demo.supportTickets;
   }
   const list = await softList<Record<string, unknown>>("/support/tickets");
-  return list.map((t) => ({
-    id: Number(t.id ?? 0),
-    subject: String(t.subject ?? ""),
-    status: String(t.status ?? "open") as SupportTicket["status"],
-    priority: String(t.priority ?? "normal"),
-    category: String(t.category ?? ""),
-    created_at: String(t.created_at ?? new Date().toISOString()),
-    updated_at: String(t.last_activity_at ?? t.updated_at ?? t.created_at ?? new Date().toISOString()),
-    messages: Array.isArray(t.messages)
-      ? (t.messages as Record<string, unknown>[]).map((m) => ({
-          id: Number(m.id ?? 0),
-          from: String(m.submitter_name ?? m.from ?? "You"),
-          body: String(m.body ?? m.message ?? ""),
-          at: String(m.created_at ?? m.at ?? new Date().toISOString()),
-        }))
-      : [],
-  }));
+  return list
+    .filter((t): t is Record<string, unknown> => !!t && typeof t === "object")
+    .map((t) => ({
+      id: Number(t.id ?? 0),
+      subject: String(t.subject ?? ""),
+      status: String(t.status ?? "open") as SupportTicket["status"],
+      priority: String(t.priority ?? "normal"),
+      category: String(t.category ?? ""),
+      created_at: String(t.created_at ?? new Date().toISOString()),
+      updated_at: String(t.last_activity_at ?? t.updated_at ?? t.created_at ?? new Date().toISOString()),
+      messages: Array.isArray(t.messages)
+        ? (t.messages as unknown[])
+            .filter((m): m is Record<string, unknown> => !!m && typeof m === "object")
+            .map((m) => ({
+              id: Number(m.id ?? 0),
+              from: String(m.submitter_name ?? m.from ?? "You"),
+              body: String(m.body ?? m.message ?? ""),
+              at: String(m.created_at ?? m.at ?? new Date().toISOString()),
+            }))
+        : [],
+    }));
 }
 
 export type PosturePoint = { day: string; score: number; findings: number };

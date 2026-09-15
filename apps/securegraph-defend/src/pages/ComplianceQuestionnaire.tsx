@@ -15,7 +15,7 @@ import {
   type QuestionnaireList,
   type QuestionnaireQuestion,
 } from "@sg/complianceGrc";
-import { cx } from "@sg/utils";
+import { cx, humanize } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
 
 // ── Compliance questionnaire (self-attestation) ──────────────────────────────
@@ -121,7 +121,7 @@ export default function ComplianceQuestionnaire() {
         "error",
         "Could not start the session",
         e instanceof ApiError && e.status === 403
-          ? "Answering needs a named user session — sign in as an organization user rather than with an org token."
+          ? "Answering needs a named user session — sign in as an organization user to continue."
           : e instanceof Error ? e.message : undefined,
       );
     } finally {
@@ -379,7 +379,7 @@ function QuestionRow({
         <div className="min-w-0 flex-1">
           <p className="text-sm leading-6 text-slate-200">{question.prompt}</p>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            {question.category && <span className="chip border-phantix-700 text-slate-400">{question.category}</span>}
+            {question.category && <span className="chip border-phantix-700 text-slate-400">{humanize(question.category)}</span>}
             {question.framework_ids.map((f) => (
               <span key={f} className="chip border-phantix-700 uppercase text-phantix-300">{f}</span>
             ))}

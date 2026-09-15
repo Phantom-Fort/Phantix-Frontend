@@ -234,14 +234,29 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
         return;
       }
       // Verify identity AND this application's access before rendering anything.
-      const [meRes, appsRes] = await Promise.all([
-        apiGet<AppPrincipal>("/app/auth/me").catch(() => null),
-        apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications").catch(() => null),
-      ]);
+      // A transient failure (API restarting, gateway error) must NOT be read as
+      // a dead session — only a 401/403 is the backend rejecting the token.
+      let meRes: AppPrincipal | null = null;
+      let authRejected = false;
+      try {
+        meRes = await apiGet<AppPrincipal>("/app/auth/me");
+      } catch (err) {
+        const status = (err as { status?: number })?.status;
+        authRejected = status === 401 || status === 403;
+      }
+      const appsRes = await apiGet<{ applications: ApplicationCard[] }>("/app/auth/applications").catch(() => null);
       if (!alive) return;
-      if (!meRes) {
+      if (!meRes && authRejected) {
         // Session invalid/expired — go to login without flashing the app.
         window.location.replace(coreLoginUrl());
+        return;
+      }
+      if (!meRes) {
+        // Could not verify right now: keep the stored session, render the shell,
+        // and let the store re-hydrate when the API recovers. Signing the
+        // operator out here would turn a blip into a new OTP round-trip.
+        setMe(null);
+        setAuthReady(true);
         return;
       }
       setMe(meRes);

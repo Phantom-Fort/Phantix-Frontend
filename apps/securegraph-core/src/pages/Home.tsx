@@ -99,7 +99,7 @@ export default function Home() {
 
         <motion.p {...fadeUp(0.16)} className="mx-auto mt-5 max-w-xl text-[16px] leading-7 text-slate-400">
           Assets, scans, VAPT campaigns, risks, compliance and verified-only reports --- running against a
-          privacy-first backend where your data never leaves your database.
+          privacy-first platform where your data never leaves your database.
         </motion.p>
 
         <motion.div {...fadeUp(0.24)} className="mt-9 flex flex-wrap items-center justify-center gap-3.5">

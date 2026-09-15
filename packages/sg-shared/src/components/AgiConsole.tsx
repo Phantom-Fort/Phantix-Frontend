@@ -36,7 +36,7 @@ import {
   type NodeStatus,
 } from "../agiGraph";
 import type { AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk, Severity } from "../types";
-import { cx } from "../utils";
+import { cx, humanize } from "../utils";
 import { useStickToBottom } from "../useStickToBottom";
 import type { SendHint } from "../useChatSend";
 
@@ -104,7 +104,7 @@ function NodeInspector({ node }: { node: AttackNode }) {
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={cx("h-2 w-2 shrink-0 rounded-full", NODE_DOT[node.status])} />
         <p className="wb-sm min-w-0 font-semibold text-white">{node.label}</p>
-        <span className="chip !px-1.5 !py-0 wb-2xs capitalize text-slate-400">{node.status}</span>
+        <span className="chip !px-1.5 !py-0 wb-2xs capitalize text-slate-400">{humanize(node.status)}</span>
         {node.tool && <span className="chip !px-1.5 !py-0 wb-2xs font-mono text-gold-300">{node.tool}</span>}
       </div>
 
@@ -203,7 +203,7 @@ function EvidenceDrawer({
                 <span className={cx("inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium", badge.cls)}>
                   {badge.icon} {badge.label}
                 </span>
-                {v?.verifier && <span className="wb-2xs font-mono text-slate-500">{v.verifier}</span>}
+                {v?.verifier && <span className="wb-2xs font-mono text-slate-500">{humanize(v.verifier)}</span>}
                 {v?.by && <span className="wb-2xs text-slate-600">by {v.by}</span>}
               </div>
               {v?.reason && <p className="wb-2xs mt-1.5 leading-relaxed text-slate-400">{v.reason}</p>}
@@ -244,7 +244,7 @@ function EvidenceDrawer({
             )}
             <div className="flex flex-wrap gap-1.5 text-slate-500">
               {finding.evidence.hash && <span className="chip !px-1.5 !py-0 wb-2xs font-mono">{finding.evidence.hash}</span>}
-              <span className="chip !px-1.5 !py-0 wb-2xs capitalize">{finding.status}</span>
+              <span className="chip !px-1.5 !py-0 wb-2xs capitalize">{humanize(finding.status)}</span>
             </div>
             {finding.evidence.notes && <p className="wb-xs leading-relaxed text-slate-400">{finding.evidence.notes}</p>}
           </div>

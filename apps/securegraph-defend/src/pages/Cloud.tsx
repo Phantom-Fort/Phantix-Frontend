@@ -16,7 +16,7 @@ import {
   rotateCloudSecret, deleteCloudConnector, cloudIngestUrl, loadIntelDashboard, loadCloudPosture,
 } from "@sg/data";
 import { useStore } from "@sg/store";
-import { cx, timeAgo, titleCase } from "@sg/utils";
+import { cx, timeAgo, titleCase, humanize } from "@sg/utils";
 import type { CloudProvider, CloudConnector } from "@sg/types";
 import { UpsellBanner } from "@sg/components/UpgradeGate";
 
@@ -267,7 +267,7 @@ export default function Cloud() {
                       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-phantix-800 text-phantix-300"><CloudIcon size={16} /></span>
                       <div className="min-w-0">
                         <p className="font-medium text-slate-100 truncate">{c.label || c.provider}</p>
-                        <p className="text-[13px] text-slate-500">{c.provider}</p>
+                        <p className="text-[13px] text-slate-500">{humanize(c.provider)}</p>
                       </div>
                     </div>
                     <span className={cx("chip shrink-0 text-[12px]", (c.is_active ?? c.active ?? true) ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>

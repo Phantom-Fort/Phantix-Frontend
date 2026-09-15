@@ -46,7 +46,7 @@ export default function App() {
           }
         >
           <Route path="/" element={<Overview application={"defend" as ApplicationKey} nav={NAV} />} />
-          <Route path="/assets" element={<Assets />} />
+          <Route path="/assets" element={<Assets title="Assets" />} />
           <Route path="/assets/intelligence" element={<AssetIntelligence />} />
           <Route path="/assets/intelligence/graph" element={<AssetGraph />} />
           <Route path="/posture" element={<Posture />} />

@@ -621,7 +621,7 @@ export default function Dashboard() {
             <div className="px-5 pt-5">
               <CardHeader
                 title="Live event rail"
-                subtitle="SSE command-center stream"
+                subtitle="Live command-centre updates"
                 action={
                   <span className={cx(
                     "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[12px] font-medium",
@@ -697,7 +697,7 @@ export default function Dashboard() {
         >
           <Zap size={16} className="shrink-0 text-gold-400" />
           <p className="min-w-0 flex-1 text-xs leading-5 text-slate-400">
-            You're browsing read-only. Unlock operate mode for mutations (tracker PATCH, report generate, intel refresh) when dual-control is configured.
+            You're browsing read-only. Unlock operate mode for changes (tracker updates, report generation, intel refresh) when dual-control is configured.
           </p>
           <button
             type="button"

@@ -125,7 +125,7 @@ export default function AuthorizerInbox() {
           else demo.authorizerInbox.counts.dualControl = Math.max(0, demo.authorizerInbox.counts.dualControl - 1);
         }
       } else {
-        await api.post(path, body);
+        await api.post(path, body, { dualControl: true });
       }
       toast("success", approve ? "Approved" : "Rejected");
       reload();

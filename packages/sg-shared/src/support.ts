@@ -24,6 +24,58 @@ export interface SupportMessage {
   created_at: string;
 }
 
+/** Keep only real objects so a malformed array entry can never be dereferenced. */
+function asRecord(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+/** Accept both the app shape (author_name/body/created_at) and the backend
+ *  shape (from/message/at) so a thread renders whatever the API sent. */
+function normalizeMessage(raw: unknown, index: number): SupportMessage | null {
+  const m = asRecord(raw);
+  if (Object.keys(m).length === 0) return null;
+  const body = String(m.body ?? m.message ?? "");
+  const authorName = m.author_name ?? m.submitter_name ?? m.from ?? null;
+  if (!body && authorName == null) return null;
+  return {
+    id: m.id != null && !Number.isNaN(Number(m.id)) ? Number(m.id) : index,
+    author_type: String(m.author_type ?? m.from_type ?? (m.is_internal ? "admin" : "customer")),
+    author_name: authorName == null ? null : String(authorName),
+    body,
+    is_internal: m.is_internal === true,
+    created_at: String(m.created_at ?? m.at ?? new Date().toISOString()),
+  };
+}
+
+/** Coerce an API ticket of either shape into a SupportTicket without throwing
+ *  on missing fields, null entries, or a non-array `messages` value. */
+function normalizeTicket(raw: unknown): SupportTicket | null {
+  const t = asRecord(raw);
+  if (Object.keys(t).length === 0) return null;
+  if (t.id == null && t.subject == null && t.reference == null) return null;
+  const messages = (Array.isArray(t.messages) ? t.messages : [])
+    .map((m, i) => normalizeMessage(m, i))
+    .filter((m): m is SupportMessage => m !== null);
+  return {
+    id: Number(t.id ?? 0),
+    organization_id: t.organization_id != null ? Number(t.organization_id) : undefined,
+    reference: t.reference != null ? String(t.reference) : undefined,
+    subject: String(t.subject ?? ""),
+    category: t.category != null ? String(t.category) : undefined,
+    priority: String(t.priority ?? "medium"),
+    status: String(t.status ?? "open"),
+    body: t.body != null ? String(t.body) : undefined,
+    submitter_name: t.submitter_name != null ? String(t.submitter_name) : null,
+    submitter_email: t.submitter_email != null ? String(t.submitter_email) : null,
+    assigned_to: t.assigned_to != null ? String(t.assigned_to) : null,
+    last_activity_at: t.last_activity_at != null ? String(t.last_activity_at) : undefined,
+    created_at: String(t.created_at ?? new Date().toISOString()),
+    updated_at: t.updated_at != null ? String(t.updated_at) : undefined,
+    message_count: t.message_count != null ? Number(t.message_count) : messages.length,
+    messages,
+  };
+}
+
 export interface SupportTicket {
   id: number;
   organization_id?: number;
@@ -117,7 +169,8 @@ export async function loadSupportTickets(status?: string): Promise<SupportTicket
   }
   const q = status ? `?status=${encodeURIComponent(status)}` : "";
   const res = await api.get<SupportTicket[] | { items?: SupportTicket[] }>(`${BASE}${q}`);
-  return Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  const list = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
+  return list.map(normalizeTicket).filter((t): t is SupportTicket => t !== null);
 }
 
 export async function getSupportTicket(ticketId: number): Promise<SupportTicket> {
@@ -125,7 +178,14 @@ export async function getSupportTicket(ticketId: number): Promise<SupportTicket>
     await delay(160);
     return demo[0];
   }
-  return api.get<SupportTicket>(`${BASE}/${ticketId}`);
+  return normalizeTicket(await api.get<SupportTicket>(`${BASE}/${ticketId}`)) ?? {
+    id: ticketId,
+    subject: "",
+    priority: "medium",
+    status: "open",
+    created_at: new Date().toISOString(),
+    messages: [],
+  };
 }
 
 export async function createSupportTicket(input: CreateTicketInput): Promise<SupportTicket> {
@@ -133,14 +193,23 @@ export async function createSupportTicket(input: CreateTicketInput): Promise<Sup
     await delay(400);
     return { ...demo[0], id: Date.now(), reference: "PHX-DEMO", status: "open", messages: [] };
   }
-  return api.post<SupportTicket>(BASE, {
+  return normalizeTicket(
+    await api.post<SupportTicket>(BASE, {
+      subject: input.subject,
+      body: input.body,
+      category: input.category,
+      priority: input.priority,
+      ...(input.submitter_name ? { submitter_name: input.submitter_name } : {}),
+      ...(input.submitter_email ? { submitter_email: input.submitter_email } : {}),
+    }),
+  ) ?? {
+    id: Date.now(),
     subject: input.subject,
-    body: input.body,
-    category: input.category,
     priority: input.priority,
-    ...(input.submitter_name ? { submitter_name: input.submitter_name } : {}),
-    ...(input.submitter_email ? { submitter_email: input.submitter_email } : {}),
-  });
+    status: "open",
+    created_at: new Date().toISOString(),
+    messages: [],
+  };
 }
 
 export async function replySupportTicket(ticketId: number, body: string): Promise<SupportTicket> {
@@ -148,7 +217,14 @@ export async function replySupportTicket(ticketId: number, body: string): Promis
     await delay(300);
     return demo[0];
   }
-  return api.post<SupportTicket>(`${BASE}/${ticketId}/messages`, { body });
+  return normalizeTicket(await api.post<SupportTicket>(`${BASE}/${ticketId}/messages`, { body })) ?? {
+    id: ticketId,
+    subject: "",
+    priority: "medium",
+    status: "open",
+    created_at: new Date().toISOString(),
+    messages: [],
+  };
 }
 
 export function ticketAge(ticket: SupportTicket): string {

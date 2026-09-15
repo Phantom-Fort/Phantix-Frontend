@@ -5,7 +5,7 @@ import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyStat
 import { loadAdvisorDashboard, loadAdvisorRecommendations, updateAdvisorRecommendation, loadAdvisorReports, generateAdvisorReport, publishAdvisorReport, deleteAdvisorReport } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
-import { timeAgo, cx } from "@sg/utils";
+import { timeAgo, cx, humanize } from "@sg/utils";
 import type { SocAdvisorDashboard, SocAdvisorRecommendation, SocAdvisorReport } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
@@ -171,7 +171,7 @@ export default function SocAdvisor() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-200">{r.title}</p>
-                    <p className="text-xs text-slate-500">{r.report_type} &middot; {timeAgo(r.created_at || "")}</p>
+                    <p className="text-xs text-slate-500">{humanize(r.report_type)} · {timeAgo(r.created_at || "")}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {r.status === "draft" && (
