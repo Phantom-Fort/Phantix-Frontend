@@ -4,6 +4,7 @@
 // *organization* (so it can be worked by any operator, and support answers the
 // account), while the operator who raised it is recorded as the submitter.
 import { api, delay, isDemoMode } from "./api";
+import { sanitizeMultiline, sanitizeSingleLine } from "./uploadValidation";
 
 export type TicketStatus = "open" | "in_progress" | "waiting_on_customer" | "resolved" | "closed";
 export type TicketPriority = "low" | "medium" | "high" | "critical";
@@ -189,22 +190,28 @@ export async function getSupportTicket(ticketId: number): Promise<SupportTicket>
 }
 
 export async function createSupportTicket(input: CreateTicketInput): Promise<SupportTicket> {
+  const subject = sanitizeSingleLine(input.subject).slice(0, 255);
+  const body = sanitizeMultiline(input.body).slice(0, 20_000);
+  const submitterName = sanitizeSingleLine(input.submitter_name ?? "").slice(0, 255);
+  const submitterEmail = (input.submitter_email ?? "").trim();
+  if (subject.length < 3) throw new Error("Subject must be at least 3 characters.");
+  if (!body) throw new Error("Add a description of the issue.");
   if (isDemoMode()) {
     await delay(400);
     return { ...demo[0], id: Date.now(), reference: "PHX-DEMO", status: "open", messages: [] };
   }
   return normalizeTicket(
     await api.post<SupportTicket>(BASE, {
-      subject: input.subject,
-      body: input.body,
+      subject,
+      body,
       category: input.category,
       priority: input.priority,
-      ...(input.submitter_name ? { submitter_name: input.submitter_name } : {}),
-      ...(input.submitter_email ? { submitter_email: input.submitter_email } : {}),
+      ...(submitterName ? { submitter_name: submitterName } : {}),
+      ...(submitterEmail ? { submitter_email: submitterEmail } : {}),
     }),
   ) ?? {
     id: Date.now(),
-    subject: input.subject,
+    subject,
     priority: input.priority,
     status: "open",
     created_at: new Date().toISOString(),
@@ -213,11 +220,13 @@ export async function createSupportTicket(input: CreateTicketInput): Promise<Sup
 }
 
 export async function replySupportTicket(ticketId: number, body: string): Promise<SupportTicket> {
+  const cleanBody = sanitizeMultiline(body).slice(0, 20_000);
+  if (!cleanBody) throw new Error("Write a message first.");
   if (isDemoMode()) {
     await delay(300);
     return demo[0];
   }
-  return normalizeTicket(await api.post<SupportTicket>(`${BASE}/${ticketId}/messages`, { body })) ?? {
+  return normalizeTicket(await api.post<SupportTicket>(`${BASE}/${ticketId}/messages`, { body: cleanBody })) ?? {
     id: ticketId,
     subject: "",
     priority: "medium",

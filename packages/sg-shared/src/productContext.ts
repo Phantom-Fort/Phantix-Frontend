@@ -9,6 +9,7 @@
 // helper only; it is not consulted by the live threat-models page.
 import { api, ApiError, delay, isDemoMode } from "./api";
 import * as demo from "./demo-data";
+import { sanitizeMultiline, sanitizeSingleLine, validateUploadFile } from "./uploadValidation";
 
 export const PROJECT_STAGES = ["planned", "in_build", "live"] as const;
 export type ProjectStage = (typeof PROJECT_STAGES)[number];
@@ -134,28 +135,34 @@ export async function listProjects(activeOnly = true) {
 }
 
 export async function createProject(name: string, stage: ProjectStage) {
+  const cleanName = sanitizeSingleLine(name).slice(0, 255);
+  if (!cleanName) throw new Error("Enter a project name.");
   if (isDemoMode()) {
     await delay(360);
     const now = new Date().toISOString();
     return {
       id: Math.max(0, ...demo.productProjects.map((p) => p.id)) + 1,
-      name,
+      name: cleanName,
       stage,
       active: true,
       created_at: now,
       updated_at: now,
     };
   }
-  return api.post<ProductProject>("/context/projects", { name, stage });
+  return api.post<ProductProject>("/context/projects", { name: cleanName, stage });
 }
 
 /** PATCH /context/projects/{id} — correct the product information after creation. */
 export async function updateProject(projectId: number, patch: { name?: string; stage?: ProjectStage }) {
+  const cleanPatch = {
+    ...patch,
+    ...(patch.name !== undefined ? { name: sanitizeSingleLine(patch.name).slice(0, 255) } : {}),
+  };
   if (isDemoMode()) {
     await delay(300);
-    return { id: projectId, ...patch } as Partial<ProductProject> & { id: number };
+    return { id: projectId, ...cleanPatch } as Partial<ProductProject> & { id: number };
   }
-  return api.patch<ProductProject>(`/context/projects/${projectId}`, patch);
+  return api.patch<ProductProject>(`/context/projects/${projectId}`, cleanPatch);
 }
 
 // ── Readiness — what a threat model needs vs what the project has ────────────
@@ -289,7 +296,11 @@ export async function ingestDocument(projectId: number, input: { text: string; t
   }
   return api.post<{ execution?: string; task_id?: string; message?: string }>(
     `/context/projects/${projectId}/documents`,
-    { text: input.text, title: input.title ?? "", kind: input.kind ?? "requirements" },
+    {
+      text: sanitizeMultiline(input.text) || input.text,
+      title: sanitizeSingleLine(input.title ?? "").slice(0, 255),
+      kind: input.kind ?? "requirements",
+    },
   );
 }
 
@@ -300,7 +311,7 @@ export async function answerContextClarification(clarificationId: number, answer
   }
   return api.post<{ clarification_id: number; applied: boolean }>(
     `/context/clarifications/${clarificationId}/answer`,
-    { answer },
+    { answer: sanitizeMultiline(answer) },
   );
 }
 
@@ -309,6 +320,8 @@ export async function answerContextClarification(clarificationId: number, answer
  * back as a 400 with the parse reason, which is what the uploader needs to see.
  */
 export async function uploadDiagram(projectId: number, file: File, replace = true): Promise<Record<string, unknown>> {
+  const invalid = validateUploadFile(file, "diagram");
+  if (invalid) throw new Error(invalid);
   if (isDemoMode()) {
     await delay(900);
     const graph = demo.projectGraphs[projectId] ?? { components: [], flows: [], boundaries: [] };

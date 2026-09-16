@@ -69,6 +69,7 @@ import type {
   VaptCampaign,
   VaptFinding,
   IntegrationConnector,
+  IntegrationCatalogPage,
   IntegrationInstallation,
   MitreMatrix,
   MitreStats,
@@ -303,16 +304,32 @@ export async function loadScansBundle() {
     };
   }
   const meta: LoadMeta = {};
-  const [scanJobs, scanResults] = await Promise.all([
+  const [rawJobs, scanResults] = await Promise.all([
     softList<ScanJob>("/scans/jobs", meta),
     softList<ScanResult>("/scans/results?limit=500", meta),
   ]);
   return {
-    scanJobs,
+    scanJobs: rawJobs.map(normalizeScanJob),
     scanResults: scanResults.map(normalizeScanResult),
     securityDbBlocked: !!meta.securityDbBlocked,
     error: meta.error ?? null,
   };
+}
+
+/** Server progress is now an object ({targets_percent, checks_percent, …});
+ *  expose a normalized 0–100 number plus the detail for the UI. */
+export function normalizeScanJob(raw: ScanJob | Record<string, unknown>): ScanJob {
+  const job = raw as unknown as ScanJob & { progress?: unknown };
+  const p = job.progress;
+  let pct = 0;
+  let detail: import("./types").ScanProgressDetail | undefined;
+  if (typeof p === "number") {
+    pct = p;
+  } else if (p && typeof p === "object") {
+    detail = p as import("./types").ScanProgressDetail;
+    pct = Math.round(Number(detail.checks_percent ?? detail.targets_percent ?? 0));
+  }
+  return { ...job, progress: pct, progress_detail: detail };
 }
 
 /** Promote evidence.verification / evidence.impact_analysis to top-level ScanResult fields. */
@@ -2611,6 +2628,16 @@ export async function startReputationScan(body: Record<string, unknown>): Promis
   return startScan(body);
 }
 
+/** Resume an interrupted/partial scan (POST /scans/jobs/{id}/resume).
+ *  Clones the job server-side, skipping work items that already completed. */
+export async function resumeScan(jobId: number): Promise<ScanJob> {
+  if (isDemoMode()) {
+    await delay(300);
+    return { ...(demo.scanJobs[0] as ScanJob), id: Date.now(), status: "queued", progress: 0 };
+  }
+  return api.post<ScanJob>(`/scans/jobs/${jobId}/resume`, {});
+}
+
 // ── Orchestration: External pentest scope + ROE loaders ──────────────────────
 export function loadPentestPattern(): Promise<PentestScopePattern> {
   if (isDemoMode()) { return delay(160).then(() => demo.pentestPattern); }
@@ -2932,14 +2959,50 @@ export async function checkCloudConnectionStatus(id: number): Promise<Record<str
 }
 
 // ── Integrations Hub ──────────────────────────────────────────────────────────
-export async function loadHubCatalog(): Promise<IntegrationConnector[]> {
-  if (isDemoMode()) { await delay(200); return demo.hubCatalog; }
-  return api.get<IntegrationConnector[] | { connectors: IntegrationConnector[] }>("/integrations/catalog").then(r => (r as { connectors: IntegrationConnector[] }).connectors ?? r as IntegrationConnector[]);
+export interface HubCatalogQuery {
+  page?: number;
+  pageSize?: number;
+  category?: string;
+  q?: string;
+  status?: string;
+}
+
+/** Server-paginated connector catalogue (20/page by default). */
+export async function loadHubCatalog(query: HubCatalogQuery = {}): Promise<IntegrationCatalogPage> {
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.max(1, query.pageSize ?? 20);
+  if (isDemoMode()) {
+    await delay(200);
+    const all = demo.hubCatalog;
+    const start = (page - 1) * pageSize;
+    return {
+      items: all.slice(start, start + pageSize),
+      total: all.length,
+      page,
+      page_size: pageSize,
+      pages: Math.max(1, Math.ceil(all.length / pageSize)),
+    };
+  }
+  const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  if (query.category) params.set("category", query.category);
+  if (query.q) params.set("q", query.q);
+  if (query.status) params.set("status", query.status);
+  const r = await api.get<IntegrationCatalogPage | IntegrationConnector[]>(
+    `/integrations/catalog?${params.toString()}`,
+  );
+  if (Array.isArray(r)) {
+    return { items: r, total: r.length, page, page_size: pageSize, pages: 1 };
+  }
+  return { ...r, items: r.items ?? r.connectors ?? [] };
 }
 
 export async function loadHubInstallations(): Promise<IntegrationInstallation[]> {
   if (isDemoMode()) { await delay(200); return demo.hubInstallations; }
-  return api.get<IntegrationInstallation[] | { installations: IntegrationInstallation[] }>("/integrations/installations").then(r => (r as { installations: IntegrationInstallation[] }).installations ?? r as IntegrationInstallation[]);
+  const r = await api.get<
+    IntegrationInstallation[] | { items?: IntegrationInstallation[]; installations?: IntegrationInstallation[] }
+  >("/integrations/installations");
+  if (Array.isArray(r)) return r;
+  return r.items ?? r.installations ?? [];
 }
 
 export async function installHubIntegration(body: Record<string, unknown>): Promise<IntegrationInstallation> {

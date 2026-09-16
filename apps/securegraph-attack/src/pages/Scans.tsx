@@ -5,13 +5,13 @@ import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationB
 import { Pagination } from "@sg/components/Pagination";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import DocLink from "@sg/components/DocLink";
-import { loadScansBundle, verifyScanResult, startScan, scanConsentRequired, type ScanConsentDocument } from "@sg/data";
+import { loadScansBundle, verifyScanResult, startScan, resumeScan, scanConsentRequired, type ScanConsentDocument } from "@sg/data";
 import ScanConsentModal from "@sg/components/ScanConsentModal";
 import { useResource } from "@sg/useResource";
 import { useOperations } from "@sg/operations";
 import { timeAgo, formatDateTime, cx, severityHex, humanize } from "@sg/utils";
 import { useStore } from "@sg/store";
-import type { VerificationStatus, ScanResult } from "@sg/types";
+import type { VerificationStatus, ScanResult, ScanJob } from "@sg/types";
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -33,6 +33,7 @@ export default function Scans() {
   const [newTools, setNewTools] = useState<Record<string, boolean>>({ nmap: true, nuclei: true, apk: false });
   const [newFilter, setNewFilter] = useState("tags:external");
   const [scanBusy, setScanBusy] = useState(false);
+  const [resumeBusy, setResumeBusy] = useState<number | null>(null);
   const [consent, setConsent] = useState<{ documents: ScanConsentDocument[]; missing: string[] } | null>(null);
   const [selected, setSelected] = useState<ScanResult | null>(null);
   const [note, setNote] = useState("");
@@ -41,7 +42,11 @@ export default function Scans() {
    *  github_analysis is a SEPARATE family and must NOT block network scans). */
   const isGithubAnalysis = (j: { job_type?: string; tools?: string[] }) =>
     j.job_type === "github_analysis" || (j.tools ?? []).includes("github_analysis");
-  const runningFilter = (j: { status?: string }) => j.status === "running" || j.status === "queued";
+  const runningFilter = (j: { status?: string }) => j.status === "running" || j.status === "queued" || j.status === "pending";
+  /** Stopped-but-resumable: operator validates dual control once and continues. */
+  const resumableJob = (j: ScanJob) =>
+    (j.status === "interrupted" || j.status === "completed_partial" || j.status === "failed") &&
+    j.resumable !== false;
   const active = scanJobs.find((j) => runningFilter(j) && !isGithubAnalysis(j));
   const githubActive = scanJobs.find((j) => runningFilter(j) && isGithubAnalysis(j));
 
@@ -72,6 +77,21 @@ export default function Scans() {
       toast("error", "Scan failed", e instanceof Error ? e.message : "");
     } finally {
       setScanBusy(false);
+    }
+  };
+
+  /** Resume a stopped scan: server clones the job and skips completed work. */
+  const resumeJob = async (jobId: number) => {
+    if (!(await requireDualControl("Resuming scans requires a dual-control operate session."))) return;
+    setResumeBusy(jobId);
+    try {
+      await resumeScan(jobId);
+      toast("success", "Scan resumed", "Continuing from where it stopped --- completed work is skipped.");
+      reload();
+    } catch (e) {
+      toast("error", "Resume failed", e instanceof Error ? e.message : "");
+    } finally {
+      setResumeBusy(null);
     }
   };
 
@@ -277,6 +297,7 @@ export default function Scans() {
                   <th className="th">Findings</th>
                   <th className="th">Initiated by</th>
                   <th className="th">Finished</th>
+                  <th className="th">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -304,6 +325,19 @@ export default function Scans() {
                     <td className="td font-semibold text-slate-200">{j.findings_count}</td>
                     <td className="td text-xs text-slate-400">{j.initiated_by}</td>
                     <td className="td text-xs text-slate-500">{j.finished_at ? formatDateTime(j.finished_at) : "---"}</td>
+                    <td className="td">
+                      {resumableJob(j) ? (
+                        <button
+                          className="btn-secondary !py-1.5 text-xs"
+                          disabled={resumeBusy === j.id}
+                          onClick={() => void resumeJob(j.id)}
+                        >
+                          {resumeBusy === j.id ? "Resuming..." : "Resume"}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-600">---</span>
+                      )}
+                    </td>
                   </tr>
                   );
                 })}
