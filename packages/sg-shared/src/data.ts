@@ -2397,6 +2397,27 @@ export async function deleteCloudConnector(id: number): Promise<void> {
   return api.delete<void>(`/cloud-security/connectors/${id}`);
 }
 
+/** Live API poller capability map (webhook-only providers incl. Contabo OAuth2). */
+export interface CloudPollerCapability {
+  provider: string;
+  displayName: string;
+  auth: string;
+  liveApi: boolean;
+  note: string;
+}
+
+export async function loadCloudPollers(): Promise<CloudPollerCapability[]> {
+  if (isDemoMode()) { await delay(120); return []; }
+  const d = await api.get<{ items?: CloudPollerCapability[] }>("/cloud-security/pollers");
+  return d?.items ?? [];
+}
+
+/** Poll an API-mode connector (Contabo OAuth2, Hetzner/Vercel bearer, …) now. */
+export async function syncCloudConnector(id: number): Promise<Record<string, unknown>> {
+  if (isDemoMode()) { await delay(400); return { connectorId: id, accepted: 0, results: [] }; }
+  return api.post<Record<string, unknown>>(`/cloud-security/connectors/${id}/sync`, {});
+}
+
 export async function loadIntelDashboard(): Promise<IntelDashboard> {
   if (isDemoMode()) { return delay(220).then(() => demo.intelDashboard); }
   const d = await api.get<IntelDashboard | null>("/cloud-security/dashboard");
