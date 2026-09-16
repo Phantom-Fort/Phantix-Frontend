@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Cloud as CloudIcon, Plus, Trash2, KeyRound, Copy, ExternalLink, RefreshCw,
+  Cloud as CloudIcon, Plus, Trash2, KeyRound, Copy, ExternalLink, RefreshCw, Zap,
   Plug, Activity, Radar, ShieldAlert, CheckCircle2, XCircle, Pause, Play, Search, Globe2,
 } from "lucide-react";
 import {
@@ -14,6 +14,7 @@ import { useResource } from "@sg/useResource";
 import {
   loadCloudProviders, loadCloudConnectors, createCloudConnector, patchCloudConnector,
   rotateCloudSecret, deleteCloudConnector, cloudIngestUrl, loadIntelDashboard, loadCloudPosture,
+  loadCloudPollers, syncCloudConnector,
 } from "@sg/data";
 import { useStore } from "@sg/store";
 import { cx, timeAgo, titleCase, humanize } from "@sg/utils";
@@ -49,6 +50,8 @@ export default function Cloud() {
 
   const providers = useResource<CloudProvider[]>(() => loadCloudProviders(), [], "cloud-providers");
   const connectors = useResource<CloudConnector[]>(() => loadCloudConnectors(), [], "cloud-connectors");
+  const pollers = useResource(() => loadCloudPollers(), [], "cloud-pollers");
+  const [syncing, setSyncing] = useState<number | null>(null);
   const intel = useResource<{ matched: number; unmatched: number }>(
     async () => {
       const d = await loadIntelDashboard();
@@ -120,6 +123,22 @@ export default function Cloud() {
       connectors.reload();
     } catch (e) {
       toast("error", "Rotate failed", e instanceof Error ? e.message : "");
+    }
+  };
+
+  /** Live API pull for API-mode connectors (Contabo OAuth2, Hetzner/Vercel bearer). */
+  const sync = async (c: CloudConnector) => {
+    if (!(await requireDualControl("Polling a provider API requires dual-control."))) return;
+    setSyncing(c.id);
+    try {
+      const res = await syncCloudConnector(c.id);
+      const n = Number((res as { accepted?: number })?.accepted ?? 0);
+      toast("success", "Provider polled", `${n} event(s) ingested from ${humanize(c.provider)}.`);
+      connectors.reload();
+    } catch (e) {
+      toast("error", "Poll failed", e instanceof Error ? e.message : "");
+    } finally {
+      setSyncing(null);
     }
   };
 
@@ -284,6 +303,7 @@ export default function Cloud() {
 
                   <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-phantix-800/40">
                     <button className="btn-ghost p-1.5 text-xs" title={c.is_active ?? c.active ?? true ? "Pause" : "Enable"} onClick={() => void toggle(c)}>{(c.is_active ?? c.active ?? true) ? <Pause size={13} /> : <Play size={13} />}</button>
+                    <button className="btn-ghost p-1.5 text-xs text-phantix-300" title="Poll provider API now (read-only)" disabled={syncing === c.id} onClick={() => void sync(c)}><RefreshCw size={13} className={syncing === c.id ? "animate-spin" : undefined} /></button>
                     <button className="btn-ghost p-1.5 text-xs text-gold-400" title="Rotate secret" onClick={() => void rotate(c)}><KeyRound size={13} /></button>
                     <button className="btn-ghost p-1.5 text-xs ml-auto text-slate-400" title="Copy ingest URL" onClick={() => copy(cloudIngestUrl(c), "Ingest URL")}><Copy size={13} /></button>
                     <button className="btn-ghost p-1.5 text-xs text-severity-critical" title="Delete" onClick={() => void remove(c)}><Trash2 size={13} /></button>
@@ -396,6 +416,9 @@ export default function Cloud() {
                           <span className="chip text-[11px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account</span>
                         ) : (
                           <span className="chip text-[11px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook</span>
+                        )}
+                        {pollers.data.some((x) => x.provider === p.id && x.liveApi) && (
+                          <span className="chip text-[11px] border-phantix-400/30 bg-phantix-400/10 text-phantix-200"><Zap size={9} /> Live API</span>
                         )}
                         {(p.engines ?? []).map((engine) => (
                           <span key={engine} className="chip text-[11px] border-phantix-700/50 text-slate-500">{engine}</span>

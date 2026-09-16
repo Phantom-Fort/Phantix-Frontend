@@ -13,9 +13,18 @@ import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL, IS_DEV_HOSTS } from "./confi
 export type ApplicationKey = "core" | "attack" | "defend" | "code";
 
 export interface ApplicationSurface {
+  /** Stable section id (`core.reports`, `attack.vapt`…) used by the section gate. */
+  section_key?: string;
   path: string;
   label: string;
   group: string;
+  /** Backend API prefixes this page drives. */
+  api?: string[];
+  /** `free` = always-included experience; `paid` = Starter/Growth section. */
+  gate?: "free" | "paid";
+  /** True when the section is a paid one and the org is on Free. */
+  locked?: boolean;
+  lock_reason?: string | null;
 }
 
 export interface ApplicationCard {
@@ -38,6 +47,13 @@ export interface ApplicationsSnapshot {
   applications: ApplicationCard[];
   enabled: ApplicationKey[];
   default: ApplicationKey;
+  /** Resolved plan when section gating is enforced (`free`, `starter`, `growth`, `enterprise`). */
+  plan?: string | null;
+  section_gate?: {
+    enforced: boolean;
+    unlocked_for_current_plan: boolean;
+    upgrade_to: string | null;
+  };
 }
 
 /** Apps in launcher order. */
@@ -66,8 +82,9 @@ function demoSnapshot(): ApplicationsSnapshot {
         key: "core",
         label: "Core",
         tagline: "Connect the security picture",
-        description: "Unified security graph — overview, findings, risk, reports, context and AI.",
-        capabilities: ["Overview", "Findings", "Risk", "Reports", "Context", "AI"],
+        description:
+          "Core is the security graph every other application writes into — assets, findings, risk, reports and alerts in one place.",
+        capabilities: ["Overview", "Findings", "Risk", "Reports", "Alerts", "AI"],
         order: 0,
         base: true,
         entitled: true,
@@ -79,8 +96,9 @@ function demoSnapshot(): ApplicationsSnapshot {
         key: "attack",
         label: "Attack",
         tagline: "Test your security",
-        description: "Offensive testing — VAPT, web/API scans, code security and attack paths.",
-        capabilities: ["Targets", "VAPT", "Web", "APIs", "Code", "Pentest"],
+        description:
+          "Attack tests your own security the way an attacker would: scoped VAPT campaigns, web, API and mobile scans, and an autonomous pentest agent.",
+        capabilities: ["Targets", "VAPT", "Web", "APIs", "Mobile", "Pentest"],
         order: 1,
         base: false,
         entitled: true,
@@ -105,7 +123,8 @@ function demoSnapshot(): ApplicationsSnapshot {
         key: "code",
         label: "Code",
         tagline: "Design and build it securely",
-        description: "Code security, code graph, threat modelling and product context.",
+        description:
+          "Code catches security problems before they ship: repository review with the fix offered back as a pull request, plus the threat models and product context that define what secure means for your system.",
         capabilities: ["Code review", "Code graph", "Threat models", "Product context"],
         order: 3,
         base: false,

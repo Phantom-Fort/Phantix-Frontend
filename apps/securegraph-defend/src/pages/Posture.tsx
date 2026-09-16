@@ -26,6 +26,16 @@ interface PostureSnapshot {
   overall_score?: number | null;
   surfaces_covered?: number;
   generated_at?: string;
+  asset_posture_score?: number | null;
+  findings_adjusted_score?: number | null;
+  findings?: {
+    total?: number;
+    open?: number;
+    critical_open?: number;
+    high_open?: number;
+    bySeverity?: Record<string, number>;
+    bySurface?: Record<string, number>;
+  };
 }
 
 interface DueRisk {
@@ -147,15 +157,29 @@ export default function Posture() {
       ) : (
         <div className="space-y-5">
           {/* Overall + surfaces */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <StatCard label="Overall posture" value={snapshot?.overall_score != null ? `${snapshot.overall_score}` : "—"} />
-            <StatCard label="Surfaces covered" value={snapshot?.surfaces_covered ?? 0} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            <StatCard label="Overall posture" value={snapshot?.overall_score != null ? `${snapshot.overall_score}` : "—"} hint="Reportable scan evidence" />
+            <StatCard
+              label="Findings-adjusted"
+              value={snapshot?.findings_adjusted_score != null ? `${snapshot.findings_adjusted_score}` : "—"}
+              hint="Open criticals/highs deducted"
+            />
+            <StatCard
+              label="Asset posture"
+              value={snapshot?.asset_posture_score != null ? `${snapshot.asset_posture_score}` : "—"}
+              hint="Dashboard asset-risk score"
+            />
+            <StatCard
+              label="Open findings"
+              value={snapshot?.findings?.open ?? 0}
+              hint={`${snapshot?.findings?.critical_open ?? 0} critical`}
+            />
             <StatCard label="Accepted risks due" value={due.length} />
             <StatCard label="Drift items" value={drift?.drift_count ?? 0} />
           </div>
 
           <Card>
-            <CardHeader title="Surfaces" subtitle="Reportable, critical and high findings per surface" action={<Layers size={16} className="text-gold-300" />} />
+            <CardHeader title="Surfaces" subtitle="Reportable, critical and high findings per surface (scan evidence)" action={<Layers size={16} className="text-gold-300" />} />
             {surfaces.length === 0 ? (
               <EmptyState icon={<Activity size={22} />} title="No posture yet" body="Posture builds as scans, reviews and assessments land." />
             ) : (

@@ -7,6 +7,9 @@ export interface NavLeaf {
   to: string;
   label: string;
   icon?: React.ReactNode;
+  /** Paid section the current plan has not unlocked (Free). Rendered with a lock. */
+  locked?: boolean;
+  lockReason?: string | null;
 }
 
 export interface NavSection {

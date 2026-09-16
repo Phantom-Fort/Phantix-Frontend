@@ -6,7 +6,7 @@ import {
   Building2, Eye, Repeat2, BookOpen,
 } from "lucide-react";
 import { useStore } from "@sg/store";
-import { loadPricing, pricingFootnote } from "@sg/pricing";
+import { loadPricing, pricingFootnote, yearlySavePercent } from "@sg/pricing";
 import type { PricingTier } from "@sg/pricing";
 import { LANDING_URL, PLATFORM_URL } from "@sg/links";
 import { cx } from "@sg/utils";
@@ -23,6 +23,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
+  const [cycle, setCycle] = useState<"monthly" | "yearly">("monthly");
 
   // A signed-in operator belongs at the application picker, not in Core's
   // dashboard: Core is one of four applications, not the default destination.
@@ -47,6 +48,13 @@ export default function Home() {
     enterDemo();
     navigate("/choose-app");
   };
+
+  // The pricing table matches the landing page: three paid cards carry the grid
+  // (Starter / Growth / Enterprise) and Free is promoted below it.
+  const freeTier = pricingTiers.find((t) => t.id === "free");
+  const paidTiers = (["starter", "growth", "enterprise"] as const)
+    .map((id) => pricingTiers.find((t) => t.id === id))
+    .filter((t): t is PricingTier => Boolean(t));
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
@@ -166,55 +174,128 @@ export default function Home() {
           </p>
         </motion.div>
 
-        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {pricingTiers.map((t, i) => (
-            <motion.div
-              key={t.id}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.55, delay: i * 0.09 }}
-              className={cx(
-                "card relative flex flex-col p-7",
-                t.highlighted && "border-gold-400/50 shadow-glow lg:-my-3 lg:py-10",
-              )}
-            >
-              {t.highlighted && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-3.5 py-1 text-[12px] font-bold uppercase tracking-wider text-phantix-950">
-                  Most popular
-                </span>
-              )}
-              <h3 className="font-display text-xl font-bold text-white">{t.name}</h3>
-              <p className="mt-1 text-sm text-slate-500">{t.tagline}</p>
-              <div className="mt-5">
-                {t.monthly_ngn !== null ? (
-                  <>
-                    <span className="font-display text-4xl font-bold text-white">{t.monthly_ngn === 0 ? "Free" : `₦${t.monthly_ngn.toLocaleString()}`}</span>
-                    {t.monthly_ngn > 0 && <span className="text-sm text-slate-500">/month</span>}
-                    {t.first_month_ngn != null && t.first_month_ngn > 0 && <p className="mt-1 text-xs text-emerald-400">First month ₦{t.first_month_ngn.toLocaleString()} — {t.monthly_ngn > 0 ? `${Math.round((1 - t.first_month_ngn / t.monthly_ngn) * 100)}% off` : "free"}</p>}
-                    {t.yearly_price_ngn != null && t.yearly_price_ngn > 0 && <p className="mt-0.5 text-[13px] text-slate-600">{t.yearly_note}</p>}
-                  </>
-                ) : (
-                  <span className="font-display text-4xl font-bold text-white">Custom</span>
+        {/* Monthly / annual toggle — annual is 10× monthly ("pay 10, get 12"). */}
+        <motion.div {...fadeUp(0.05)} className="mt-8 flex justify-center">
+          <div
+            role="tablist"
+            aria-label="Billing cycle"
+            className="inline-flex items-center gap-0.5 rounded-full border border-phantix-700/50 bg-phantix-900/60 p-1"
+          >
+            {(["monthly", "yearly"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="tab"
+                aria-selected={cycle === c}
+                onClick={() => setCycle(c)}
+                className={cx(
+                  "rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-200",
+                  cycle === c ? "bg-phantix-800 text-white shadow-sm" : "text-slate-500 hover:text-slate-300",
                 )}
-              </div>
-              <ul className="mt-6 flex-1 space-y-2.5">
-                {t.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-[13px] leading-5 text-slate-300">
-                    <CheckCircle2 size={14} className={cx("mt-0.5 shrink-0", t.highlighted ? "text-gold-400" : "text-emerald-400")} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              <a
-                href={`${PLATFORM_URL}/register`}
-                className={cx("mt-7 w-full", t.highlighted ? "btn-primary" : "btn-secondary")}
               >
-                {t.cta} <ArrowRight size={14} />
-              </a>
-            </motion.div>
-          ))}
+                {c === "monthly" ? "Monthly" : "Annual"}
+              </button>
+            ))}
+            {cycle === "yearly" && (
+              <span className="ml-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-gold-400/50 bg-gold-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gold-300">
+                Save ~{yearlySavePercent()}% · 2 months free
+              </span>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Paid plan cards */}
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
+          {paidTiers.map((t, i) => {
+            const monthly = t.monthly_ngn;
+            const yearly = cycle === "yearly" && t.yearly_price_ngn != null && t.yearly_price_ngn > 0;
+            const elevated = Boolean(t.highlighted) || t.id === "growth";
+            const custom = monthly === null;
+            const priceBig = custom
+              ? "Custom"
+              : monthly === 0
+                ? "NGN 0"
+                : yearly
+                  ? `₦${(t.yearly_price_ngn ?? 0).toLocaleString()}`
+                  : `₦${monthly.toLocaleString()}`;
+            const priceSuffix = custom || monthly === 0 ? "" : yearly ? "/yr" : "/mo";
+
+            return (
+              <motion.div
+                key={t.id}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.55, delay: i * 0.09 }}
+                className={cx(
+                  "card relative flex flex-col p-7",
+                  elevated
+                    ? "z-10 border-gold-400/60 bg-gradient-to-b from-phantix-850 to-phantix-900 shadow-glow lg:-translate-y-4"
+                    : "bg-gradient-to-b from-phantix-900/80 to-phantix-900/40",
+                )}
+              >
+                {elevated && (
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-phantix-950 shadow-glow">
+                    {t.badge ?? "Most popular"}
+                  </span>
+                )}
+
+                <h3 className="font-display text-xl font-bold tracking-tight text-white">{t.name}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-400">{t.tagline}</p>
+
+                <div className="mt-5 border-t border-phantix-700/40 pt-5">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className={cx("font-display font-bold tracking-tight tabular-nums text-white", custom ? "text-3xl" : "text-4xl")}>
+                      {priceBig}
+                    </span>
+                    {priceSuffix && <span className="text-sm font-medium text-slate-500">{priceSuffix}</span>}
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">
+                    {custom ? (
+                      <>{t.heroUnit || "Custom AI credits & volume"} — scoped and quoted per organization</>
+                    ) : yearly ? (
+                      <>Billed once a year — that&rsquo;s ≈₦{Math.round((t.yearly_price_ngn ?? 0) / 12).toLocaleString()}/mo</>
+                    ) : (
+                      <>
+                        {t.heroMetric} AI credits / month
+                        {t.first_month_ngn != null && t.first_month_ngn > 0 && (
+                          <>
+                            {" · "}
+                            <span className="text-emerald-400/90">first month ₦{t.first_month_ngn.toLocaleString()}</span>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <ul className="mt-6 flex-1 space-y-3">
+                  {t.features.slice(0, 5).map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-[13px] leading-5 text-slate-300">
+                      <CheckCircle2 size={15} className={cx("mt-0.5 shrink-0", elevated ? "text-gold-400" : "text-emerald-400")} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <a
+                  href={`${PLATFORM_URL}/register`}
+                  className={cx("mt-8 w-full", elevated ? "btn-primary" : "btn-secondary")}
+                >
+                  {t.cta} <ArrowRight size={14} />
+                </a>
+              </motion.div>
+            );
+          })}
         </div>
+
+        {/* Free is a promo below the grid, not a card. */}
+        <motion.div {...fadeUp(0.1)} className="mt-10 flex justify-center">
+          <a href={`${PLATFORM_URL}/register`} className="btn-secondary !px-6">
+            <Sparkles size={15} className="text-gold-400" />
+            {freeTier?.cta ?? "Start free"} — no card required
+          </a>
+        </motion.div>
 
         <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-5 text-slate-600">{pricingFootnote}</p>
       </section>

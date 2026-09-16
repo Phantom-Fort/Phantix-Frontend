@@ -29,6 +29,14 @@ import { useStore } from "@sg/store";
 import { cx, timeAgo, humanize } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
 import { UpsellBanner } from "@sg/components/UpgradeGate";
+import {
+  SCM_HUB_PROVIDERS,
+  SCM_PROVIDER_SETUP,
+  SCM_WEBHOOK_PATH,
+  providerTone,
+  scmIcon,
+  scmInstallable,
+} from "../scmProviders";
 
 // ── Code — AutoFix, Continuous PR, GitHub repositories & review runs ─────────
 // One place for everything code: connected repos, branch-review runs (the PR
@@ -74,29 +82,8 @@ function statusTone(status: string): string {
   return "border-phantix-600/40 bg-phantix-800/50 text-slate-400";
 }
 
-// ── Source-control providers ─────────────────────────────────────────────
-// GitHub arrives via the GitHub App; GitLab and Gitea are Integrations Hub
-// Connectors (category `scm`). All three feed the same branch-review pipeline
-// and the verified-only merge gate.
-const SCM_WEBHOOK_PATH: Record<string, string> = {
-  github: "/github/webhook",
-  gitlab: "/gitlab/webhook",
-  gitea: "/gitea/webhook",
-};
-
-function scmIcon(id: string): React.ReactNode {
-  if (id === "github") return <Github size={15} />;
-  if (id === "gitlab") return <Gitlab size={15} />;
-  return <GitBranch size={15} />;
-}
-
-function providerTone(status?: string): string {
-  const s = (status || "").toLowerCase();
-  if (s === "active") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
-  if (s === "pending_auth") return "border-amber-400/30 bg-amber-400/10 text-amber-300";
-  if (s === "error" || s === "degraded") return "border-severity-critical/30 bg-severity-critical/10 text-severity-critical";
-  return "border-phantix-600/40 bg-phantix-800/50 text-slate-400";
-}
+// Source-control provider metadata, icons and webhook paths are shared with
+// the dedicated connection pages in ../scmProviders.
 
 function asArray<T>(value: unknown): T[] {
   if (Array.isArray(value)) return value as T[];
@@ -152,7 +139,7 @@ export default function Code() {
     ]);
     setInstallation(inst);
     const catalog = asArray<IntegrationConnector & { display_name?: string }>(catalogRes)
-      .filter((c) => (c.category || "").toLowerCase() === "scm")
+      .filter((c) => SCM_HUB_PROVIDERS.has(c.connector_id))
       .map((c) => ({ ...c, name: c.name || c.display_name || c.connector_id }));
     setScmCatalog(catalog);
     setScmInstalls(
@@ -257,7 +244,7 @@ export default function Code() {
         </span>
         <button
           type="button"
-          onClick={() => setTab("providers")}
+          onClick={() => navigate("/code-review/providers/github")}
           title={connected ? "GitHub — connected" : "GitHub — not connected"}
           aria-label={connected ? "GitHub connected" : "GitHub not connected"}
           className={cx(
@@ -279,7 +266,11 @@ export default function Code() {
             <button
               key={c.connector_id}
               type="button"
-              onClick={() => (active ? setTab("providers") : setConnectId(c.connector_id))}
+              onClick={() => {
+                if (SCM_PROVIDER_SETUP[c.connector_id]) navigate(`/code-review/providers/${c.connector_id}`);
+                else if (scmInstallable(c)) setConnectId(c.connector_id);
+                else toast("info", "Coming soon", `${c.name || c.connector_id} is in the catalogue and not installable yet.`);
+              }}
               title={`${c.name || c.connector_id} — ${active ? "connected" : install ? install.status : "not connected"}`}
               aria-label={c.name || c.connector_id}
               className={cx(
@@ -496,7 +487,10 @@ export default function Code() {
                         </td>
                         <td className="td text-xs font-mono text-slate-500">{SCM_WEBHOOK_PATH.github}</td>
                         <td className="td text-right">
-                          {!connected && <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => void connectGithub()}>Connect</button>}
+                          <div className="flex justify-end gap-1">
+                            <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => navigate("/code-review/providers/github")}>Manage</button>
+                            {!connected && <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => void connectGithub()}>Connect</button>}
+                          </div>
                         </td>
                       </tr>
                       {scmCatalog.map((c) => {
@@ -511,28 +505,37 @@ export default function Code() {
                             <td className="td text-xs text-slate-400">{(c.auth_modes || []).join(" · ")}</td>
                             <td className="td">
                               <span className={cx("chip text-[12px]", providerTone(install?.status))}>
-                                {install?.status === "active" ? "connected" : install?.status || "not connected"}
+                                {install?.status === "active"
+                                  ? "connected"
+                                  : install?.status || (scmInstallable(c) ? "not connected" : "coming soon")}
                               </span>
                             </td>
                             <td className="td text-xs font-mono text-slate-500">{SCM_WEBHOOK_PATH[c.connector_id] || "—"}</td>
                             <td className="td text-right">
-                              {install?.status === "active" ? (
-                                <div className="flex justify-end gap-1">
-                                  <button
-                                    className="btn-ghost !px-2 !py-1 !text-xs"
-                                    onClick={async () => { await testHubInstallation(install.installation_id); toast("info", "Test sent", "Integration health check completed."); }}
-                                  >
-                                    <TestTube size={12} /> Test
-                                  </button>
-                                  <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" onClick={() => void disconnectScm(install)}>
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-                              ) : install?.status === "pending_auth" ? (
-                                <button className="btn-secondary !px-2 !py-1 !text-xs" onClick={() => void resumeScmOAuth(install.installation_id)}>Finish auth</button>
-                              ) : (
-                                <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => setConnectId(c.connector_id)}>Connect</button>
-                              )}
+                              <div className="flex justify-end gap-1">
+                                {SCM_PROVIDER_SETUP[c.connector_id] && (
+                                  <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => navigate(`/code-review/providers/${c.connector_id}`)}>Manage</button>
+                                )}
+                                {install?.status === "active" ? (
+                                  <>
+                                    <button
+                                      className="btn-ghost !px-2 !py-1 !text-xs"
+                                      onClick={async () => { await testHubInstallation(install.installation_id); toast("info", "Test sent", "Integration health check completed."); }}
+                                    >
+                                      <TestTube size={12} /> Test
+                                    </button>
+                                    <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" onClick={() => void disconnectScm(install)}>
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </>
+                                ) : install?.status === "pending_auth" ? (
+                                  <button className="btn-secondary !px-2 !py-1 !text-xs" onClick={() => void resumeScmOAuth(install.installation_id)}>Finish auth</button>
+                                ) : !scmInstallable(c) ? (
+                                  <span className="chip text-[12px] border-phantix-600/40 text-slate-500">Coming soon</span>
+                                ) : (
+                                  <button className="btn-primary !px-2 !py-1 !text-xs" onClick={() => setConnectId(c.connector_id)}>Connect</button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );

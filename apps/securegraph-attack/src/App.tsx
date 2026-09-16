@@ -19,6 +19,8 @@ import Vapt from "./pages/Vapt";
 import VaptSchedules from "./pages/VaptSchedules";
 import VaptProcedures from "./pages/VaptProcedures";
 import VaptSettings from "./pages/VaptSettings";
+import Mobile from "./pages/Mobile";
+import SectionGate from "@sg/components/SectionGate";
 
 export default function App() {
   return (
@@ -36,7 +38,22 @@ export default function App() {
           <Route path="/" element={<Overview application={"attack" as ApplicationKey} nav={NAV} />} />
           <Route path="/targets" element={<Targets title="Targets" />} />
           <Route path="/pentest-scope" element={<PentestScope />} />
-          <Route path="/pentest-agent" element={<Agent initialMode="agi" allowAgi />} />
+          <Route
+            path="/pentest-agent"
+            element={
+              <SectionGate section="attack.pentest_agent">
+                <Agent initialMode="agi" allowAgi />
+              </SectionGate>
+            }
+          />
+          <Route
+            path="/mobile"
+            element={
+              <SectionGate section="attack.mobile">
+                <Mobile />
+              </SectionGate>
+            }
+          />
           <Route path="/vapt" element={<Vapt />} />
           <Route path="/vapt/schedules" element={<VaptSchedules />} />
           <Route path="/vapt/procedures" element={<VaptProcedures />} />

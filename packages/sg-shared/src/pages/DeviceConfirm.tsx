@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { CheckCircle2, XCircle, Loader2, Mail } from "lucide-react";
+import { CheckCircle2, XCircle, Mail } from "lucide-react";
 import { api } from "@sg/api";
 import { notifyDeviceConfirmed } from "@sg/deviceConfirm";
 import { BrandLogo } from "@sg/components/BrandLogo";
+import { BrandLoader } from "@sg/components/BrandLoader";
 
 /**
  * Opens from the org-specific confirmation email link:
@@ -40,6 +41,10 @@ export default function DeviceConfirm() {
     return () => { cancelled = true; };
   }, [org, challenge]);
 
+  if (state === "loading") {
+    return <BrandLoader label="Core" message={`Confirming this device for ${org || "your organization"}`} />;
+  }
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-phantix-950 px-4">
       <div className="pointer-events-none absolute inset-0">
@@ -50,13 +55,6 @@ export default function DeviceConfirm() {
       <div className="relative w-full max-w-[440px] text-center">
         <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(232,181,77,0.5)]" />
         <div className="card mt-8 p-8">
-          {state === "loading" && (
-            <div className="py-4">
-              <Loader2 size={28} className="mx-auto animate-spin text-gold-400" />
-              <p className="mt-4 text-sm text-slate-400">Confirming this device for {org || "your organization"}...</p>
-            </div>
-          )}
-
           {state === "confirmed" && (
             <div className="py-2">
               <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/12 text-emerald-400">

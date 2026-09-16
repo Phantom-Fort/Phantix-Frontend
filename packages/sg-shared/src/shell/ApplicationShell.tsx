@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import { useSidebarCollapsed } from "../useSidebarCollapsed";
+import { useApplicationNav } from "./useApplicationNav";
 import { ThemeToggle } from "../ThemeToggle";
 import { BrandLogo } from "../components/BrandLogo";
 import { BrandLoader } from "../components/BrandLoader";
@@ -181,7 +182,15 @@ function CommandPalette({
  * menu), the demo-tenant banner and the sandbox banner. Pages render into
  * <Outlet/>. Chrome is identical across Core / Attack / Defend / Code.
  */
-export function ApplicationShell({ application, subtitle, nav, hosts }: ApplicationShellProps) {
+export function ApplicationShell({
+  application,
+  subtitle,
+  nav: fallbackNav,
+  hosts,
+}: ApplicationShellProps) {
+  // Backend is the source of truth for pages, groups and lock state; the static
+  // nav passed by the app is the offline fallback and the icon registry.
+  const nav = useApplicationNav(application, fallbackNav);
   const { collapsed, toggle } = useSidebarCollapsed();
   const {
     session,
@@ -370,11 +379,22 @@ export function ApplicationShell({ application, subtitle, nav, hosts }: Applicat
               key={item.to}
               to={item.to}
               end={item.to === "/"}
-              title={item.label}
+              title={
+                item.locked
+                  ? `${item.label} — ${item.lockReason || "Included with a paid plan"}`
+                  : item.label
+              }
               className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
             >
               {item.icon}
               {collapsible ? <span className="sg-hide-collapsed">{item.label}</span> : item.label}
+              {item.locked ? (
+                <Lock
+                  size={12}
+                  className={`ml-auto shrink-0 text-gold-400/80 ${collapsible ? "sg-hide-collapsed" : ""}`}
+                  aria-label={item.lockReason || "Included with a paid plan"}
+                />
+              ) : null}
             </NavLink>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import React from "react";
 import { Sparkles, Sparkle, UserCog } from "lucide-react";
 import { Card } from "../ui";
-import { upsellFor, isFreePlan } from "../entitlements";
+import { upsellFor, planAtLeast, planLabel } from "../entitlements";
 import { useEntitlements } from "../useEntitlements";
 import { cx } from "../utils";
 
@@ -22,14 +22,18 @@ export function UpgradeGate({
   feature,
   title,
   body,
+  plan,
   className,
 }: {
   feature?: string;
   title?: string;
   body?: string;
+  /** Plan that unlocks the surface; names the tier in the CTA when provided. */
+  plan?: string;
   className?: string;
 }) {
   const up = upsellFor(feature);
+  const target = plan ?? up?.plan;
   const heading = title ?? up?.label ?? "This surface needs a paid plan";
   const detail =
     body ??
@@ -45,7 +49,9 @@ export function UpgradeGate({
         <p className="max-w-md text-sm leading-6 text-slate-400">{detail}</p>
         <p className="mt-2 flex items-center gap-2 rounded-md border border-gold-400/30 bg-gold-400/[0.08] px-4 py-2.5 text-sm font-medium text-gold-200">
           <UserCog size={16} className="shrink-0 text-gold-300" />
-          Ask your organization admin to upgrade the plan
+          {target
+            ? `Ask your organization admin to upgrade to ${planLabel(target)}`
+            : "Ask your organization admin to upgrade the plan"}
         </p>
         <p className="text-[13px] text-slate-500">
           Plan changes and billing are managed on the Platform by your company admin. Cards are charged per company —
@@ -72,8 +78,11 @@ export function UpsellBanner({
 }) {
   const { ent, loading } = useEntitlements();
   const up = upsellFor(feature);
-  // Don't flash an upsell at a paying customer while the snapshot loads.
-  if (!force && (loading || !isFreePlan(ent))) return null;
+  // Show when the plan is below what the feature needs — so a Starter customer
+  // still sees the Growth cap upsell, not only a Free customer. Don't flash it
+  // while the snapshot loads.
+  const target = up?.plan ?? "starter";
+  if (!force && (loading || planAtLeast(ent, target))) return null;
   if (!up && !title) return null;
   const label = title ?? up?.label ?? "Unlock with an upgrade";
   const detail = body ?? up?.blurb ?? "";
@@ -90,7 +99,7 @@ export function UpsellBanner({
         <span className="font-semibold text-gold-200">{label}.</span> {detail}
       </p>
       <span className="flex shrink-0 items-center gap-1.5 text-[13px] font-medium text-gold-300">
-        <UserCog size={13} /> Ask your admin to upgrade
+        <UserCog size={13} /> Ask your admin to upgrade to {planLabel(target)}
       </span>
     </div>
   );

@@ -31,6 +31,7 @@ import SocAdvisor from "./pages/SocAdvisor";
 import SocLogPipeline from "./pages/SocLogPipeline";
 import SocAgentManager from "./pages/SocAgentManager";
 import SocCloudIntegration from "./pages/SocCloudIntegration";
+import SectionGate from "@sg/components/SectionGate";
 
 export default function App() {
   return (
@@ -50,22 +51,22 @@ export default function App() {
           <Route path="/assets/intelligence" element={<AssetIntelligence />} />
           <Route path="/assets/intelligence/graph" element={<AssetGraph />} />
           <Route path="/posture" element={<Posture />} />
-          <Route path="/cloud" element={<Cloud />} />
+          <Route path="/cloud" element={<SectionGate section="defend.cloud"><Cloud /></SectionGate>} />
           <Route path="/risks" element={<Risks />} />
-          <Route path="/threat-intel" element={<ThreatIntel />} />
+          <Route path="/threat-intel" element={<SectionGate section="defend.threat_intel"><ThreatIntel /></SectionGate>} />
           <Route path="/alerts" element={<Alerts />} />
-          <Route path="/compliance" element={<Compliance />} />
-          <Route path="/compliance/questionnaire" element={<ComplianceQuestionnaire />} />
-          <Route path="/compliance/gaps" element={<ComplianceGaps />} />
-          <Route path="/compliance/profile" element={<ComplianceProfile />} />
-          <Route path="/compliance/connectors" element={<ComplianceConnectors />} />
-          <Route path="/soc" element={<SocDashboard />} />
-          <Route path="/soc/war-room" element={<SocWarRoom />} />
-          <Route path="/soc/playbooks" element={<SocPlaybooks />} />
-          <Route path="/soc/advisor" element={<SocAdvisor />} />
-          <Route path="/soc/logs" element={<SocLogPipeline />} />
-          <Route path="/soc/agents" element={<SocAgentManager />} />
-          <Route path="/soc/cloud" element={<SocCloudIntegration />} />
+          <Route path="/compliance" element={<SectionGate section="defend.compliance"><Compliance /></SectionGate>} />
+          <Route path="/compliance/questionnaire" element={<SectionGate section="defend.compliance_questionnaire"><ComplianceQuestionnaire /></SectionGate>} />
+          <Route path="/compliance/gaps" element={<SectionGate section="defend.compliance_gaps"><ComplianceGaps /></SectionGate>} />
+          <Route path="/compliance/profile" element={<SectionGate section="defend.compliance_profile"><ComplianceProfile /></SectionGate>} />
+          <Route path="/compliance/connectors" element={<SectionGate section="defend.compliance_connectors"><ComplianceConnectors /></SectionGate>} />
+          <Route path="/soc" element={<SectionGate section="defend.soc"><SocDashboard /></SectionGate>} />
+          <Route path="/soc/war-room" element={<SectionGate section="defend.soc_war_room"><SocWarRoom /></SectionGate>} />
+          <Route path="/soc/playbooks" element={<SectionGate section="defend.soc_playbooks"><SocPlaybooks /></SectionGate>} />
+          <Route path="/soc/advisor" element={<SectionGate section="defend.soc_advisor"><SocAdvisor /></SectionGate>} />
+          <Route path="/soc/logs" element={<SectionGate section="defend.soc_logs"><SocLogPipeline /></SectionGate>} />
+          <Route path="/soc/agents" element={<SectionGate section="defend.soc_agents"><SocAgentManager /></SectionGate>} />
+          <Route path="/soc/cloud" element={<SectionGate section="defend.soc_cloud"><SocCloudIntegration /></SectionGate>} />
           <Route path="/assistant" element={<Agent />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

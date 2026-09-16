@@ -32,6 +32,9 @@ const emptyDash = {
 };
 
 function num(v: unknown, fallback = 0): number {
+  // `Number(null)` is 0, which would report a real "0" for a value we simply
+  // do not have. Treat null/undefined/"" as absent and use the fallback.
+  if (v == null || v === "") return fallback;
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
 }
@@ -211,6 +214,9 @@ export default function Dashboard() {
   const orgName = cc?.org?.name || storeOrg.name;
   const lab = cc?.lab;
   const postureScore = num(cc?.posture?.postureScore, 0);
+  // Distinguish "no posture yet" from a genuine 0 so a transient/blocked load
+  // does not read as a confident zero (the dashboard-shows-0 bug).
+  const postureKnown = cc?.posture?.postureScore != null;
   const openFindings = num(cc?.posture?.totals?.openFindings ?? cc?.tracker?.summary?.open, 0);
   const openRisks = num(cc?.risks?.open, 0);
   const socOpen = num(cc?.soc?.queue?.openTotal, 0);
@@ -279,7 +285,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Posture"
-          value={<AnimatedNumber value={postureScore} />}
+          value={postureKnown ? <AnimatedNumber value={postureScore} /> : "—"}
           delay={0}
           hint={<span>{activeAssets} active assets</span>}
         />
@@ -441,7 +447,7 @@ export default function Dashboard() {
             <CardHeader title="Posture score" subtitle="Composite org posture" />
             <div className="flex flex-col items-center py-4">
               <ProgressRing value={postureScore} size={140} color={postureScore >= 70 ? "#34D399" : "#E8B54D"}>
-                <span className="font-mono text-3xl font-semibold tracking-tight text-white">{postureScore}</span>
+                <span className="font-mono text-3xl font-semibold tracking-tight text-white">{postureKnown ? postureScore : "—"}</span>
                 <span className="text-[12px] font-medium uppercase tracking-wider text-slate-500">score</span>
               </ProgressRing>
               <p className="mt-4 text-center text-xs text-slate-500">

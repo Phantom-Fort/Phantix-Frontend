@@ -342,6 +342,19 @@ export interface PostureSnapshot {
   overall_score?: number | null;
   surfaces_covered?: number;
   generated_at?: string;
+  /** Asset-risk posture the Dashboard shows — same source, so the two agree. */
+  asset_posture_score?: number | null;
+  /** `overall_score` after open criticals/highs are deducted. */
+  findings_adjusted_score?: number | null;
+  /** Remediation-tracker load (platform DB), so a high score can't hide criticals. */
+  findings?: {
+    total?: number;
+    open?: number;
+    critical_open?: number;
+    high_open?: number;
+    bySeverity?: Record<string, number>;
+    bySurface?: Record<string, number>;
+  };
 }
 
 export interface PostureDueRisk {
