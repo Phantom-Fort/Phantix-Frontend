@@ -343,13 +343,37 @@ export interface DiscoveryJob {
   finished_at: string | null;
 }
 
+export interface ScanProgressDetail {
+  checks_done?: number;
+  checks_total?: number;
+  checks_percent?: number;
+  targets_done?: number;
+  targets_total?: number;
+  targets_percent?: number;
+}
+
 export interface ScanJob {
   id: number;
   job_type: string;
   tools: string[];
-  status: "pending" | "queued" | "running" | "completed" | "failed" | "cancelled";
+  status:
+    | "pending"
+    | "queued"
+    | "running"
+    | "completed"
+    | "completed_partial"
+    | "interrupted"
+    | "failed"
+    | "cancelled";
   target_filter: Record<string, unknown>;
+  /** Normalized percentage (0–100). */
   progress: number;
+  /** Server-side progress detail (targets and checks). */
+  progress_detail?: ScanProgressDetail;
+  heartbeat_at?: string | null;
+  scan_budget_seconds?: number | null;
+  resumable?: boolean;
+  resumed_from?: number | null;
   findings_count: number;
   initiated_by: string;
   idempotency_key: string;
@@ -1796,14 +1820,32 @@ export interface SocWarRoomStats {
 // ── Integrations Hub ──────────────────────────────────────────────────────────
 export interface IntegrationConnector {
   connector_id: string;
+  /** Backend canonical display name; `name` is the alias both now return. */
+  display_name?: string;
   name: string;
   description?: string;
   icon?: string;
   auth_modes: string[];
+  directions?: string[];
+  capabilities?: string[];
   category: string;
-  wave: number;
-  status: "active" | "beta" | "coming_soon";
+  wave: number | string;
+  /** `ga`/`beta`/`preview` are installable; `planned` is catalogue-only; legacy bridges are read-only. */
+  status: "ga" | "beta" | "preview" | "planned" | "legacy_bridge" | "active" | "coming_soon";
   config_schema?: Record<string, unknown>;
+}
+
+/** Server-paginated connector catalogue (GET /integrations/catalog). */
+export interface IntegrationCatalogPage {
+  items: IntegrationConnector[];
+  /** Alias of `items` kept for older clients. */
+  connectors?: IntegrationConnector[];
+  total: number;
+  page: number;
+  page_size: number;
+  pages: number;
+  /** Category → count, for the filter chips. */
+  categories?: Record<string, number>;
 }
 
 export interface IntegrationInstallation {

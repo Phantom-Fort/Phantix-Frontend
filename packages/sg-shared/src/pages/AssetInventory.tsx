@@ -12,6 +12,7 @@ import { timeAgo, titleCase, cx, severityMeta } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { api, tokens, API_BASE, ApiError } from "@sg/api";
 import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@sg/assetTags";
+import { sanitizeSingleLine, validateUploadFile } from "@sg/uploadValidation";
 import type { Asset, AssetIntelligence, DiscoveryJob } from "@sg/types";
 
 const typeIcon: Record<string, React.ReactNode> = {
@@ -254,12 +255,14 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
     if (!(await requireDualControl("Adding assets requires a dual-control operate session."))) return;
     setAdding(true);
     setVerifyStep(null);
+    const value = sanitizeSingleLine(addForm.value, false);
+    if (!value) { toast("error", "Enter a value"); setAdding(false); return; }
     try {
       await api.post("/assets", {
         asset_type: addForm.type,
-        value: addForm.value.trim(),
-        name: addForm.name || addForm.value.trim(),
-        environment: addForm.environment,
+        value,
+        name: sanitizeSingleLine(addForm.name || value),
+        environment: sanitizeSingleLine(addForm.environment),
         criticality: addForm.criticality,
         confirm_ownership: addConfirmOwnership,
       });
@@ -364,6 +367,8 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
 
     if (apiInputMode === "file") {
       if (!apiFile) { toast("error", "Choose a JSON/YAML file"); return; }
+      const invalid = validateUploadFile(apiFile, "apiSpec");
+      if (invalid) { toast("error", "Invalid spec file", invalid); return; }
       try {
         const content = await readTextFile(apiFile);
         if (!content.trim()) { toast("error", "File is empty"); return; }
@@ -869,10 +874,12 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
             <h3 className="font-display text-[15px] font-semibold text-slate-100">Android APK</h3>
             <p className="mt-1.5 flex-1 text-[13px] leading-6 text-slate-400">Upload an APK for static analysis. Package mapped as a mobile_apk asset with permissions.</p>
             <button className="btn-secondary mt-4 w-full" onClick={() => { void (async () => { if (await requireDualControl("APK upload requires a dual-control operate session.")) { 
-              const input = document.createElement('input'); input.type = 'file'; input.accept = '.apk';
+              const input = document.createElement('input'); input.type = 'file'; input.accept = '.apk,.xapk,.apks';
               input.onchange = async (ev) => {
                 const file = (ev.target as HTMLInputElement).files?.[0];
                 if (!file) return;
+                const invalid = validateUploadFile(file, "apk");
+                if (invalid) { toast("error", "Upload failed", invalid); return; }
                 if (!(await requireDualControl("APK upload requires a dual-control operate session."))) return;
                 setImporting(true);
                 try {

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { ShieldCheck, Download, Send, Loader2, FileText } from "lucide-react";
 import { api } from "@sg/api";
+import { sanitizeMultiline } from "@sg/uploadValidation";
 import { useStore } from "@sg/store";
 import { PageHeader, Card, CardHeader, EmptyState, DetailSkeleton, CardListSkeleton } from "@sg/ui";
 import { cx } from "@sg/utils";
@@ -106,7 +107,7 @@ export default function Privacy() {
     try {
       await api.post("/organizations/me/data-subject-request", {
         request_type: type,
-        details: details.trim() || null,
+        details: sanitizeMultiline(details) || null,
         contact_email: contactEmail.trim() || null,
       });
       toast("success", "Request received", `${typeLabel(type)} — we will respond using the contact details on file.`);

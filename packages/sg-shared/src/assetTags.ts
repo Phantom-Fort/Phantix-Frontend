@@ -6,6 +6,7 @@
 // at /asset-tags/assets/{asset_id}, not under /assets.
 import { api, delay, isDemoMode } from "./api";
 import * as demo from "./demo-data";
+import { sanitizeSingleLine } from "./uploadValidation";
 import type { AssetTag } from "./types";
 
 export interface AssetTagCreate {
@@ -25,20 +26,23 @@ export async function listAssetTags() {
 
 /** 409 when a tag of the same name already exists for this organization. */
 export async function createAssetTag(body: AssetTagCreate) {
+  const name = sanitizeSingleLine(body.name).slice(0, 100);
+  if (!name) throw new Error("Tag name is required.");
+  const description = sanitizeSingleLine(body.description ?? "").slice(0, 500) || undefined;
   if (isDemoMode()) {
     await delay(300);
     return {
       id: Math.max(0, ...demo.assetTags.map((t) => t.id)) + 1,
-      name: body.name,
+      name,
       color: body.color ?? TAG_COLORS[demo.assetTags.length % TAG_COLORS.length],
-      description: body.description,
+      description,
       asset_count: 0,
     };
   }
   return api.post<AssetTag>("/asset-tags", {
-    name: body.name,
+    name,
     ...(body.color ? { color: body.color } : {}),
-    ...(body.description ? { description: body.description } : {}),
+    ...(description ? { description } : {}),
   });
 }
 

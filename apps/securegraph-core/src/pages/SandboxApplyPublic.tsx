@@ -5,6 +5,7 @@ import { FlaskConical, CheckCircle2, Loader2, ArrowLeft, KeyRound } from "lucide
 import { ThemeToggle } from "@sg/ThemeToggle";
 import { LANDING_URL, PLATFORM_URL, SANDBOX_PROGRAM_SLUG } from "@sg/config";
 import { api, tokens, type ApiError } from "@sg/api";
+import { sanitizeSingleLine } from "@sg/uploadValidation";
 import { cx } from "@sg/utils";
 
 type Status = {
@@ -78,8 +79,8 @@ export default function SandboxApplyPublic() {
     setBusy(true);
     try {
       await api.post(`/sandbox/programs/${SANDBOX_PROGRAM_SLUG}/members`, {
-        use_case: useCase.trim(),
-        hear_about: hearAbout.trim() || undefined,
+        use_case: sanitizeSingleLine(useCase),
+        hear_about: sanitizeSingleLine(hearAbout) || undefined,
       });
       setDone(true);
     } catch (err) {
