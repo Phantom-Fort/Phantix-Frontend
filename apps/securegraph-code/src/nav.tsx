@@ -1,6 +1,7 @@
 import React from "react";
 import {
   BookOpen, Bot, GitBranch, GitPullRequest, LayoutDashboard, Plug, ShieldCheck, ShieldQuestion, Wrench, Workflow,
+  Github, Gitlab,
 } from "lucide-react";
 import type { NavSection } from "@sg/shell/types";
 
@@ -16,6 +17,14 @@ export const NAV: NavSection[] = [
       { to: "/code-review/providers", label: "Providers", icon: <Plug size={17} /> },
       { to: "/code-review/autofix", label: "AutoFix", icon: <Wrench size={17} /> },
       { to: "/code-review/continuous-pr", label: "Continuous PR", icon: <Workflow size={17} /> },
+    ],
+  },
+  {
+    label: "Source control",
+    items: [
+      { to: "/code-review/providers/github", label: "GitHub", icon: <Github size={17} /> },
+      { to: "/code-review/providers/gitlab", label: "GitLab", icon: <Gitlab size={17} /> },
+      { to: "/code-review/providers/gitea", label: "Gitea", icon: <GitBranch size={17} /> },
     ],
   },
   {

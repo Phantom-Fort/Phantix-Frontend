@@ -12,6 +12,7 @@ import { HOSTS } from "./hosts";
 import { NAV } from "./nav";
 import Overview from "./pages/Overview";
 import Code from "./pages/Code";
+import ProviderConnect from "./pages/ProviderConnect";
 import ThreatModels from "./pages/ThreatModels";
 import ContextProjects from "./pages/ContextProjects";
 
@@ -30,6 +31,7 @@ export default function App() {
         >
           <Route path="/" element={<Overview application={"code" as ApplicationKey} nav={NAV} />} />
           <Route path="/code-review" element={<Code />} />
+          <Route path="/code-review/providers/:provider" element={<ProviderConnect />} />
           <Route path="/code-review/:section" element={<Code />} />
           <Route path="/threat-models" element={<ThreatModels />} />
           <Route path="/context" element={<ContextProjects />} />
