@@ -12,6 +12,7 @@ import {
 import { cx } from "@sg/utils";
 import ContinuousReassessmentCard from "@sg/components/ContinuousReassessmentCard";
 import DocLink from "@sg/components/DocLink";
+import { UpsellBanner } from "@sg/components/UpgradeGate";
 
 // ── Recurring VAPT schedules ─────────────────────────────────────────────────
 // A schedule runs a procedure against a scope on a cadence. Blackout windows
@@ -74,6 +75,10 @@ export default function VaptSchedules() {
           </div>
         </>}
       />
+
+      {/* Recurring execution is a Growth cap — the page is reachable on any plan,
+          the always-on schedule is what Growth buys. */}
+      <UpsellBanner feature="continuous_pentest" />
 
       {loading && !rows.length ? (
         <PageBodySkeleton stats={4} variant="list" rows={4} />

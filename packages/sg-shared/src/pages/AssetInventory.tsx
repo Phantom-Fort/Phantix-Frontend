@@ -75,6 +75,11 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   const prioTotalPages = Math.max(1, Math.ceil((prioritized?.length ?? 0) / prioPageSize));
   const prioSafePage = Math.min(prioPage, prioTotalPages);
   const prioPageItems = (prioritized ?? []).slice((prioSafePage - 1) * prioPageSize, prioSafePage * prioPageSize);
+  const [discPage, setDiscPage] = useState(1);
+  const [discPageSize, setDiscPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const discTotalPages = Math.max(1, Math.ceil(discoveryJobs.length / discPageSize));
+  const discSafePage = Math.min(discPage, discTotalPages);
+  const discPageItems = discoveryJobs.slice((discSafePage - 1) * discPageSize, discSafePage * discPageSize);
   const [tab, setTab] = useState("inventory");
   const [addOpen, setAddOpen] = useState(false);
   const [selected, setSelected] = useState<Asset | null>(null);
@@ -707,7 +712,18 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
               )}
             </p>
           </div>
-          {discoveryJobs.map((j: any) => {
+          {discoveryJobs.length > 0 && (
+            <Card className="!p-0">
+              <Pagination
+                totalItems={discoveryJobs.length}
+                page={discSafePage}
+                pageSize={discPageSize}
+                onPageChange={setDiscPage}
+                onPageSizeChange={setDiscPageSize}
+              />
+            </Card>
+          )}
+          {discPageItems.map((j: any) => {
             const cfg = j.config || {};
             const rs = j.result_summary || {};
             const subdomains: string[] = rs.subdomains || [];

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { api } from "@sg/api";
 import { BrandLogo } from "@sg/components/BrandLogo";
+import { BrandLoader } from "@sg/components/BrandLoader";
 
 /**
  * Integrations Hub OAuth callback landing page.
@@ -64,6 +65,10 @@ export default function IntegrationOAuthCallback() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (state === "loading") {
+    return <BrandLoader label="Core" message={`Finishing your ${label} connection`} />;
+  }
+
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-phantix-950 px-4">
       <div className="pointer-events-none absolute inset-0">
@@ -74,13 +79,6 @@ export default function IntegrationOAuthCallback() {
       <div className="relative w-full max-w-[440px] text-center">
         <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_40px_rgba(232,181,77,0.5)]" />
         <div className="card mt-8 p-8">
-          {state === "loading" && (
-            <div className="py-4">
-              <Loader2 size={28} className="mx-auto animate-spin text-gold-400" />
-              <p className="mt-4 text-sm text-slate-400">Finishing your {label} connection…</p>
-            </div>
-          )}
-
           {state === "done" && (
             <div className="py-2">
               <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-400/12 text-emerald-400">

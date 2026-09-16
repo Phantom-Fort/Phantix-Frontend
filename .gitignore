@@ -22,3 +22,4 @@ graphify-out/
 .vscode/
 scripts/
 session.txt
+.dev-logs/

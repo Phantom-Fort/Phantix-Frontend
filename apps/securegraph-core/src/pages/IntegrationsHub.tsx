@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, ExternalLink, Webhook, Bot, MessageSquare, Send, ChevronRight } from "lucide-react";
-import { PageHeader, Card, CardHeader, Tabs, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
+import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, Webhook, MessageSquare, Send, ChevronRight, Search, X } from "lucide-react";
+import { PageHeader, Card, Tabs, PageSkeleton, EmptyState, Modal } from "@sg/ui";
+import { Pagination } from "@sg/components/Pagination";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
 import { isPendingApproval } from "@sg/api";
 import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallHubIntegration, testHubInstallation, rotateHubSecret } from "@sg/data";
 import { timeAgo, cx, humanize } from "@sg/utils";
-import type { IntegrationConnector, IntegrationInstallation } from "@sg/types";
+import type { IntegrationConnector, IntegrationInstallation, IntegrationCatalogPage } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
 const connectorIcons: Record<string, React.ReactNode> = {
@@ -16,22 +17,64 @@ const connectorIcons: Record<string, React.ReactNode> = {
   whatsapp: <MessageSquare size={16} />,
   telegram: <Send size={16} />,
   webhook: <Webhook size={16} />,
+  webhook_mapper: <Webhook size={16} />,
   entra_oidc: <Shield size={16} />,
   okta_oidc: <Shield size={16} />,
   google_oidc: <Shield size={16} />,
   scim: <Key size={16} />,
 };
 
+/** Statuses the backend can actually install today. */
+const INSTALLABLE = new Set(["ga", "beta", "preview", "active"]);
+
+function connectorStatusLabel(status?: string): string {
+  switch (status) {
+    case "ga":
+    case "active":
+      return "Available";
+    case "beta":
+      return "Beta";
+    case "preview":
+      return "Preview";
+    case "planned":
+      return "Coming soon";
+    case "legacy_bridge":
+      return "Legacy";
+    default:
+      return humanize(status || "unknown");
+  }
+}
+
+function isInstallable(conn: IntegrationConnector): boolean {
+  return INSTALLABLE.has(String(conn.status || "").toLowerCase());
+}
+
 export default function IntegrationsHub() {
   const [tab, setTab] = useState("catalog");
   const [showInstall, setShowInstall] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [category, setCategory] = useState("");
+  const [qDraft, setQDraft] = useState("");
+  const [q, setQ] = useState("");
   const { toast, requireDualControl } = useStore();
 
-  const { data: catalog, loading: cl } = useResource<IntegrationConnector[]>(() => loadHubCatalog(), [], "hub-catalog");
+  const emptyPage: IntegrationCatalogPage = { items: [], total: 0, page: 1, page_size: pageSize, pages: 0 };
+  const {
+    data: catalog,
+    loading: cl,
+    reload: reloadCatalog,
+  } = useResource<IntegrationCatalogPage>(
+    () => loadHubCatalog({ page, pageSize, category: category || undefined, q: q || undefined }),
+    emptyPage,
+    `hub-catalog:${category}:${q}:${page}:${pageSize}`,
+  );
   const { data: installations, loading: dil, reload } = useResource<IntegrationInstallation[]>(() => loadHubInstallations(), [], "hub-installations");
 
   if (cl || dil) return <PageSkeleton variant="list" rows={6} actions />;
 
+  const connectors = catalog.items ?? [];
+  const categories = catalog.categories ?? {};
   const activeInstallations = installations.filter((i) => i.status === "active");
   const pendingAuth = installations.filter((i) => i.status === "pending_auth");
 
@@ -39,12 +82,13 @@ export default function IntegrationsHub() {
     <div>
       <PageHeader
         title="Integrations Hub"
-        description="Connect your tools and services: alert channels, SSO providers, webhooks, and SCIM provisioning."
-       actions={<DocLink docId="howto-app-27" label="Integrations how-to" />} />
+        description="Connect your tools and services: alert channels, SSO providers, source control, SIEM, cloud, webhooks and SCIM provisioning."
+        actions={<DocLink docId="howto-app-27" label="Integrations how-to" />}
+      />
 
       <Tabs
         tabs={[
-          { id: "catalog", label: "Connector catalog", count: catalog.length },
+          { id: "catalog", label: "Connector catalog", count: catalog.total },
           { id: "installed", label: "Installed", count: activeInstallations.length },
           { id: "pending", label: "Pending auth", count: pendingAuth.length },
         ]}
@@ -53,34 +97,123 @@ export default function IntegrationsHub() {
       />
 
       {tab === "catalog" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {catalog.length === 0 ? (
-            <EmptyState icon={<Cable size={32} />} title="No connectors" body="The integration catalog is loading or empty." />
-          ) : catalog.map((conn, i) => (
-            <motion.div key={conn.connector_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <div className="cursor-pointer" onClick={() => setShowInstall(conn.connector_id)}>
-              <Card hover className="!p-4">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300">
-                    {connectorIcons[conn.connector_id] || <Plug size={15} />}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-200">{conn.name}</p>
-                    <p className="text-xs text-slate-400">{conn.description}</p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {conn.auth_modes.map((mode) => (
-                        <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[12px] text-slate-400">{humanize(mode)}</span>
-                      ))}
-                      <StatusBadge status={conn.status} />
-                    </div>
-                  </div>
-                  <ChevronRight size={14} className="text-slate-500 mt-1" />
-                </div>
-              </Card>
+        <>
+          <div className="mt-4 flex flex-col gap-3">
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setQ(qDraft.trim());
+                setPage(1);
+                reloadCatalog();
+              }}
+            >
+              <div className="relative flex-1">
+                <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  className="input !pl-9"
+                  placeholder={`Search ${catalog.total} integrations — Slack, Wazuh, AWS, GitLab…`}
+                  value={qDraft}
+                  onChange={(e) => setQDraft(e.target.value)}
+                />
+                {qDraft && (
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                    onClick={() => { setQDraft(""); setQ(""); setPage(1); reloadCatalog(); }}
+                    aria-label="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
               </div>
+              <button type="submit" className="btn-secondary">Search</button>
+            </form>
+
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => { setCategory(""); setPage(1); reloadCatalog(); }}
+                className={cx("chip text-xs", !category && "border-gold-400/40 bg-gold-400/10 text-gold-200")}
+              >
+                All {catalog.total}
+              </button>
+              {Object.entries(categories).map(([key, count]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => { setCategory(key === category ? "" : key); setPage(1); reloadCatalog(); }}
+                  className={cx("chip text-xs", category === key && "border-gold-400/40 bg-gold-400/10 text-gold-200")}
+                >
+                  {humanize(key)} {count}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {connectors.length === 0 ? (
+            <EmptyState icon={<Cable size={32} />} title="No connectors" body="No integration matches this filter." />
+          ) : (
+            <motion.div
+              key={`${category}-${q}-${page}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {connectors.map((conn, i) => {
+                const installable = isInstallable(conn);
+                return (
+                  <motion.div key={conn.connector_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}>
+                    <div
+                      className={cx(installable ? "cursor-pointer" : "cursor-default opacity-80")}
+                      onClick={() => installable && setShowInstall(conn.connector_id)}
+                    >
+                      <Card hover={installable} className="!p-4">
+                        <div className="flex items-start gap-3">
+                          <span className={cx(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border",
+                            installable
+                              ? "border-gold-400/30 bg-gold-400/10 text-gold-300"
+                              : "border-phantix-700/40 bg-phantix-800/40 text-slate-500",
+                          )}>
+                            {connectorIcons[conn.connector_id] || <Plug size={15} />}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-slate-200">{conn.name || conn.display_name || conn.connector_id}</p>
+                            <p className="line-clamp-2 text-xs text-slate-400">{conn.description}</p>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {(conn.auth_modes || []).slice(0, 3).map((mode) => (
+                                <span key={mode} className="rounded-md bg-phantix-800 px-2 py-0.5 text-[12px] text-slate-400">{humanize(mode)}</span>
+                              ))}
+                              <span className={cx(
+                                "rounded-md px-2 py-0.5 text-[12px]",
+                                installable ? "bg-emerald-400/10 text-emerald-300" : "bg-phantix-800 text-slate-500",
+                              )}>
+                                {connectorStatusLabel(conn.status)}
+                              </span>
+                            </div>
+                          </div>
+                          {installable && <ChevronRight size={14} className="mt-1 shrink-0 text-slate-500" />}
+                        </div>
+                      </Card>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </motion.div>
-          ))}
-        </motion.div>
+          )}
+
+          {catalog.total > 0 && (
+            <Pagination
+              totalItems={catalog.total}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={(p) => { setPage(p); reloadCatalog(); }}
+              onPageSizeChange={(s) => { setPageSize(s); setPage(1); reloadCatalog(); }}
+              className="mt-4 rounded-lg border border-phantix-800/40"
+            />
+          )}
+        </>
       )}
 
       {tab === "installed" && (
@@ -166,9 +299,9 @@ export default function IntegrationsHub() {
       {showInstall && (
         <InstallModal
           connectorId={showInstall}
-          catalog={catalog}
+          catalog={connectors}
           onClose={() => setShowInstall(null)}
-          onInstalled={() => { setShowInstall(null); reload(); }}
+          onInstalled={() => { setShowInstall(null); reload(); reloadCatalog(); }}
         />
       )}
     </div>
@@ -205,7 +338,7 @@ function InstallModal({ connectorId, catalog, onClose, onInstalled }: { connecto
   };
 
   return (
-    <Modal open={true} onClose={onClose} title={connector.name}>
+    <Modal open={true} onClose={onClose} title={connector.name || connector.connector_id}>
       <div className="space-y-4">
         <p className="text-xs text-slate-400">{connector.description}</p>
         <input className="input" placeholder="Label (e.g. Production Slack)" value={label} onChange={(e) => setLabel(e.target.value)} />

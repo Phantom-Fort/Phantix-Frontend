@@ -83,6 +83,33 @@ export function planLabel(plan?: string | null): string {
   return plan ? p[0].toUpperCase() + p.slice(1) : "Free";
 }
 
+/** Plan ordering for tier comparisons. Enterprise ranks highest. */
+export const PLAN_RANK: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+  enterprise: 3,
+};
+
+export function planRank(plan?: string | null): number {
+  return PLAN_RANK[String(plan || "free").toLowerCase()] ?? 0;
+}
+
+/**
+ * Whether the org's plan is at least `plan`. Full-access coupons count as the
+ * top tier. An `engagement` requirement means “any paid plan plus a quote”, so
+ * it resolves to Starter for the in-app gate.
+ */
+export function planAtLeast(
+  ent: Entitlements | null | undefined,
+  plan: string,
+): boolean {
+  if (!ent) return false;
+  if (ent.full_access_coupon) return true;
+  if (plan === "engagement") return planRank(ent.plan) >= PLAN_RANK.starter;
+  return planRank(ent.plan) >= (PLAN_RANK[String(plan).toLowerCase()] ?? 0);
+}
+
 /**
  * Features Free cannot use, and the plan that unlocks each.
  *
@@ -98,6 +125,8 @@ export interface UpsellFeature {
 }
 
 export const UPSELL_FEATURES: Record<string, UpsellFeature> = {
+  // Growth is a **cap** upsell: the surface is reachable, the always-on
+  // behaviour is what Growth buys.
   continuous_pr: {
     key: "continuous_pr",
     label: "Continuous PR / MR review",
@@ -110,41 +139,42 @@ export const UPSELL_FEATURES: Record<string, UpsellFeature> = {
     plan: "growth",
     blurb: "Re-tested on a schedule so a fix is confirmed, not assumed. Recurring pentest is Growth.",
   },
+  // Starter is a **section** upsell: the whole page unlocks on any paid plan.
   cloud_security_scan: {
     key: "cloud_security_scan",
-    label: "Cloud posture packs",
-    plan: "growth",
-    blurb: "Multi-cloud posture from connected accounts. Cloud packs are part of Growth.",
+    label: "Cloud posture",
+    plan: "starter",
+    blurb: "Cloud posture from connected accounts is included with Starter and Growth.",
   },
   container_security_scan: {
     key: "container_security_scan",
     label: "Container & Kubernetes posture",
-    plan: "growth",
-    blurb: "Image and cluster posture with a container runtime. Container packs are Growth.",
+    plan: "starter",
+    blurb: "Image and cluster posture with a container runtime is included with Starter and Growth.",
   },
   secrets_and_sca: {
     key: "secrets_and_sca",
     label: "Secrets, SCA & SAST",
-    plan: "growth",
-    blurb: "Six-layer code security — secrets, dependencies, IaC and SAST. Part of Growth.",
+    plan: "starter",
+    blurb: "Six-layer code security — secrets, dependencies, IaC and SAST — is included with Starter and Growth.",
   },
   compliance_workbench: {
     key: "compliance_workbench",
     label: "Compliance workbench",
-    plan: "growth",
-    blurb: "Evidence collection, mappings and audit packaging sit in the Growth workbench.",
+    plan: "starter",
+    blurb: "Evidence collection, mappings and audit packaging are included with Starter and Growth.",
   },
   soc_alert_console: {
     key: "soc_alert_console",
-    label: "SOC alert console",
-    plan: "growth",
-    blurb: "Detection queue and analyst console. The SOC console is a Growth capability.",
+    label: "SOC console",
+    plan: "starter",
+    blurb: "The detection queue and analyst console are included with Starter and Growth.",
   },
   ai_pentest_agent: {
     key: "ai_pentest_agent",
     label: "Autonomous Pentest Agent",
-    plan: "growth",
-    blurb: "Governed agent sessions against your own assets are part of Growth.",
+    plan: "starter",
+    blurb: "Governed agent sessions against your own assets are included with Starter and Growth.",
   },
   dynamic_mobile: {
     key: "dynamic_mobile",
@@ -153,6 +183,31 @@ export const UPSELL_FEATURES: Record<string, UpsellFeature> = {
     blurb: "Runtime mobile analysis is a project engagement — request a quote.",
   },
 };
+
+/** Section key → the plan that unlocks it, for the in-page section gate. */
+export const SECTION_UPSELL: Record<string, { label: string; plan: "starter" | "growth" }> = {
+  "attack.pentest_agent": { label: "Pentest agent", plan: "starter" },
+  "attack.mobile": { label: "Mobile testing", plan: "starter" },
+  "defend.cloud": { label: "Cloud posture", plan: "starter" },
+  "defend.compliance": { label: "Compliance", plan: "starter" },
+  "defend.compliance_questionnaire": { label: "Compliance questionnaire", plan: "starter" },
+  "defend.compliance_gaps": { label: "Compliance gap analysis", plan: "starter" },
+  "defend.compliance_profile": { label: "Compliance business profile", plan: "starter" },
+  "defend.compliance_connectors": { label: "Compliance evidence connectors", plan: "starter" },
+  "defend.soc": { label: "SOC console", plan: "starter" },
+  "defend.soc_war_room": { label: "SOC war room", plan: "starter" },
+  "defend.soc_playbooks": { label: "SOC playbooks", plan: "starter" },
+  "defend.soc_advisor": { label: "SOC advisor", plan: "starter" },
+  "defend.soc_logs": { label: "SOC log pipeline", plan: "starter" },
+  "defend.soc_agents": { label: "SOC agents", plan: "starter" },
+  "defend.soc_cloud": { label: "SOC cloud integrations", plan: "starter" },
+  "defend.threat_intel": { label: "Threat intelligence", plan: "starter" },
+};
+
+export function sectionUpsell(sectionKey?: string | null) {
+  if (!sectionKey) return null;
+  return SECTION_UPSELL[sectionKey] ?? null;
+}
 
 export function upsellFor(key?: string | null): UpsellFeature | null {
   if (!key) return null;
