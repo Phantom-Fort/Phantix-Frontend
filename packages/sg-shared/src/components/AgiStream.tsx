@@ -250,6 +250,9 @@ const TOOL_LABELS: Record<string, string> = {
   recon_subagent: "Recon subagent",
   autofix_subagent: "Autofix subagent",
   verify_all: "Verify-all gate",
+  pi_subagent: "Pi helper",
+  pi_quick: "Pi helper",
+  opencode_contract: "OpenCode handoff",
 };
 
 function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {

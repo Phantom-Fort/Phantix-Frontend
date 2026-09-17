@@ -510,7 +510,7 @@ export async function startAgiSession(
   const body: Record<string, unknown> = {
     instruction,
     autonomy: opts.autonomy ?? "medium",
-    include_org_assets: opts.include_org_assets ?? true,
+    include_org_assets: opts.include_org_assets ?? false,
     confirm_environment: opts.confirm_environment ?? "staging",
   };
   if (opts.preapprove_lab_auth != null) body.preapprove_lab_auth = opts.preapprove_lab_auth;

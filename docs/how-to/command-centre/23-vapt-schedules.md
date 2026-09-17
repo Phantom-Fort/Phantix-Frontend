@@ -57,6 +57,21 @@ the finding's state; it does not create a duplicate.
 
 ---
 
+## Adaptive procedures
+
+A schedule can pick its procedure from the assets it will actually touch. On
+each run the scope is classified (web app / API / GraphQL / infra / cloud / …)
+and the procedure whose process flow matches is selected, so a weekly sweep of a
+web estate runs the web flow and the same cadence pointed at an API estate runs
+the API flow. The chosen procedure and the inferred surfaces are recorded on the
+campaign for audit.
+
+To pin a schedule to one procedure instead, set
+`campaign_config.adaptive_procedure: false` (or use a specific procedure key);
+the schedule is then left exactly as configured.
+
+---
+
 ## Notes
 
 - Continuous / recurring pentest is a Growth capability.
