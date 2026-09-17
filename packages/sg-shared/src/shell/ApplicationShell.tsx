@@ -227,16 +227,19 @@ export function ApplicationShell({
     setAuthReady(false);
     (async () => {
       let demo = isDemoFlagSet();
-      if (!demo && !appToken()) {
-        // The arriving fragment carries either a session handoff or the demo,
-        // whose flag cannot cross an origin in storage.
-        const handed = await consumeHandoff(application);
-        demo = isDemoFlagSet();
-        if (!handed && !demo) {
-          // Replace (not push) so Back cannot land on the gated page.
-          window.location.replace(coreLoginUrl(application));
-          return;
-        }
+      // Redeem an arriving handoff/demo fragment BEFORE trusting any token that
+      // already sits on this origin. Gating this on `!appToken()` signed
+      // operators out on every app switch: the target origin still held a token
+      // (expired/idle/revoked), so the fresh and valid handoff code in the URL
+      // was ignored, `/app/auth/me` 401'd, and the boot bounced to the login
+      // screen. Consuming first is always safe — with no fragment it is a no-op,
+      // and with one the arriving session is authoritative.
+      const handed = await consumeHandoff(application);
+      demo = isDemoFlagSet();
+      if (!handed && !demo && !appToken()) {
+        // Replace (not push) so Back cannot land on the gated page.
+        window.location.replace(coreLoginUrl(application));
+        return;
       }
       if (demo) {
         setMe(null);
