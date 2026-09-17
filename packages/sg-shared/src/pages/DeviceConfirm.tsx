@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle2, XCircle, Mail } from "lucide-react";
 import { api } from "@sg/api";
@@ -18,6 +18,7 @@ export default function DeviceConfirm() {
   const challenge = params.get("challenge") ?? "";
   const [state, setState] = useState<"loading" | "confirmed" | "error">("loading");
   const [error, setError] = useState("");
+  const confirmRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     if (!org || !challenge) {
@@ -25,19 +26,26 @@ export default function DeviceConfirm() {
       setError("This confirmation link is incomplete. Please sign in again and use the fresh link from your email.");
       return;
     }
+    // The confirmation link is single-use, so share one request across React
+    // StrictMode's mount -> unmount -> mount effect cycle. Posting twice makes
+    // the second attempt fail (the challenge is already spent) and can stop the
+    // sign-in tab from ever receiving the "device confirmed" signal.
+    if (!confirmRef.current) {
+      confirmRef.current = api.post("/app/auth/device-confirm", { challenge }).then(() => undefined);
+    }
     let cancelled = false;
-    (async () => {
-      try {
-        await api.post("/app/auth/device-confirm", { challenge });
+    confirmRef.current.then(
+      () => {
         if (cancelled) return;
         setState("confirmed");
         notifyDeviceConfirmed();
-      } catch (e) {
+      },
+      (e: unknown) => {
         if (cancelled) return;
         setState("error");
         setError(e instanceof Error ? e.message : "Confirmation failed. Please request a fresh link.");
-      }
-    })();
+      },
+    );
     return () => { cancelled = true; };
   }, [org, challenge]);
 
