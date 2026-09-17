@@ -313,11 +313,17 @@ async function request<T>(
       /session expired|token expired|authentication expired|jwt expired|bearer token|not authenticated|unauthorized/i.test(msg);
 
     // A missing/expired dual-control operate session is NOT a dropped org/app
-    // session. Match both the structured operate-middleware shape and the human
-    // message. As long as the main session is still valid, a 401 on a mutation
-    // that carried a dual-control token is treated as dual-control expiry so the
-    // operator can request a fresh operate session without signing in again.
+    // session. Match the explicit ``WWW-Authenticate: DualControl`` challenge the
+    // operate middleware sends on 401 (concurrent-sessions.md §4.2), the
+    // structured operate-middleware shape, and the human message. As long as the
+    // main session is still valid, a 401 on a mutation that carried a
+    // dual-control token is treated as dual-control expiry so the operator can
+    // request a fresh operate session without signing in again.
+    const operateChallenge = (res.headers.get("WWW-Authenticate") || "")
+      .toLowerCase()
+      .includes("dualcontrol");
     const dcSessionIssue =
+      operateChallenge ||
       detailObj?.error === "dual_control_session_required" ||
       detailObj?.error === "dual_control_session_expired" ||
       (detailObj as Record<string, unknown>)?.["required_header"] === "X-Dual-Control-Session" ||

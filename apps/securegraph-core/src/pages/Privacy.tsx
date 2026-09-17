@@ -4,7 +4,7 @@ import { api } from "@sg/api";
 import { sanitizeMultiline } from "@sg/uploadValidation";
 import { useStore } from "@sg/store";
 import { PageHeader, Card, CardHeader, EmptyState, DetailSkeleton, CardListSkeleton } from "@sg/ui";
-import { cx } from "@sg/utils";
+import { cx, timeAgo } from "@sg/utils";
 
 // ── Settings → Privacy: NDPA §34–37 data-subject requests (staging-rollout §2) ──
 // POST/GET /api/v1/organizations/me/data-subject-request, beside the privacy
@@ -211,33 +211,45 @@ export default function Privacy() {
         </form>
       </Card>
 
-      <Card>
-        <CardHeader title="Your requests" subtitle="Reference · type · status" />
-        <div className="px-5 pb-5">
-          {requests === null ? (
-            <CardListSkeleton rows={3} />
-          ) : requests.length === 0 ? (
-            <EmptyState icon={<FileText size={20} />} title="No requests yet" body="Raise a request above and track its status here." />
-          ) : (
-            <div className="space-y-2">
-              {requests.map((r) => (
-                <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-phantix-900/50 px-3 py-2.5">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-slate-200">
-                      <span className="font-mono text-gold-400">{r.reference}</span>
-                      <span className="mx-2 text-slate-600">·</span>
-                      {typeLabel(r.request_type)}
-                    </p>
-                    {r.details && <p className="mt-0.5 truncate text-[13px] text-slate-500">{r.details}</p>}
-                  </div>
-                  <span className={cx("chip !px-2 !py-0.5 text-[12px] capitalize", STATUS_COLORS[r.status] ?? "border-phantix-600/50 bg-phantix-800/60 text-slate-300")}>
-                    {r.status.replace(/_/g, " ")}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+      <Card className={requests && requests.length ? "!p-0 overflow-hidden" : undefined}>
+        <div className={cx(requests && requests.length ? "px-5 pt-5" : "")}>
+          <CardHeader title="Your requests" subtitle="Reference · type · status" />
         </div>
+        {requests === null ? (
+          <div className="px-5 pb-5"><CardListSkeleton rows={3} /></div>
+        ) : requests.length === 0 ? (
+          <div className="px-5 pb-5">
+            <EmptyState icon={<FileText size={20} />} title="No requests yet" body="Raise a request above and track its status here." />
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-phantix-700/40">
+                <th className="th">Reference</th>
+                <th className="th">Type</th>
+                <th className="th">Status</th>
+                <th className="th">Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {requests.map((r) => (
+                <tr key={r.id} className="border-b border-phantix-800/40">
+                  <td className="td font-mono text-gold-400">{r.reference}</td>
+                  <td className="td text-slate-300">
+                    {typeLabel(r.request_type)}
+                    {r.details && <p className="mt-0.5 truncate text-[12px] text-slate-500">{r.details}</p>}
+                  </td>
+                  <td className="td">
+                    <span className={cx("chip !px-2 !py-0.5 text-[12px] capitalize", STATUS_COLORS[r.status] ?? "border-phantix-600/50 bg-phantix-800/60 text-slate-300")}>
+                      {r.status.replace(/_/g, " ")}
+                    </span>
+                  </td>
+                  <td className="td text-slate-500 whitespace-nowrap">{r.created_at ? timeAgo(r.created_at) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Card>
       </div>
     </div>

@@ -341,21 +341,32 @@ function AuthorizerCatalog() {
             <p className="text-xs text-slate-500">No action types are registered.</p>
           ) : (
             <>
-              <div className="space-y-1.5">
-                {rows.map((r, i) => (
-                  <div key={i} className="rounded-md border border-phantix-700/60 bg-phantix-950/40 p-2.5">
-                    <p className="text-xs text-slate-200">
-                      {String(r.label ?? r.title ?? r.action_key ?? r.key ?? `Action ${i + 1}`)}
-                    </p>
-                    {(r.action_key ?? r.key) != null && (
-                      <p className="mt-0.5 font-mono text-[12px] text-slate-500">{String(r.action_key ?? r.key)}</p>
-                    )}
-                    {r.description != null && (
-                      <p className="mt-1 text-[13px] leading-4 text-slate-400">{String(r.description)}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <Card className="!p-0 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Action</th>
+                      <th className="th">Key</th>
+                      <th className="th">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, i) => (
+                      <tr key={i} className="border-b border-phantix-800/40">
+                        <td className="td text-slate-200">
+                          {String(r.label ?? r.title ?? r.action_key ?? r.key ?? `Action ${i + 1}`)}
+                        </td>
+                        <td className="td font-mono text-[12px] text-slate-500">
+                          {(r.action_key ?? r.key) != null ? String(r.action_key ?? r.key) : "—"}
+                        </td>
+                        <td className="td text-[13px] leading-4 text-slate-400">
+                          {r.description != null ? String(r.description) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
               {note && <p className="mt-3 text-[13px] leading-4 text-slate-500">{note}</p>}
             </>
           )}

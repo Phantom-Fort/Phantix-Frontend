@@ -54,27 +54,52 @@ export default function SocWarRoom() {
           />
 
           {tab === "cases" && (
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-3">
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
               {cases.length === 0 ? (
                 <EmptyState icon={<Swords size={32} />} title="No open cases" body="Open a new case to start tracking an incident." />
-              ) : cases.map((c, i) => (
-                <motion.div key={c.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                  <div className="cursor-pointer" onClick={() => setSelectedCase(c.id)}>
-                  <Card hover className="!p-4">
-                    <div className="flex items-center gap-4">
-                      <SeverityBadge severity={c.severity as Severity} />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-slate-200">{c.title}</p>
-                        <p className="mt-0.5 text-xs text-slate-500">Opened {c.opened_at ? timeAgo(c.opened_at) : ""}</p>
-                      </div>
-                      <StatusBadge status={c.status} />
-                      {c.sla_deadline && new Date(c.sla_deadline) < new Date() && <AlertTriangle size={16} className="text-severity-critical" />}
-                      <ArrowRight size={16} className="text-slate-500" />
-                    </div>
-                  </Card>
+              ) : (
+                <Card className="!p-0 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-phantix-700/40">
+                          <th className="th">Severity</th>
+                          <th className="th">Case</th>
+                          <th className="th">Opened</th>
+                          <th className="th">Status</th>
+                          <th className="th">SLA</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cases.map((c) => {
+                          const slaBreached = c.sla_deadline && new Date(c.sla_deadline) < new Date();
+                          return (
+                            <tr
+                              key={c.id}
+                              onClick={() => setSelectedCase(c.id)}
+                              className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                            >
+                              <td className="td"><SeverityBadge severity={c.severity as Severity} /></td>
+                              <td className="td font-medium text-slate-200">{c.title}</td>
+                              <td className="td text-xs text-slate-500">{c.opened_at ? timeAgo(c.opened_at) : "—"}</td>
+                              <td className="td"><StatusBadge status={c.status} /></td>
+                              <td className="td">
+                                {slaBreached ? (
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-severity-critical">
+                                    <AlertTriangle size={13} /> Breached
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-500">On track</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  </motion.div>
-              ))}
+                </Card>
+              )}
             </motion.div>
           )}
 

@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Monitor, Download, Terminal, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import React from "react";
+import { Monitor, Download, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState, EmptyState, StatusBadge } from "@sg/ui";
 import { loadAgentFleet, loadSocAgentInstall, downloadSocAgent } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -47,28 +46,41 @@ export default function SocAgentManager() {
         </div>
       )}
 
-      <div className="space-y-2">
-        {fleet?.agents?.map((agent, i) => (
-          <motion.div
-            key={agent.agent_id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-          >
-            <Card className="!p-4">
-              <div className="flex items-center gap-3">
-                <Monitor size={16} className="text-slate-400" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-200">{agent.hostname}</p>
-                  <p className="text-xs text-slate-500">v{agent.version} &middot; ID: {agent.agent_id.slice(0, 12)}</p>
-                </div>
-                <StatusBadge status={agent.status} />
-                {agent.last_heartbeat && <span className="text-[13px] text-slate-500">{timeAgo(agent.last_heartbeat)}</span>}
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+      {(fleet?.agents?.length ?? 0) === 0 ? (
+        <EmptyState icon={<Monitor size={24} />} title="No agents" body="No SecureGraph agents have registered yet." />
+      ) : (
+        <Card className="!p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-phantix-700/40">
+                  <th className="th">Hostname</th>
+                  <th className="th">Version</th>
+                  <th className="th">Agent ID</th>
+                  <th className="th">Status</th>
+                  <th className="th">Last heartbeat</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fleet?.agents?.map((agent) => (
+                  <tr key={agent.agent_id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                    <td className="td">
+                      <div className="flex items-center gap-2">
+                        <Monitor size={14} className="text-slate-400 shrink-0" />
+                        <span className="font-medium text-slate-200">{agent.hostname}</span>
+                      </div>
+                    </td>
+                    <td className="td text-xs text-slate-400">v{agent.version}</td>
+                    <td className="td font-mono text-xs text-slate-500">{agent.agent_id.slice(0, 12)}</td>
+                    <td className="td"><StatusBadge status={agent.status} /></td>
+                    <td className="td text-xs text-slate-500">{agent.last_heartbeat ? timeAgo(agent.last_heartbeat) : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {install && (
         <div className="mt-6">

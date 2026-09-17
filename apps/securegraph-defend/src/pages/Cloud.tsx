@@ -278,49 +278,73 @@ export default function Cloud() {
               <EmptyState icon={<CloudIcon size={24} />} title="No connectors" body="Pick a provider to connect a webhook / log drain." />
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {connectors.data.map((c) => (
-                <Card key={c.id} className="flex flex-col">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-phantix-800 text-phantix-300"><CloudIcon size={16} /></span>
-                      <div className="min-w-0">
-                        <p className="font-medium text-slate-100 truncate">{c.label || c.provider}</p>
-                        <p className="text-[13px] text-slate-500">{humanize(c.provider)}</p>
-                      </div>
-                    </div>
-                    <span className={cx("chip shrink-0 text-[12px]", (c.is_active ?? c.active ?? true) ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
-                      {(c.is_active ?? c.active ?? true) ? <><CheckCircle2 size={10} /> Active</> : <><Pause size={10} /> Paused</>}
-                    </span>
-                  </div>
-
-                  {cloudIngestUrl(c) && (
-                    <div className="mt-3 rounded-lg bg-phantix-950/60 border border-phantix-700/40 p-2.5">
-                      <p className="text-[12px] uppercase tracking-wider text-slate-500 mb-1">Ingest URL</p>
-                      <p className="font-mono text-[12px] text-phantix-300 truncate">{cloudIngestUrl(c)}</p>
-                    </div>
-                  )}
-
-                  <div className="mt-3 flex flex-wrap gap-1.5 pt-2 border-t border-phantix-800/40">
-                    <button className="btn-ghost p-1.5 text-xs" title={c.is_active ?? c.active ?? true ? "Pause" : "Enable"} onClick={() => void toggle(c)}>{(c.is_active ?? c.active ?? true) ? <Pause size={13} /> : <Play size={13} />}</button>
-                    <button className="btn-ghost p-1.5 text-xs text-phantix-300" title="Poll provider API now (read-only)" disabled={syncing === c.id} onClick={() => void sync(c)}><RefreshCw size={13} className={syncing === c.id ? "animate-spin" : undefined} /></button>
-                    <button className="btn-ghost p-1.5 text-xs text-gold-400" title="Rotate secret" onClick={() => void rotate(c)}><KeyRound size={13} /></button>
-                    <button className="btn-ghost p-1.5 text-xs ml-auto text-slate-400" title="Copy ingest URL" onClick={() => copy(cloudIngestUrl(c), "Ingest URL")}><Copy size={13} /></button>
-                    <button className="btn-ghost p-1.5 text-xs text-severity-critical" title="Delete" onClick={() => void remove(c)}><Trash2 size={13} /></button>
-                  </div>
-
-                  {secretMap[c.id] && (
-                    <div className="mt-2 rounded-lg border border-gold-400/30 bg-gold-400/8 p-2.5">
-                      <p className="text-[12px] font-semibold text-gold-300 mb-0.5">Webhook secret — copy now</p>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 font-mono text-[12px] text-slate-200 break-all">{secretMap[c.id]}</code>
-                        <button className="btn-ghost p-1" onClick={() => copy(secretMap[c.id], "Webhook secret")}><Copy size={12} /></button>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
+            <Card className="!p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Label</th>
+                      <th className="th">Provider</th>
+                      <th className="th">Status</th>
+                      <th className="th">Ingest URL</th>
+                      <th className="th">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {connectors.data.map((c) => {
+                      const active = c.is_active ?? c.active ?? true;
+                      return (
+                        <React.Fragment key={c.id}>
+                          <tr className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                            <td className="td">
+                              <div className="flex items-center gap-2">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-phantix-800 text-phantix-300"><CloudIcon size={14} /></span>
+                                <span className="font-medium text-slate-100">{c.label || c.provider}</span>
+                              </div>
+                            </td>
+                            <td className="td text-xs text-slate-400">{humanize(c.provider)}</td>
+                            <td className="td">
+                              <span className={cx("chip text-[12px]", active ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-phantix-700/50 text-slate-500")}>
+                                {active ? <><CheckCircle2 size={10} /> Active</> : <><Pause size={10} /> Paused</>}
+                              </span>
+                            </td>
+                            <td className="td max-w-[220px]">
+                              {cloudIngestUrl(c) ? (
+                                <p className="font-mono text-[12px] text-phantix-300 truncate">{cloudIngestUrl(c)}</p>
+                              ) : (
+                                <span className="text-xs text-slate-500">—</span>
+                              )}
+                            </td>
+                            <td className="td">
+                              <div className="flex flex-wrap gap-1.5">
+                                <button className="btn-ghost p-1.5 text-xs" title={active ? "Pause" : "Enable"} onClick={() => void toggle(c)}>{active ? <Pause size={13} /> : <Play size={13} />}</button>
+                                <button className="btn-ghost p-1.5 text-xs text-phantix-300" title="Poll provider API now (read-only)" disabled={syncing === c.id} onClick={() => void sync(c)}><RefreshCw size={13} className={syncing === c.id ? "animate-spin" : undefined} /></button>
+                                <button className="btn-ghost p-1.5 text-xs text-gold-400" title="Rotate secret" onClick={() => void rotate(c)}><KeyRound size={13} /></button>
+                                <button className="btn-ghost p-1.5 text-xs text-slate-400" title="Copy ingest URL" onClick={() => copy(cloudIngestUrl(c), "Ingest URL")}><Copy size={13} /></button>
+                                <button className="btn-ghost p-1.5 text-xs text-severity-critical" title="Delete" onClick={() => void remove(c)}><Trash2 size={13} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                          {secretMap[c.id] && (
+                            <tr className="border-b border-phantix-800/40 bg-gold-400/[0.04]">
+                              <td className="td" colSpan={5}>
+                                <div className="rounded-lg border border-gold-400/30 bg-gold-400/8 p-2.5">
+                                  <p className="text-[12px] font-semibold text-gold-300 mb-0.5">Webhook secret — copy now</p>
+                                  <div className="flex items-center gap-2">
+                                    <code className="flex-1 font-mono text-[12px] text-slate-200 break-all">{secretMap[c.id]}</code>
+                                    <button className="btn-ghost p-1" onClick={() => copy(secretMap[c.id], "Webhook secret")}><Copy size={12} /></button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
         </div>
       )}

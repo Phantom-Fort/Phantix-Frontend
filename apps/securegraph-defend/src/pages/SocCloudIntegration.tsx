@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Cloud, Plus, Trash2, RefreshCw, CheckCircle, XCircle, Cable } from "lucide-react";
+import { Cloud, Plus, Trash2, RefreshCw } from "lucide-react";
 import { PageHeader, Card, CardHeader, PageSkeleton, ErrorState, EmptyState, StatusBadge, Modal } from "@sg/ui";
 import { loadCloudProviderCatalog, loadCloudConnections, connectCloudProvider, deleteCloudConnection, syncCloudConnection } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -30,37 +29,50 @@ export default function SocCloudIntegration() {
         </>}
       />
 
-      <div className="space-y-3">
-        {connections.length === 0 ? (
-          <EmptyState icon={<Cloud size={32} />} title="No cloud connections" body="Connect your AWS, Azure, or GCP account to start ingesting security events." />
-        ) : connections.map((conn, i) => (
-          <motion.div
-            key={conn.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.04 }}
-          >
-            <Card className="!p-4">
-              <div className="flex items-center gap-3">
-                <Cloud size={16} className="text-gold-400" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-200">{conn.display_name}</p>
-                  <p className="text-xs text-slate-500">{humanize(conn.provider)} &middot; {humanize(conn.integration_type)}</p>
-                </div>
-                <StatusBadge status={conn.status} />
-                <div className="flex gap-1.5">
-                  <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void syncCloudConnection(conn.id); toast("info", "Sync started", "Cloud connection sync initiated."); }}>
-                    <RefreshCw size={12} /> Sync
-                  </button>
-                  <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" onClick={() => { void deleteCloudConnection(conn.id); reload(); }}>
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+      {connections.length === 0 ? (
+        <EmptyState icon={<Cloud size={32} />} title="No cloud connections" body="Connect your AWS, Azure, or GCP account to start ingesting security events." />
+      ) : (
+        <Card className="!p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-phantix-700/40">
+                  <th className="th">Connection</th>
+                  <th className="th">Provider</th>
+                  <th className="th">Type</th>
+                  <th className="th">Status</th>
+                  <th className="th">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {connections.map((conn) => (
+                  <tr key={conn.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                    <td className="td">
+                      <div className="flex items-center gap-2">
+                        <Cloud size={14} className="text-gold-400 shrink-0" />
+                        <span className="font-medium text-slate-200">{conn.display_name}</span>
+                      </div>
+                    </td>
+                    <td className="td text-xs text-slate-400">{humanize(conn.provider)}</td>
+                    <td className="td text-xs text-slate-400">{humanize(conn.integration_type)}</td>
+                    <td className="td"><StatusBadge status={conn.status} /></td>
+                    <td className="td">
+                      <div className="flex gap-1.5">
+                        <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void syncCloudConnection(conn.id); toast("info", "Sync started", "Cloud connection sync initiated."); }}>
+                          <RefreshCw size={12} /> Sync
+                        </button>
+                        <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" onClick={() => { void deleteCloudConnection(conn.id); reload(); }}>
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {showConnect && (
         <ConnectModal catalog={catalog} onClose={() => setShowConnect(false)} onConnected={() => { setShowConnect(false); reload(); }} />

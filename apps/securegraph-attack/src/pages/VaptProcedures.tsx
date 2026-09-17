@@ -134,29 +134,47 @@ export default function VaptProcedures() {
             !visibleProcedures.length ? (
               <Card><EmptyState icon={<BookOpen size={22} />} title="No procedures" body={procedures.length ? "Nothing matches that search." : "The engine returned no procedures for this organization."} /></Card>
             ) : (
-              <div className="space-y-2">
-                {visibleProcedures.map((p) => (
-                  <Card key={procedureKey(p)}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-200">{procedureName(p)}</p>
-                        <p className="mt-0.5 font-mono text-[13px] text-slate-500">{procedureKey(p)}</p>
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {p.category && <span className="chip border-phantix-700 text-slate-400">{text(p.category)}</span>}
-                          {p.phase && <span className="chip border-phantix-700 text-phantix-300">{text(p.phase)}</span>}
-                          {p.required_role && <span className="chip border-gold-400/30 text-gold-200">needs {text(p.required_role)}</span>}
-                          {Array.isArray(p.steps) && p.steps.length > 0 && (
-                            <span className="chip border-phantix-700 text-slate-400">
-                              <Workflow size={10} className="mr-1 inline" />{p.steps.length} steps
-                            </span>
+              <Card className="!p-0 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Name</th>
+                      <th className="th">Key</th>
+                      <th className="th">Category</th>
+                      <th className="th">Phase</th>
+                      <th className="th">Steps</th>
+                      <th className="th">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleProcedures.map((p) => (
+                      <tr key={procedureKey(p)} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                        <td className="td">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-slate-200">{procedureName(p)}</span>
+                            {p.required_role && <span className="chip w-fit border-gold-400/30 text-[11px] text-gold-200">needs {text(p.required_role)}</span>}
+                          </div>
+                        </td>
+                        <td className="td font-mono text-[13px] text-slate-500">{procedureKey(p)}</td>
+                        <td className="td">{p.category ? <span className="chip border-phantix-700 text-slate-400">{text(p.category)}</span> : <span className="text-slate-600">—</span>}</td>
+                        <td className="td">{p.phase ? <span className="chip border-phantix-700 text-phantix-300">{text(p.phase)}</span> : <span className="text-slate-600">—</span>}</td>
+                        <td className="td text-slate-400">
+                          {Array.isArray(p.steps) && p.steps.length > 0 ? (
+                            <span className="inline-flex items-center gap-1"><Workflow size={10} />{p.steps.length}</span>
+                          ) : "—"}
+                        </td>
+                        <td className="td">
+                          {p.is_active === false ? (
+                            <span className="chip border-phantix-700 text-slate-500">Inactive</span>
+                          ) : (
+                            <span className="chip border-emerald-400/30 text-emerald-400">Active</span>
                           )}
-                        </div>
-                      </div>
-                      {p.is_active === false && <span className="chip shrink-0 border-phantix-700 text-slate-500">Inactive</span>}
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
             )
           )}
 
@@ -164,23 +182,33 @@ export default function VaptProcedures() {
             !visibleRules.length ? (
               <Card><EmptyState icon={<GitBranch size={22} />} title="No correlation rules" body={rules.length ? "Nothing matches that search." : "No builtin or organization correlation rules are registered."} /></Card>
             ) : (
-              <div className="space-y-2">
-                {visibleRules.map((r, i) => (
-                  <Card key={String(r.id ?? r.rule_key ?? i)}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-slate-200">{text(r.name ?? r.title ?? r.rule_key, "Rule")}</p>
-                        {r.description && <p className="mt-1 text-xs leading-5 text-slate-400">{text(r.description)}</p>}
-                        {r.rule_key && <p className="mt-1 font-mono text-[13px] text-slate-500">{text(r.rule_key)}</p>}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {r.severity && <SeverityBadge severity={sevOf(r.severity)} />}
-                        {r.source && <span className="chip border-phantix-700 text-slate-500">{text(r.source)}</span>}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+              <Card className="!p-0 overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Name</th>
+                      <th className="th">Description</th>
+                      <th className="th">Severity</th>
+                      <th className="th">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleRules.map((r, i) => (
+                      <tr key={String(r.id ?? r.rule_key ?? i)} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                        <td className="td">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-medium text-slate-200">{text(r.name ?? r.title ?? r.rule_key, "Rule")}</span>
+                            {r.rule_key && <span className="font-mono text-[13px] text-slate-500">{text(r.rule_key)}</span>}
+                          </div>
+                        </td>
+                        <td className="td text-xs leading-5 text-slate-400">{r.description ? text(r.description) : <span className="text-slate-600">—</span>}</td>
+                        <td className="td">{r.severity ? <SeverityBadge severity={sevOf(r.severity)} /> : <span className="text-slate-600">—</span>}</td>
+                        <td className="td">{r.source ? <span className="chip border-phantix-700 text-slate-500">{text(r.source)}</span> : <span className="text-slate-600">—</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
             )
           )}
 
@@ -196,20 +224,28 @@ export default function VaptProcedures() {
               {!candidates.length ? (
                 <Card><EmptyState icon={<Lightbulb size={22} />} title="No candidates mined" body="Either mining consent is off, or no pattern has met the frequency threshold yet." /></Card>
               ) : (
-                candidates.map((c, i) => (
-                  <Card key={i}>
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-slate-200">{text(c.pattern ?? c.description, "Mined pattern")}</p>
-                        {c.description && c.pattern && <p className="mt-1 text-xs leading-5 text-slate-400">{text(c.description)}</p>}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {c.frequency != null && <span className="chip border-phantix-700 text-slate-400">seen {String(c.frequency)}×</span>}
-                        {c.confidence != null && <span className="chip border-gold-400/30 text-gold-200">confidence {String(c.confidence)}</span>}
-                      </div>
-                    </div>
-                  </Card>
-                ))
+                <Card className="!p-0 overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-phantix-700/40">
+                        <th className="th">Pattern</th>
+                        <th className="th">Description</th>
+                        <th className="th">Frequency</th>
+                        <th className="th">Confidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {candidates.map((c, i) => (
+                        <tr key={i} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                          <td className="td text-slate-200">{text(c.pattern ?? c.description, "Mined pattern")}</td>
+                          <td className="td text-xs leading-5 text-slate-400">{c.description && c.pattern ? text(c.description) : <span className="text-slate-600">—</span>}</td>
+                          <td className="td">{c.frequency != null ? <span className="chip border-phantix-700 text-slate-400">seen {String(c.frequency)}×</span> : <span className="text-slate-600">—</span>}</td>
+                          <td className="td">{c.confidence != null ? <span className="chip border-gold-400/30 text-gold-200">confidence {String(c.confidence)}</span> : <span className="text-slate-600">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
               )}
             </div>
           )}

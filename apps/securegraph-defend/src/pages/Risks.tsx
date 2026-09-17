@@ -179,47 +179,49 @@ export default function Risks() {
         </div>
       </div>
 
-      <div className="space-y-2.5">
-        {paginated.map((r, i) => {
-          const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "---", className: "text-slate-400" };
-          const color = riskLevelHex[r.level] ?? "#64748b";
-          return (
-            <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card hover className="!p-0 overflow-hidden" >
-                <button onClick={() => setSelected(r)} className="flex w-full items-stretch text-left">
-                  <div className="w-1 shrink-0" style={{ background: color, boxShadow: `0 0 12px ${color}66` }} />
-                  <div className="flex flex-1 flex-wrap items-center gap-4 p-4">
-                    <div className="w-14 text-center">
-                      <p className="font-display text-2xl font-bold" style={{ color }}>{r.inherent_score}</p>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-600">score</p>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium text-slate-100">{r.title}</p>
-                        <span className={cx("chip", bm.className)}>{r.priority_band}</span>
-                        {r.residual_score !== null && (
-                          <span className="chip border-severity-low/30 bg-severity-low/10 text-severity-low">residual {r.residual_score}</span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        <span className="font-mono">{r.asset_value}</span> · {r.owner_department ?? "Unassigned"} · {titleCase(r.status)} · {r.age_days}d old
-                      </p>
-                    </div>
-                    <div className="hidden w-40 md:block">
-                      <div className="mb-1 flex justify-between text-[12px] text-slate-500">
-                        <span>Priority {r.priority_score.toFixed(1)}</span>
-                        <span>{bm.label}</span>
-                      </div>
-                      <ProgressBar value={r.priority_score} color={color} />
-                    </div>
-                    <ChevronDown size={15} className="text-slate-600" />
-                  </div>
-                </button>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+      <Card className="!p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-phantix-700/40">
+                <th className="th">Score</th>
+                <th className="th">Title</th>
+                <th className="th">Priority band</th>
+                <th className="th">Asset</th>
+                <th className="th">Owner</th>
+                <th className="th">Status</th>
+                <th className="th">Age</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((r) => {
+                const bm = priorityBandMeta[r.priority_band] ?? { label: r.priority_band ?? "---", className: "text-slate-400" };
+                const color = riskLevelHex[r.level] ?? "#64748b";
+                return (
+                  <tr
+                    key={r.id}
+                    onClick={() => setSelected(r)}
+                    className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                  >
+                    <td className="td">
+                      <span className="font-display text-lg font-bold" style={{ color }}>{r.inherent_score}</span>
+                      {r.residual_score !== null && (
+                        <span className="ml-2 chip border-severity-low/30 bg-severity-low/10 text-severity-low">residual {r.residual_score}</span>
+                      )}
+                    </td>
+                    <td className="td font-medium text-slate-100">{r.title}</td>
+                    <td className="td"><span className={cx("chip", bm.className)}>{r.priority_band}</span></td>
+                    <td className="td font-mono text-xs text-slate-400">{r.asset_value}</td>
+                    <td className="td text-xs text-slate-400">{r.owner_department ?? "Unassigned"}</td>
+                    <td className="td text-xs text-slate-400">{titleCase(r.status)}</td>
+                    <td className="td text-xs text-slate-500">{r.age_days}d</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       <Pagination
         totalItems={sorted.length}

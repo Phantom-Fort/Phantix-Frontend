@@ -634,31 +634,43 @@ export default function SocDashboard() {
             <p className="text-xs text-slate-500">Optional incident cases linked from escalated detections.</p>
             <button className="btn-primary !py-2 text-sm" onClick={() => setCaseOpen(true)}><Plus size={14} /> Open case</button>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <Card className="!p-0 overflow-hidden">
             {casesRes.loading && !(casesRes.data?.items ?? []).length ? (
-              <div className="md:col-span-2"><CardListSkeleton rows={4} /></div>
+              <div className="p-4"><TableSkeleton rows={5} /></div>
             ) : (casesRes.data?.items ?? []).length === 0 ? (
-              <div className="md:col-span-2"><EmptyState icon={<BellRing size={24} />} title="No cases" body="Escalate a detection to open an incident case" /></div>
-            ) : (casesRes.data?.items ?? []).map((c) => (
-              <button key={c.id} type="button" className="text-left" onClick={() => void openCaseDetail(c)}>
-                <Card hover className="cursor-pointer">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="chip text-[12px]">#{c.id}</span>
-                      <p className="font-medium text-slate-100">{c.title}</p>
-                    </div>
-                    <StatusBadge status={String(c.status)} />
-                  </div>
-                  {c.summary && <p className="mt-2 text-xs text-slate-500 line-clamp-2">{c.summary}</p>}
-                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-                    <SeverityBadge severity={sevOf(String(c.severity))} />
-                    {c.assignee_ref && <span className="flex items-center gap-1"><UserCheck size={11} /> {c.assignee_ref}</span>}
-                    {c.opened_at && <span className="ml-auto">{timeAgo(c.opened_at)}</span>}
-                  </div>
-                </Card>
-              </button>
-            ))}
-          </div>
+              <EmptyState icon={<BellRing size={24} />} title="No cases" body="Escalate a detection to open an incident case" />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">ID</th>
+                      <th className="th">Title</th>
+                      <th className="th">Severity</th>
+                      <th className="th">Status</th>
+                      <th className="th">Assignee</th>
+                      <th className="th">Opened</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(casesRes.data?.items ?? []).map((c) => (
+                      <tr key={c.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors" onClick={() => void openCaseDetail(c)}>
+                        <td className="td font-mono text-xs text-gold-300">#{c.id}</td>
+                        <td className="td">
+                          <p className="font-medium text-slate-100">{c.title}</p>
+                          {c.summary && <p className="text-[13px] text-slate-500 line-clamp-1">{c.summary}</p>}
+                        </td>
+                        <td className="td"><SeverityBadge severity={sevOf(String(c.severity))} /></td>
+                        <td className="td"><StatusBadge status={String(c.status)} /></td>
+                        <td className="td text-xs text-slate-400">{c.assignee_ref ? <span className="flex items-center gap-1"><UserCheck size={11} /> {c.assignee_ref}</span> : "—"}</td>
+                        <td className="td text-xs text-slate-500 whitespace-nowrap">{c.opened_at ? timeAgo(c.opened_at) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
         </div>
       )}
 
