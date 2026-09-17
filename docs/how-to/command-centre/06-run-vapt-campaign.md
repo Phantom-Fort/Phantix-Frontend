@@ -50,9 +50,10 @@ tested differently — the planner turns off phases an estate cannot exercise
 - Infrastructure → network/service scan and templates.
 
 The generated plan lists each step's `process_flow`, its vulnerability-type
-substeps, and the checks selected against the live catalog. Generate a plan
-without starting it via `POST /api/v1/vapt/plan`; execute with modifications via
-`POST /api/v1/vapt/plan/execute`.
+substeps, and the checks selected against the live catalog. The review modal
+shows the inferred surfaces and each step's process flow before you create the
+campaign. Generate a plan without starting it via `POST /api/v1/vapt/plan`;
+execute with modifications via `POST /api/v1/vapt/plan/execute`.
 
 ---
 

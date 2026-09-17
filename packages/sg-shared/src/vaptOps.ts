@@ -453,6 +453,18 @@ export interface PlanVulnFocus {
   rationale?: string;
 }
 
+/**
+ * One inferred process flow present in the inventory. The strongest surface
+ * selects the pipeline a web/API step runs (browser vs REST vs GraphQL); this is
+ * the evidence the plan shows for that choice.
+ */
+export interface PlanProcessFlow {
+  flow: string;
+  assets: number;
+  pipeline_weight?: number;
+  samples?: string[];
+}
+
 export interface PlanStep {
   step_type: string;
   step_name: string;
@@ -461,6 +473,12 @@ export interface PlanStep {
   config?: Record<string, unknown>;
   substeps?: PlanSubstep[];
   vuln_focus?: PlanVulnFocus[];
+  /** The process flow this step runs (e.g. `graphql_focused`, `rest_api_full`). */
+  process_flow?: string | null;
+  /** Inferred surfaces that selected the flow. */
+  surfaces?: string[];
+  /** Inferred capabilities that shaped the flow toggles. */
+  capabilities?: string[];
 }
 
 export interface PlanProductContext {
@@ -501,6 +519,16 @@ export interface VaptPlan {
   /** Prose summary of the whole plan — use it for the confirm step. */
   narrative?: string;
   vuln_focus?: PlanVulnFocus[];
+  /** Inferred asset surfaces/capabilities the plan was shaped around. */
+  asset_surfaces?: {
+    available?: boolean;
+    surfaces?: string[];
+    capabilities?: string[];
+    by_surface?: Record<string, number>;
+    process_flows?: PlanProcessFlow[];
+  };
+  /** Process flows present in the inventory, most material first. */
+  process_flows?: PlanProcessFlow[];
   vuln_coverage?: {
     total_types?: number;
     checks_selected?: number;

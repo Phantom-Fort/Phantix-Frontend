@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   AlertTriangle, ChevronDown, ChevronRight, Crosshair, Info, Layers, Loader2,
-  RotateCcw, ShieldCheck, Sparkles, Target,
+  RotateCcw, ShieldCheck, Sparkles, Target, Workflow,
 } from "lucide-react";
 import { Modal, SeverityBadge } from "../ui";
 import type { PlanStep, PlanSubstep, VaptPlan } from "../vaptOps";
@@ -142,6 +142,11 @@ function StepBlock({
         <div className="flex min-w-0 items-center gap-2">
           <Layers size={13} className="shrink-0 text-gold-300" />
           <span className="text-[13px] font-semibold text-slate-100">{step.step_name}</span>
+          {step.process_flow && (
+            <span className="chip border-gold-400/20 bg-gold-400/[0.06] font-mono text-[11px] text-gold-200">
+              {step.process_flow}
+            </span>
+          )}
           {substeps.length > 0 && (
             <span className="text-[12px] text-slate-500">
               {substeps.length} {substeps.length === 1 ? "type" : "types"} · {checks}{" "}
@@ -256,6 +261,49 @@ export default function VaptPlanReview({
               : ""}
             — a newly added check joins the next plan without a code change.
           </p>
+        )}
+
+        {((plan.asset_surfaces?.surfaces ?? []).length > 0 ||
+          (plan.process_flows ?? []).length > 0) && (
+          <div className="rounded-md border border-phantix-700/40 bg-phantix-900/30 p-3">
+            <h4 className="mb-1.5 flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wide text-slate-400">
+              <Workflow size={11} /> Inferred surfaces &amp; process flows
+            </h4>
+            {(plan.asset_surfaces?.surfaces ?? []).length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {(plan.asset_surfaces?.surfaces ?? []).map((s) => (
+                  <span
+                    key={s}
+                    className="chip border-gold-400/20 bg-gold-400/[0.06] font-mono text-[12px] text-gold-200"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+            {(plan.process_flows ?? []).length > 0 ? (
+              <ul className="space-y-0.5 text-[13px] leading-5 text-slate-400">
+                {(plan.process_flows ?? []).map((f) => (
+                  <li key={f.flow} className="flex items-center justify-between gap-3">
+                    <span className="font-mono text-slate-300">{f.flow}</span>
+                    <span className="text-slate-500">
+                      {f.assets} asset{f.assets === 1 ? "" : "s"}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-[13px] leading-5 text-slate-500">
+                Surfaces were inferred from the asset inventory; no process-flow counts were
+                reported.
+              </p>
+            )}
+            <p className="mt-1.5 text-[12px] leading-4 text-slate-500">
+              The surface decides the pipeline each web/API step runs — an API-only scope skips
+              browser XSS and screenshots, a GraphQL scope adds introspection and operation
+              discovery.
+            </p>
+          </div>
         )}
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
