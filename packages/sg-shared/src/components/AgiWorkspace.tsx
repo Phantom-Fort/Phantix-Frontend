@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
-  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert, Sparkles,
+  Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
 } from "lucide-react";
 import { Modal, SkeletonBlock } from "../ui";
 import DocLink from "./DocLink";
@@ -88,6 +88,22 @@ function ActionCard({
       </div>
     </div>
   );
+}
+
+// Map an AGI blocker to the person who can clear it and the step they take.
+// "Unavailable" without a name leaves the operator stuck; every gate here has
+// a known owner.
+function blockerGuidance(code: string): string | null {
+  switch (code) {
+    case "agi_org_disabled":
+      return "Ask your organization admin to enable the Autonomous Agent on Platform \u2192 Autonomous Agent.";
+    case "agi_plan_required":
+      return "Ask your organization admin to upgrade the plan or add the AI Pentest Agent.";
+    case "agi_disabled":
+      return "The Autonomous Agent is turned off on this deployment \u2014 contact Phantix support to enable it.";
+    default:
+      return null;
+  }
 }
 
 export default function AgiWorkspace({ variant = "drawer" }: { variant?: WorkspaceVariant }) {
@@ -744,19 +760,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           <p className="mt-3 text-sm font-semibold text-slate-200">Autonomous Pentest Agent unavailable</p>
           <ul className="mt-3 space-y-1.5 text-xs text-slate-500">
             {access?.agi.blockers.map((b) => (
-              <li key={b.code} className="flex items-center gap-1.5">
-                <span className="h-1 w-1 rounded-full bg-slate-600" /> {b.message}
+              <li key={b.code} className="flex items-start gap-1.5">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-slate-600" />
+                <span>
+                  {b.message}
+                  {blockerGuidance(b.code) && (
+                    <span className="mt-0.5 block text-gold-200/90">{blockerGuidance(b.code)}</span>
+                  )}
+                </span>
               </li>
             ))}
           </ul>
-          {/* When the blocker is entitlement, the way out is payment — but an
-              operator has no company password to reach the Platform's billing
-              page, so point them at their admin instead of a dead-end redirect. */}
-          {access?.agi.blockers.some((b) => /entitle|plan|payment|subscri|premium/i.test(`${b.code} ${b.message}`)) && (
-            <p className="mt-4 flex items-center gap-2 rounded-md border border-gold-400/30 bg-gold-400/[0.08] px-3.5 py-2 text-xs font-medium text-gold-200">
-              <Sparkles size={13} className="shrink-0 text-gold-300" /> Ask your organization admin to upgrade the plan
-            </p>
-          )}
         </div>
       )}
 

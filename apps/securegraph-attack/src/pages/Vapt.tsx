@@ -98,6 +98,17 @@ export default function Vapt() {
   const loadError = data.error;
   const [tab, setTab] = useState("campaigns");
   const [selected, setSelected] = useState<VaptCampaign | null>(null);
+  // A concurrency 409 names the campaign in the way + the actions the state
+  // machine will accept. Surface it as an actionable dialog, not a dead end.
+  const [conflict, setConflict] = useState<{
+    id: number;
+    campaign_name?: string;
+    status?: string;
+    campaign_type?: string;
+    current_phase?: string;
+    findings_count?: number;
+    actions?: string[];
+  } | null>(null);
   const [findingSelected, setFindingSelected] = useState<VaptFinding | null>(null);
   const [retesting, setRetesting] = useState(false);
   const [retestResult, setRetestResult] = useState<{ outcome: string; engine: string; verdict: string; reason: string } | null>(null);
@@ -175,6 +186,15 @@ export default function Vapt() {
   };
 
   // Campaign action handlers
+  const reportConflict = (e: any) => {
+    const c = e?.detail?.conflicting_campaign;
+    if (c?.id) {
+      setConflict(c);
+      return;
+    }
+    toast("warning", "Concurrent campaign", "Pause or cancel the active campaign first.");
+  };
+
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
     if (!(await requireDualControl(`${action} campaign requires a dual-control operate session.`))) return;
     try {
@@ -187,7 +207,7 @@ export default function Vapt() {
       reload();
     } catch (e: any) {
       if (e.status === 409) {
-        toast("warning", "Concurrent campaign", "Another campaign is already running. Pause or cancel it first.");
+        reportConflict(e);
       } else {
         toast("error", `${action} failed`, e.message || "");
       }
@@ -237,7 +257,7 @@ export default function Vapt() {
       reload();
     } catch (e: any) {
       if (e.status === 409) {
-        toast("warning", "Another campaign is already running", "Pause or cancel the active campaign before creating a new one.");
+        reportConflict(e);
       } else {
         toast("error", "Create failed", e.message || "");
       }
@@ -258,7 +278,7 @@ export default function Vapt() {
       }
       setPendingPlan(plan);
     } catch (e: any) {
-      if (e.status === 409) toast("warning", "Another campaign is already running", "Pause or cancel it first.");
+      if (e.status === 409) reportConflict(e);
       else toast("error", "Plan failed", e.message || "");
     }
     finally { setPlanning(false); }
@@ -286,7 +306,7 @@ export default function Vapt() {
         setPendingPlan(null);
         reload();
       } else if (e.status === 409) {
-        toast("warning", "Another campaign is already running", "Pause or cancel it first.");
+        reportConflict(e);
       } else {
         toast("error", "Could not create campaign", e.message || "");
       }
@@ -439,6 +459,23 @@ export default function Vapt() {
 
       {tab === "campaigns" && (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
+          {/* What is still running — the operator can see it and end it here. */}
+          {activeCampaigns.length > 0 && (
+            <div className="xl:col-span-5 flex flex-wrap items-center gap-2 rounded-xl border border-severity-medium/30 bg-severity-medium/8 px-3.5 py-2.5 text-xs text-severity-medium">
+              <AlertTriangle size={14} className="shrink-0" />
+              <span>
+                <strong>{activeCampaigns[0].name}</strong>{" "}
+                {activeCampaigns[0].status === "pending_approval"
+                  ? "is awaiting approval"
+                  : `is ${activeCampaigns[0].status}`}
+                {activeCampaigns.length > 1 ? ` (+${activeCampaigns.length - 1} more)` : ""} — no new
+                campaign can start until it is resumed, paused or cancelled.
+              </span>
+              <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => setSelected(activeCampaigns[0])}>
+                View it
+              </button>
+            </div>
+          )}
           {/* Campaign list */}
           <div className="space-y-3 xl:col-span-2">
             {vaptCampaigns.map((c, i) => (
@@ -1102,6 +1139,70 @@ export default function Vapt() {
           </p>
           <button className="btn-primary w-full" type="submit">Create campaign</button>
         </form>
+      </Modal>
+
+      {/* Concurrency conflict — name the campaign in the way and let the
+          operator finish or end it without leaving the page. */}
+      <Modal open={!!conflict} onClose={() => setConflict(null)} title="A campaign is still running">
+        {conflict && (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-300">
+              <strong className="text-slate-100">{conflict.campaign_name || `Campaign #${conflict.id}`}</strong>{" "}
+              {conflict.status === "pending_approval"
+                ? "is awaiting approval"
+                : `is ${conflict.status || "active"}`}
+              . A new campaign cannot start until it is resumed, paused or cancelled.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {conflict.actions?.includes("resume") && (
+                <button
+                  className="btn-primary !text-xs"
+                  onClick={() => {
+                    const id = conflict.id;
+                    setConflict(null);
+                    void handleCampaignAction(id, "resume");
+                  }}
+                >
+                  <Play size={13} className="mr-1 inline" /> Resume it
+                </button>
+              )}
+              {conflict.actions?.includes("pause") && (
+                <button
+                  className="btn-secondary !text-xs"
+                  onClick={() => {
+                    const id = conflict.id;
+                    setConflict(null);
+                    void handleCampaignAction(id, "pause");
+                  }}
+                >
+                  <Pause size={13} className="mr-1 inline" /> Pause it
+                </button>
+              )}
+              {conflict.actions?.includes("cancel") && (
+                <button
+                  className="btn-danger !text-xs"
+                  onClick={() => {
+                    const id = conflict.id;
+                    setConflict(null);
+                    void handleCampaignAction(id, "cancel");
+                  }}
+                >
+                  <XCircle size={13} className="mr-1 inline" /> Cancel it
+                </button>
+              )}
+              <button
+                className="btn-ghost !text-xs"
+                onClick={() => {
+                  const c = vaptCampaigns.find((x) => x.id === conflict.id);
+                  if (c) setSelected(c);
+                  setConflict(null);
+                }}
+              >
+                Open campaign
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Bruteforce typed confirmation modal */}
