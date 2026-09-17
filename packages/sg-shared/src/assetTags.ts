@@ -66,6 +66,83 @@ export function removeTagFromAsset(assetId: number, tagId: number) {
   return api.delete<void>(`/asset-tags/assets/${assetId}/${tagId}`);
 }
 
+// ── Inferred classification ──────────────────────────────────────────────────
+// The backend derives what an asset *is* (surface, capabilities, process flow)
+// from its type, value, metadata and imports, and persists namespaced tags
+// (`surface:` / `cap:` / `flow:` / `tech:`). "Classify" refreshes them on demand
+// — e.g. after a metadata change — and returns the reasoning for the UI.
+
+export interface AssetClassification {
+  asset_id: number;
+  primary_surface: string;
+  surfaces: string[];
+  capabilities: string[];
+  technologies: string[];
+  recommended_flow: string;
+  confidence: number;
+  inferred_tags: string[];
+  applied_tags: string[];
+  evidence: string[];
+}
+
+/** Prefixes the classifier owns; anything else on an asset is a human tag. */
+export const INFERRED_TAG_PREFIXES = ["surface:", "cap:", "flow:", "tech:"] as const;
+
+export function isInferredTag(name: string): boolean {
+  const n = (name ?? "").toLowerCase();
+  return INFERRED_TAG_PREFIXES.some((p) => n.startsWith(p));
+}
+
+export async function classifyAsset(assetId: number): Promise<AssetClassification> {
+  if (isDemoMode()) {
+    await delay(300);
+    const a = demo.assets.find((x) => x.id === assetId);
+    const type = String(a?.asset_type ?? "domain").toLowerCase();
+    const value = String(a?.value ?? "").toLowerCase();
+    const surfaces: string[] = [];
+    const capabilities: string[] = [];
+    if (/graphql/.test(value)) {
+      surfaces.push("graphql_api");
+      capabilities.push("graphql");
+    } else if (type === "api" || /\/api(\/|$)|openapi|swagger/.test(value)) {
+      surfaces.push("rest_api");
+      capabilities.push("rest", "json");
+    } else if (type === "ip_address" || type === "port_service") {
+      surfaces.push("network_host");
+    } else if (type === "web_app") {
+      surfaces.push("web_application");
+    } else {
+      surfaces.push("web_application");
+    }
+    const primary = surfaces[0];
+    const flow =
+      primary === "graphql_api"
+        ? "graphql_focused"
+        : primary === "rest_api"
+          ? "rest_api_full"
+          : primary === "network_host"
+            ? "network_host"
+            : "web_application_standard";
+    return {
+      asset_id: assetId,
+      primary_surface: primary,
+      surfaces,
+      capabilities,
+      technologies: [],
+      recommended_flow: flow,
+      confidence: 0.7,
+      inferred_tags: [
+        ...surfaces.map((s) => `surface:${s}`),
+        ...capabilities.map((c) => `cap:${c}`),
+        `flow:${flow}`,
+      ],
+      applied_tags: [],
+      evidence: ["Demo classification — live mode reads type, value and metadata."],
+    };
+  }
+  return api.post<AssetClassification>(`/asset-tags/assets/${assetId}/classify`, {});
+}
+
 /** A readable default palette so new tags are distinguishable at a glance. */
 export const TAG_COLORS = [
   "#E8B54D", "#5A7BD6", "#34D399", "#F43F5E", "#FB923C", "#A78BFA", "#38BDF8", "#94A3B8",

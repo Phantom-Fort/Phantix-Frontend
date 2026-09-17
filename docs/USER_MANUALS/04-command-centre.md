@@ -215,7 +215,10 @@ held. See [Agent activity](../how-to/command-centre/20-agent-activity.md).
 
 **Autonomous Pentest Agent** (right-side drawer) runs governed sessions against
 your own assets. First use requires accepting the usage agreement; the agreement
-dialog links its guide below the accept button. See
+dialog links its guide below the accept button. It walks a six-phase attack tree
+(each phase shows up to five named steps and runs at most five loops), tests
+assets in batches by type, delegates read-only work to bounded subagents in
+parallel, and closes on verified findings plus an AI credit-spend readout. See
 [Autonomous pentest agent](../how-to/command-centre/17-autonomous-pentest.md).
 
 ---

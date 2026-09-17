@@ -36,6 +36,27 @@ flowchart TD
 
 ---
 
+## Test process flows
+
+The campaign does not run one generic scan. Each asset's inferred surface picks
+a **process flow**, so a web application, a REST API and a GraphQL endpoint are
+tested differently — the planner turns off phases an estate cannot exercise
+(browser XSS and screenshots on an API-only scope) and turns on the ones it can
+(GraphQL introspection, BOLA/IDOR, OpenAPI fuzzing).
+
+- Web application → crawl, XSS, upload, screenshots, auth.
+- REST / OpenAPI → route discovery, schema fuzzing, BOLA, JWT.
+- GraphQL → introspection, operation discovery, authorization.
+- Infrastructure → network/service scan and templates.
+
+The generated plan lists each step's `process_flow`, its vulnerability-type
+substeps, and the checks selected against the live catalog. The review modal
+shows the inferred surfaces and each step's process flow before you create the
+campaign. Generate a plan without starting it via `POST /api/v1/vapt/plan`;
+execute with modifications via `POST /api/v1/vapt/plan/execute`.
+
+---
+
 ## Retest after remediation
 
 In a finding's detail, **Retest** re-checks whether the issue still holds after a

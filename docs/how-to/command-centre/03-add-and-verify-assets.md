@@ -37,6 +37,30 @@ flowchart TD
 
 ---
 
+## Inferred intelligence tags
+
+You tag an asset with what you know ("production", "pci-scope"); the platform
+also derives what the asset **is**, because a domain can be a web app, a REST
+API, or a GraphQL endpoint — and each is tested differently. On save (and on
+demand via **Classify**), the asset is classified from its type, value, metadata
+and imports, and namespaced tags are added alongside your own:
+
+| Prefix | Example | Means |
+|--------|---------|-------|
+| `surface:` | `surface:graphql_api` | The primary shape to test |
+| `cap:` | `cap:file_upload` | A capability that changes the process flow |
+| `flow:` | `flow:spa_plus_api` | The test process flow the VAPT planner selects |
+| `tech:` | `tech:wordpress` | A detected technology |
+
+Inferred tags are recomputed on every save, so a metadata change cannot leave a
+stale `surface:` behind; your manual tags are never touched. Use them to filter
+catalogues and to explain why a campaign tests one asset differently from another.
+
+API: `POST /api/v1/asset-tags/assets/{id}/classify` (returns the surface,
+capabilities, confidence and the tags it applied).
+
+---
+
 ## Tips
 
 - Prefer verified assets before production-impacting scans.

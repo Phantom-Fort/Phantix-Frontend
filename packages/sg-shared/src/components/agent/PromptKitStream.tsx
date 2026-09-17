@@ -55,6 +55,17 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
     return <Tool toolPart={toToolPart(t)} defaultOpen={false} />;
   }
 
+  // A turn streams in as several transcript chunks before real text lands —
+  // several of those arrive with blank content. Chunks that carry their own
+  // "kind" (turn_start, reasoning, …) have their own fallback content below
+  // and still render; a bare empty chunk has nothing to show, so skip it
+  // instead of painting an empty rounded bubble that then vanishes once real
+  // text pushes it out — the "four or five empty boxes before the reply"
+  // this guard removes.
+  if (!t.content.trim() && !t.meta?.kind) {
+    return null;
+  }
+
   if (t.role === "system") {
     return (
       <Message className="max-w-full">

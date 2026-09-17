@@ -135,6 +135,29 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [selectedAssetIds, setSelectedAssetIds] = useState<Set<number>>(new Set());
   const [selectAllAssets, setSelectAllAssets] = useState(false);
 
+  // Group the inventory by its first asset tag so the picker reads like the
+  // asset inventory does — tagged groups first, untagged assets at the end.
+  const assetGroups = useMemo(() => {
+    const groups: { name: string; assets: Asset[] }[] = [];
+    const index = new Map<string, number>();
+    for (const a of orgAssets) {
+      const tag = a.tags?.[0]?.name?.trim();
+      const name = tag || "Untagged";
+      const existing = index.get(name);
+      if (existing !== undefined) {
+        groups[existing].assets.push(a);
+      } else {
+        index.set(name, groups.length);
+        groups.push({ name, assets: [a] });
+      }
+    }
+    return groups.sort((a, b) => {
+      if (a.name === "Untagged") return 1;
+      if (b.name === "Untagged") return -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [orgAssets]);
+
   // Session + stream
   const [session, setSession] = useState<AgiSession | null>(null);
   const [instruction, setInstruction] = useState("");
@@ -817,6 +840,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   pendingCount={0}
                   running={false}
                   compact={COMPACT}
+                  collapsible
+                  defaultCollapsed={COMPACT}
                 />
               </div>
 
@@ -828,16 +853,24 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
               {createOpen && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-3">
                   <p className="wb-pane-title">New engagement</p>
-                  <input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="Name (e.g. Lab external web)"
-                    className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
-                  />
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-400">Engagement name</span>
+                    <input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="e.g. Lab external web"
+                      className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
+                    />
+                  </label>
                   <div className="rounded-lg border border-phantix-700/50 bg-phantix-950/60 p-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="wb-pane-title">Target assets (from your inventory)</p>
-                      <label className="wb-xs flex cursor-pointer items-center gap-1.5 text-slate-400">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="wb-pane-title">Target assets</p>
+                        <p className="mt-0.5 text-[12px] leading-4 text-slate-500">
+                          Pick the assets this engagement may touch. Only selected assets become allowlist targets.
+                        </p>
+                      </div>
+                      <label className="wb-xs flex shrink-0 cursor-pointer items-center gap-1.5 pt-0.5 text-slate-400">
                         <input
                           type="checkbox"
                           checked={selectAllAssets}
@@ -859,36 +892,67 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     ) : orgAssets.length === 0 ? (
                       <p className="wb-xs py-3 text-center text-slate-500">No assets in your inventory yet. Add assets first, then create an engagement.</p>
                     ) : (
-                      <div className="wb-scroll mt-1.5 max-h-40 space-y-1 overflow-y-auto pr-1">
-                        {orgAssets
-                          .filter((a) => !selectAllAssets && (!assetSearch.trim() || a.value.toLowerCase().includes(assetSearch.toLowerCase()) || a.name.toLowerCase().includes(assetSearch.toLowerCase())))
-                          .map((a) => (
-                            <label
-                              key={a.id}
-                              className={cx(
-                                "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
-                                selectAllAssets ? "opacity-60" : "hover:bg-phantix-800/50",
-                                selectedAssetIds.has(a.id) && !selectAllAssets && "bg-phantix-800/40",
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectAllAssets || selectedAssetIds.has(a.id)}
-                                disabled={selectAllAssets}
-                                onChange={(e) => {
+                      <div className="wb-scroll mt-2 max-h-64 space-y-3 overflow-y-auto pr-1">
+                        {assetGroups.map((group) => {
+                          const visible = selectAllAssets
+                            ? group.assets
+                            : group.assets.filter((a) => !assetSearch.trim() || a.value.toLowerCase().includes(assetSearch.toLowerCase()) || a.name.toLowerCase().includes(assetSearch.toLowerCase()));
+                          if (visible.length === 0) return null;
+                          const allSelected = selectAllAssets || visible.every((a) => selectedAssetIds.has(a.id));
+                          return (
+                            <div key={group.name}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (selectAllAssets) return;
                                   setSelectedAssetIds((prev) => {
                                     const next = new Set(prev);
-                                    if (e.target.checked) next.add(a.id); else next.delete(a.id);
+                                    for (const a of visible) {
+                                      if (allSelected) next.delete(a.id); else next.add(a.id);
+                                    }
                                     return next;
                                   });
                                 }}
-                                className="h-3 w-3 shrink-0 accent-gold-400"
-                              />
-                              <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", a.criticality === "critical" ? "bg-severity-critical" : a.criticality === "high" ? "bg-severity-high" : a.criticality === "medium" ? "bg-severity-medium" : "bg-severity-low")} />
-                              <span className="wb-xs min-w-0 flex-1 truncate font-mono text-slate-200">{a.value}</span>
-                              <span className="wb-2xs shrink-0 uppercase tracking-wider text-slate-500">{humanize(a.asset_type)}</span>
-                            </label>
-                          ))}
+                                className="mb-1 flex w-full items-center gap-2 text-left"
+                              >
+                                <span className={cx("flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px]", allSelected ? "border-gold-400/50 bg-gold-400/20 text-gold-300" : "border-phantix-600 text-transparent")}>
+                                  {allSelected ? "✓" : ""}
+                                </span>
+                                <span className="wb-2xs font-semibold uppercase tracking-wider text-slate-400">{group.name}</span>
+                                <span className="wb-2xs text-slate-600">{visible.length} asset{visible.length === 1 ? "" : "s"}</span>
+                              </button>
+                              <div className="space-y-1 pl-5">
+                                {visible.map((a) => (
+                                  <label
+                                    key={a.id}
+                                    className={cx(
+                                      "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-colors",
+                                      selectAllAssets ? "opacity-60" : "hover:bg-phantix-800/50",
+                                      selectedAssetIds.has(a.id) && !selectAllAssets && "bg-phantix-800/40",
+                                    )}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectAllAssets || selectedAssetIds.has(a.id)}
+                                      disabled={selectAllAssets}
+                                      onChange={(e) => {
+                                        setSelectedAssetIds((prev) => {
+                                          const next = new Set(prev);
+                                          if (e.target.checked) next.add(a.id); else next.delete(a.id);
+                                          return next;
+                                        });
+                                      }}
+                                      className="h-3 w-3 shrink-0 accent-gold-400"
+                                    />
+                                    <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", a.criticality === "critical" ? "bg-severity-critical" : a.criticality === "high" ? "bg-severity-high" : a.criticality === "medium" ? "bg-severity-medium" : "bg-severity-low")} />
+                                    <span className="wb-xs min-w-0 flex-1 truncate font-mono text-slate-200">{a.value}</span>
+                                    <span className="wb-2xs shrink-0 uppercase tracking-wider text-slate-500">{humanize(a.asset_type)}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     <p className="wb-2xs mt-1.5 text-slate-600">
@@ -897,12 +961,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                         : `${selectedAssetIds.size} of ${orgAssets.length} selected`}
                     </p>
                   </div>
-                  <input
-                    value={newRoe}
-                    onChange={(e) => setNewRoe(e.target.value)}
-                    placeholder="Rules of engagement (optional)"
-                    className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
-                  />
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-semibold text-slate-400">Rules of engagement</span>
+                    <input
+                      value={newRoe}
+                      onChange={(e) => setNewRoe(e.target.value)}
+                      placeholder="e.g. Business hours only, no destructive actions"
+                      className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
+                    />
+                    <span className="mt-1 block text-[12px] leading-4 text-slate-600">Optional. Defaults to authorized targets only, no destructive actions.</span>
+                  </label>
                   <button onClick={() => void createEngagement()} disabled={creating} className="btn-primary w-full !py-2 wb-sm">
                     {creating ? <Loader2 size={12} className="mr-1 animate-spin inline" /> : <Plus size={12} className="mr-1 inline" />} Create engagement
                   </button>
@@ -933,7 +1001,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                         <span className="wb-sm min-w-0 truncate font-semibold text-slate-200">{e.name}</span>
                         <span className={cx("ml-auto chip shrink-0 !px-2 !py-0.5 wb-2xs", e.status === "ready" ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>{humanize(e.status)}</span>
                       </div>
-                      <p className="wb-2xs mt-1 truncate font-mono text-slate-500">{e.scope_definition.target_allowlist.join(" · ") || "no targets"}</p>
+                      <p className="wb-2xs mt-1.5 flex items-center gap-1.5 text-slate-500">
+                        <span className="shrink-0 font-semibold text-slate-400">{e.scope_definition.target_allowlist.length} target{e.scope_definition.target_allowlist.length === 1 ? "" : "s"}</span>
+                        <span className="min-w-0 truncate font-mono">
+                          {e.scope_definition.target_allowlist.slice(0, 3).join(", ")}
+                          {e.scope_definition.target_allowlist.length > 3 ? "…" : ""}
+                        </span>
+                      </p>
+                      {e.scope_definition.rules_of_engagement && (
+                        <p className="wb-2xs mt-1 line-clamp-1 text-slate-600">ROE: {e.scope_definition.rules_of_engagement}</p>
+                      )}
                     </button>
                   ))}
                 </div>

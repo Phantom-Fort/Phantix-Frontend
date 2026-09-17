@@ -11,7 +11,7 @@ import { useResource } from "@sg/useResource";
 import { timeAgo, titleCase, cx, severityMeta } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { api, tokens, API_BASE, ApiError } from "@sg/api";
-import { createAssetTag, deleteAssetTag, TAG_COLORS } from "@sg/assetTags";
+import { classifyAsset, createAssetTag, deleteAssetTag, TAG_COLORS, type AssetClassification } from "@sg/assetTags";
 import { sanitizeSingleLine, validateUploadFile } from "@sg/uploadValidation";
 import type { Asset, AssetIntelligence, DiscoveryJob } from "@sg/types";
 
@@ -109,6 +109,9 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   const [tagForm, setTagForm] = useState({ name: "", color: TAG_COLORS[0], description: "" });
   const [savingTag, setSavingTag] = useState(false);
   const [deletingTag, setDeletingTag] = useState<number | null>(null);
+  /** Inferred classification for the open asset detail, refreshed on demand. */
+  const [classification, setClassification] = useState<AssetClassification | null>(null);
+  const [classifying, setClassifying] = useState(false);
   /** Discovery job id currently being re-queued (Retry action). */
   const [retryingJob, setRetryingJob] = useState<number | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -160,6 +163,20 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
       );
     } finally {
       setSavingTag(false);
+    }
+  };
+
+  const handleClassify = async () => {
+    if (!selected) return;
+    setClassifying(true);
+    try {
+      const result = await classifyAsset(selected.id);
+      setClassification(result);
+      toast("success", "Asset classified", `${titleCase(result.primary_surface)} · ${result.recommended_flow}`);
+    } catch (e) {
+      toast("error", "Could not classify the asset", e instanceof Error ? e.message : undefined);
+    } finally {
+      setClassifying(false);
     }
   };
 
@@ -986,6 +1003,30 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
                 )) : <span className="text-sm text-slate-500">No manual tags -- auto-tags (type/source/verified) apply.</span>}
               </div>
             </div>
+            {classification && classification.asset_id === selected.id && (
+              <div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="label">Inferred classification</p>
+                  <span className="text-[12px] text-slate-500">confidence {Math.round((classification.confidence ?? 0) * 100)}%</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-200">{titleCase(classification.primary_surface)}</span>
+                  <span className="chip border-phantix-600/40 bg-phantix-800/50 font-mono text-slate-300">flow: {classification.recommended_flow}</span>
+                  {classification.capabilities.map((c) => (
+                    <span key={c} className="chip border-phantix-700 font-mono text-slate-400">cap:{c}</span>
+                  ))}
+                  {classification.technologies.map((t) => (
+                    <span key={t} className="chip border-phantix-700 font-mono text-emerald-300/80">tech:{t}</span>
+                  ))}
+                </div>
+                {classification.evidence.length > 0 && (
+                  <p className="mt-1.5 text-[12px] leading-4 text-slate-500">{classification.evidence.slice(0, 4).join(" · ")}</p>
+                )}
+                <p className="mt-1 text-[12px] leading-4 text-slate-500">
+                  Inferred tags are recomputed on every save and drive the VAPT process flow; your manual tags are never touched.
+                </p>
+              </div>
+            )}
             {selectedIntel && (
               <>
                 <div>
@@ -1048,6 +1089,9 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
               </button>
               <button className="btn-secondary" onClick={() => toast("info", "History", "asset_history tracks every change in your security DB.")}>
                 View history
+              </button>
+              <button className="btn-secondary" onClick={() => void handleClassify()} disabled={classifying} title="Recompute the inferred surface, capabilities and process flow">
+                {classifying ? <Spinner className="h-3.5 w-3.5" /> : <Sparkles size={13} className="mr-1 inline" />} Classify
               </button>
             </div>
           </div>

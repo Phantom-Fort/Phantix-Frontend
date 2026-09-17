@@ -125,6 +125,11 @@ export default function VaptSchedules() {
                       {s.description && <p className="mt-1 text-xs leading-5 text-slate-400">{s.description}</p>}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         <span className="chip border-phantix-700 font-mono text-phantix-300">{s.procedure_key}</span>
+                        {s.campaign_config?.adaptive_procedure !== false && (
+                          <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-200" title="The procedure is chosen from the inferred surfaces of the scoped assets on each run.">
+                            adaptive
+                          </span>
+                        )}
                         <span className="chip border-phantix-700 font-mono text-slate-400">{s.cron_expression}</span>
                         <span className="chip border-phantix-700 text-slate-400">{s.timezone}</span>
                         <span className="chip border-phantix-700 text-slate-400">max {s.max_concurrent_per_org} concurrent</span>
@@ -189,6 +194,8 @@ function CreateScheduleModal({
   const [procedure, setProcedure] = useState(procedures.length ? procedureKey(procedures[0]) : "");
   const [cron, setCron] = useState("7d");
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+  /** Let each run choose the procedure from the inferred surfaces of the scoped assets. */
+  const [adaptive, setAdaptive] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -205,6 +212,7 @@ function CreateScheduleModal({
           procedure_key: procedure.trim(),
           cron_expression: cron.trim() || "7d",
           timezone: timezone.trim() || "UTC",
+          campaign_config: { adaptive_procedure: adaptive },
         }),
       );
       if (created) {
@@ -247,6 +255,23 @@ function CreateScheduleModal({
             <input id="sch-tz" value={timezone} onChange={(e) => setTimezone(e.target.value)} className="input mt-1" />
           </div>
         </div>
+
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
+          <input
+            type="checkbox"
+            checked={adaptive}
+            onChange={(e) => setAdaptive(e.target.checked)}
+            className="mt-0.5 accent-[rgb(var(--gold-400))]"
+          />
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-slate-200">Adaptive procedure</span>
+            <span className="mt-0.5 block text-[13px] leading-5 text-slate-500">
+              On each run the scope is classified (web app / API / GraphQL / infra / cloud) and the
+              procedure whose process flow matches is selected. Turn this off to pin the schedule
+              to the procedure above.
+            </span>
+          </span>
+        </label>
 
         <div>
           <label className="label" htmlFor="sch-cron">Cadence</label>

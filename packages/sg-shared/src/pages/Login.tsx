@@ -329,6 +329,18 @@ function ReturningLogin({
     const timer = setInterval(() => {
       void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
     }, 2500);
+    // Backgrounded tabs get their setInterval throttled (sometimes to once a
+    // minute, sometimes frozen outright) by the browser while the user is off
+    // reading the confirmation email — so a tab left waiting can sit past the
+    // point of confirmation with nothing to show for it until the throttled
+    // timer eventually fires. Checking immediately on return to the tab closes
+    // that gap instead of waiting on the interval to catch up.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const timeout = setTimeout(() => {
       if (!disposed) {
         clearInterval(timer);
@@ -338,6 +350,7 @@ function ReturningLogin({
     }, 15 * 60 * 1000);
     return () => {
       unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
       clearTimeout(timeout);
       disposed = true;
@@ -691,6 +704,18 @@ function AppLoginFlow({
     const timer = setInterval(() => {
       void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
     }, 2500);
+    // Backgrounded tabs get their setInterval throttled (sometimes to once a
+    // minute, sometimes frozen outright) by the browser while the user is off
+    // reading the confirmation email — so a tab left waiting can sit past the
+    // point of confirmation with nothing to show for it until the throttled
+    // timer eventually fires. Checking immediately on return to the tab closes
+    // that gap instead of waiting on the interval to catch up.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void checkDeviceConfirmed().then((ok) => { if (ok) stop(); });
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const timeout = setTimeout(() => {
       if (!disposed) {
         clearInterval(timer);
@@ -700,6 +725,7 @@ function AppLoginFlow({
     }, 15 * 60 * 1000);
     return () => {
       unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
       clearTimeout(timeout);
       disposed = true;
