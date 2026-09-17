@@ -247,6 +247,13 @@ export default function Reports() {
   const trackerPageItems = trackerFindings.slice((trackerSafePage - 1) * trackerPageSize, trackerSafePage * trackerPageSize);
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
+  // Only campaign-scoped report types need a campaign (from the backend catalog's
+  // `requires_campaign`). All others — compliance, executive, tracker,
+  // org_security_overview, audit_activity, … — generate org-wide without one.
+  const requiresCampaign = useMemo(() => {
+    const t = reportTypes.find((x) => x.report_type === genForm.report_type);
+    return t ? !!t.requires_campaign : genForm.report_type === "vapt_campaign";
+  }, [reportTypes, genForm.report_type]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const fetchedCampaigns = useRef(false);
@@ -314,14 +321,14 @@ export default function Reports() {
 
   useEffect(() => {
     if (!genOpen) return;
-    if (!fromAgi && !genForm.campaign_id) {
+    if (!fromAgi && requiresCampaign && !genForm.campaign_id) {
       setGate(null);
       setGateError(null);
       return;
     }
     ackRef.current = false;
     void loadGate(genForm.campaign_id, genForm.report_type);
-  }, [genOpen, genForm.campaign_id, genForm.report_type, fromAgi, loadGate]);
+  }, [genOpen, genForm.campaign_id, genForm.report_type, fromAgi, requiresCampaign, loadGate]);
 
   // Unit retest state
   const [retestTarget, setRetestTarget] = useState<TrackerFinding | null>(null);
@@ -443,7 +450,7 @@ export default function Reports() {
 
   const handleGenerate = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fromAgi && !genForm.campaign_id) {
+    if (!fromAgi && requiresCampaign && !genForm.campaign_id) {
       toast("error", "Validation", "Please select a campaign.");
       return;
     }
@@ -474,7 +481,7 @@ export default function Reports() {
     } finally {
       setGenSubmitting(false);
     }
-  }, [genForm, toast, reload, fromAgi, agiSession, params, setData, requireDualControl, doGenerate]);
+  }, [genForm, toast, reload, fromAgi, agiSession, params, setData, requireDualControl, doGenerate, requiresCampaign]);
 
   const confirmVerifiedOnly = useCallback(async () => {
     if (!ackGate) return;
