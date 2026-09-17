@@ -296,7 +296,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     setPolicyBanner(null);
     try {
       toast("info", "Provisioning container…", "Workspace setup can take up to ~2 minutes.");
-      const s = await startAgiSession(selectedEng, msg, { include_org_assets: false, autonomy: "medium" });
+      const s = await startAgiSession(selectedEng, msg, { include_org_assets: true, autonomy: "medium" });
       setSession(s);
       setRunning(true);
       reportSubmitted.current = false;

@@ -121,6 +121,15 @@ export default function DualControlOverlay() {
     };
     const unsubscribe = listenDeviceConfirmed(attempt);
     const timer = setInterval(attempt, 5000);
+    // Backgrounded tabs get their setInterval throttled (sometimes to once a
+    // minute, sometimes frozen outright) while the user is off reading the
+    // confirmation email, so a tab left waiting can sit past the point of
+    // confirmation until the throttled timer eventually catches up. Checking
+    // immediately on return to the tab closes that gap.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") attempt();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     const timeout = setTimeout(() => {
       if (!disposed) {
         clearInterval(timer);
@@ -130,6 +139,7 @@ export default function DualControlOverlay() {
     }, 15 * 60 * 1000);
     return () => {
       unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
       clearTimeout(timeout);
       disposed = true;
