@@ -961,7 +961,18 @@ p {
 /* ── Collapsible application sidebar ─────────────────────────────────────────
    The shell toggles `data-collapsed` on the sidebar; labels/echo widgets carry
    `sg-hide-collapsed` and vanish, leaving an icon rail. Shared across the four
-   SecureGraph applications. */
+   SecureGraph applications.
+
+   Collapsed is icon-only with no labels, so it opens on hover (like VS Code's
+   activity bar) instead of being a dead strip of icons the user can only
+   decode by clicking "Expand". The sidebar is `position: fixed`, so widening
+   it on hover overlays the page instead of reflowing it — the persisted
+   collapsed width (and the main content's margin) never changes; this is a
+   purely visual affordance. `:focus-within` mirrors `:hover` so keyboard
+   users tabbing into the rail get the same reveal. */
+.sg-sidebar {
+  transition: width 150ms ease;
+}
 .sg-sidebar[data-collapsed] .sg-hide-collapsed {
   display: none !important;
 }
@@ -972,4 +983,22 @@ p {
 }
 .sg-sidebar[data-collapsed] nav {
   overflow-x: hidden;
+}
+.sg-sidebar[data-collapsed]:hover,
+.sg-sidebar[data-collapsed]:focus-within {
+  width: 248px !important;
+}
+.sg-sidebar[data-collapsed]:hover .sg-hide-collapsed,
+.sg-sidebar[data-collapsed]:focus-within .sg-hide-collapsed {
+  display: revert !important;
+}
+.sg-sidebar[data-collapsed]:hover .nav-item,
+.sg-sidebar[data-collapsed]:focus-within .nav-item {
+  justify-content: flex-start;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.sg-sidebar[data-collapsed]:hover nav,
+.sg-sidebar[data-collapsed]:focus-within nav {
+  overflow-x: visible;
 }
