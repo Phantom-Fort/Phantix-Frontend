@@ -350,16 +350,18 @@ export default function Support() {
       </div>
 
       {/* Tickets */}
-      <Card>
-        <CardHeader
-          title="Your tickets"
-          subtitle={tickets.length ? `${tickets.length} ticket${tickets.length === 1 ? "" : "s"}` : "Nothing open"}
-          action={
-            <button onClick={() => { setRefreshing(true); void load(true); }} className="btn-ghost text-xs !py-1.5" title="Refresh">
-              <RefreshCw size={12} className={cx("inline", refreshing && "animate-spin")} />
-            </button>
-          }
-        />
+      <Card className={tickets.length ? "!p-0 overflow-hidden" : undefined}>
+        <div className={tickets.length ? "px-5 pt-5" : undefined}>
+          <CardHeader
+            title="Your tickets"
+            subtitle={tickets.length ? `${tickets.length} ticket${tickets.length === 1 ? "" : "s"}` : "Nothing open"}
+            action={
+              <button onClick={() => { setRefreshing(true); void load(true); }} className="btn-ghost text-xs !py-1.5" title="Refresh">
+                <RefreshCw size={12} className={cx("inline", refreshing && "animate-spin")} />
+              </button>
+            }
+          />
+        </div>
         {!tickets.length ? (
           <EmptyState
             icon={<LifeBuoy size={22} />}
@@ -367,32 +369,50 @@ export default function Support() {
             body="Raise one above — or use the Support switch in the assistant at the bottom-right of any page."
           />
         ) : (
-          <div className="space-y-2">
-            {tickets.map((t) => (
-              <motion.button
-                key={t.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setSelected(t)}
-                className="flex w-full flex-wrap items-center gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3 text-left transition-colors hover:border-gold-400/30"
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
-                  <MessageSquare size={15} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm text-slate-200">{t.subject}</span>
-                  <span className="block text-[13px] text-slate-500">
-                    {t.reference ?? `#${t.id}`}
-                    {t.category ? ` · ${t.category.replace(/_/g, " ")}` : ""}
-                    {` · ${t.message_count ?? t.messages?.length ?? 0} message${(t.message_count ?? t.messages?.length ?? 0) === 1 ? "" : "s"}`}
-                    {` · updated ${timeAgo(ticketAge(t))}`}
-                  </span>
-                </span>
-                <span className="chip shrink-0 border-phantix-600/50 bg-phantix-800/60 capitalize text-slate-400">{t.priority}</span>
-                <StatusBadge status={t.status} />
-              </motion.button>
-            ))}
-          </div>
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-phantix-700/40">
+                <th className="th">Ticket</th>
+                <th className="th">Category</th>
+                <th className="th">Priority</th>
+                <th className="th">Status</th>
+                <th className="th">Updated</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tickets.map((t, i) => (
+                <motion.tr
+                  key={t.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: i * 0.03 }}
+                  onClick={() => setSelected(t)}
+                  className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35"
+                >
+                  <td className="td">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
+                        <MessageSquare size={14} />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-slate-200">{t.subject}</p>
+                        <p className="text-[12px] text-slate-500">
+                          {t.reference ?? `#${t.id}`}
+                          {` · ${t.message_count ?? t.messages?.length ?? 0} message${(t.message_count ?? t.messages?.length ?? 0) === 1 ? "" : "s"}`}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="td text-slate-400 capitalize">{t.category ? t.category.replace(/_/g, " ") : "—"}</td>
+                  <td className="td">
+                    <span className="chip border-phantix-600/50 bg-phantix-800/60 capitalize text-slate-400">{t.priority}</span>
+                  </td>
+                  <td className="td"><StatusBadge status={t.status} /></td>
+                  <td className="td text-slate-500 whitespace-nowrap">{timeAgo(ticketAge(t))}</td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </Card>
 

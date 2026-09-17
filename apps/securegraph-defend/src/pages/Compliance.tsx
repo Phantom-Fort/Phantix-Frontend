@@ -277,23 +277,35 @@ export default function Compliance() {
               <FileUp size={14} /> Add manual evidence
             </button>
           </div>
-          {evidenceItems.map((e, i) => (
-            <motion.div key={e.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card hover className="!p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-phantix-800/70 font-mono text-[12px] font-bold text-gold-400">
-                    {e.connector.slice(0, 3).toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-200">{e.title}</p>
-                    <p className="text-xs text-slate-500">{e.summary} · {timeAgo(e.collected_at)}</p>
-                  </div>
-                  <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{humanize(e.evidence_type)}</span>
-                  <StatusBadge status={e.status} />
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+          <Card className="!p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Title</th>
+                    <th className="th">Connector</th>
+                    <th className="th">Type</th>
+                    <th className="th">Status</th>
+                    <th className="th">Collected</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {evidenceItems.map((e) => (
+                    <tr key={e.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                      <td className="td font-medium text-slate-200">
+                        {e.title}
+                        <p className="mt-0.5 text-xs text-slate-500">{e.summary}</p>
+                      </td>
+                      <td className="td font-mono text-xs text-gold-300">{e.connector.slice(0, 3).toUpperCase()}</td>
+                      <td className="td text-xs text-slate-400">{humanize(e.evidence_type)}</td>
+                      <td className="td"><StatusBadge status={e.status} /></td>
+                      <td className="td text-xs text-slate-500">{timeAgo(e.collected_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </motion.div>
       )}
 

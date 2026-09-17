@@ -26,6 +26,7 @@ interface PostureSnapshot {
   overall_score?: number | null;
   surfaces_covered?: number;
   generated_at?: string;
+  posture_source?: "findings" | "scan_evidence" | "none";
   asset_posture_score?: number | null;
   findings_adjusted_score?: number | null;
   findings?: {
@@ -138,6 +139,12 @@ export default function Posture() {
   };
 
   const surfaces = Object.entries(snapshot?.surfaces ?? {});
+  const postureSourceHint =
+    snapshot?.posture_source === "findings"
+      ? "Tracked findings"
+      : snapshot?.posture_source === "scan_evidence"
+        ? "Reportable scan evidence"
+        : "No evidence yet";
 
   return (
     <div>
@@ -158,7 +165,7 @@ export default function Posture() {
         <div className="space-y-5">
           {/* Overall + surfaces */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Overall posture" value={snapshot?.overall_score != null ? `${snapshot.overall_score}` : "—"} hint="Reportable scan evidence" />
+            <StatCard label="Overall posture" value={snapshot?.overall_score != null ? `${snapshot.overall_score}` : "—"} hint={postureSourceHint} />
             <StatCard
               label="Findings-adjusted"
               value={snapshot?.findings_adjusted_score != null ? `${snapshot.findings_adjusted_score}` : "—"}
@@ -179,7 +186,7 @@ export default function Posture() {
           </div>
 
           <Card>
-            <CardHeader title="Surfaces" subtitle="Reportable, critical and high findings per surface (scan evidence)" action={<Layers size={16} className="text-gold-300" />} />
+            <CardHeader title="Surfaces" subtitle={`Reportable, critical and high findings per surface (${postureSourceHint.toLowerCase()})`} action={<Layers size={16} className="text-gold-300" />} />
             {surfaces.length === 0 ? (
               <EmptyState icon={<Activity size={22} />} title="No posture yet" body="Posture builds as scans, reviews and assessments land." />
             ) : (

@@ -217,82 +217,134 @@ export default function IntegrationsHub() {
       )}
 
       {tab === "installed" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-3">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
           {activeInstallations.length === 0 ? (
             <EmptyState icon={<PlugZap size={32} />} title="No integrations installed" body="Browse the catalog and install a connector to get started." />
-          ) : activeInstallations.map((inst, i) => (
-            <motion.div
-              key={inst.installation_id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-            >
-              <Card className="!p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-emerald-400/30 bg-emerald-400/10 text-emerald-400">
-                    {connectorIcons[inst.connector_id] || <PlugZap size={15} />}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-200">{inst.label}</p>
-                    <p className="text-xs text-slate-500">{humanize(inst.connector_id)} · {humanize(inst.auth_mode)}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void testHubInstallation(inst.installation_id); toast("info", "Test sent", "Integration health check completed."); }}>
-                      <TestTube size={12} /> Test
-                    </button>
-                    <button
-                      className="btn-ghost !px-2 !py-1 !text-xs"
-                      onClick={async () => {
-                        const res = await rotateHubSecret(inst.installation_id);
-                        if (isPendingApproval(res)) toast("info", "Sent for approval", "Secret rotation is parked for an authorizer.");
-                        else toast("success", "Secret rotated", "New secret generated.");
-                      }}
+          ) : (
+            <Card className="!p-0 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Connector</th>
+                    <th className="th">Label</th>
+                    <th className="th">Auth mode</th>
+                    <th className="th">Last test</th>
+                    <th className="th">Status</th>
+                    <th className="th">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activeInstallations.map((inst, i) => (
+                    <motion.tr
+                      key={inst.installation_id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="border-b border-phantix-800/40 hover:bg-phantix-800/35"
                     >
-                      <RefreshCw size={12} /> Rotate
-                    </button>
-                    <button
-                      className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical"
-                      onClick={async () => {
-                        if (!(await requireDualControl("Uninstall requires dual-control."))) return;
-                        const res = await uninstallHubIntegration(inst.installation_id);
-                        reload();
-                        if (isPendingApproval(res)) toast("info", "Sent for approval", `${inst.label} disconnect is parked for an authorizer.`);
-                        else toast("success", "Uninstalled", `${inst.label} disconnected.`);
-                      }}
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                </div>
-                {inst.last_test_at && (
-                  <p className="mt-2 text-[13px] text-slate-500">Last test: {inst.last_test_ok ? "OK" : "Failed"} &middot; {timeAgo(inst.last_test_at)}</p>
-                )}
-              </Card>
-            </motion.div>
-          ))}
+                      <td className="td">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-400/30 bg-emerald-400/10 text-emerald-400">
+                            {connectorIcons[inst.connector_id] || <PlugZap size={15} />}
+                          </span>
+                          <span className="text-sm text-slate-300">{humanize(inst.connector_id)}</span>
+                        </div>
+                      </td>
+                      <td className="td font-medium text-slate-200">{inst.label}</td>
+                      <td className="td text-slate-400">{humanize(inst.auth_mode)}</td>
+                      <td className="td text-slate-500">
+                        {inst.last_test_at ? <>{inst.last_test_ok ? "OK" : "Failed"} &middot; {timeAgo(inst.last_test_at)}</> : "—"}
+                      </td>
+                      <td className="td">
+                        <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300 capitalize">{humanize(inst.status)}</span>
+                      </td>
+                      <td className="td">
+                        <div className="flex items-center gap-2">
+                          <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void testHubInstallation(inst.installation_id); toast("info", "Test sent", "Integration health check completed."); }}>
+                            <TestTube size={12} /> Test
+                          </button>
+                          <button
+                            className="btn-ghost !px-2 !py-1 !text-xs"
+                            onClick={async () => {
+                              const res = await rotateHubSecret(inst.installation_id);
+                              if (isPendingApproval(res)) toast("info", "Sent for approval", "Secret rotation is parked for an authorizer.");
+                              else toast("success", "Secret rotated", "New secret generated.");
+                            }}
+                          >
+                            <RefreshCw size={12} /> Rotate
+                          </button>
+                          <button
+                            className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical"
+                            onClick={async () => {
+                              if (!(await requireDualControl("Uninstall requires dual-control."))) return;
+                              const res = await uninstallHubIntegration(inst.installation_id);
+                              reload();
+                              if (isPendingApproval(res)) toast("info", "Sent for approval", `${inst.label} disconnect is parked for an authorizer.`);
+                              else toast("success", "Uninstalled", `${inst.label} disconnected.`);
+                            }}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
         </motion.div>
       )}
 
       {tab === "pending" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-3">
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
           {pendingAuth.length === 0 ? (
             <EmptyState icon={<Key size={32} />} title="No pending authorizations" body="Installations awaiting OAuth completion will appear here." />
-          ) : pendingAuth.map((inst, i) => (
-            <motion.div key={inst.installation_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card className="!p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300">
-                    {connectorIcons[inst.connector_id] || <Key size={15} />}
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-200">{inst.label}</p>
-                    <p className="text-xs text-slate-500">Awaiting OAuth authorization</p>
-                  </div>
-                  <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">Pending auth</span>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+          ) : (
+            <Card className="!p-0 overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Connector</th>
+                    <th className="th">Label</th>
+                    <th className="th">Auth mode</th>
+                    <th className="th">Last test</th>
+                    <th className="th">Status</th>
+                    <th className="th">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingAuth.map((inst, i) => (
+                    <motion.tr
+                      key={inst.installation_id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                    >
+                      <td className="td">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300">
+                            {connectorIcons[inst.connector_id] || <Key size={15} />}
+                          </span>
+                          <span className="text-sm text-slate-300">{humanize(inst.connector_id)}</span>
+                        </div>
+                      </td>
+                      <td className="td font-medium text-slate-200">{inst.label}</td>
+                      <td className="td text-slate-400">{humanize(inst.auth_mode)}</td>
+                      <td className="td text-slate-500">
+                        {inst.last_test_at ? <>{inst.last_test_ok ? "OK" : "Failed"} &middot; {timeAgo(inst.last_test_at)}</> : "—"}
+                      </td>
+                      <td className="td">
+                        <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-300">Pending auth</span>
+                      </td>
+                      <td className="td text-slate-600">Awaiting OAuth authorization</td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
         </motion.div>
       )}
 

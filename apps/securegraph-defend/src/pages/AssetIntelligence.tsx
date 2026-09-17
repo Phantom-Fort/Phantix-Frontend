@@ -267,23 +267,34 @@ export default function AssetIntelligenceDashboard() {
                 isVerified: a.isVerified ?? false,
               })) ?? [];
             return criticalList.length > 0 ? (
-              <div className="space-y-2">
-                {criticalList.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 rounded-lg bg-phantix-800/40 border border-phantix-700/30 px-3 py-3">
-                    <RiskBadge level={a.riskLevel || "medium"} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-200 truncate">{a.value || `#${a.id}`}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                        <span>{a.assetType}</span><span>•</span><span>{a.exposureLevel}</span>
-                        {a.isVerified && <span className="text-emerald-400">• Verified</span>}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-mono text-severity-high">{a.openFindings} findings</p>
-                      <p className="text-xs text-slate-500">Priority {a.priorityScore}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="-mx-5 -mb-2 overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Asset</th>
+                      <th className="th">Type</th>
+                      <th className="th">Risk</th>
+                      <th className="th">Findings / Priority</th>
+                      <th className="th">Exposure</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {criticalList.map((a) => (
+                      <tr key={a.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                        <td className="td font-medium text-slate-200">{a.value || `#${a.id}`}</td>
+                        <td className="td text-xs text-slate-500">{a.assetType}</td>
+                        <td className="td"><RiskBadge level={a.riskLevel || "medium"} /></td>
+                        <td className="td text-xs">
+                          <span className="font-mono text-severity-high">{a.openFindings} findings</span>
+                          <span className="text-slate-500"> · priority {a.priorityScore}</span>
+                        </td>
+                        <td className="td text-xs text-slate-500">
+                          {a.exposureLevel}{a.isVerified && <span className="ml-1 text-emerald-400">· Verified</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <EmptyState icon={<Shield size={24} />} title="All clear" body="No critical assets at risk" />
@@ -313,27 +324,38 @@ export default function AssetIntelligenceDashboard() {
                 source: a.source ?? null,
               })) ?? [];
             return newList.length > 0 ? (
-              <div className="space-y-2">
-                {newList.map((a) => (
-                  <div key={a.id} className="flex items-center gap-3 rounded-lg bg-phantix-800/40 border border-phantix-700/30 px-3 py-3">
-                    <div className="h-2 w-2 rounded-full bg-severity-medium animate-pulse-soft" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-200 truncate">{a.value || `#${a.id}`}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs">
-                        <span className="text-slate-500">{a.assetType}</span>
-                        {a.source && <span className="text-phantix-400">via {a.source}</span>}
-                        {a.firstSeenAt && <span className="text-slate-500">• {timeAgo(a.firstSeenAt)}</span>}
-                      </div>
-                    </div>
-                    <div className="shrink-0">
-                      {a.isVerified ? (
-                        <span className="chip text-xs text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Verified</span>
-                      ) : (
-                        <span className="chip text-xs text-severity-medium bg-severity-medium/10 border-severity-medium/30">Unverified</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="-mx-5 -mb-2 overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Asset</th>
+                      <th className="th">Type</th>
+                      <th className="th">Risk</th>
+                      <th className="th">Findings / Priority</th>
+                      <th className="th">Exposure / Verified</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {newList.map((a) => (
+                      <tr key={a.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                        <td className="td font-medium text-slate-200">{a.value || `#${a.id}`}</td>
+                        <td className="td text-xs text-slate-500">{a.assetType}</td>
+                        <td className="td"><span className="inline-flex h-2 w-2 rounded-full bg-severity-medium animate-pulse-soft" title="Newly discovered" /></td>
+                        <td className="td text-xs text-slate-500">
+                          {a.source && <span className="text-phantix-400">via {a.source}</span>}
+                          {a.firstSeenAt && <span> · {timeAgo(a.firstSeenAt)}</span>}
+                        </td>
+                        <td className="td">
+                          {a.isVerified ? (
+                            <span className="chip text-xs text-emerald-400 bg-emerald-400/10 border-emerald-400/30">Verified</span>
+                          ) : (
+                            <span className="chip text-xs text-severity-medium bg-severity-medium/10 border-severity-medium/30">Unverified</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <EmptyState icon={<Search size={24} />} title="Nothing new" body="All discovered assets have been scanned" />

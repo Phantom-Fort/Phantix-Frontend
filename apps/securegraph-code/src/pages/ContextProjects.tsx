@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Share2, Upload,
+  Boxes, FileText, GitFork, Loader2, Plus, RefreshCw, Search, Upload,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
 import { useStore } from "@sg/store";
 import { ApiError } from "@sg/api";
 import {
-  createProject, ingestDocument, listProjects, projectGraph, PROJECT_STAGES,
+  createProject, getContextSummary, ingestDocument, listProjects, projectGraph, PROJECT_STAGES,
   searchProjectDocuments, uploadDiagram,
-  type DocumentHit, type ProductProject, type ProjectGraph, type ProjectStage,
+  type DocumentHit, type ProductContextSummary, type ProductProject, type ProjectGraph, type ProjectStage,
 } from "@sg/productContext";
-import { cx } from "@sg/utils";
+import { cx, timeAgo } from "@sg/utils";
 
 // ── Product context projects ─────────────────────────────────────────────────
 // The system model a threat model is generated from: components, trust
@@ -35,6 +35,7 @@ function securityDbMessage(e: unknown, fallback: string): string {
 
 export default function ContextProjects() {
   const [projects, setProjects] = useState<ProductProject[]>([]);
+  const [summaries, setSummaries] = useState<Record<number, ProductContextSummary | null>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -45,7 +46,16 @@ export default function ContextProjects() {
     setError(null);
     try {
       const res = await listProjects(true);
-      setProjects(Array.isArray(res.items) ? res.items : []);
+      const items = Array.isArray(res.items) ? res.items : [];
+      setProjects(items);
+      // Component/flow/crossing counts for the list — the same readiness summary
+      // the drawer and ThreatModels pull per project, not the full parsed graph.
+      const summaryRows = await Promise.all(
+        items.map((p) => getContextSummary(p.id, p).catch(() => null)),
+      );
+      const nextSummaries: Record<number, ProductContextSummary | null> = {};
+      items.forEach((p, i) => { nextSummaries[p.id] = summaryRows[i]; });
+      setSummaries(nextSummaries);
     } catch (e) {
       setError(securityDbMessage(e, "Failed to load product projects."));
     } finally {
@@ -75,7 +85,7 @@ export default function ContextProjects() {
       />
 
       {loading && !projects.length ? (
-        <PageBodySkeleton variant="cards" rows={6} />
+        <PageBodySkeleton variant="table" rows={6} cols={5} />
       ) : error ? (
         <ErrorState title="Product context unavailable" body={error} onRetry={() => void load()} />
       ) : !projects.length ? (
@@ -88,22 +98,60 @@ export default function ContextProjects() {
           />
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <Card key={p.id} hover onClick={() => setSelected(p)} className="cursor-pointer">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>
-                  <p className="mt-0.5 font-mono text-[13px] text-slate-500">#{p.id}</p>
-                </div>
-                <span className={cx("chip shrink-0", STAGE_TONE[p.stage] ?? STAGE_TONE.planned)}>{stageLabel(p.stage)}</span>
-              </div>
-              <p className="mt-4 flex items-center gap-1.5 text-[13px] text-slate-500">
-                <Share2 size={11} /> Open to upload a diagram, add requirements or search documents
-              </p>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardHeader title="Projects" subtitle="Open a project to upload a diagram, add requirements or search documents" action={<Boxes size={16} className="text-gold-300" />} />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-phantix-700/40">
+                  <th className="th">Project</th>
+                  <th className="th">Stage</th>
+                  <th className="th">Components</th>
+                  <th className="th">Flows</th>
+                  <th className="th">Last updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {projects.map((p) => {
+                  const summary = summaries[p.id];
+                  return (
+                    <tr
+                      key={p.id}
+                      onClick={() => setSelected(p)}
+                      className="cursor-pointer border-b border-phantix-700/20 hover:bg-phantix-800/40"
+                    >
+                      <td className="td">
+                        <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>
+                        <p className="mt-0.5 font-mono text-[13px] text-slate-500">#{p.id}</p>
+                      </td>
+                      <td className="td">
+                        <span className={cx("chip", STAGE_TONE[p.stage] ?? STAGE_TONE.planned)}>{stageLabel(p.stage)}</span>
+                      </td>
+                      <td className="td text-sm text-slate-300">
+                        {summary ? summary.components : <span className="text-slate-600">—</span>}
+                      </td>
+                      <td className="td text-sm text-slate-300">
+                        {summary ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            {summary.flows}
+                            {summary.cross_boundary_flows > 0 && (
+                              <span className="chip border-severity-medium/30 text-[11px] text-severity-medium">
+                                {summary.cross_boundary_flows} crossing
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-slate-600">—</span>
+                        )}
+                      </td>
+                      <td className="td text-xs text-slate-500">{p.updated_at ? timeAgo(p.updated_at) : "—"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
 
       {creating && (

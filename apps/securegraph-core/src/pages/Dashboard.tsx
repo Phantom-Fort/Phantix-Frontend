@@ -412,14 +412,14 @@ export default function Dashboard() {
             {criticalAssets.length === 0 ? (
               <p className="py-8 text-center text-sm text-slate-500">No critical assets flagged.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {criticalAssets.slice(0, 8).map((a, i) => {
                   const id = Number(a.id ?? 0);
                   return (
                     <Link
                       key={id || i}
                       to={`/assets?id=${id}`}
-                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-4 py-3 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
+                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-3.5 py-2.5 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <Boxes size={15} className="shrink-0 text-gold-400" />
                       <div className="min-w-0 flex-1">
@@ -472,7 +472,7 @@ export default function Dashboard() {
             {topRisks.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-500">No open risks.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {topRisks.slice(0, 5).map((r, i) => {
                   const id = Number(r.id ?? 0);
                   return (
@@ -510,7 +510,7 @@ export default function Dashboard() {
             {topDetections.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-500">Queue clear.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {topDetections.slice(0, 5).map((d, i) => {
                   const id = Number(d.id ?? 0);
                   return (
@@ -551,7 +551,7 @@ export default function Dashboard() {
             {trackerCritical.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-500">No critical open tracker items.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {trackerCritical.slice(0, 5).map((t, i) => {
                   const key = str(t.findingKey ?? t.finding_key, `row-${i}`);
                   return (
@@ -594,14 +594,14 @@ export default function Dashboard() {
             {recentReports.length === 0 ? (
               <p className="py-6 text-center text-sm text-slate-500">No reports yet.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {recentReports.slice(0, 6).map((r, i) => {
                   const id = Number(r.id ?? 0);
                   return (
                     <Link
                       key={id || i}
                       to={`/reports?id=${id}`}
-                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-4 py-3 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
+                      className="flex items-center gap-3 rounded-md border border-phantix-700 bg-phantix-950 px-3.5 py-2.5 transition-colors hover:border-phantix-600 hover:bg-phantix-900"
                     >
                       <FileText size={15} className="shrink-0 text-gold-400" />
                       <div className="min-w-0 flex-1">

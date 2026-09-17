@@ -131,9 +131,29 @@ export interface ApiOptions {
   anonymous?: boolean;
 }
 
-export async function apiRequest<T>(path: string, opts: ApiOptions = {}): Promise<T> {
+/** Apply X-Token-Refreshed response headers (app_session rotation) to storage. */
+function applyTokenRenewal(res: Response): void {
+  if (res.headers.get("X-Token-Refreshed") !== "1") return;
+  const access = res.headers.get("X-Refreshed-Access-Token");
+  const device = res.headers.get("X-Refreshed-Device-Token");
+  if (access) write(STORAGE.accessToken, access);
+  if (device) write(STORAGE.deviceToken, device);
+}
+
+/** True when a 401 is the retryable "token superseded by renewal" race. */
+async function isSessionSuperseded(res: Response): Promise<boolean> {
+  try {
+    const j = (await res.clone().json()) as { detail?: { error?: string; message?: string } };
+    const d = j?.detail;
+    return d?.error === "session_superseded" || /superseded by renewal/i.test(d?.message ?? "");
+  } catch {
+    return false;
+  }
+}
+
+function buildHeaders(anonymous: boolean): Record<string, string> {
   const headers: Record<string, string> = { Accept: "application/json" };
-  if (!opts.anonymous) {
+  if (!anonymous) {
     const token = appToken();
     if (token) headers["Authorization"] = `Bearer ${token}`;
     const device = deviceToken();
@@ -143,13 +163,31 @@ export async function apiRequest<T>(path: string, opts: ApiOptions = {}): Promis
     headers["X-Device-Id"] = deviceId();
   }
   if (currentApplication) headers["X-Application"] = currentApplication;
-  if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+  return headers;
+}
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: opts.method || "GET",
-    headers,
-    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-  });
+export async function apiRequest<T>(path: string, opts: ApiOptions = {}): Promise<T> {
+  const doFetch = async (): Promise<Response> => {
+    const headers = buildHeaders(!!opts.anonymous);
+    if (opts.body !== undefined) headers["Content-Type"] = "application/json";
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+    });
+    // App-session token rotation (APP_SESSION_TOKEN_RENEWAL.md): the stack
+    // bumps the token version on activity and returns the new pair in headers.
+    applyTokenRenewal(res);
+    return res;
+  };
+
+  let res = await doFetch();
+  // Concurrent-renewal race: a sibling request already rotated the token, so
+  // this one was rejected as superseded. Retry once with the freshly stored
+  // token instead of surfacing a dropped session.
+  if (res.status === 401 && (await isSessionSuperseded(res))) {
+    res = await doFetch();
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     let detail: unknown = text;

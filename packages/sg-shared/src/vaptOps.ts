@@ -342,6 +342,12 @@ export interface PostureSnapshot {
   overall_score?: number | null;
   surfaces_covered?: number;
   generated_at?: string;
+  /**
+   * Which evidence store the per-surface scores came from. The endpoint reads
+   * the deduplicated remediation tracker (`findings`) and raw scan evidence
+   * (`scan_evidence`); a VAPT/code/AGI org with no raw scans still gets a score.
+   */
+  posture_source?: "findings" | "scan_evidence" | "none";
   /** Asset-risk posture the Dashboard shows — same source, so the two agree. */
   asset_posture_score?: number | null;
   /** `overall_score` after open criticals/highs are deducted. */

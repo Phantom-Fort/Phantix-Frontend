@@ -74,29 +74,48 @@ export default function Alerts() {
       />
 
       {tab === "events" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2.5">
-          {alertEvents.map((a, i) => (
-            <motion.div key={a.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Card hover className="!p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <span className={cx("flex h-9 w-9 items-center justify-center rounded-lg", a.severity === "critical" ? "bg-severity-critical/15 text-severity-critical" : "bg-phantix-800/70 text-phantix-300")}>
-                    <BellRing size={15} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-200">{a.title}</p>
-                    <p className="mt-0.5 font-mono text-xs text-slate-500">{humanize(a.event_type)} · {timeAgo(a.created_at)}</p>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {(a.channels ?? []).map((c) => (
-                      <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[12px] font-medium text-slate-400">{c}</span>
-                    ))}
-                  </div>
-                  <SeverityBadge severity={a.severity} />
-                  <StatusBadge status={a.status} />
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="!p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Title</th>
+                    <th className="th">Type</th>
+                    <th className="th">Channels</th>
+                    <th className="th">Severity</th>
+                    <th className="th">Status</th>
+                    <th className="th">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {alertEvents.map((a) => (
+                    <tr key={a.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                      <td className="td">
+                        <div className="flex items-center gap-2.5">
+                          <span className={cx("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", a.severity === "critical" ? "bg-severity-critical/15 text-severity-critical" : "bg-phantix-800/70 text-phantix-300")}>
+                            <BellRing size={13} />
+                          </span>
+                          <span className="font-medium text-slate-200">{a.title}</span>
+                        </div>
+                      </td>
+                      <td className="td font-mono text-xs text-slate-500">{humanize(a.event_type)}</td>
+                      <td className="td">
+                        <div className="flex flex-wrap gap-1.5">
+                          {(a.channels ?? []).map((c) => (
+                            <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[12px] font-medium text-slate-400">{c}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="td"><SeverityBadge severity={a.severity} /></td>
+                      <td className="td"><StatusBadge status={a.status} /></td>
+                      <td className="td text-xs text-slate-500 whitespace-nowrap">{timeAgo(a.created_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </motion.div>
       )}
 
