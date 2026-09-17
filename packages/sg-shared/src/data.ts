@@ -184,6 +184,33 @@ async function softOne<T>(path: string, meta?: LoadMeta): Promise<T | null> {
   }
 }
 
+/** Backend page ceiling for list endpoints (`/assets`, prioritized, …). */
+const LIST_PAGE_SIZE = 200;
+/** Hard ceiling on pages walked, so a runaway pagination cannot loop forever. */
+const LIST_MAX_PAGES = 50; // 200 × 50 = 10,000 rows
+
+/**
+ * Paginate a list endpoint (`limit`/`offset`) until every row is collected.
+ *
+ * The API defaults `limit` to 50, so a single un-parameterised call silently
+ * truncates any inventory larger than that — which is exactly what made the
+ * Assets page stop at 50. Reuses `softList` so error/security-DB handling is
+ * identical to a one-shot list.
+ */
+async function softListAll<T>(path: string, meta?: LoadMeta): Promise<T[]> {
+  const sep = path.includes("?") ? "&" : "?";
+  const out: T[] = [];
+  for (let page = 0; page < LIST_MAX_PAGES; page++) {
+    const items = await softList<T>(
+      `${path}${sep}limit=${LIST_PAGE_SIZE}&offset=${page * LIST_PAGE_SIZE}`,
+      meta,
+    );
+    out.push(...items);
+    if (items.length < LIST_PAGE_SIZE) break;
+  }
+  return out;
+}
+
 function pickUser(u: Record<string, unknown> | null | undefined): DualControlState["initiator"] {
   if (!u) return null;
   return {
@@ -280,9 +307,9 @@ export async function loadAssetsBundle() {
   }
   const meta: LoadMeta = {};
   const [assets, assetTags, discoveryJobs] = await Promise.all([
-    softList<Asset>("/assets", meta),
-    softList<AssetTag>("/asset-tags", meta),
-    softList<DiscoveryJob>("/assets/discovery/jobs", meta),
+    softListAll<Asset>("/assets", meta),
+    softListAll<AssetTag>("/asset-tags", meta),
+    softListAll<DiscoveryJob>("/assets/discovery/jobs", meta),
   ]);
   return {
     assets,
@@ -1351,8 +1378,8 @@ export async function loadPrioritizedAssets(): Promise<PrioritizedAsset[]> {
       last_seen_at: a.last_seen_at,
     }));
   }
-  const raw = await api.get<unknown>("/assets/intelligence/prioritized");
-  return (asList(raw) as PrioritizedAsset[]).map((a) => ({
+  const rows = await softListAll<PrioritizedAsset>("/assets/intelligence/prioritized");
+  return rows.map((a) => ({
     ...a,
     id: Number(a.id),
     risk_score: Number(a.risk_score ?? 0),
@@ -1408,7 +1435,7 @@ export async function loadDashboardBundle() {
   const meta: LoadMeta = {};
   const [assets, risks, scanJobs, vaptCampaigns, alertEvents, auditEvents, complianceAssessments, reports, scanResults] =
     await Promise.all([
-      softList<Asset>("/assets", meta),
+      softListAll<Asset>("/assets", meta),
       loadRisks(),
       softList<ScanJob>("/scans/jobs", meta),
       softList<VaptCampaign>("/vapt/campaigns", meta),
