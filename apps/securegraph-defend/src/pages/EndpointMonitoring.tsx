@@ -204,7 +204,16 @@ export default function EndpointMonitoring() {
   const incidents = data.incidents;
   const summary = data.summary;
 
+  const cap = summary?.cap ?? null;
+  const used = summary?.used ?? monitors.length;
+  const atLimit = Boolean(summary?.atLimit);
+  const capLabel = cap == null ? "Unlimited" : `${used}/${cap}`;
+
   const openCreate = () => {
+    if (atLimit) {
+      toast("warning", "Monitor limit reached", `Your plan allows ${cap} endpoint monitor${cap === 1 ? "" : "s"}. Upgrade or contact us to raise it.`);
+      return;
+    }
     setForm(formFromMonitor(null));
     setFormOpen(true);
   };
@@ -309,7 +318,12 @@ export default function EndpointMonitoring() {
         title="Endpoint monitoring"
         description="The standard 24/7 monitor for your own endpoints. Set the expected response, flagging thresholds and access preconditions per endpoint; we watch health and security posture (TLS, auth enforcement, response drift) and raise incidents."
         actions={
-          <button className="btn-primary" onClick={openCreate}>
+          <button
+            className="btn-primary"
+            onClick={openCreate}
+            disabled={atLimit}
+            title={atLimit ? `Plan limit reached (${capLabel})` : undefined}
+          >
             <Plus size={15} /> New monitor
           </button>
         }
@@ -317,8 +331,16 @@ export default function EndpointMonitoring() {
 
       {data.securityDbBlocked && <SecurityDbBanner message={data.error} />}
 
+      {atLimit && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-gold-400/30 bg-gold-400/8 px-4 py-3">
+          <p className="text-sm text-slate-200">
+            You've reached your plan's endpoint-monitor limit ({capLabel}). Upgrade your plan, or contact us to raise the limit for your organization.
+          </p>
+        </div>
+      )}
+
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard label="Monitors" value={mstats.total ?? monitors.length} hint={`${mstats.enabled ?? 0} enabled`} />
+        <StatCard label="Monitors" value={cap == null ? (mstats.total ?? monitors.length) : capLabel} hint={`${mstats.enabled ?? 0} enabled · plan limit ${cap == null ? "unlimited" : cap}`} />
         <StatCard label="Up" value={mstats.up ?? 0} />
         <StatCard label="Degraded" value={mstats.degraded ?? 0} />
         <StatCard label="Down" value={mstats.down ?? 0} />

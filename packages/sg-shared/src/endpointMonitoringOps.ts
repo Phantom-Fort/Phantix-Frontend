@@ -131,6 +131,10 @@ export interface EndpointSummary {
   openByIssueType: Record<string, number>;
   healthPercentSnapshot: number | null;
   postureScore: number | null;
+  /** Effective plan cap (staff-overridable). null = uncapped (Enterprise/custom). */
+  cap: number | null;
+  used: number;
+  atLimit: boolean;
 }
 
 export interface EndpointRunResult {
@@ -460,4 +464,7 @@ const demoSummary: EndpointSummary = {
   openByIssueType: { auth: 1, tls: 1 },
   healthPercentSnapshot: 33.33,
   postureScore: 23.33,
+  cap: 10,
+  used: 3,
+  atLimit: false,
 };
