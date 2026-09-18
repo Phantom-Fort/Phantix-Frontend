@@ -10,7 +10,7 @@ import {
   searchProjectDocuments, uploadDiagram,
   type DocumentHit, type ProductContextSummary, type ProductProject, type ProjectGraph, type ProjectStage,
 } from "@sg/productContext";
-import { cx, timeAgo } from "@sg/utils";
+import { clickableRowProps, cx, timeAgo } from "@sg/utils";
 
 // ── Product context projects ─────────────────────────────────────────────────
 // The system model a threat model is generated from: components, trust
@@ -118,7 +118,8 @@ export default function ContextProjects() {
                     <tr
                       key={p.id}
                       onClick={() => setSelected(p)}
-                      className="cursor-pointer border-b border-phantix-700/20 hover:bg-phantix-800/40"
+                      className="cursor-pointer border-b border-phantix-700/20 hover:bg-phantix-800/40 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                      {...clickableRowProps(() => setSelected(p))}
                     >
                       <td className="td">
                         <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>

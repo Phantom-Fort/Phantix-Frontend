@@ -1,25 +1,29 @@
-import React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import React, { Suspense } from "react";
+import { Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
 import DocsChrome from "@sg/pages/DocsChrome";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
+import { BrandLoader } from "@sg/components/BrandLoader";
 import { HOSTS } from "./hosts";
 import { NAV } from "./nav";
-import Overview from "./pages/Overview";
-import Code from "./pages/Code";
-import ProviderConnect from "./pages/ProviderConnect";
-import ThreatModels from "./pages/ThreatModels";
-import ContextProjects from "./pages/ContextProjects";
+
+const Agent = React.lazy(() => import("@sg/pages/Agent"));
+const NotFound = React.lazy(() => import("@sg/pages/NotFound"));
+const Overview = React.lazy(() => import("./pages/Overview"));
+const Code = React.lazy(() => import("./pages/Code"));
+const ProviderConnect = React.lazy(() => import("./pages/ProviderConnect"));
+const ThreatModels = React.lazy(() => import("./pages/ThreatModels"));
+const ContextProjects = React.lazy(() => import("./pages/ContextProjects"));
 
 export default function App() {
   return (
     <StoreProvider>
-      <Routes>        <Route
+      <Suspense fallback={<BrandLoader label="Code" message="Loading" />}>
+        <Routes>        <Route
           element={
             <ApplicationShell
               application={"code" as ApplicationKey}
@@ -36,7 +40,7 @@ export default function App() {
           <Route path="/threat-models" element={<ThreatModels />} />
           <Route path="/context" element={<ContextProjects />} />
           <Route path="/assistant" element={<Agent />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound homePath="/" />} />
         </Route>
         {/* Documentation renders outside the sidebar with its own top bar. */}
         <Route element={<DocsChrome />}>
@@ -44,7 +48,8 @@ export default function App() {
           <Route path="/docs/:docId" element={<DocPage />} />
         </Route>
 
-      </Routes>
+        </Routes>
+      </Suspense>
       <ToastViewport />
       <DualControlOverlay />
     </StoreProvider>

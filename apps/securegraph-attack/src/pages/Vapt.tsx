@@ -116,14 +116,14 @@ export default function Vapt() {
   const [planning, setPlanning] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<VaptPlan | null>(null);
   const [executingPlan, setExecutingPlan] = useState(false);
-  const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard" as "standard" | "poc", bruteforceAcked: false });
+  const [createForm, setCreateForm] = useState({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard" as "standard" | "poc", bruteforceAcked: false, runGraphql: false, runWebhook: false });
   const [bfConfirmOpen, setBfConfirmOpen] = useState(false);
   const [bfConfirmText, setBfConfirmText] = useState("");
   const [creds, setCreds] = useState({ username: "", password: "", token: "" });
   const [altCreds, setAltCreds] = useState({ username: "", password: "", token: "" });
 
   const resetCreateForm = () => {
-    setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard", bruteforceAcked: false });
+    setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard", bruteforceAcked: false, runGraphql: false, runWebhook: false });
     setCreds({ username: "", password: "", token: "" });
     setAltCreds({ username: "", password: "", token: "" });
     setBfConfirmText("");
@@ -148,6 +148,9 @@ export default function Vapt() {
       acknowledge_bruteforce: createForm.bruteforceAcked,
       run_follow_on: true,
     };
+    // GraphQL + webhook security testing (opt-in; backend defaults them off).
+    if (createForm.runGraphql) cfg.run_graphql = true;
+    if (createForm.runWebhook) cfg.run_webhook = true;
     const primary = clean(creds);
     if (Object.keys(primary).length) cfg.credentials = primary;
     const alt = clean(altCreds);
@@ -192,7 +195,10 @@ export default function Vapt() {
       setConflict(c);
       return;
     }
-    toast("warning", "Concurrent campaign", "Pause or cancel the active campaign first.");
+    // No named campaign in the response --- the conflict isn't "something else
+    // is running" (e.g. a failed/cancelled campaign can't restart in place).
+    // Show the server's actual reason instead of a canned, possibly wrong one.
+    toast("warning", "Can't do that right now", e?.message || "Pause or cancel the active campaign first.");
   };
 
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
@@ -330,9 +336,13 @@ export default function Vapt() {
       const stillActive = campaigns.filter((c: any) =>
         c.status === "active" || c.status === "pending_approval" || c.status === "paused"
       );
-      if (stillActive.length === 0) {
-        if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
-        reload();
+      // Refresh the view EVERY tick while a campaign runs so the operator sees
+      // live progress (current_phase, step, findings) advance — not a frozen bar
+      // that only updates when the run ends.
+      reload();
+      if (stillActive.length === 0 && pollTimer.current) {
+        clearInterval(pollTimer.current);
+        pollTimer.current = null;
       }
     } catch { /* silent */ }
   }, [reload]);
@@ -1075,6 +1085,7 @@ export default function Vapt() {
                 <option value="full_vapt">Full VAPT</option>
                 <option value="infra_scan">Infrastructure scan</option>
                 <option value="api_scan">API scan</option>
+                <option value="webhook_graphql_scan">Webhook &amp; GraphQL scan</option>
                 <option value="caido">CAIDO proxy</option>
               </select>
             </div>
@@ -1108,6 +1119,14 @@ export default function Vapt() {
               <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
                 <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.bruteforceAcked} onChange={(e) => setCreateForm((f) => ({ ...f, bruteforceAcked: e.target.checked }))} />
                 Authorize login bruteforce
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.runGraphql} onChange={(e) => setCreateForm((f) => ({ ...f, runGraphql: e.target.checked }))} />
+                Test GraphQL (introspection, batching, depth, CSRF, injection, role oracle)
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300">
+                <input type="checkbox" className="h-3.5 w-3.5 accent-gold-400" checked={createForm.runWebhook} onChange={(e) => setCreateForm((f) => ({ ...f, runWebhook: e.target.checked }))} />
+                Test webhook receivers (signature verification, replay, SSRF)
               </label>
               <details className="text-[13px]">
                 <summary className="cursor-pointer text-slate-400 hover:text-slate-200">Credentials panel (optional)</summary>

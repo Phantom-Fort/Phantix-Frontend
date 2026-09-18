@@ -8,7 +8,7 @@ import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import { loadRisksBundle } from "@sg/data";
 import { api } from "@sg/api";
 import { useResource } from "@sg/useResource";
-import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx } from "@sg/utils";
+import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx, clickableRowProps } from "@sg/utils";
 import { useStore } from "@sg/store";
 import type { Risk } from "@sg/types";
 
@@ -201,7 +201,8 @@ export default function Risks() {
                   <tr
                     key={r.id}
                     onClick={() => setSelected(r)}
-                    className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                    className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                    {...clickableRowProps(() => setSelected(r))}
                   >
                     <td className="td">
                       <span className="font-display text-lg font-bold" style={{ color }}>{r.inherent_score}</span>

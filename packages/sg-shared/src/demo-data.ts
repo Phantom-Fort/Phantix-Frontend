@@ -2110,6 +2110,20 @@ function hoursFromNow(hours: number): string {
 
 export const vaptProcedures: VaptProcedure[] = [
   {
+    procedure_key: "webhook_graphql_scan",
+    display_name: "Webhook & GraphQL security scan",
+    category: "application",
+    phase: "exploitation",
+    required_role: "authorizer",
+    is_active: true,
+    description: "Targeted GraphQL (introspection, field suggestion, batching/aliasing, query depth, CSRF, argument injection, role oracle) and webhook (signature verification, replay, verbose-error, SSRF-registration) security testing.",
+    steps: [
+      { order: 1, name: "GraphQL & webhook research & testing", requires_approval: false },
+      { order: 2, name: "API attack path analysis", requires_approval: false },
+      { order: 3, name: "Complexity analysis", requires_approval: false },
+    ],
+  },
+  {
     procedure_key: "external_web_app_assessment",
     display_name: "External web application assessment",
     category: "application",

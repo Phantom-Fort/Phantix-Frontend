@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Activity, Bot, ChevronLeft, ChevronRight, KeyRound, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 import { PageHeader, Card, TableCardSkeleton, ErrorState, EmptyState } from "@sg/ui";
 import { isDenied, loadAgentActivity, type AgentAction } from "@sg/agentActivity";
-import { cx, timeAgo, formatDateTime } from "@sg/utils";
+import { cx, timeAgo, formatDateTime, clickableRowProps } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
 
 // ── Agent activity ───────────────────────────────────────────────────────────
@@ -166,8 +166,9 @@ export default function AgentActivity() {
                     return (
                       <React.Fragment key={row.id}>
                         <tr
-                          className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                          className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
                           onClick={() => setOpen(open === row.id ? null : row.id)}
+                          {...clickableRowProps(() => setOpen(open === row.id ? null : row.id))}
                         >
                           <td className="td whitespace-nowrap text-[13px] text-slate-400" title={row.created_at ? formatDateTime(row.created_at) : ""}>
                             {timeAgo(row.created_at ?? null)}

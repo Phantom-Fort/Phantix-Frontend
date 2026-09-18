@@ -21,7 +21,7 @@ import {
   type TrendSeriesPoint,
 } from "@sg/data";
 import { useStore } from "@sg/store";
-import { timeAgo, cx, titleCase } from "@sg/utils";
+import { timeAgo, cx, titleCase, clickableRowProps } from "@sg/utils";
 import { useSseStream, type SseEvent } from "@sg/useSse";
 import type {
   SocStatus, SocDashboardScaffold, SocDetection, SocCase, SocRule, SocAdapter,
@@ -604,7 +604,7 @@ export default function SocDashboard() {
                   </thead>
                   <tbody>
                     {filtered.map((d) => (
-                      <tr key={d.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors" onClick={() => setDetail(d)}>
+                      <tr key={d.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset" onClick={() => setDetail(d)} {...clickableRowProps(() => setDetail(d))}>
                         <td className="td">
                           <div className="min-w-0 max-w-md">
                             <p className="font-medium text-slate-100 truncate">{d.title}</p>
@@ -654,7 +654,7 @@ export default function SocDashboard() {
                   </thead>
                   <tbody>
                     {(casesRes.data?.items ?? []).map((c) => (
-                      <tr key={c.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors" onClick={() => void openCaseDetail(c)}>
+                      <tr key={c.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 cursor-pointer transition-colors focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset" onClick={() => void openCaseDetail(c)} {...clickableRowProps(() => void openCaseDetail(c))}>
                         <td className="td font-mono text-xs text-gold-300">#{c.id}</td>
                         <td className="td">
                           <p className="font-medium text-slate-100">{c.title}</p>

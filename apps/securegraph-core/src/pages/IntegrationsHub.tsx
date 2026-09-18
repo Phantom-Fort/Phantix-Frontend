@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Cable, Plug, PlugZap, Key, Shield, TestTube, Trash2, RefreshCw, Webhook, MessageSquare, Send, ChevronRight, Search, X } from "lucide-react";
+import { Cable, PlugZap, Key, TestTube, Trash2, RefreshCw, ChevronRight, Search, X } from "lucide-react";
 import { PageHeader, Card, Tabs, PageSkeleton, EmptyState, Modal } from "@sg/ui";
 import { Pagination } from "@sg/components/Pagination";
+import { BrandIcon } from "@sg/components/BrandIcon";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
 import { isPendingApproval } from "@sg/api";
@@ -10,19 +11,6 @@ import { loadHubCatalog, loadHubInstallations, installHubIntegration, uninstallH
 import { timeAgo, cx, humanize } from "@sg/utils";
 import type { IntegrationConnector, IntegrationInstallation, IntegrationCatalogPage } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
-
-const connectorIcons: Record<string, React.ReactNode> = {
-  slack: <MessageSquare size={16} />,
-  teams: <Send size={16} />,
-  whatsapp: <MessageSquare size={16} />,
-  telegram: <Send size={16} />,
-  webhook: <Webhook size={16} />,
-  webhook_mapper: <Webhook size={16} />,
-  entra_oidc: <Shield size={16} />,
-  okta_oidc: <Shield size={16} />,
-  google_oidc: <Shield size={16} />,
-  scim: <Key size={16} />,
-};
 
 /** Statuses the backend can actually install today. */
 const INSTALLABLE = new Set(["ga", "beta", "preview", "active"]);
@@ -176,7 +164,7 @@ export default function IntegrationsHub() {
                               ? "border-gold-400/30 bg-gold-400/10 text-gold-300"
                               : "border-phantix-700/40 bg-phantix-800/40 text-slate-500",
                           )}>
-                            {connectorIcons[conn.connector_id] || <Plug size={15} />}
+                            <BrandIcon connectorId={conn.connector_id} iconHint={conn.icon} size={16} />
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-slate-200">{conn.name || conn.display_name || conn.connector_id}</p>
@@ -245,7 +233,7 @@ export default function IntegrationsHub() {
                       <td className="td">
                         <div className="flex items-center gap-2.5">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-400/30 bg-emerald-400/10 text-emerald-400">
-                            {connectorIcons[inst.connector_id] || <PlugZap size={15} />}
+                            <BrandIcon connectorId={inst.connector_id} size={16} />
                           </span>
                           <span className="text-sm text-slate-300">{humanize(inst.connector_id)}</span>
                         </div>
@@ -325,7 +313,7 @@ export default function IntegrationsHub() {
                       <td className="td">
                         <div className="flex items-center gap-2.5">
                           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300">
-                            {connectorIcons[inst.connector_id] || <Key size={15} />}
+                            <BrandIcon connectorId={inst.connector_id} size={16} />
                           </span>
                           <span className="text-sm text-slate-300">{humanize(inst.connector_id)}</span>
                         </div>
