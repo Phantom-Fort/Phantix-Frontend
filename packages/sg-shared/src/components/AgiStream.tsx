@@ -341,6 +341,7 @@ export function ToolGroupCard({
           {runs.map((r, i) => {
             const { command, body } = splitToolContent(r.content);
             const output = body || command;
+            if (!command && !output) return null;
             return (
               <div key={i} className="rounded-lg bg-phantix-900/50 px-2.5 py-1.5">
                 {command && <p className={cx("font-mono text-slate-500", dense ? "text-[12px]" : "text-[13px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>}
@@ -679,6 +680,13 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   const time = streamTime(t.created_at);
 
   if (t.role === "tool") {
+    // No response yet means nothing to show, full stop — a tool name alone
+    // (no output) still isn't a real answer. Without this guard every
+    // tool-call-started event with no output yet rendered as an empty
+    // bordered box (ToolCallCard → the same <Tool> shell as
+    // PromptKitStream, minus its equivalent guard).
+    if (!t.content.trim()) return null;
+
     // Pi mid-turn helpers render as compact cards, not generic tool dumps.
     if (t.meta?.tool === "pi_subagent") {
       return (

@@ -59,7 +59,7 @@ export default function AgiDrawer() {
   return (
     <>
       <button
-        onClick={() => { setOpen(true); setFullscreen(false); }}
+        onClick={() => window.dispatchEvent(new CustomEvent("phantix:agi-open"))}
         className="fixed right-0 top-1/2 z-[70] -translate-y-1/2 flex items-center gap-2 rounded-l-xl border border-r-0 border-phantix-700/50 bg-phantix-900/90 px-2.5 py-3 text-gold-300 shadow-card backdrop-blur-xl transition-colors hover:border-gold-400/40 hover:bg-phantix-800/90"
         title={live ? "Pentest Agent — session running" : "Autonomous Pentest Agent"}
       >

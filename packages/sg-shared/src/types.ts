@@ -1228,6 +1228,12 @@ export interface AgiSession {
   meta?: Record<string, unknown> | null;
   job?: Record<string, unknown> | null;
   loop?: AgiLoopBrief | null;
+  /**
+   * Autonomous-loop state, distinct from session.status: a stopped loop keeps
+   * the session resumable (send a chat), so the UI must not treat it as dead.
+   */
+  loop_status?: "running" | "stopped" | null;
+  loop_stop_reason?: string | null;
   /** Open ASK_OPERATOR clarification (cleared on answer). */
   clarification?: Record<string, unknown> | null;
 }

@@ -11,8 +11,9 @@ import {
   Loader2,
   AlertTriangle,
   Sparkles,
+  Eye,
 } from "lucide-react";
-import { PageHeader, Card, SeverityBadge, VerificationBadge, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, Modal, SeverityBadge, VerificationBadge, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import { api } from "@sg/api";
 import { useResource } from "@sg/useResource";
 import { cx, timeAgo } from "@sg/utils";
@@ -21,12 +22,14 @@ import type { Severity, VerificationStatus } from "@sg/types";
 /**
  * AI remediation page (AV-16).
  *
- * Reads the verified-but-unresolved findings for the org and renders the
- * remediation artifact the AI engine produced beside each verdict: why it was
- * verified, how to reproduce it, the business impact, and the fix guidance.
+ * Reads the verified-but-unresolved findings for the org and renders, beside
+ * each verdict, why it was verified, how to reproduce it, and its business
+ * impact. The AI *fix guidance* opens in an overlay so the list stays scannable.
  *
- * A finding only leaves this page when it is retested and confirmed fixed —
- * that is the backend's filter, not this component's.
+ * Generation is asynchronous: POST enqueues a job, so after queuing we poll the
+ * feed until the guidance actually lands (a fresh generate flips status to
+ * "generated"; a regenerate changes the artifact) — then the overlay opens.
+ * A finding only leaves this page when it is retested and confirmed fixed.
  */
 
 type RemediationBlock = {
@@ -70,6 +73,24 @@ type RemediationFeed = {
 
 const EMPTY: RemediationFeed = { items: [], counts: { total: 0, ai_generated: 0, pending: 0 }, total: 0 };
 
+const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
+
+function isGenerated(rem?: RemediationBlock): boolean {
+  return (rem?.status || "") === "generated";
+}
+
+/** A stable signature of the fix artifact, so we can tell when a (re)generation
+ *  actually produced new guidance rather than just re-queuing the same job. */
+function remediationSignature(rem?: RemediationBlock): string {
+  return JSON.stringify({
+    status: rem?.status ?? "",
+    summary: rem?.summary ?? "",
+    steps: rem?.steps ?? [],
+    validation: rem?.validation ?? "",
+    references: rem?.references ?? [],
+  });
+}
+
 function priorityClass(priority?: string | null): string {
   switch ((priority || "").toLowerCase()) {
     case "immediate":
@@ -100,26 +121,21 @@ function numberedSteps(steps: string[] | undefined) {
   );
 }
 
-function RemediationCard({ item, onGenerated }: { item: RemediationItem; onGenerated: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+function RemediationCard({
+  item,
+  generating,
+  onGenerate,
+  onView,
+}: {
+  item: RemediationItem;
+  generating: boolean;
+  onGenerate: (item: RemediationItem) => void;
+  onView: (item: RemediationItem) => void;
+}) {
   const ver = item.verification || {};
   const rem = item.remediation || {};
-  const generated = (rem.status || "") === "generated";
+  const generated = isGenerated(rem);
   const repro = Array.isArray(ver.reproducibility_steps) ? ver.reproducibility_steps : [];
-
-  async function generate() {
-    setBusy(true);
-    setErr(null);
-    try {
-      await api.post(`/scans/results/${item.id}/remediation`, {});
-      onGenerated();
-    } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Could not queue generation");
-    } finally {
-      setBusy(false);
-    }
-  }
 
   return (
     <Card className="overflow-hidden">
@@ -144,23 +160,11 @@ function RemediationCard({ item, onGenerated }: { item: RemediationItem; onGener
             {item.created_at ? ` · ${timeAgo(item.created_at)}` : ""}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {ver.verified_by ? (
-            <span className="chip border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Verified by">
-              <ShieldCheck size={12} /> {ver.verified_by}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            onClick={generate}
-            disabled={busy}
-            className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-50"
-            title="Queue AI remediation guidance for this finding"
-          >
-            {busy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            {generated ? "Regenerate" : "Generate guidance"}
-          </button>
-        </div>
+        {ver.verified_by ? (
+          <span className="chip shrink-0 border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Verified by">
+            <ShieldCheck size={12} /> {ver.verified_by}
+          </span>
+        ) : null}
       </div>
 
       {item.description ? (
@@ -169,23 +173,15 @@ function RemediationCard({ item, onGenerated }: { item: RemediationItem; onGener
         </p>
       ) : null}
 
+      {/* Why it is real — the verification artifact stays inline as list context. */}
       <div className="grid gap-4 px-5 py-4 md:grid-cols-2">
-        {/* Why it is real — the verification artifact. */}
-        <section className="space-y-3">
+        <section className="space-y-2">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <ShieldCheck size={13} /> Why it was verified
           </p>
           <p className="text-[13px] leading-relaxed text-slate-300">
             {ver.why_verified || "No verification rationale recorded."}
           </p>
-
-          <p className="flex items-center gap-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            <FlaskConical size={13} /> Reproduce it
-          </p>
-          {numberedSteps(repro) || (
-            <p className="text-[13px] text-slate-500">No reproduction steps recorded for this finding.</p>
-          )}
-
           {ver.business_impact ? (
             <>
               <p className="flex items-center gap-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
@@ -195,60 +191,117 @@ function RemediationCard({ item, onGenerated }: { item: RemediationItem; onGener
             </>
           ) : null}
         </section>
-
-        {/* How to fix it — the remediation artifact. */}
-        <section className="space-y-3 md:border-l md:border-phantix-800/40 md:pl-4">
+        <section className="space-y-2 md:border-l md:border-phantix-800/40 md:pl-4">
           <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            <Wrench size={13} /> How to fix it
+            <FlaskConical size={13} /> Reproduce it
           </p>
-          {generated ? (
-            <>
-              {rem.summary ? (
-                <p className="text-[13px] leading-relaxed text-slate-200">{rem.summary}</p>
-              ) : null}
-              {numberedSteps(rem.steps)}
-              {rem.validation ? (
-                <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/80">
-                    How to confirm the fix
-                  </p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-emerald-100/90">{rem.validation}</p>
-                </div>
-              ) : null}
-              {Array.isArray(rem.references) && rem.references.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <BookOpen size={13} className="text-slate-500" />
-                  {rem.references.map((r, i) => (
-                    <span key={i} className="chip border-slate-500/30 bg-slate-500/10 text-slate-400">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
-              <p className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                <Sparkles size={11} /> Generated by AI{rem.model ? ` · ${rem.model}` : ""}
-              </p>
-            </>
-          ) : (
-            <div className="rounded-lg border border-phantix-700/40 bg-phantix-900/40 px-3 py-4 text-center">
-              <Sparkles size={16} className="mx-auto text-phantix-300" />
-              <p className="mt-1.5 text-[13px] text-slate-400">
-                AI remediation guidance has not been generated for this finding yet.
-              </p>
-              <p className="text-[12px] text-slate-600">
-                It is queued for the daily sweep, or generate it now above.
-              </p>
-            </div>
+          {numberedSteps(repro) || (
+            <p className="text-[13px] text-slate-500">No reproduction steps recorded for this finding.</p>
           )}
-          {err ? <p className="text-[12px] text-severity-high">{err}</p> : null}
         </section>
+      </div>
+
+      {/* Fix guidance lives in the overlay — the row here summarizes + opens it. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-phantix-800/40 bg-phantix-950/40 px-5 py-3">
+        <p className="flex items-center gap-1.5 text-[12px] text-slate-500">
+          <Wrench size={13} className="text-slate-500" />
+          {generating
+            ? "Generating fix guidance…"
+            : generated
+            ? "AI fix guidance is ready."
+            : "No AI fix guidance yet — queued for the daily sweep, or generate it now."}
+        </p>
+        <div className="flex shrink-0 items-center gap-2">
+          {generated && !generating ? (
+            <button type="button" onClick={() => onView(item)} className="btn-primary !px-3 !py-1.5 text-xs">
+              <Eye size={13} /> View guidance
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onGenerate(item)}
+            disabled={generating}
+            className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-50"
+            title="Queue AI remediation guidance for this finding"
+          >
+            {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            {generated ? "Regenerate" : "Generate guidance"}
+          </button>
+        </div>
       </div>
     </Card>
   );
 }
 
+function GuidanceModal({
+  item,
+  generating,
+  onRegenerate,
+  onClose,
+}: {
+  item: RemediationItem;
+  generating: boolean;
+  onRegenerate: (item: RemediationItem) => void;
+  onClose: () => void;
+}) {
+  const rem = item.remediation || {};
+  return (
+    <Modal open onClose={onClose} title={`How to fix — ${item.title || "finding"}`} wide>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <SeverityBadge severity={(item.severity || "info") as Severity} />
+          {rem.priority ? (
+            <span className={cx("chip capitalize", priorityClass(rem.priority))}>{rem.priority}</span>
+          ) : null}
+          {rem.effort ? (
+            <span className="chip capitalize text-slate-400 bg-slate-400/10 border-slate-500/30">effort: {rem.effort}</span>
+          ) : null}
+          <span className="ml-auto">
+            <button
+              type="button"
+              onClick={() => onRegenerate(item)}
+              disabled={generating}
+              className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-50"
+            >
+              {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Regenerate
+            </button>
+          </span>
+        </div>
+
+        {rem.summary ? <p className="text-[13px] leading-relaxed text-slate-200">{rem.summary}</p> : null}
+
+        {numberedSteps(rem.steps) || (
+          <p className="text-[13px] text-slate-500">No remediation steps were produced for this finding.</p>
+        )}
+
+        {rem.validation ? (
+          <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/5 px-3 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-300/80">How to confirm the fix</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-emerald-100/90">{rem.validation}</p>
+          </div>
+        ) : null}
+
+        {Array.isArray(rem.references) && rem.references.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <BookOpen size={13} className="text-slate-500" />
+            {rem.references.map((r, i) => (
+              <span key={i} className="chip border-slate-500/30 bg-slate-500/10 text-slate-400">
+                {r}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <p className="flex items-center gap-1.5 text-[11px] text-slate-600">
+          <Sparkles size={11} /> Generated by AI{rem.model ? ` · ${rem.model}` : ""}
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Remediation() {
-  const { data, loading, error, reload } = useResource<RemediationFeed>(
+  const { data, loading, error, reload, setData } = useResource<RemediationFeed>(
     () => api.get<RemediationFeed>("/scans/remediation"),
     EMPTY,
     "attack:remediation",
@@ -256,13 +309,17 @@ export default function Remediation() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [refreshing, setRefreshing] = useState(false);
+  const [generatingId, setGeneratingId] = useState<number | null>(null);
+  const [viewingId, setViewingId] = useState<number | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+
   const totalPages = Math.max(1, Math.ceil(data.items.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = data.items.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const viewingItem = viewingId != null ? data.items.find((i) => i.id === viewingId) ?? null : null;
 
-  // Header refresh feedback: `useResource.reload` keeps the cached data (no
-  // `loading` flip), so track the in-flight refresh locally. Cleared as soon as
-  // a fresh payload lands; a timeout backstops a same-value error response.
+  // Header refresh feedback: `useResource.reload` keeps cached data (no `loading`
+  // flip), so track the in-flight refresh locally; cleared when fresh data lands.
   useEffect(() => {
     setRefreshing(false);
   }, [data]);
@@ -272,6 +329,43 @@ export default function Remediation() {
     reload();
     window.setTimeout(() => setRefreshing(false), 6000);
   };
+
+  // Generation is async: queue the job, then poll the feed until this finding's
+  // guidance actually changes (fresh generate → status "generated"; regenerate →
+  // artifact differs). On success push the fresh feed and open the overlay.
+  async function generate(item: RemediationItem) {
+    if (generatingId != null) return;
+    const baseline = remediationSignature(item.remediation);
+    setGeneratingId(item.id);
+    setGenError(null);
+    try {
+      await api.post(`/scans/results/${item.id}/remediation`, {});
+      for (let attempt = 0; attempt < 20; attempt++) {
+        await sleep(3000);
+        let feed: RemediationFeed;
+        try {
+          feed = await api.get<RemediationFeed>("/scans/remediation");
+        } catch {
+          continue; // transient — keep polling
+        }
+        const fresh = feed.items.find((x) => x.id === item.id);
+        const changed =
+          fresh && isGenerated(fresh.remediation) && remediationSignature(fresh.remediation) !== baseline;
+        if (changed) {
+          setData(feed);
+          setViewingId(item.id); // open the guidance overlay when it lands
+          return;
+        }
+      }
+      // Timed out waiting for the worker — refresh once so any late result shows.
+      reload();
+      setGenError("Guidance is taking longer than usual. It will appear here when the worker finishes.");
+    } catch (e: unknown) {
+      setGenError(e instanceof Error ? e.message : "Could not queue generation");
+    } finally {
+      setGeneratingId(null);
+    }
+  }
 
   if (loading && data.total === 0) return <PageSkeleton variant="list" rows={5} actions />;
   if (error && data.total === 0) return <ErrorState title="Remediation" body={error} onRetry={reload} />;
@@ -310,6 +404,12 @@ export default function Remediation() {
         ) : null}
       </div>
 
+      {genError ? (
+        <p className="flex items-center gap-1.5 text-[12px] text-severity-high">
+          <AlertTriangle size={13} /> {genError}
+        </p>
+      ) : null}
+
       {data.items.length === 0 ? (
         <EmptyState
           icon={<ShieldCheck size={22} />}
@@ -320,7 +420,13 @@ export default function Remediation() {
         <Card className="overflow-hidden">
           <div className="space-y-4 p-4">
             {pageItems.map((item) => (
-              <RemediationCard key={item.id} item={item} onGenerated={reload} />
+              <RemediationCard
+                key={item.id}
+                item={item}
+                generating={generatingId === item.id}
+                onGenerate={generate}
+                onView={(it) => setViewingId(it.id)}
+              />
             ))}
           </div>
           <Pagination
@@ -332,6 +438,15 @@ export default function Remediation() {
           />
         </Card>
       )}
+
+      {viewingItem ? (
+        <GuidanceModal
+          item={viewingItem}
+          generating={generatingId === viewingItem.id}
+          onRegenerate={generate}
+          onClose={() => setViewingId(null)}
+        />
+      ) : null}
     </div>
   );
 }
