@@ -266,6 +266,9 @@ function EvidenceDrawer({
   );
 }
 
+/** Rows visible per phase column before the attack tree scrolls. */
+const TREE_ROWS = 6;
+
 export type AgiConsoleProps = {
   running: boolean;
   paused: boolean;
@@ -334,6 +337,9 @@ export default function AgiConsole({
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Attack tree stays bounded: six rows per column, scroll (or "Show all") for
+  // the rest, so a tall tree never squeezes the Pentest plan below it.
+  const [treeExpanded, setTreeExpanded] = useState(false);
   const [findingId, setFindingId] = useState<string | null>(null);
   const [sevFilter, setSevFilter] = useState<Severity | null>(null);
   const [gate, setGate] = useState<AgiAction | null>(null);
@@ -402,6 +408,10 @@ export default function AgiConsole({
   );
   const maxSlots = useMemo(
     () => Math.max(1, ...PHASES.map((phase) => nodes.filter((n) => n.phase === phase.id).length)),
+    [nodes],
+  );
+  const anyPhaseOverflow = useMemo(
+    () => PHASES.some((phase) => nodes.filter((n) => n.phase === phase.id).length > TREE_ROWS),
     [nodes],
   );
 
@@ -569,32 +579,50 @@ export default function AgiConsole({
                       </div>
                     );
                   })}
-                  {PHASES.map((phase) => {
-                    const list = nodes.filter((n) => n.phase === phase.id);
-                    const slots = [...list, ...Array.from({ length: Math.max(0, maxSlots - list.length) }, () => null)];
-                    return (
-                      <div key={`${phase.id}-col`} className="flex flex-col gap-1">
-                        {slots.map((n, i) => n ? (
-                          <button
-                            key={n.id}
-                            onClick={() => setSelectedId(n.id)}
-                            title={n.tool ? `${n.label} · ${n.tool}` : n.label}
-                            className={cx("flex min-h-[46px] flex-1 flex-col items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-center transition-all duration-200", NODE_RING[n.status], selected?.id === n.id && "ring-1 ring-gold-400/40")}
-                          >
-                            <span className={cx("h-1.5 w-1.5 rounded-full", NODE_DOT[n.status])} title={`${n.label} · ${n.status}`} />
-                            <span className="wb-2xs line-clamp-2 leading-tight text-slate-200">
-                              <span className="at-long">{n.label}</span>
-                              <span className="at-short">{n.short}</span>
-                            </span>
-                            {n.tool && <span className="wb-2xs max-w-full truncate font-mono text-slate-500">{n.tool}</span>}
-                          </button>
-                        ) : (
-                          <div key={`${phase.id}-empty-${i}`} className="min-h-[46px] flex-1 rounded-md border border-dashed border-phantix-700/30" />
-                        ))}
-                      </div>
-                    );
-                  })}
                 </div>
+                {/* Columns scroll instead of growing the pane, and show six rows
+                    per column until expanded — the Pentest plan below keeps its
+                    height no matter how many nodes the tree grows. */}
+                <div className="wb-scroll mt-1 max-h-[300px] min-h-0 overflow-y-auto pr-0.5">
+                  <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${PHASES.length}, minmax(0, 1fr))` }}>
+                    {PHASES.map((phase) => {
+                      const list = nodes.filter((n) => n.phase === phase.id);
+                      const shown = treeExpanded ? list : list.slice(0, TREE_ROWS);
+                      const rowCap = treeExpanded ? maxSlots : Math.min(maxSlots, TREE_ROWS);
+                      const slots = [...shown, ...Array.from({ length: Math.max(0, rowCap - shown.length) }, () => null)];
+                      return (
+                        <div key={`${phase.id}-col`} className="flex flex-col gap-1">
+                          {slots.map((n, i) => n ? (
+                            <button
+                              key={n.id}
+                              onClick={() => setSelectedId(n.id)}
+                              title={n.tool ? `${n.label} · ${n.tool}` : n.label}
+                              className={cx("flex min-h-[46px] flex-1 flex-col items-center justify-center gap-0.5 rounded-md border px-1 py-1 text-center transition-all duration-200", NODE_RING[n.status], selected?.id === n.id && "ring-1 ring-gold-400/40")}
+                            >
+                              <span className={cx("h-1.5 w-1.5 rounded-full", NODE_DOT[n.status])} title={`${n.label} · ${n.status}`} />
+                              <span className="wb-2xs line-clamp-2 leading-tight text-slate-200">
+                                <span className="at-long">{n.label}</span>
+                                <span className="at-short">{n.short}</span>
+                              </span>
+                              {n.tool && <span className="wb-2xs max-w-full truncate font-mono text-slate-500">{n.tool}</span>}
+                            </button>
+                          ) : (
+                            <div key={`${phase.id}-empty-${i}`} className="min-h-[46px] flex-1 rounded-md border border-dashed border-phantix-700/30" />
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {anyPhaseOverflow && (
+                  <button
+                    type="button"
+                    onClick={() => setTreeExpanded((v) => !v)}
+                    className="wb-2xs mt-1 w-full rounded px-1.5 py-0.5 text-center font-medium text-slate-500 transition-colors hover:bg-phantix-800 hover:text-slate-300"
+                  >
+                    {treeExpanded ? "Show fewer nodes" : "Show all nodes"}
+                  </button>
+                )}
               </div>
               <div className="wb-scroll min-h-0 flex-1 space-y-2 overflow-y-auto wb-pad">
                 <PentestTodo job={session.job as Parameters<typeof PentestTodo>[0]["job"]} running={running && !paused} />

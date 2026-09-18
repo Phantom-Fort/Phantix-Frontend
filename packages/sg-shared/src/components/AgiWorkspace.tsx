@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
+  AlertTriangle,
 } from "lucide-react";
 import { Modal, SkeletonBlock } from "../ui";
 import DocLink from "./DocLink";
@@ -118,6 +119,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const reportSubmitted = useRef(false);
   const [access, setAccess] = useState<AgiAccess | null>(null);
   const [booting, setBooting] = useState(true);
+  // AgiWorkspace mounts once at app root (inside the always-rendered drawer), so
+  // its first boot can run before the app-session token is established — then
+  // `/agi/access` fails and the agent looks broken until a full reload. This
+  // tracks a successful access load so we can safely re-boot when the operator
+  // opens the console, instead of forcing a reload.
+  const bootedOkRef = useRef(false);
 
   // Agreement
   const [agreementOpen, setAgreementOpen] = useState(false);
@@ -199,6 +206,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [workingOn, setWorkingOn] = useState<string | null>(null);
   const [connError, setConnError] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  // Set when the runner's autonomous loop has ended but the SESSION is still
+  // alive (resumable by chat). Distinct from session.status so the page stops
+  // looking frozen after a bounded stop (max_tools / idle / max_turns) without
+  // pretending the session is dead.
+  const [loopStopped, setLoopStopped] = useState<string | null>(null);
   const [overrideDrafts, setOverrideDrafts] = useState<Record<number, string>>({});
   const stick = useStickToBottom([transcript, actions, running, thinking]);
   const chatSend = useChatSend();
@@ -216,6 +228,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     try {
       const a = await loadAgiAccess();
       setAccess(a);
+      bootedOkRef.current = Boolean(a?.agi?.can_use);
       if (a.agi.can_use) {
         const engs = await loadAgiEngagements();
         setEngagements(engs);
@@ -226,6 +239,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           setSelectedEng(live.engagement_id);
           setRunning(live.status === "running" || live.status === "provisioning");
           setPaused(live.status === "paused");
+          if (live.loop_status === "stopped") { setLoopStopped(live.loop_stop_reason || "stopped"); setThinking(false); }
+          else setLoopStopped(null);
           const chunks = await loadAgiTranscript(live.id, 0);
           setTranscript(sanitizeAgiChunks(chunks));
           afterSeqRef.current = chunks.length ? Math.max(...chunks.map((c) => c.seq)) : 0;
@@ -250,6 +265,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   }, [toast]);
 
   useEffect(() => { void boot(); }, [boot]);
+
+  // Opening the console re-boots when the first (app-boot) attempt failed — e.g.
+  // it ran before auth was ready. Guarded by `bootedOkRef` so a successful load
+  // (and any running-session state) is never clobbered on subsequent opens.
+  useEffect(() => {
+    const onOpen = () => { if (!bootedOkRef.current) void boot(); };
+    window.addEventListener("phantix:agi-open", onOpen);
+    return () => window.removeEventListener("phantix:agi-open", onOpen);
+  }, [boot]);
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("phantix:agi-live", { detail: { running: Boolean(session && running) } }));
@@ -409,6 +433,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
 
   const dispatchChat = async (msg: string) => {
     if (!session || !running || paused) return;
+    // Optimistic resume: sending an instruction restarts the loop server-side.
+    setLoopStopped(null);
     if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
     setConnError(null);
     pendingOpsRef.current.push(msg);
@@ -702,6 +728,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         const s = await loadAgiSession(session.id);
         if (!s) return;
         setSession(s);
+        if (s.loop_status === "stopped") { setLoopStopped(s.loop_stop_reason || "stopped"); setThinking(false); }
+        else if (s.loop_status === "running") setLoopStopped(null);
         if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
         if (s.loop?.content && s.loop.event === "loop_progress") {
           setTranscript((prev) => {
@@ -757,6 +785,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       const s = await loadAgiSession(session.id);
       if (s) {
         setSession(s);
+        if (s.loop_status === "stopped") { setLoopStopped(s.loop_stop_reason || "stopped"); setThinking(false); }
+        else if (s.loop_status === "running") setLoopStopped(null);
         if (s.status === "stopped" || s.status === "torn_down" || s.status === "failed") setRunning(false);
       }
     } catch { /* transient — the watchdog will retry */ }
@@ -773,7 +803,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       // not flag a stall before the first poll has had a chance to bring output.
       if (!lastOutputAtRef.current) { lastOutputAtRef.current = Date.now(); setStalled(false); return; }
       const quietFor = Date.now() - lastOutputAtRef.current;
-      const blocked = actions.length > 0 || Boolean(openClarification) || thinking;
+      const blocked = actions.length > 0 || Boolean(openClarification) || thinking || Boolean(loopStopped);
       if (blocked || quietFor < STALL_MS) { setStalled(false); return; }
       setStalled(true);
       if (Date.now() - lastResyncAtRef.current > STALL_MS) {
@@ -784,7 +814,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     check();
     const t = window.setInterval(check, WATCHDOG_MS);
     return () => window.clearInterval(t);
-  }, [running, session?.id, paused, demoActive, actions.length, openClarification, thinking, resyncTranscript]);
+  }, [running, session?.id, paused, demoActive, actions.length, openClarification, thinking, loopStopped, resyncTranscript]);
 
   // Operator-initiated recovery from a stall: nudge the backend so it restarts
   // the autonomous loop, and re-sync in case chunks were only missed on the client.
@@ -1153,8 +1183,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-center gap-1.5 border-b border-phantix-700/40 px-3 py-2">
-                <span className={cx("chip !px-2 !py-0.5 wb-2xs", running ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
-                  {running ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-gold-400" /> running</span> : "stopped"}
+                <span className={cx("chip !px-2 !py-0.5 wb-2xs", loopStopped ? "border-severity-medium/30 bg-severity-medium/10 text-severity-medium" : running ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-600/40 bg-phantix-800/50 text-slate-400")}>
+                  {loopStopped
+                    ? <span className="flex items-center gap-1" title={`Autonomous loop stopped: ${loopStopped}`}><span className="h-1.5 w-1.5 rounded-full bg-severity-medium" /> loop stopped</span>
+                    : running ? <span className="flex items-center gap-1"><span className="h-1.5 w-1.5 rounded-full bg-gold-400" /> running</span> : "stopped"}
                 </span>
                 <span className="chip !px-2 !py-0.5 wb-2xs min-w-0 truncate text-slate-500">{selected?.name}</span>
                 <span className="chip !px-2 !py-0.5 wb-2xs shrink-0 font-mono text-slate-500">#{session.id}</span>
@@ -1394,6 +1426,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     ))}
                   </div>
                 )}
+                {loopStopped && (
+                  <div className="mb-2 flex items-start gap-2 rounded-lg border border-severity-medium/30 bg-severity-medium/10 px-3 py-2 text-[12px] text-severity-medium">
+                    <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+                    <span>Autonomous loop stopped (<span className="font-mono">{loopStopped}</span>). Send a message to continue where it left off, or start a new session.</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 transition-colors focus-within:border-gold-400/40">
                   <input
                     value={instruction}
@@ -1403,7 +1441,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       e.preventDefault();
                       send();
                     }}
-                    placeholder={running ? "Further instructions for the agent..." : "Session stopped"}
+                    placeholder={loopStopped ? "Loop stopped — send a message to continue..." : running ? "Further instructions for the agent..." : "Session stopped"}
                     disabled={!running}
                     className="wb-md flex-1 bg-transparent text-slate-200 outline-none placeholder:text-slate-500 disabled:opacity-50"
                   />

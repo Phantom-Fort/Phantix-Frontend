@@ -78,6 +78,8 @@ export function normalizeAgiSession(raw: unknown): AgiSession {
     meta: Object.keys(meta).length ? meta : {},
     job: asObj(o.job),
     loop: normalizeAgiLoop(o.loop),
+    loop_status: o.loop_status === "stopped" || o.loop_status === "running" ? o.loop_status : null,
+    loop_stop_reason: o.loop_stop_reason == null ? null : String(o.loop_stop_reason),
     clarification: o.clarification != null && typeof o.clarification === "object" ? (o.clarification as Record<string, unknown>) : null,
   };
 }
