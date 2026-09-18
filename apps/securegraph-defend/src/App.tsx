@@ -19,6 +19,7 @@ const Assets = React.lazy(() => import("./pages/Assets"));
 const AssetIntelligence = React.lazy(() => import("./pages/AssetIntelligence"));
 const AssetGraph = React.lazy(() => import("./pages/AssetGraph"));
 const Risks = React.lazy(() => import("./pages/Risks"));
+const EndpointMonitoring = React.lazy(() => import("./pages/EndpointMonitoring"));
 const ThreatIntel = React.lazy(() => import("./pages/ThreatIntel"));
 const Cloud = React.lazy(() => import("./pages/Cloud"));
 const Posture = React.lazy(() => import("./pages/Posture"));
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/posture" element={<Posture />} />
           <Route path="/cloud" element={<SectionGate section="defend.cloud"><Cloud /></SectionGate>} />
           <Route path="/risks" element={<Risks />} />
+          <Route path="/endpoint-monitoring" element={<EndpointMonitoring />} />
           <Route path="/threat-intel" element={<SectionGate section="defend.threat_intel"><ThreatIntel /></SectionGate>} />
           <Route path="/alerts" element={<Alerts />} />
           <Route path="/compliance" element={<SectionGate section="defend.compliance"><Compliance /></SectionGate>} />

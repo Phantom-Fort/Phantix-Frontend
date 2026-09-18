@@ -12,6 +12,7 @@ import {
   Logs,
   Network,
   Plug,
+  Radar,
   Scale,
   ScrollText,
   SearchCheck,
@@ -38,6 +39,7 @@ export const NAV: NavSection[] = [
     label: "Continuous",
     items: [
       { to: "/cloud", label: "Cloud posture", icon: <Cloud size={17} /> },
+      { to: "/endpoint-monitoring", label: "Endpoint monitoring", icon: <Radar size={17} /> },
       { to: "/risks", label: "Risk register", icon: <ShieldAlert size={17} /> },
     ],
   },
