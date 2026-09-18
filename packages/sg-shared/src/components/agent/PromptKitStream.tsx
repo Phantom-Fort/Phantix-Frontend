@@ -51,10 +51,6 @@ function Avatar({ children, tone = "muted" }: { children: React.ReactNode; tone?
 }
 
 export const PromptKitStream = memo(function PromptKitStream({ t, last = false }: { t: AgiTranscriptChunk; last?: boolean }) {
-  if (t.role === "tool") {
-    return <Tool toolPart={toToolPart(t)} defaultOpen={false} />;
-  }
-
   // A turn streams in as several transcript chunks before real text lands —
   // several of those arrive with blank content. Chunks that carry their own
   // "kind" (turn_start, reasoning, …) have their own fallback content below
@@ -62,6 +58,19 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
   // instead of painting an empty rounded bubble that then vanishes once real
   // text pushes it out — the "four or five empty boxes before the reply"
   // this guard removes.
+  //
+  // Tool chunks get the same treatment but check a different signal: a
+  // tool-call-started event with no output yet is still worth a box *if* it
+  // at least names the tool (e.g. "nmap" while it runs), but one with
+  // neither content nor a tool name is pure noise — the identical, blank
+  // "empty rounded rectangle" rows this was still producing, because this
+  // branch used to return before the empty-content guard below ever ran.
+  if (t.role === "tool") {
+    const hasToolName = typeof t.meta?.tool === "string" && t.meta.tool.trim().length > 0;
+    if (!t.content.trim() && !hasToolName) return null;
+    return <Tool toolPart={toToolPart(t)} defaultOpen={false} />;
+  }
+
   if (!t.content.trim() && !t.meta?.kind) {
     return null;
   }

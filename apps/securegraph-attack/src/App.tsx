@@ -24,6 +24,7 @@ const VaptSchedules = React.lazy(() => import("./pages/VaptSchedules"));
 const VaptProcedures = React.lazy(() => import("./pages/VaptProcedures"));
 const VaptSettings = React.lazy(() => import("./pages/VaptSettings"));
 const Mobile = React.lazy(() => import("./pages/Mobile"));
+const Remediation = React.lazy(() => import("./pages/Remediation"));
 
 export default function App() {
   return (
@@ -63,6 +64,7 @@ export default function App() {
           <Route path="/vapt/procedures" element={<VaptProcedures />} />
           <Route path="/vapt/settings" element={<VaptSettings />} />
           <Route path="/scans" element={<Scans />} />
+          <Route path="/remediation" element={<Remediation />} />
           <Route path="/assistant" element={<Agent allowAgi />} />
           <Route path="*" element={<NotFound homePath="/" />} />
         </Route>

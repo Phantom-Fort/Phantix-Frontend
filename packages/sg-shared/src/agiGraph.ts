@@ -253,6 +253,97 @@ const CATALOG: CatalogPhase[] = [
 
 const PHASE_BY_ID: Record<string, CatalogPhase> = Object.fromEntries(CATALOG.map((p) => [p.id, p]));
 
+/** Catalog nodes grouped by their engagement phase (recon/discovery/…). */
+const CATALOG_BY_GROUP: Record<string, CatalogPhase[]> = CATALOG.reduce(
+  (acc, p) => {
+    (acc[p.group] ||= []).push(p);
+    return acc;
+  },
+  {} as Record<string, CatalogPhase[]>,
+);
+
+const VALID_GROUPS = new Set<AttackPhase>([
+  "recon",
+  "discovery",
+  "vuln",
+  "exploit",
+  "auth",
+  "report",
+]);
+
+/** A sensible primary tool per phase so a step never falls back to a bare "shell". */
+const GROUP_DEFAULT_TOOL: Record<AttackPhase, string> = {
+  recon: "httpx",
+  discovery: "http_get",
+  vuln: "nuclei",
+  exploit: "http_get",
+  auth: "authenticated_get",
+  report: "engine_call",
+};
+
+/** One backend phase as delivered to the FE (session.job.phases[]). */
+export interface SessionPhase {
+  id: string;
+  name?: string;
+  /** Named steps the backend selected for this phase (may be strings or objects). */
+  steps?: Array<string | { id?: string; name?: string; title?: string; tool?: string }>;
+}
+
+interface StepLike {
+  id?: string;
+  name?: string;
+  tool?: string;
+}
+
+function normalizeSteps(steps: SessionPhase["steps"]): StepLike[] {
+  if (!Array.isArray(steps)) return [];
+  return steps
+    .map((s): StepLike | null => {
+      if (typeof s === "string") return s.trim() ? { name: s.trim() } : null;
+      if (s && typeof s === "object") {
+        const name = (s.name ?? s.title ?? "").toString().trim();
+        return name ? { id: s.id, name, tool: s.tool } : null;
+      }
+      return null;
+    })
+    .filter((s): s is StepLike => s !== null);
+}
+
+/** Best-effort catalog match for a free-text step label within a phase group,
+ *  so a backend step inherits a real tool + routing signatures when it can. */
+function matchCatalogForLabel(label: string, group: AttackPhase): CatalogPhase | undefined {
+  const blob = label.toLowerCase();
+  const pool = CATALOG_BY_GROUP[group] ?? [];
+  let best: CatalogPhase | undefined;
+  let bestScore = 0;
+  for (const c of pool) {
+    let score = 0;
+    if (blob.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(blob)) score += 2;
+    for (const sig of c.sigs) if (sig && blob.includes(sig.toLowerCase())) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      best = c;
+    }
+  }
+  return bestScore > 0 ? best : undefined;
+}
+
+function catalogToNode(p: CatalogPhase): AttackNode {
+  return {
+    id: p.id,
+    phaseId: p.id,
+    label: p.label,
+    short: p.short,
+    phase: p.group,
+    status: "pending",
+    commands: [],
+    outputs: [],
+    reasoning: [],
+    persona: p.group === "recon" || p.group === "discovery" ? "recon" : "exploit",
+    tool: p.tool,
+  };
+}
+
 const RECON_TOOLS = /nmap|httpx|whois|dig|amass|subfinder|masscan|katana|gau|gospider/i;
 const EXPLOIT_TOOLS = /nuclei|ffuf|sqlmap|nikto|gobuster|hydra|http_probe|burp|frida|jadx/i;
 const HIGH_RISK = /sqlmap|drop\s+table|dos|flood|ransomware|privesc|privilege\s*esc|metasploit|reverse.?shell|rm\s+-rf|exploit-db|data_exfil/i;
@@ -277,28 +368,82 @@ function bump(status: NodeStatus, next: NodeStatus): NodeStatus {
   return rank[next] > rank[status] ? next : status;
 }
 
-function seedNodes(phases?: { id: string; name?: string }[]): AttackNode[] {
-  // Prefer the backend-selected phase list (session.job.phases) so the tree
-  // reflects what was actually chosen for this objective; otherwise the full
-  // catalog.
-  const source: CatalogPhase[] = phases?.length
-    ? phases
-        .map((p) => PHASE_BY_ID[p.id] ?? ({ id: p.id, group: "recon", label: p.name || p.id, short: shortLabel(p.name || p.id), sigs: [], tool: "shell" } as CatalogPhase))
-    : CATALOG;
+function seedNodes(phases?: SessionPhase[]): AttackNode[] {
+  // No backend phase list → show the full methodology catalog.
+  if (!phases?.length) return CATALOG.map(catalogToNode);
 
-  return source.map((p) => ({
-    id: p.id,
-    phaseId: p.id,
-    label: p.label,
-    short: p.short,
-    phase: p.group,
-    status: "pending",
-    commands: [],
-    outputs: [],
-    reasoning: [],
-    persona: p.group === "recon" || p.group === "discovery" ? "recon" : "exploit",
-    tool: p.tool,
-  }));
+  // Prefer the backend-selected phases (session.job.phases) so the tree reflects
+  // what was chosen for this objective — but expand each phase into *informative*
+  // step nodes instead of a single generic "shell" node:
+  //   1. a granular catalog id  → the catalog node itself;
+  //   2. a group id with backend `steps` → one node per named step (real tool);
+  //   3. a group id with no steps → the catalog's steps for that group;
+  //   4. anything else → a single labelled node with the group's default tool.
+  const out: AttackNode[] = [];
+  const seen = new Set<string>();
+  const push = (node: AttackNode) => {
+    if (seen.has(node.id)) return;
+    seen.add(node.id);
+    out.push(node);
+  };
+
+  for (const p of phases) {
+    const direct = PHASE_BY_ID[p.id];
+    if (direct) {
+      push(catalogToNode(direct));
+      continue;
+    }
+    const group: AttackPhase = VALID_GROUPS.has(p.id as AttackPhase)
+      ? (p.id as AttackPhase)
+      : "recon";
+    const persona: AgentPersona =
+      group === "recon" || group === "discovery" ? "recon" : "exploit";
+
+    const steps = normalizeSteps(p.steps);
+    if (steps.length) {
+      steps.forEach((s, i) => {
+        const label = s.name || `${p.name || p.id} · step ${i + 1}`;
+        const cat = matchCatalogForLabel(label, group);
+        push({
+          id: s.id || cat?.id || `${group}_${i + 1}`,
+          phaseId: s.id || cat?.id || `${group}_${i + 1}`,
+          label,
+          short: shortLabel(label),
+          phase: group,
+          status: "pending",
+          commands: [],
+          outputs: [],
+          reasoning: [],
+          persona,
+          tool: s.tool || cat?.tool || GROUP_DEFAULT_TOOL[group],
+        });
+      });
+      continue;
+    }
+
+    const catalogGroup = CATALOG_BY_GROUP[group];
+    if (catalogGroup?.length) {
+      catalogGroup.forEach((c) => push(catalogToNode(c)));
+      continue;
+    }
+
+    const label = p.name || p.id;
+    push({
+      id: p.id,
+      phaseId: p.id,
+      label,
+      short: shortLabel(label),
+      phase: group,
+      status: "pending",
+      commands: [],
+      outputs: [],
+      reasoning: [],
+      persona,
+      tool: GROUP_DEFAULT_TOOL[group],
+    });
+  }
+
+  return out.length ? out : CATALOG.map(catalogToNode);
 }
 
 function routePhase(t: AgiTranscriptChunk): string | null {
@@ -324,7 +469,7 @@ export function deriveAttackGraph(
   transcript: AgiTranscriptChunk[],
   actions: AgiAction[],
   running: boolean,
-  phases?: { id: string; name?: string }[],
+  phases?: SessionPhase[],
 ): AttackNode[] {
   const nodes = seedNodes(phases);
   const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
@@ -490,12 +635,18 @@ export function severityCounts(findings: AgiFinding[]): Record<Severity, number>
 }
 
 /** Phase ids selected for an objective, if the session exposes them. */
-export function phasesFromSession(job: unknown): { id: string; name?: string }[] | undefined {
+export function phasesFromSession(job: unknown): SessionPhase[] | undefined {
   const phases = (job as { phases?: unknown } | null | undefined)?.phases;
   if (!Array.isArray(phases)) return undefined;
   const out = phases
     .filter((p): p is Record<string, unknown> => !!p && typeof p === "object")
-    .map((p) => ({ id: String(p.id ?? ""), name: typeof p.name === "string" ? p.name : undefined }))
+    .map((p) => ({
+      id: String(p.id ?? ""),
+      name: typeof p.name === "string" ? p.name : undefined,
+      // Carry the backend's named steps through so the attack tree can render
+      // an informative node per step instead of one generic phase node.
+      steps: Array.isArray(p.steps) ? (p.steps as SessionPhase["steps"]) : undefined,
+    }))
     .filter((p) => p.id);
   return out.length ? out : undefined;
 }
