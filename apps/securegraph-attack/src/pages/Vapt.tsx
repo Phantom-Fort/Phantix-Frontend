@@ -192,7 +192,10 @@ export default function Vapt() {
       setConflict(c);
       return;
     }
-    toast("warning", "Concurrent campaign", "Pause or cancel the active campaign first.");
+    // No named campaign in the response --- the conflict isn't "something else
+    // is running" (e.g. a failed/cancelled campaign can't restart in place).
+    // Show the server's actual reason instead of a canned, possibly wrong one.
+    toast("warning", "Can't do that right now", e?.message || "Pause or cancel the active campaign first.");
   };
 
   const handleCampaignAction = async (id: number, action: string, extra?: Record<string, unknown>) => {
