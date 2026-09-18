@@ -49,6 +49,12 @@ import { useNavigate } from "react-router-dom";
 
 const POLL_MS = 5000;
 const ACTION_POLL_MS = 8000;
+// Stream is considered stalled after this much silence while the session still
+// claims to be running (no approvals / clarification pending). The watchdog then
+// re-syncs the transcript from scratch (self-heals a desynced cursor) and offers
+// the operator a Resume that restarts the agent's loop.
+const STALL_MS = 45_000;
+const WATCHDOG_MS = 7_000;
 
 type WorkspaceVariant = "drawer" | "page" | "console";
 
@@ -177,6 +183,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   // response".
   const lastOutputAtRef = useRef(0);
   const [streaming, setStreaming] = useState(false);
+  // Stall watchdog: the stream went silent while the session still claims to be
+  // running. `stalled` drives a visible recovery affordance; the ref throttles
+  // the automatic re-sync so it runs at most once per stall window.
+  const [stalled, setStalled] = useState(false);
+  const [resuming, setResuming] = useState(false);
+  const lastResyncAtRef = useRef(0);
   // Prompts sent mid-turn stay pinned above the composer until the agent acts.
   const [pendingPrompts, setPendingPrompts] = useState<QueuedPrompt[]>([]);
   const [actions, setActions] = useState<AgiAction[]>([]);
@@ -715,6 +727,83 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     return () => window.clearInterval(t);
   }, [running, session?.id, paused]);
 
+  // Full transcript re-sync: refetch from seq 0 and merge anything we are missing
+  // (dedup by seq + locally-appended twins), then refresh the session. Self-heals
+  // a desynced cursor and any dropped poll batch. Read-only; no dual control.
+  const resyncTranscript = useCallback(async () => {
+    if (!session || pollBusyRef.current) return;
+    pollBusyRef.current = true;
+    try {
+      const chunks = await loadAgiTranscript(session.id, 0);
+      if (chunks.length > 0) {
+        const safe = sanitizeAgiChunks(chunks);
+        let added = 0;
+        setTranscript((prev) => {
+          const seenSeqs = new Set(prev.filter((p) => p.seq > 0).map((p) => p.seq));
+          const out: AgiTranscriptChunk[] = [];
+          for (const c of safe) {
+            if (c.seq > 0 && seenSeqs.has(c.seq)) continue;
+            const key = `${c.role}|${c.content}`;
+            if (localKeysRef.current.has(key)) { localKeysRef.current.delete(key); continue; }
+            out.push(c);
+          }
+          added = out.length;
+          if (out.length === 0) return prev;
+          return [...prev, ...out];
+        });
+        afterSeqRef.current = Math.max(afterSeqRef.current, ...chunks.map((c) => c.seq));
+        if (added > 0) { lastOutputAtRef.current = Date.now(); setStalled(false); }
+      }
+      const s = await loadAgiSession(session.id);
+      if (s) {
+        setSession(s);
+        if (s.status === "stopped" || s.status === "torn_down" || s.status === "failed") setRunning(false);
+      }
+    } catch { /* transient — the watchdog will retry */ }
+    finally { pollBusyRef.current = false; }
+  }, [session]);
+
+  // Stall watchdog: while the session claims to be running with no approval or
+  // clarification pending, silence past STALL_MS means the stream is wedged. Flag
+  // it (so the UI stops looking frozen) and auto re-sync once per window.
+  useEffect(() => {
+    if (!running || !session || paused || demoActive) { setStalled(false); return; }
+    const check = () => {
+      // First tick after (re)adopting a running session: seed the clock so we do
+      // not flag a stall before the first poll has had a chance to bring output.
+      if (!lastOutputAtRef.current) { lastOutputAtRef.current = Date.now(); setStalled(false); return; }
+      const quietFor = Date.now() - lastOutputAtRef.current;
+      const blocked = actions.length > 0 || Boolean(openClarification) || thinking;
+      if (blocked || quietFor < STALL_MS) { setStalled(false); return; }
+      setStalled(true);
+      if (Date.now() - lastResyncAtRef.current > STALL_MS) {
+        lastResyncAtRef.current = Date.now();
+        void resyncTranscript();
+      }
+    };
+    check();
+    const t = window.setInterval(check, WATCHDOG_MS);
+    return () => window.clearInterval(t);
+  }, [running, session?.id, paused, demoActive, actions.length, openClarification, thinking, resyncTranscript]);
+
+  // Operator-initiated recovery from a stall: nudge the backend so it restarts
+  // the autonomous loop, and re-sync in case chunks were only missed on the client.
+  const resumeAgent = useCallback(async () => {
+    if (!session || !running || paused || resuming) return;
+    setResuming(true);
+    try {
+      await resyncTranscript();
+      // Only nudge the loop if the re-sync did not already bring it back to life.
+      if (Date.now() - lastOutputAtRef.current > STALL_MS) {
+        await dispatchChat("Continue the assessment toward the open objectives.");
+      }
+      setStalled(false);
+    } finally {
+      setResuming(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, running, paused, resuming, resyncTranscript]);
+
   const stopRef = useRef(stop);
   stopRef.current = stop;
   useEffect(() => {
@@ -1210,8 +1299,23 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       authorizationsHref="/authorizations"
                     />
                   )}
-                  {running && transcript.length > 0 && !thinking && !connError && actions.length === 0 && !openClarification && (
+                  {running && transcript.length > 0 && !thinking && !connError && actions.length === 0 && !openClarification && !stalled && (
                     <p className="wb-xs text-center text-slate-600">— awaiting engine output —</p>
+                  )}
+                  {running && !thinking && !connError && actions.length === 0 && !openClarification && stalled && (
+                    <div className="mx-auto my-1 flex max-w-md flex-col items-center gap-2 rounded-xl border border-phantix-700/50 bg-phantix-900/50 px-4 py-3 text-center">
+                      <p className="wb-xs text-slate-400">
+                        The agent has been quiet for a while — re-syncing the transcript. If it stays idle, resume the run.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void resumeAgent()}
+                        disabled={resuming}
+                        className="btn-secondary !px-3 !py-1.5 wb-xs disabled:opacity-60"
+                      >
+                        {resuming ? "Resuming…" : "Resume agent"}
+                      </button>
+                    </div>
                   )}
                   <div ref={endRef} />
                 </div>

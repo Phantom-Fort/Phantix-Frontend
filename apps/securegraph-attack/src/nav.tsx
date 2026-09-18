@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Smartphone,
   Target,
+  Wrench,
 } from "lucide-react";
 import type { NavSection } from "@sg/shell/types";
 
@@ -29,6 +30,7 @@ export const NAV: NavSection[] = [
     items: [
       { to: "/scans", label: "Web & API", icon: <Radar size={17} /> },
       { to: "/mobile", label: "Mobile", icon: <Smartphone size={17} /> },
+      { to: "/remediation", label: "Remediation", icon: <Wrench size={17} /> },
     ],
   },
   {
