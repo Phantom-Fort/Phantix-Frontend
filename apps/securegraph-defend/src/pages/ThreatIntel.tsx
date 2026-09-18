@@ -16,7 +16,7 @@ import {
 } from "@sg/data";
 import ScanConsentModal from "@sg/components/ScanConsentModal";
 import { useStore } from "@sg/store";
-import { timeAgo, cx, titleCase } from "@sg/utils";
+import { timeAgo, cx, titleCase, clickableRowProps } from "@sg/utils";
 import type { IntelDashboard, TiSignal, CloudEvent } from "@sg/types";
 
 function sevOf(s: string | undefined): "critical" | "high" | "medium" | "low" | "info" {
@@ -250,7 +250,7 @@ export default function ThreatIntel() {
                         const isNew = (intel.data.newSignals ?? []).includes(s.ioc);
                         const matched = s.matchedAssetIds ?? (s as { matched_asset_ids?: number[] }).matched_asset_ids ?? [];
                         return (
-                          <tr key={s.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors cursor-pointer", isNew && "bg-emerald-400/5")} onClick={() => setOpenIoc(s)}>
+                          <tr key={s.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset", isNew && "bg-emerald-400/5")} onClick={() => setOpenIoc(s)} {...clickableRowProps(() => setOpenIoc(s))}>
                             <td className="td">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-mono text-[13px] text-slate-100 truncate max-w-[240px]">{s.ioc}</span>

@@ -1,30 +1,34 @@
-import React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import React, { Suspense } from "react";
+import { Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
-import Agent from "@sg/pages/Agent";
 import type { ApplicationKey } from "@sg/shell/types";
 import Docs from "@sg/pages/Docs";
 import DocPage from "@sg/pages/DocPage";
 import DocsChrome from "@sg/pages/DocsChrome";
 import { StoreProvider, ToastViewport } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
+import { BrandLoader } from "@sg/components/BrandLoader";
 import { HOSTS } from "./hosts";
 import { NAV } from "./nav";
-import Overview from "./pages/Overview";
-import Targets from "./pages/Targets";
-import Scans from "./pages/Scans";
-import PentestScope from "./pages/PentestScope";
 import AgiDrawer from "@sg/components/AgiDrawer";
-import Vapt from "./pages/Vapt";
-import VaptSchedules from "./pages/VaptSchedules";
-import VaptProcedures from "./pages/VaptProcedures";
-import VaptSettings from "./pages/VaptSettings";
-import Mobile from "./pages/Mobile";
 import SectionGate from "@sg/components/SectionGate";
+
+const Agent = React.lazy(() => import("@sg/pages/Agent"));
+const NotFound = React.lazy(() => import("@sg/pages/NotFound"));
+const Overview = React.lazy(() => import("./pages/Overview"));
+const Targets = React.lazy(() => import("./pages/Targets"));
+const Scans = React.lazy(() => import("./pages/Scans"));
+const PentestScope = React.lazy(() => import("./pages/PentestScope"));
+const Vapt = React.lazy(() => import("./pages/Vapt"));
+const VaptSchedules = React.lazy(() => import("./pages/VaptSchedules"));
+const VaptProcedures = React.lazy(() => import("./pages/VaptProcedures"));
+const VaptSettings = React.lazy(() => import("./pages/VaptSettings"));
+const Mobile = React.lazy(() => import("./pages/Mobile"));
 
 export default function App() {
   return (
     <StoreProvider>
+      <Suspense fallback={<BrandLoader label="Attack" message="Loading" />}>
       <Routes>        <Route
           element={
             <ApplicationShell
@@ -60,7 +64,7 @@ export default function App() {
           <Route path="/vapt/settings" element={<VaptSettings />} />
           <Route path="/scans" element={<Scans />} />
           <Route path="/assistant" element={<Agent allowAgi />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound homePath="/" />} />
         </Route>
         {/* Documentation renders outside the sidebar with its own top bar. */}
         <Route element={<DocsChrome />}>
@@ -69,6 +73,7 @@ export default function App() {
         </Route>
 
       </Routes>
+      </Suspense>
       <ToastViewport />
       <DualControlOverlay />
       <AgiDrawer />

@@ -9,7 +9,7 @@ import { PageHeader, Card, CardHeader, StatusBadge, Modal, EmptyState, PageSkele
 import DocLink from "@sg/components/DocLink";
 import { useStore } from "@sg/store";
 import { timeAgo } from "@sg/utils";
-import { cx } from "@sg/utils";
+import { cx, clickableRowProps } from "@sg/utils";
 import {
   RESPONSE_TARGETS, TICKET_CATEGORIES, TICKET_PRIORITIES,
   createSupportTicket, getSupportTicket, loadSupportTickets, replySupportTicket, ticketAge,
@@ -387,7 +387,8 @@ export default function Support() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => setSelected(t)}
-                  className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35"
+                  className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                  {...clickableRowProps(() => setSelected(t))}
                 >
                   <td className="td">
                     <div className="flex items-center gap-2.5">

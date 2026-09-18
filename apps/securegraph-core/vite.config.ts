@@ -29,6 +29,16 @@ export default defineConfig(({ mode }) => {
       host: true,
       proxy: { "/api": { target: apiTarget, changeOrigin: true, secure: true, ws: true } },
     },
-    build: { chunkSizeWarningLimit: 1200 },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ["react", "react-dom", "react-router-dom"],
+            motion: ["framer-motion"],
+          },
+        },
+      },
+    },
   };
 });

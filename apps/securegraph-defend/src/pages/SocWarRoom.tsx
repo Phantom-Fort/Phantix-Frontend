@@ -5,7 +5,7 @@ import { PageHeader, Card, CardHeader, SeverityBadge, StatusBadge, Tabs, PageSke
 import { loadSocWarRoom, loadWarRoomChecklist, updateChecklistStep, loadWarRoomEvidence, loadWarRoomKillChain, loadWarRoomSla, openSocWarRoomCase } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
-import { timeAgo, cx, humanize } from "@sg/utils";
+import { timeAgo, cx, humanize, clickableRowProps } from "@sg/utils";
 import type { Severity, SocWarRoomCase, SocWarRoomResponse, SocPlaybook } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
 
@@ -77,7 +77,8 @@ export default function SocWarRoom() {
                             <tr
                               key={c.id}
                               onClick={() => setSelectedCase(c.id)}
-                              className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35"
+                              className="cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                              {...clickableRowProps(() => setSelectedCase(c.id))}
                             >
                               <td className="td"><SeverityBadge severity={c.severity as Severity} /></td>
                               <td className="td font-medium text-slate-200">{c.title}</td>

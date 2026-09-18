@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, Code2, FileCode, ExternalLink, Lock } from "lucide-react";
+import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, FileCode, ExternalLink, Lock } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
 import DocLink from "@sg/components/DocLink";
@@ -11,7 +11,7 @@ import { api, ApiError } from "@sg/api";
 import { useResource } from "@sg/useResource";
 import { timeAgo, formatBytes, titleCase, cx, humanize, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@sg/utils";
 import { useStore } from "@sg/store";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { isDemoMode } from "@sg/api";
 import { marked } from "marked";
 import type { TrackerFinding, TrackerSummary } from "@sg/types";
@@ -117,15 +117,6 @@ async function handleDownload(
   }
 }
 
-async function loadMarkdown(reportId: number): Promise<string> {
-  try {
-    return await api.fetchText(`/reports/${reportId}/download?format=markdown`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Could not load markdown content";
-    throw new Error(msg);
-  }
-}
-
 const trackerStatuses = TRACKER_STATUSES;
 
 function JsonPre({ data }: { data: unknown }) {
@@ -177,47 +168,9 @@ function SectionRenderer({ section }: { section: any }) {
   return <JsonPre data={content} />;
 }
 
-function MarkdownReportView({ reportId }: { reportId: number }) {
-  const { toast } = useStore();
-  const [md, setMd] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleLoad = async () => {
-    if (md !== null) { setOpen(true); return; }
-    setLoading(true);
-    try {
-      const text = await loadMarkdown(reportId);
-      setMd(text);
-      setOpen(true);
-    } catch (err) {
-      toast("error", "Could not load report", err instanceof Error ? err.message : "Markdown content unavailable");
-      setMd("*Could not load markdown content.*");
-      setOpen(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      <button onClick={handleLoad} className="flex items-center gap-1.5 rounded-lg border border-phantix-700/50 bg-phantix-950/50 px-3 py-2 text-xs text-slate-300 hover:bg-phantix-800/60">
-        <Code2 size={13} /> {loading ? "Loading..." : "View formatted report"}
-      </button>
-      <Modal open={open} onClose={() => setOpen(false)} title="Formatted Report" wide>
-        {md && (
-          <div
-            className="prose-doc max-w-none overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-6 max-h-[70vh]"
-            dangerouslySetInnerHTML={{ __html: marked.parse(md) as string }}
-          />
-        )}
-      </Modal>
-    </>
-  );
-}
-
 export default function Reports() {
   const { toast, requireDualControl } = useStore();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const fromAgi = params.get("from") === "agi";
   const agiSession = params.get("session");
@@ -673,6 +626,13 @@ export default function Reports() {
                     </div>
                   ) : (
                     <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/reports/${r.id}/view`); }}
+                        className="rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase text-gold-300 hover:bg-gold-400/20"
+                      >
+                        View
+                      </button>
                       {(parseOutputFiles(r.output_files).downloads.length > 0
                         ? parseOutputFiles(r.output_files).downloads
                         : (r.formats_requested || []).map((f: string) => ({ format: f, path: "" }))
@@ -1199,8 +1159,13 @@ export default function Reports() {
               );
             })()}
 
-            {/* Markdown viewer */}
-            <MarkdownReportView reportId={detail.id} />
+            {/* Full report, rendered full-page in a sandboxed viewer */}
+            <button
+              onClick={() => navigate(`/reports/${detail.id}/view`)}
+              className="flex items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-3 py-2 text-xs font-semibold text-gold-300 hover:bg-gold-400/20"
+            >
+              <ExternalLink size={13} /> View full report
+            </button>
 
             {/* Sections */}
             {detail.sections && (

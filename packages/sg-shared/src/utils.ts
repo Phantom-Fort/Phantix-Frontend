@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { KeyboardEvent } from "react";
 import type { Severity, VerificationStatus } from "./types";
 
 export function cn(...inputs: ClassValue[]): string {
@@ -8,6 +9,23 @@ export function cn(...inputs: ClassValue[]): string {
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
+}
+
+/**
+ * Spread onto a clickable `<tr>`/`<motion.tr>` alongside its existing `onClick`
+ * so the row opens on Enter/Space too, not just a mouse click.
+ */
+export function clickableRowProps(onActivate: () => void) {
+  return {
+    tabIndex: 0,
+    role: "button" as const,
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        onActivate();
+      }
+    },
+  };
 }
 
 export const severityMeta: Record<Severity, { label: string; color: string; bg: string; border: string }> = {

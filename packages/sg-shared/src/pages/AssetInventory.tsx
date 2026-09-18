@@ -8,7 +8,7 @@ import DocLink from "@sg/components/DocLink";
 import MobileHandoffCard from "@sg/components/MobileHandoffCard";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@sg/data";
 import { useResource } from "@sg/useResource";
-import { timeAgo, titleCase, cx, severityMeta } from "@sg/utils";
+import { timeAgo, titleCase, cx, severityMeta, clickableRowProps } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { api, tokens, API_BASE, ApiError } from "@sg/api";
 import { classifyAsset, createAssetTag, deleteAssetTag, TAG_COLORS, type AssetClassification } from "@sg/assetTags";
@@ -645,7 +645,8 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
                           animate={{ opacity: 1 }}
                           transition={{ delay: i * 0.03 }}
                           onClick={() => setSelected(a)}
-                          className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35"
+                          className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                          {...clickableRowProps(() => setSelected(a))}
                         >
                           <td className="td w-10" onClick={(e) => e.stopPropagation()}>
                             <input
