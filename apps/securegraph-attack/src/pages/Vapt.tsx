@@ -330,9 +330,13 @@ export default function Vapt() {
       const stillActive = campaigns.filter((c: any) =>
         c.status === "active" || c.status === "pending_approval" || c.status === "paused"
       );
-      if (stillActive.length === 0) {
-        if (pollTimer.current) { clearInterval(pollTimer.current); pollTimer.current = null; }
-        reload();
+      // Refresh the view EVERY tick while a campaign runs so the operator sees
+      // live progress (current_phase, step, findings) advance — not a frozen bar
+      // that only updates when the run ends.
+      reload();
+      if (stillActive.length === 0 && pollTimer.current) {
+        clearInterval(pollTimer.current);
+        pollTimer.current = null;
       }
     } catch { /* silent */ }
   }, [reload]);
