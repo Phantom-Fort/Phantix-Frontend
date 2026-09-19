@@ -73,22 +73,8 @@ type RemediationFeed = {
 
 const EMPTY: RemediationFeed = { items: [], counts: { total: 0, ai_generated: 0, pending: 0 }, total: 0 };
 
-const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
-
 function isGenerated(rem?: RemediationBlock): boolean {
   return (rem?.status || "") === "generated";
-}
-
-/** A stable signature of the fix artifact, so we can tell when a (re)generation
- *  actually produced new guidance rather than just re-queuing the same job. */
-function remediationSignature(rem?: RemediationBlock): string {
-  return JSON.stringify({
-    status: rem?.status ?? "",
-    summary: rem?.summary ?? "",
-    steps: rem?.steps ?? [],
-    validation: rem?.validation ?? "",
-    references: rem?.references ?? [],
-  });
 }
 
 function priorityClass(priority?: string | null): string {
@@ -330,38 +316,30 @@ export default function Remediation() {
     window.setTimeout(() => setRefreshing(false), 6000);
   };
 
-  // Generation is async: queue the job, then poll the feed until this finding's
-  // guidance actually changes (fresh generate → status "generated"; regenerate →
-  // artifact differs). On success push the fresh feed and open the overlay.
+  // Generation is synchronous: the backend sends the finding's full verified
+  // context to the AI engine and returns the persisted guidance in one call. We
+  // patch it into the feed and open the overlay — no polling, no worker limbo.
   async function generate(item: RemediationItem) {
     if (generatingId != null) return;
-    const baseline = remediationSignature(item.remediation);
     setGeneratingId(item.id);
     setGenError(null);
     try {
-      await api.post(`/scans/results/${item.id}/remediation`, {});
-      for (let attempt = 0; attempt < 20; attempt++) {
-        await sleep(3000);
-        let feed: RemediationFeed;
-        try {
-          feed = await api.get<RemediationFeed>("/scans/remediation");
-        } catch {
-          continue; // transient — keep polling
-        }
-        const fresh = feed.items.find((x) => x.id === item.id);
-        const changed =
-          fresh && isGenerated(fresh.remediation) && remediationSignature(fresh.remediation) !== baseline;
-        if (changed) {
-          setData(feed);
-          setViewingId(item.id); // open the guidance overlay when it lands
-          return;
-        }
+      const res = await api.post<{ ok?: boolean; remediation?: RemediationBlock; error?: string | null }>(
+        `/scans/results/${item.id}/remediation`,
+        {},
+      );
+      const rem = res.remediation;
+      if (rem && isGenerated(rem)) {
+        setData((prev) => ({
+          ...prev,
+          items: prev.items.map((it) => (it.id === item.id ? { ...it, remediation: rem } : it)),
+        }));
+        setViewingId(item.id); // open the guidance overlay
+      } else {
+        setGenError(res.error || "The AI engine could not produce guidance for this finding. Try again.");
       }
-      // Timed out waiting for the worker — refresh once so any late result shows.
-      reload();
-      setGenError("Guidance is taking longer than usual. It will appear here when the worker finishes.");
     } catch (e: unknown) {
-      setGenError(e instanceof Error ? e.message : "Could not queue generation");
+      setGenError(e instanceof Error ? e.message : "Could not generate guidance");
     } finally {
       setGeneratingId(null);
     }
