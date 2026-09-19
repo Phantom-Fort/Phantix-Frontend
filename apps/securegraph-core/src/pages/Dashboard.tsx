@@ -374,6 +374,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <PostureDonut surfaces={surfaceRows} overallScore={posture?.overall_score ?? null} />
           <FindingsBreakdown
+            initialFraming="severity"
             counts={{
               byStatus: {
                 open: Number(tracker?.open ?? 0),

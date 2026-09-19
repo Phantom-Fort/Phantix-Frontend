@@ -333,7 +333,9 @@ export function ApplicationShell({
     if (card.key === application || !card.accessible) return;
     setOpening(card.key);
     const base = IS_DEV_HOSTS ? hosts[card.key] || card.open_url : card.open_url || hosts[card.key];
-    const url = await handoffUrl(card.key, base || "");
+    // Core's "/" is its public marketing page, not the dashboard — every
+    // other application's "/" already is its authenticated home.
+    const url = await handoffUrl(card.key, base || "", card.key === "core" ? "/dashboard" : "/");
     setSwitcherOpen(false);
     setOpening("");
     if (url) window.location.assign(url);

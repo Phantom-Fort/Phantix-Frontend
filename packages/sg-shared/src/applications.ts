@@ -248,7 +248,21 @@ export async function applicationHandoffHref(
       : minted?.open_url || APPLICATION_HOSTS[key];
     const base = (preferred || "").replace(/\/+$/, "");
     if (!minted?.code || !base) return fallback;
-    const suffix = path && path !== "/dashboard" ? path : "/";
+    // "/" is the authenticated home for Attack/Defend/Code, so a caller
+    // asking for the generic "/dashboard" (or passing nothing) collapses to
+    // "/" there. Core is the one app where that's wrong: its "/" is the
+    // public marketing page, and landing there just bounces back through
+    // "/choose-app" instead of actually opening the dashboard the caller
+    // asked for — so for Core, the same generic request resolves to its
+    // real "/dashboard" instead.
+    const suffix =
+      key === "core"
+        ? path && path !== "/" && path !== "/dashboard"
+          ? path
+          : "/dashboard"
+        : path && path !== "/dashboard"
+          ? path
+          : "/";
     return `${base}${suffix}#sg=${encodeURIComponent(minted.code)}`;
   } catch {
     return fallback;

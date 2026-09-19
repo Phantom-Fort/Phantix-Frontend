@@ -445,6 +445,29 @@ export interface VaptCampaign {
     steps?: VaptStep[];
     source?: string;
   };
+  /**
+   * Free-tier quota state. NULL/undefined for paid orgs (unmetered).
+   * "queued" means it waits for the shared free pool and rolls over each day.
+   */
+  quota_status?: "granted" | "queued" | "weekly_blocked" | null;
+  queued_for?: string | null;
+  quota_granted_at?: string | null;
+  quota_message?: string | null;
+}
+
+/** Free-tier VAPT quota: a shared daily pool + a per-org weekly request cap. */
+export interface VaptQuota {
+  plan?: string;
+  is_free?: boolean;
+  weekly_limit?: number | null;
+  requests_this_week?: number | null;
+  requests_remaining_this_week?: number | null;
+  daily_slots?: number;
+  used_today?: number;
+  remaining_today?: number;
+  queued?: number;
+  next_slot_at?: string;
+  pool_exhausted?: boolean;
 }
 
 /** One vulnerability type under a campaign scan step. */

@@ -13,8 +13,41 @@ import { timeAgo, titleCase, cx, humanize, isReportable, impactLevelRank, format
 import { useStore } from "@sg/store";
 import { executeVaptPlan, generateVaptPlan } from "@sg/vaptOps";
 import type { VaptPlan } from "@sg/vaptOps";
-import type { VaptCampaign, VaptFinding } from "@sg/types";
+import type { VaptCampaign, VaptFinding, VaptQuota } from "@sg/types";
 import { UpsellBanner } from "@sg/components/UpgradeGate";
+
+/**
+ * Free-plan quota strip. The shared free pool is 10 campaigns/day across every
+ * free org, with 1 request/week per org; when the pool is empty a new request is
+ * queued and rolls over each day until it runs. Showing this keeps the operator
+ * in the loop instead of meeting a 429 with no context.
+ */
+function VaptQuotaBanner({ quota }: { quota: VaptQuota }) {
+  if (!quota?.is_free) return null;
+  const pool = quota.daily_slots ?? 10;
+  const remaining = quota.remaining_today ?? 0;
+  const exhausted = quota.pool_exhausted ?? remaining <= 0;
+  const weekLeft = quota.requests_remaining_this_week ?? null;
+  return (
+    <Card className={cx("!p-3 mb-3 border", exhausted ? "border-severity-medium/40 bg-severity-medium/5" : "border-emerald-400/30 bg-emerald-400/5")}>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
+        <span className="font-semibold text-slate-200">Free plan quota</span>
+        <span className={exhausted ? "text-severity-medium" : "text-emerald-300"}>
+          Shared pool: {remaining} of {pool} campaign{pool === 1 ? "" : "s"} left today
+        </span>
+        {weekLeft != null && (
+          <span className="text-slate-400">
+            Weekly requests: {weekLeft} of {quota.weekly_limit ?? 1} left
+          </span>
+        )}
+        {(quota.queued ?? 0) > 0 && <span className="text-slate-400">{quota.queued} queued</span>}
+        {exhausted && (
+          <span className="text-slate-400">New requests are queued and roll over daily until they run.</span>
+        )}
+      </div>
+    </Card>
+  );
+}
 
 /** Multi-tool correlation chips from a web step's output_summary.multi_tool_correlation. */
 function CorrelationChips({ correlation }: { correlation: any }) {
@@ -90,6 +123,7 @@ export default function Vapt() {
     approvals: [],
     securityDbBlocked: false,
     error: null,
+    quota: null,
   }, "vapt");
   const vaptCampaigns = data.campaigns;
   const vaptFindings = data.findings;
@@ -401,6 +435,7 @@ export default function Vapt() {
   return (
     <div>
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
+      {data.quota?.is_free && <VaptQuotaBanner quota={data.quota} />}
       <PageHeader
         title="VAPT campaigns"
         description="Create VAPT campaigns manually or generate an intelligent assessment plan. Review the draft, then submit for authorizer approval or start directly."
@@ -501,6 +536,23 @@ export default function Vapt() {
                         <p className="text-xs text-slate-500">{titleCase(c.campaign_type)} · {c.procedure_key}</p>
                       </div>
                       <StatusBadge status={c.status} />
+                      {c.quota_status === "queued" && (
+                        <span
+                          className="chip text-[12px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium"
+                          title={c.quota_message ?? "Queued for the shared free pool"}
+                        >
+                          Queued
+                          {c.queued_for ? ` · ${new Date(c.queued_for).toLocaleDateString()}` : ""}
+                        </span>
+                      )}
+                      {c.quota_status === "weekly_blocked" && (
+                        <span
+                          className="chip text-[12px] border-severity-high/30 bg-severity-high/10 text-severity-high"
+                          title={c.quota_message ?? "Free plan allows 1 request per week"}
+                        >
+                          Weekly limit
+                        </span>
+                      )}
                       <ChevronRight size={15} className="shrink-0 text-slate-600" />
                     </div>
                     {c.status === "active" && (

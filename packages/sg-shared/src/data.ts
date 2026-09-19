@@ -67,6 +67,7 @@ import type {
   SocAgentInstallCatalog,
   VaptApproval,
   VaptCampaign,
+  VaptQuota,
   VaptFinding,
   IntegrationConnector,
   IntegrationCatalogPage,
@@ -419,6 +420,7 @@ export async function loadVaptBundle() {
       approvals: demo.vaptApprovals,
       securityDbBlocked: false as boolean,
       error: null as string | null,
+      quota: null as VaptQuota | null,
     };
   }
   const meta: LoadMeta = {};
@@ -442,12 +444,18 @@ export async function loadVaptBundle() {
       }
     }),
   );
+  // Free-tier quota (shared daily pool + weekly cap). Best-effort: a paid org or
+  // an older backend simply gets null and the campaign page hides the banner.
+  const quota = await api
+    .get<VaptQuota>("/vapt/campaigns/quota")
+    .catch(() => null);
   return {
     campaigns,
     findings,
     approvals,
     securityDbBlocked: !!meta.securityDbBlocked,
     error: meta.error ?? null,
+    quota,
   };
 }
 
