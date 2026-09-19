@@ -304,6 +304,22 @@ export function splitToolContent(content: string): { command: string; body: stri
 // Consecutive runs of the same tool collapse into one expandable card
 // ("http_get × 10") so a busy pipeline doesn't spam the timeline with a card
 // per invocation. Output is linkified so URLs are clickable.
+
+/** Human elapsed for a tool run, streamed from the runner (meta.duration_ms). */
+function fmtDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 0) return "";
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  const s = ms / 1000;
+  if (s < 60) return `${s.toFixed(s < 10 ? 1 : 0)}s`;
+  const m = Math.floor(s / 60);
+  return `${m}m ${Math.round(s % 60)}s`;
+}
+function runDurationMs(r: AgiTranscriptChunk): number | null {
+  const d = (r.meta as Record<string, unknown> | null)?.duration_ms;
+  const n = typeof d === "number" ? d : Number(d);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 export function ToolGroupCard({
   tool,
   runs,
@@ -316,6 +332,8 @@ export function ToolGroupCard({
   const [open, setOpen] = useState(runs.length <= 1);
   const count = runs.length;
   const totalText = useMemo(() => runs.map((r) => r.content).join("\n"), [runs]);
+  const totalMs = useMemo(() => runs.reduce((s, r) => s + (runDurationMs(r) ?? 0), 0), [runs]);
+  const anyTimed = useMemo(() => runs.some((r) => runDurationMs(r) != null), [runs]);
   return (
     <div className="group relative min-w-0 overflow-hidden rounded-xl border border-phantix-700/40 bg-phantix-950/70">
       <button
@@ -332,6 +350,14 @@ export function ToolGroupCard({
         </span>
         <span className={cx("truncate font-mono font-semibold text-slate-200", dense ? "text-[13px]" : "text-xs")}>{tool}</span>
         <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[12px] text-gold-300">× {count}</span>
+        {anyTimed && (
+          <span
+            className="chip shrink-0 !px-1.5 !py-0 font-mono text-[12px] tabular-nums text-slate-400"
+            title="Total tool time"
+          >
+            <Clock size={10} /> {fmtDuration(totalMs)}
+          </span>
+        )}
         <span className={cx("ml-auto shrink-0 text-slate-500 transition-transform", open && "rotate-180")}>
           <ChevronDown size={12} />
         </span>
@@ -342,9 +368,21 @@ export function ToolGroupCard({
             const { command, body } = splitToolContent(r.content);
             const output = body || command;
             if (!command && !output) return null;
+            const durMs = runDurationMs(r);
             return (
               <div key={i} className="rounded-lg bg-phantix-900/50 px-2.5 py-1.5">
-                {command && <p className={cx("font-mono text-slate-500", dense ? "text-[12px]" : "text-[13px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>}
+                <div className="flex items-start gap-2">
+                  {command ? (
+                    <p className={cx("min-w-0 flex-1 font-mono text-slate-500", dense ? "text-[12px]" : "text-[13px]")}>{linkify(command, "text-gold-300/90 break-all hover:text-gold-200")}</p>
+                  ) : (
+                    <span className="flex-1" />
+                  )}
+                  {durMs != null && (
+                    <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500" title="Time to run and respond">
+                      {fmtDuration(durMs)}
+                    </span>
+                  )}
+                </div>
                 {output && (
                   <p className={cx("whitespace-pre-wrap break-words font-mono leading-5 text-slate-300", dense ? "text-[12px]" : "text-[13px]")}>
                     {linkify(output)}
@@ -967,6 +1005,38 @@ export interface AgentActivity {
   clarification?: boolean;
   connError?: string | null;
   sessionStatus?: string;
+  /** Session start (ISO) — drives the overall pentest runtime timer. */
+  startedAt?: string | null;
+}
+
+/** Live-ticking overall pentest runtime (start → now), bold and prominent. */
+function RuntimeClock({ since, live }: { since?: string | null; live: boolean }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!live) return;
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, [live]);
+  const start = since ? new Date(since).getTime() : NaN;
+  if (Number.isNaN(start)) return null;
+  const s = Math.max(0, Math.floor((now - start) / 1000));
+  const hh = String(Math.floor(s / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return (
+    <span
+      className={cx(
+        "flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-sm font-bold tabular-nums",
+        live
+          ? "border-gold-400/50 bg-gold-400/10 text-gold-300"
+          : "border-phantix-700 bg-phantix-800/60 text-slate-400",
+      )}
+      title="Overall pentest runtime"
+    >
+      <Clock size={13} className={cx(live && "text-gold-400")} />
+      {hh}:{mm}:{ss}
+    </span>
+  );
 }
 
 /** Cognitive verbs cycled while the agent is streaming a response. The line
@@ -1058,7 +1128,10 @@ export function AgentActivityLine({ activity, dense = false }: { activity: Agent
   return (
     <div
       className={cx(
-        "flex items-center gap-2 rounded-lg border border-phantix-700/30 bg-phantix-950/60 px-2.5 py-1.5",
+        "flex items-center gap-2.5 rounded-xl border px-3 py-2",
+        busy
+          ? "border-gold-400/40 bg-gold-400/[0.06] shadow-[0_0_0_1px_rgba(232,181,77,0.06)]"
+          : "border-phantix-700/40 bg-phantix-950/60",
         dense ? "max-w-full" : "mx-auto max-w-3xl",
       )}
       role="status"
@@ -1069,15 +1142,21 @@ export function AgentActivityLine({ activity, dense = false }: { activity: Agent
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className="h-1 w-1 animate-bounce rounded-full bg-gold-400"
+              className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold-400"
               style={{ animationDelay: `${i * 160}ms`, animationDuration: "0.9s" }}
             />
           ))}
         </span>
       ) : (
-        <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", dot)} aria-hidden />
+        <span className={cx("h-2 w-2 shrink-0 rounded-full", dot)} aria-hidden />
       )}
-      <span className={cx("min-w-0 flex-1 truncate font-medium", dense ? "text-[12px]" : "wb-xs")}>
+      <span
+        className={cx(
+          "min-w-0 flex-1 truncate font-semibold",
+          busy ? "text-gold-200" : "text-slate-300",
+          dense ? "text-[13px]" : "text-sm",
+        )}
+      >
         <motion.span
           key={streaming ? `cycle-${step}` : "static"}
           initial={{ opacity: 0, y: 2 }}
@@ -1094,6 +1173,7 @@ export function AgentActivityLine({ activity, dense = false }: { activity: Agent
           )}
         </motion.span>
       </span>
+      <RuntimeClock since={activity.startedAt} live={busy || working} />
     </div>
   );
 }

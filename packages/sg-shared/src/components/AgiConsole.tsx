@@ -840,6 +840,7 @@ export default function AgiConsole({
                   clarification: Boolean(clarification),
                   connError,
                   sessionStatus: session.status,
+                  startedAt: session.started_at,
                 }}
               />
             </div>
