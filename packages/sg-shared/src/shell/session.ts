@@ -77,13 +77,21 @@ function takeCodeFromFragment(): string {
  *
  * Falls back to the plain host when the handoff cannot be minted — the target
  * then bounces the operator to the Core login, which is the correct failure.
+ *
+ * `path` is where the operator lands once there — defaults to `/`, which is
+ * the authenticated home for Attack/Defend/Code but is Core's *public*
+ * marketing page, not its dashboard. Landing there sent every Core switch
+ * through an extra "you're signed in, go pick an app" hop (Home's own
+ * authenticated redirect to /choose-app) instead of straight into the
+ * dashboard the operator actually asked for — callers switching into Core
+ * should pass "/dashboard" explicitly.
  */
-export async function handoffUrl(target: ApplicationKey, fallbackHost: string): Promise<string> {
+export async function handoffUrl(target: ApplicationKey, fallbackHost: string, path = "/"): Promise<string> {
   // The guided demo has no session, and its flag lives in per-origin storage —
   // so it has to be told, in the URL, that it is still the demo on arrival.
   if (isDemoFlagSet()) {
     const base = (fallbackHost || "").replace(/\/+$/, "");
-    return base ? `${base}/#${DEMO_FRAGMENT_KEY}=1` : fallbackHost;
+    return base ? `${base}${path}#${DEMO_FRAGMENT_KEY}=1` : fallbackHost;
   }
   try {
     const minted = await apiRequest<HandoffMinted>("/app/auth/handoff", {
@@ -94,7 +102,7 @@ export async function handoffUrl(target: ApplicationKey, fallbackHost: string): 
     // minted open_url only fills in when it did not.
     const base = (fallbackHost || minted.open_url || "").replace(/\/+$/, "");
     if (!base || !minted.code) return fallbackHost;
-    return `${base}/#${HANDOFF_FRAGMENT_KEY}=${encodeURIComponent(minted.code)}`;
+    return `${base}${path}#${HANDOFF_FRAGMENT_KEY}=${encodeURIComponent(minted.code)}`;
   } catch {
     return fallbackHost;
   }

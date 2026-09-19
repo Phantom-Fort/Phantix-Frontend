@@ -1009,8 +1009,11 @@ export interface AgentActivity {
   startedAt?: string | null;
 }
 
-/** Live-ticking overall pentest runtime (start → now), bold and prominent. */
-function RuntimeClock({ since, live }: { since?: string | null; live: boolean }) {
+/** Live-ticking overall pentest runtime (start → now), bold and prominent —
+ *  matches AgentActivityLine's own label sizing so it doesn't run larger than
+ *  its sibling in the compact drawer, where every dense/non-dense pairing
+ *  around it already shrinks together. */
+function RuntimeClock({ since, live, dense = false }: { since?: string | null; live: boolean; dense?: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!live) return;
@@ -1026,14 +1029,15 @@ function RuntimeClock({ since, live }: { since?: string | null; live: boolean })
   return (
     <span
       className={cx(
-        "flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono text-sm font-bold tabular-nums",
+        "flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5 font-mono font-bold tabular-nums",
+        dense ? "text-[13px]" : "text-sm",
         live
           ? "border-gold-400/50 bg-gold-400/10 text-gold-300"
           : "border-phantix-700 bg-phantix-800/60 text-slate-400",
       )}
       title="Overall pentest runtime"
     >
-      <Clock size={13} className={cx(live && "text-gold-400")} />
+      <Clock size={dense ? 12 : 13} className={cx(live && "text-gold-400")} />
       {hh}:{mm}:{ss}
     </span>
   );
@@ -1173,7 +1177,7 @@ export function AgentActivityLine({ activity, dense = false }: { activity: Agent
           )}
         </motion.span>
       </span>
-      <RuntimeClock since={activity.startedAt} live={busy || working} />
+      <RuntimeClock since={activity.startedAt} live={busy || working} dense={dense} />
     </div>
   );
 }
