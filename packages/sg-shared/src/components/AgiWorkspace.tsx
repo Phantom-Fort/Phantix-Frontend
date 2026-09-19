@@ -1404,6 +1404,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       clarification: Boolean(openClarification),
                       connError,
                       sessionStatus: session.status,
+                      startedAt: session.started_at,
                     }}
                   />
                 </div>
