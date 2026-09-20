@@ -82,6 +82,13 @@ function parseOutputFiles(files: Record<string, unknown> | null | undefined): {
   return { downloads, errors };
 }
 
+/** True when the report has a stored PDF artifact (or was generated asking for one). */
+function reportHasPdf(report: any): boolean {
+  const { downloads } = parseOutputFiles(report?.output_files);
+  if (downloads.some((d) => d.format === "pdf")) return true;
+  return Array.isArray(report?.formats_requested) && report.formats_requested.includes("pdf");
+}
+
 async function handleDownload(
   reportId: number,
   format: string,
@@ -658,10 +665,10 @@ export default function Reports() {
                     <div className="flex gap-1.5">
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/reports/${r.id}/view`); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/reports/${r.id}/view${reportHasPdf(r) ? "?format=pdf" : ""}`); }}
                         className="rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase text-gold-300 hover:bg-gold-400/20"
                       >
-                        View
+                        {reportHasPdf(r) ? "View PDF" : "View"}
                       </button>
                       {(parseOutputFiles(r.output_files).downloads.length > 0
                         ? parseOutputFiles(r.output_files).downloads
@@ -1222,10 +1229,10 @@ export default function Reports() {
 
             {/* Full report, rendered full-page in a sandboxed viewer */}
             <button
-              onClick={() => navigate(`/reports/${detail.id}/view`)}
+              onClick={() => navigate(`/reports/${detail.id}/view${reportHasPdf(detail) ? "?format=pdf" : ""}`)}
               className="flex items-center gap-1.5 rounded-lg border border-gold-400/40 bg-gold-400/10 px-3 py-2 text-xs font-semibold text-gold-300 hover:bg-gold-400/20"
             >
-              <ExternalLink size={13} /> View full report
+              <ExternalLink size={13} /> {reportHasPdf(detail) ? "View PDF" : "View full report"}
             </button>
 
             {/* Sections */}

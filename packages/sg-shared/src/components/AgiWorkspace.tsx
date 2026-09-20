@@ -57,6 +57,35 @@ const ACTION_POLL_MS = 8000;
 const STALL_MS = 45_000;
 const WATCHDOG_MS = 7_000;
 
+/** One-tap starting scopes for the pre-session picker.
+ *
+ *  Each maps to a phase the agent already runs, so an operator can pick an
+ *  engagement, tap a scope and start without writing a paragraph first. The
+ *  text stays editable afterwards.
+ */
+const QUICK_INSTRUCTIONS: { key: string; label: string; text: string }[] = [
+  {
+    key: "vapt",
+    label: "VAPT",
+    text: "Map and assess the attack surface of the in-scope targets.",
+  },
+  {
+    key: "web",
+    label: "Web app",
+    text: "Assess the in-scope web applications for injection, auth and access-control flaws.",
+  },
+  {
+    key: "api",
+    label: "API",
+    text: "Test the in-scope APIs for authorization, injection and business-logic flaws.",
+  },
+  {
+    key: "mobile",
+    label: "Mobile App",
+    text: "Assess the in-scope mobile application (APK) for insecure storage, transport and auth.",
+  },
+];
+
 type WorkspaceVariant = "drawer" | "page" | "console";
 
 function ActionCard({
@@ -993,13 +1022,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <p className="wb-pane-title">1 · Choose an engagement</p>
-                <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 wb-xs"><Plus size={12} className="mr-1 inline" /> New</button>
-              </div>
+              <div className="overflow-hidden rounded-xl border border-phantix-700/40 bg-phantix-900/40">
+                <div className="flex items-center justify-between border-b border-phantix-700/40 px-3 py-2">
+                  <p className="wb-pane-title">1 · Choose an engagement</p>
+                  <button onClick={() => setCreateOpen((v) => !v)} className="btn-ghost !px-2 !py-1 wb-xs"><Plus size={12} className="mr-1 inline" /> New</button>
+                </div>
 
-              {createOpen && (
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-3">
+                <div className="wb-scroll max-h-[min(45vh,380px)] overflow-y-auto p-2">
+                  {createOpen && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mb-2 space-y-2 rounded-xl border border-phantix-700/40 bg-phantix-900/50 p-3">
                   <p className="wb-pane-title">New engagement</p>
                   <label className="block">
                     <span className="mb-1 block text-xs font-semibold text-slate-400">Engagement name</span>
@@ -1163,6 +1194,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   ))}
                 </div>
               )}
+                </div>
+              </div>
 
               <div>
                 <p className="wb-pane-title">2 · Instruction</p>
@@ -1175,6 +1208,30 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                   disabled={!selectedEng}
                   className="wb-sm mt-2 w-full rounded-xl border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 leading-relaxed text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40 disabled:opacity-50"
                 />
+                {/* One-tap starting scope — fills the instruction so an engagement
+                    can be selected and started without typing first. */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {QUICK_INSTRUCTIONS.map((q) => {
+                    const active = instruction.trim() === q.text;
+                    return (
+                      <button
+                        key={q.key}
+                        type="button"
+                        disabled={!selectedEng}
+                        aria-pressed={active}
+                        onClick={() => setInstruction(q.text)}
+                        className={cx(
+                          "wb-xs rounded-lg border px-2.5 py-1.5 font-medium transition-colors disabled:opacity-50",
+                          active
+                            ? "border-gold-400/50 bg-gold-400/15 text-gold-200"
+                            : "border-phantix-700/50 bg-phantix-950/50 text-slate-400 hover:bg-phantix-800/60 hover:text-slate-200",
+                        )}
+                      >
+                        {q.label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button onClick={() => void start()} disabled={!selectedEng || !instruction.trim() || starting} className="btn-primary mt-2 w-full !py-2.5 wb-sm">
                   {starting ? <Loader2 size={13} className="mr-1 animate-spin inline" /> : <Radar size={13} className="mr-1 inline" />} Start session
                 </button>
