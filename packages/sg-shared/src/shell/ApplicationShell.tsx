@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -29,14 +29,18 @@ import { useApplicationNav } from "./useApplicationNav";
 import { ThemeToggle } from "../ThemeToggle";
 import { BrandLogo } from "../components/BrandLogo";
 import { BrandLoader } from "../components/BrandLoader";
+import { PageSkeleton } from "../ui";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
+import AgiNotifications from "../components/AgiNotifications";
 import AgentAssistant from "../components/AgentAssistant";
 import OperationsWidget from "../components/OperationsWidget";
 import { OperationsProvider } from "../operations";
 import SandboxBanner from "../components/SandboxBanner";
+import CookieConsent from "../components/CookieConsent";
 import { useStore } from "../store";
 import { shortName } from "../utils";
 import { loadSandboxMe } from "../sandbox";
+import { loadAppIdentity, type AppIdentity } from "../applications";
 import { PLATFORM_IDENTITY_URL } from "../links";
 import { apiGet, appToken, clearStoredSession, setApplication } from "./api";
 import { isDemoFlagSet, setActiveApplication } from "../api";
@@ -48,15 +52,6 @@ import {
   type ApplicationKey,
   type NavSection,
 } from "./types";
-
-/** The signed-in operator, as /app/auth/me reports them. */
-interface AppPrincipal {
-  full_name?: string;
-  email?: string;
-  organization_name?: string;
-  organization_slug?: string;
-  effective_role?: string;
-}
 
 /** One launcher card as the backend reports it. */
 interface ApplicationCard {
@@ -205,7 +200,7 @@ export function ApplicationShell({
     securityDbReady,
   } = useStore();
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  const [me, setMe] = useState<AppPrincipal | null>(null);
+  const [me, setMe] = useState<AppIdentity | null>(null);
   const [userMenu, setUserMenu] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -249,10 +244,10 @@ export function ApplicationShell({
       // Verify identity AND this application's access before rendering anything.
       // A transient failure (API restarting, gateway error) must NOT be read as
       // a dead session — only a 401/403 is the backend rejecting the token.
-      let meRes: AppPrincipal | null = null;
+      let meRes: AppIdentity | null = null;
       let authRejected = false;
       try {
-        meRes = await apiGet<AppPrincipal>("/app/auth/me");
+        meRes = await loadAppIdentity();
       } catch (err) {
         const status = (err as { status?: number })?.status;
         authRejected = status === 401 || status === 403;
@@ -295,6 +290,17 @@ export function ApplicationShell({
     setUserMenu(false);
     setSwitcherOpen(false);
   }, [location.pathname]);
+
+  // Tell components mounted outside this shell (e.g. the global AgiDrawer) that
+  // the app session is established, so they can run their first authenticated
+  // call now instead of firing early during the cross-app handoff and 401ing.
+  useEffect(() => {
+    if (authReady) {
+      window.dispatchEvent(
+        new CustomEvent("phantix:app-authenticated", { detail: { identity: me } }),
+      );
+    }
+  }, [authReady, me]);
 
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
@@ -463,9 +469,9 @@ export function ApplicationShell({
                 <div className="mt-1 space-y-1">
                   <p
                     className="truncate text-xs font-medium text-emerald-300"
-                    title={operate.actingUser ?? undefined}
+                    title={operate.actingUser ?? session?.userName ?? undefined}
                   >
-                    Operating as {shortName(operate.actingUser)}
+                    Operating as {shortName(operate.actingUser ?? session?.userName)}
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-[13px] capitalize text-slate-500">
@@ -773,7 +779,7 @@ export function ApplicationShell({
                     <p className="text-[13px] font-semibold text-slate-500">Dual control</p>
                     {operate.unlocked ? (
                       <p className="mt-1 text-xs font-medium text-emerald-300">
-                        Operating as {shortName(operate.actingUser)}
+                        Operating as {shortName(operate.actingUser ?? session?.userName)}
                       </p>
                     ) : dualControl.configured ? (
                       <button
@@ -832,7 +838,16 @@ export function ApplicationShell({
                 display should not stretch a table across a metre of glass. */}
             <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
               {session?.authenticated && !demoActive && <SandboxBanner />}
-              <Outlet />
+              {/* Page-level Suspense boundary. Moving between pages inside an
+                  application only re-mounts the page at the <Outlet/>, so it
+                  suspends here and shows an animated skeleton in place of the
+                  page while the chrome (sidebar, header, footer) stays put.
+                  The full-screen BrandLoader is reserved for application boot /
+                  switching between apps (the authReady gate above), which is a
+                  fresh shell mount, not a page transition. */}
+              <Suspense fallback={<PageSkeleton />}>
+                <Outlet />
+              </Suspense>
             </div>
           </main>
 
@@ -858,6 +873,15 @@ export function ApplicationShell({
       {/* Running operations tray — pages start long jobs through useOperations,
           so the provider has to wrap the shell or they throw on mount. */}
       <OperationsWidget />
+
+      {/* Long-running Pentest Agent: durable inbox into the bell + the global
+          approval popup, wherever the operator is in the app. */}
+      <AgiNotifications application={application} />
+
+      {/* Analytics consent banner — lost when the Command Centre monolith was
+          retired in favor of this shared shell; nothing was tracked because
+          consent could never be granted with no banner to grant it from. */}
+      <CookieConsent />
       </NotificationProvider>
     </OperationsProvider>
   );

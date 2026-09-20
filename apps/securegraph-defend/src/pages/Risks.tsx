@@ -133,7 +133,7 @@ export default function Risks() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Risk register"
-        description="Auto-created from verified scan results, scored with explainable Likelihood×Impact and prioritized by the platform risk rules. Risks are client-owned --- SecureGraph never owns them."
+        description="Automated risk scoring and prioritization of your assets, with treatment tracking and dual-control approval."
         actions={
           <>
             <DocLink docId="howto-app-09" label="Risks how-to" />

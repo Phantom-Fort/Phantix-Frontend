@@ -110,7 +110,7 @@ export default function Compliance() {
     <div>
       <PageHeader
         title="Compliance"
-        description="Frameworks mapped from verified findings + a merged GRC questionnaire. Keyword mapping is triage, not a certified audit --- gaps show human review status."
+        description="Not a certified audit, but a good way to start --- gaps show human review status."
         actions={
           <>
           <DocLink docId="howto-app-10" label="Compliance how-to" />

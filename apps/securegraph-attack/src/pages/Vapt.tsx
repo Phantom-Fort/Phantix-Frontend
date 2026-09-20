@@ -155,6 +155,13 @@ export default function Vapt() {
   const [bfConfirmText, setBfConfirmText] = useState("");
   const [creds, setCreds] = useState({ username: "", password: "", token: "" });
   const [altCreds, setAltCreds] = useState({ username: "", password: "", token: "" });
+  // The active-campaign banner sits above the split pane; once the detail
+  // column (the only thing that scrolls now) is scrolled at all, hide it to
+  // give the detail view more room, restoring it when scrolled back to top.
+  const [detailScrolled, setDetailScrolled] = useState(false);
+  const handleDetailScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setDetailScrolled(e.currentTarget.scrollTop > 0);
+  };
 
   const resetCreateForm = () => {
     setCreateForm({ name: "", campaign_type: "web_scan", procedure_key: "web_scan", researchDepth: "standard", bruteforceAcked: false, runGraphql: false, runWebhook: false });
@@ -438,7 +445,6 @@ export default function Vapt() {
       {data.quota?.is_free && <VaptQuotaBanner quota={data.quota} />}
       <PageHeader
         title="VAPT campaigns"
-        description="Create VAPT campaigns manually or generate an intelligent assessment plan. Review the draft, then submit for authorizer approval or start directly."
         actions={
           <>
             <DocLink docId="howto-app-06" label="VAPT how-to" />
@@ -503,9 +509,11 @@ export default function Vapt() {
       />
 
       {tab === "campaigns" && (
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
-          {/* What is still running — the operator can see it and end it here. */}
-          {activeCampaigns.length > 0 && (
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-5 xl:items-start">
+          {/* What is still running — the operator can end it here. Hidden once
+              the detail column is scrolled, so it doesn't eat into the space
+              freed up by the split-pane layout below. */}
+          {activeCampaigns.length > 0 && !detailScrolled && (
             <div className="xl:col-span-5 flex flex-wrap items-center gap-2 rounded-xl border border-severity-medium/30 bg-severity-medium/8 px-3.5 py-2.5 text-xs text-severity-medium">
               <AlertTriangle size={14} className="shrink-0" />
               <span>
@@ -569,8 +577,13 @@ export default function Vapt() {
             ))}
           </div>
 
-          {/* Campaign detail */}
-          <div className="xl:col-span-3">
+          {/* Campaign detail --- pinned alongside the list and scrolls on its
+              own, so a long list on the left never gets stretched or clipped
+              to match the detail pane's height. */}
+          <div
+            className="xl:col-span-3 xl:sticky xl:top-[72px] xl:max-h-[calc(100vh-6rem)] xl:overflow-y-auto"
+            onScroll={handleDetailScroll}
+          >
             {activeSelected ? (
               <Card>
                 <CardHeader

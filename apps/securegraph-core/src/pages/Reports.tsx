@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, FileCode, ExternalLink, Lock } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
 import DocLink from "@sg/components/DocLink";
 import ReportSolutions from "@sg/components/ReportSolutions";
@@ -9,12 +9,12 @@ import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerF
 import type { ReportTypeEntry } from "@sg/types";
 import { api, ApiError } from "@sg/api";
 import { useResource } from "@sg/useResource";
-import { timeAgo, formatBytes, titleCase, cx, humanize, normalizeReportRow, extractReportFindings, TRACKER_STATUSES } from "@sg/utils";
+import { timeAgo, formatBytes, titleCase, cx, humanize, normalizeReportRow, extractReportFindings, normalizeTrackerVerification, TRACKER_STATUSES, TRACKER_VERIFICATIONS } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { isDemoMode } from "@sg/api";
 import { marked } from "marked";
-import type { TrackerFinding, TrackerSummary } from "@sg/types";
+import type { TrackerFinding, TrackerSummary, TrackerVerification } from "@sg/types";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -119,6 +119,18 @@ async function handleDownload(
 
 const trackerStatuses = TRACKER_STATUSES;
 
+/**
+ * Evidence filter for the board. Verification is a separate axis from
+ * remediation status: the report gate holds unverified candidates back from the
+ * client deliverable, but they are still open work and belong on the tracker.
+ */
+const VERIFICATION_FILTERS: { key: TrackerVerification | "all"; label: string }[] = [
+  { key: "all", label: "All evidence" },
+  { key: "auto_verified", label: "Auto-verified" },
+  { key: "unverified", label: "Unverified" },
+  { key: "manually_verified", label: "Human-verified" },
+];
+
 function JsonPre({ data }: { data: unknown }) {
   return (
     <pre className="mt-2 overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-[13px] leading-relaxed text-slate-300 max-h-[400px]">
@@ -195,9 +207,27 @@ export default function Reports() {
   const reportsPageItems = reports.slice((reportsSafePage - 1) * reportsPageSize, reportsSafePage * reportsPageSize);
   const [trackerPage, setTrackerPage] = useState(1);
   const [trackerPageSize, setTrackerPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const trackerTotalPages = Math.max(1, Math.ceil(trackerFindings.length / trackerPageSize));
+  const [verificationFilter, setVerificationFilter] = useState<TrackerVerification | "all">("all");
+  const verificationCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: trackerFindings.length };
+    for (const v of TRACKER_VERIFICATIONS) counts[v] = 0;
+    for (const f of trackerFindings) {
+      counts[normalizeTrackerVerification(f.verification_status)] += 1;
+    }
+    return counts;
+  }, [trackerFindings]);
+  const visibleTrackerFindings = useMemo(
+    () =>
+      verificationFilter === "all"
+        ? trackerFindings
+        : trackerFindings.filter(
+            (f) => normalizeTrackerVerification(f.verification_status) === verificationFilter,
+          ),
+    [trackerFindings, verificationFilter],
+  );
+  const trackerTotalPages = Math.max(1, Math.ceil(visibleTrackerFindings.length / trackerPageSize));
   const trackerSafePage = Math.min(trackerPage, trackerTotalPages);
-  const trackerPageItems = trackerFindings.slice((trackerSafePage - 1) * trackerPageSize, trackerSafePage * trackerPageSize);
+  const trackerPageItems = visibleTrackerFindings.slice((trackerSafePage - 1) * trackerPageSize, trackerSafePage * trackerPageSize);
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
   // Only campaign-scoped report types need a campaign (from the backend catalog's
@@ -515,7 +545,7 @@ export default function Reports() {
     <div>
       <PageHeader
         title="Report solutions"
-        description="Generate a report for the question you need answered — across every attack surface and every engine, not just VAPT. The library holds what has already been produced; the tracker is a living remediation board, not a report file."
+        description="All your reports in one place."
         actions={
           <>
           <DocLink docId="howto-app-11" label="Reports how-to" />
@@ -685,7 +715,9 @@ export default function Reports() {
               <strong className="text-slate-200">open → in_progress → fixed</strong> (or{" "}
               <strong className="text-slate-200">accepted</strong>). A fixed finding is marked{" "}
               <strong className="text-severity-critical">regressed</strong> when it reappears. Changing status needs
-              dual-control when configured.
+              dual-control when configured. <strong className="text-slate-200">Evidence</strong> is a separate axis:
+              unverified candidates are held out of the client report but stay on the board until someone
+              confirms or dismisses them.
             </p>
           </div>
 
@@ -711,12 +743,37 @@ export default function Reports() {
             </div>
           )}
 
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-slate-500">Evidence:</span>
+            {VERIFICATION_FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => { setVerificationFilter(key); setTrackerPage(1); }}
+                aria-pressed={verificationFilter === key}
+                className={cx(
+                  "chip transition-colors",
+                  verificationFilter === key
+                    ? "border-gold-400/50 bg-gold-400/15 text-gold-200"
+                    : "border-phantix-600/50 bg-phantix-800/50 text-slate-400 hover:text-slate-200",
+                )}
+              >
+                {label}
+                <strong className="ml-1 text-slate-100">{verificationCounts[key] ?? 0}</strong>
+              </button>
+            ))}
+          </div>
+
           <Card className="!p-0 overflow-hidden">
-            {trackerFindings.length === 0 ? (
+            {visibleTrackerFindings.length === 0 ? (
               <EmptyState
                 icon={<KanbanSquare size={24} />}
-                title="No tracker findings"
-                body="Findings appear here from completed report sessions. Never render PDF/HTML in this tab."
+                title={trackerFindings.length === 0 ? "No tracker findings" : "Nothing at this evidence level"}
+                body={
+                  trackerFindings.length === 0
+                    ? "Findings appear here from completed report sessions. Never render PDF/HTML in this tab."
+                    : "Every tracked finding sits at a different evidence level — clear the filter to see them."
+                }
               />
             ) : (
               <div className="max-h-[min(70vh,720px)] overflow-auto">
@@ -728,6 +785,7 @@ export default function Reports() {
                       <th className="th">Severity</th>
                       <th className="th">Asset</th>
                       <th className="th">Owner</th>
+                      <th className="th">Evidence</th>
                       <th className="th">Status</th>
                       <th className="th">Updated</th>
                     </tr>
@@ -760,6 +818,9 @@ export default function Reports() {
                           )}
                         </td>
                         <td className="td text-xs text-slate-400">{f.owner ?? <span className="text-slate-600">unassigned</span>}</td>
+                        <td className="td">
+                          <VerificationBadge status={normalizeTrackerVerification(f.verification_status)} />
+                        </td>
                         <td className="td">
                           <div className="flex items-center gap-1.5">
                             {f.status === "regressed" && (
@@ -829,7 +890,7 @@ export default function Reports() {
                   </tbody>
                 </table>
                 <Pagination
-                  totalItems={trackerFindings.length}
+                  totalItems={visibleTrackerFindings.length}
                   page={trackerSafePage}
                   pageSize={trackerPageSize}
                   onPageChange={setTrackerPage}

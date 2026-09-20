@@ -71,7 +71,7 @@ export default function ContextProjects() {
     <div>
       <PageHeader
         title="Product context"
-        description="The system model behind your threat models — components, trust boundaries and data flows from your architecture diagram, plus the requirements that describe them."
+        description="The system model behind your threat models."
         actions={
           <div className="flex items-center gap-2">
             <button onClick={() => setCreating(true)} className="btn-primary text-xs !py-2">

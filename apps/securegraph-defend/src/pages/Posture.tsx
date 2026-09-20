@@ -150,7 +150,7 @@ export default function Posture() {
     <div>
       <PageHeader
         title="Posture"
-        description="Per-surface posture, product-context drift and accepted risks due for re-review (continuous loop)."
+        description="Posture review that keeps you informed."
         actions={<>
             <DocLink docId="howto-app-22" label="Posture how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">

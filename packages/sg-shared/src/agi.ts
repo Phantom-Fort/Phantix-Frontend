@@ -729,3 +729,209 @@ export function isAgiPolicyBlocked(err: unknown): { code: string; message: strin
   if (code.startsWith("forbidden_")) return { code, message };
   return null;
 }
+
+// ── Durable in-app notifications ──────────────────────────────────────────────
+// The backend persists an inbox row for every signal the operator may have
+// missed (session complete, new finding, approval gate) and pushes it on the
+// org realtime stream. These helpers feed the notification bell and the global
+// approval popup, even when the Pentest Agent console is closed.
+
+export interface AgiNotification {
+  id: number;
+  organization_id: number;
+  user_id: number | null;
+  kind: string;
+  severity: string;
+  title: string;
+  body: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  engagement_id: number | null;
+  session_id: number | null;
+  action_id: number | null;
+  finding_id: string | null;
+  link: string | null;
+  requires_action: boolean;
+  read: boolean;
+  read_at: string | null;
+  created_at: string;
+  meta: Record<string, unknown>;
+}
+
+export interface AgiPendingApproval {
+  action_id: number;
+  session_id: number;
+  engagement_id: number;
+  engagement_name: string;
+  action_type: string;
+  tool_name: string | null;
+  proposed_command: string;
+  rationale: string | null;
+  status: string;
+  created_at: string;
+  initiator_user_id: number | null;
+  session_status: string;
+}
+
+function normalizeAgiNotification(raw: unknown): AgiNotification {
+  const o = asObj(raw);
+  const sev = asStr(o.severity, "info") || "info";
+  return {
+    id: Number(o.id ?? 0),
+    organization_id: Number(o.organization_id ?? 0),
+    user_id: o.user_id == null ? null : Number(o.user_id),
+    kind: asStr(o.kind),
+    severity: sev,
+    title: asStr(o.title, "Notification"),
+    body: asStr(o.body),
+    entity_type: o.entity_type == null ? null : asStr(o.entity_type),
+    entity_id: o.entity_id == null ? null : asStr(o.entity_id),
+    engagement_id: o.engagement_id == null ? null : Number(o.engagement_id),
+    session_id: o.session_id == null ? null : Number(o.session_id),
+    action_id: o.action_id == null ? null : Number(o.action_id),
+    finding_id: o.finding_id == null ? null : asStr(o.finding_id),
+    link: o.link == null ? null : asStr(o.link),
+    requires_action: Boolean(o.requires_action),
+    read: Boolean(o.read),
+    read_at: o.read_at == null ? null : asStr(o.read_at),
+    created_at: asStr(o.created_at, new Date().toISOString()),
+    meta: asObj(o.meta),
+  };
+}
+
+function normalizeAgiPendingApproval(raw: unknown): AgiPendingApproval {
+  const o = asObj(raw);
+  return {
+    action_id: Number(o.action_id ?? 0),
+    session_id: Number(o.session_id ?? 0),
+    engagement_id: Number(o.engagement_id ?? 0),
+    engagement_name: asStr(o.engagement_name),
+    action_type: asStr(o.action_type, "state_changing"),
+    tool_name: o.tool_name == null ? null : asStr(o.tool_name),
+    proposed_command: asStr(o.proposed_command),
+    rationale: o.rationale == null ? null : asStr(o.rationale),
+    status: asStr(o.status, "pending_approval"),
+    created_at: asStr(o.created_at, new Date().toISOString()),
+    initiator_user_id: o.initiator_user_id == null ? null : Number(o.initiator_user_id),
+    session_status: asStr(o.session_status, "running"),
+  };
+}
+
+/** The durable inbox (org-wide + rows targeted at the signed-in user). */
+export async function loadAgiNotifications(
+  opts: { unreadOnly?: boolean; limit?: number } = {},
+): Promise<AgiNotification[]> {
+  if (isDemoMode()) {
+    await delay(120);
+    return demoNotifications();
+  }
+  try {
+    const qs = new URLSearchParams();
+    if (opts.unreadOnly) qs.set("unread_only", "true");
+    qs.set("limit", String(opts.limit ?? 30));
+    const res = await api.get<{ items?: unknown[] }>(`/notifications?${qs.toString()}`);
+    const items = Array.isArray(res) ? res : res?.items ?? [];
+    return items.map(normalizeAgiNotification);
+  } catch {
+    return [];
+  }
+}
+
+export async function markAgiNotificationRead(id: number): Promise<void> {
+  if (isDemoMode()) return;
+  try {
+    await api.post(`/notifications/${id}/read`);
+  } catch {
+    /* best-effort */
+  }
+}
+
+export async function markAllAgiNotificationsRead(): Promise<void> {
+  if (isDemoMode()) return;
+  try {
+    await api.post("/notifications/read-all");
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Cross-session pending approvals for the global popup (initiator-filtered). */
+export async function loadAgiPendingApprovals(): Promise<AgiPendingApproval[]> {
+  if (isDemoMode()) {
+    await delay(120);
+    return demoActions.map((a) => ({
+      action_id: a.id,
+      session_id: a.session_id,
+      engagement_id: 0,
+      engagement_name: "Lab external web",
+      action_type: a.action_type,
+      tool_name: a.tool_name ?? null,
+      proposed_command: a.proposed_command,
+      rationale: a.rationale ?? null,
+      status: a.status,
+      created_at: a.created_at,
+      initiator_user_id: null,
+      session_status: "running",
+    }));
+  }
+  try {
+    const res = await api.get<{ items?: unknown[] }>("/agi/pending-approvals");
+    const items = Array.isArray(res) ? res : res?.items ?? [];
+    return items.map(normalizeAgiPendingApproval);
+  } catch {
+    return [];
+  }
+}
+
+/** Demo inbox: the pending gate plus a settled finding/completion pair. */
+function demoNotifications(): AgiNotification[] {
+  const now = Date.now();
+  const base: AgiNotification[] = [];
+  for (const a of demoActions) {
+    base.push({
+      id: 910000 + a.id,
+      organization_id: 1,
+      user_id: null,
+      kind: "agi_approval_required",
+      severity: "warning",
+      title: "Pentest Agent needs your approval",
+      body: a.proposed_command,
+      entity_type: "agi_action",
+      entity_id: String(a.id),
+      engagement_id: 0,
+      session_id: a.session_id,
+      action_id: a.id,
+      finding_id: null,
+      link: "/pentest-agent",
+      requires_action: true,
+      read: false,
+      read_at: null,
+      created_at: a.created_at,
+      meta: {},
+    });
+  }
+  if (demoSession) {
+    base.push({
+      id: 910001,
+      organization_id: 1,
+      user_id: null,
+      kind: "agi_finding",
+      severity: "high",
+      title: "New finding [high]: Default credentials accepted",
+      body: "https://lab.acme.example · http_probe",
+      entity_type: "agi_finding",
+      entity_id: "demo-f1",
+      engagement_id: 0,
+      session_id: demoSession.id,
+      action_id: null,
+      finding_id: "demo-f1",
+      link: "/pentest-agent",
+      requires_action: false,
+      read: false,
+      read_at: null,
+      created_at: new Date(now - 60_000).toISOString(),
+      meta: {},
+    });
+  }
+  return base;
+}

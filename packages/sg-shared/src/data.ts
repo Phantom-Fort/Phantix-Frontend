@@ -919,6 +919,7 @@ export async function loadCommandCenter(): Promise<{
         commandCenter: "/org/command-center/stream",
         intelligence: "/assets/intelligence/stream",
         soc: "/soc/dashboard/stream",
+        availability: "/soc/availability/stream",
         protocol: "text/event-stream",
       },
       posture: {

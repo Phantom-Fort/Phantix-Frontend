@@ -1,7 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { KeyboardEvent } from "react";
-import type { Severity, VerificationStatus } from "./types";
+import type { Severity, TrackerVerification, VerificationStatus } from "./types";
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
@@ -309,6 +309,38 @@ export const TRACKER_STATUSES = [
   "regressed",
 ] as const;
 
+/** The three evidence levels the tracker board carries (mirrors the backend). */
+export const TRACKER_VERIFICATIONS = [
+  "unverified",
+  "auto_verified",
+  "manually_verified",
+] as const;
+
+const TRACKER_VERIFICATION_ALIASES: Record<string, TrackerVerification> = {
+  auto: "auto_verified",
+  autoverified: "auto_verified",
+  manual: "manually_verified",
+  manual_verified: "manually_verified",
+  human: "manually_verified",
+  human_verified: "manually_verified",
+  verified: "manually_verified",
+  confirmed: "manually_verified",
+  validated: "manually_verified",
+  true_positive: "manually_verified",
+  exploited: "manually_verified",
+};
+
+/** Map any inbound verification label onto the three board levels. */
+export function normalizeTrackerVerification(value: unknown): TrackerVerification {
+  const raw = String(value ?? "").toLowerCase().replace(/[\s-]/g, "_");
+  if ((TRACKER_VERIFICATIONS as readonly string[]).includes(raw)) {
+    return raw as TrackerVerification;
+  }
+  // Anything unrecognised reads as unverified rather than claiming evidence
+  // the finding does not have.
+  return TRACKER_VERIFICATION_ALIASES[raw] ?? "unverified";
+}
+
 /** Map engine tracker / AGI finding rows into FE TrackerFinding shape. */
 export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
   finding_key: string;
@@ -328,6 +360,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
   detection_count?: number;
   retest_status?: string | null;
   description?: string | null;
+  verification_status: TrackerVerification;
 } {
   const statusRaw = String(raw?.status ?? "open").toLowerCase().replace(/-/g, "_");
   // Map legacy / verification labels onto the living-board set only.
@@ -341,6 +374,12 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
     manually_verified: "open",
   };
   const status = statusMap[statusRaw] ?? statusRaw;
+  // Evidence level is a second dimension, not a board status. Rows that arrive
+  // with a verification label in `status` (AGI / legacy sources) would otherwise
+  // be flattened to "open" and lose it entirely.
+  const verification_status = normalizeTrackerVerification(
+    raw?.verification_status ?? raw?.verification?.verification_status ?? statusRaw,
+  );
   const key =
     raw?.finding_key ??
     raw?.key ??
@@ -353,6 +392,7 @@ export function normalizeTrackerFinding(raw: any, fallbackCampaign = ""): {
     title: String(raw?.title ?? raw?.name ?? "Untitled finding"),
     severity: (raw?.severity ?? "info") as any,
     status,
+    verification_status,
     owner: owner != null ? String(owner) : null,
     assigned_owner: owner != null ? String(owner) : null,
     campaign_name: String(raw?.campaign_name ?? raw?.campaign ?? fallbackCampaign ?? "—"),

@@ -189,6 +189,18 @@ async function request<T>(
   opts: RequestOpts = {},
 ): Promise<T> {
   const realm = opts.realm ?? (tokens.appSession ? "application" : "platform");
+  // Whether this request actually carried a session bearer. A 401 on a request
+  // that sent NO token means "not signed in (yet)" — e.g. a background call that
+  // fired during the cross-app handoff, before the session was redeemed — and it
+  // must never tear down or invalidate a session that is valid or still being
+  // established. Only a token that was sent and then rejected is a dropped session.
+  const hadBearer = !!(
+    realm === "staff"
+      ? tokens.staff
+      : realm === "application"
+        ? tokens.appSession
+        : tokens.orgUser ?? tokens.platform
+  );
 
   // Demo mode never touches the backend: mutations resolve as a no-op success so
   // every gated action (approve/start/pause/cancel/create, decisions, etc.) passes
@@ -347,14 +359,15 @@ async function request<T>(
     // generic "unauthorized" message — only an explicit session_invalid/relogin
     // (or a clear main-session expiry on a non-operate request) does that.
     const sessionInvalid =
-      explicitMainSessionInvalid || (mainSessionAuthFailure && !dualControlScoped);
+      hadBearer &&
+      (explicitMainSessionInvalid || (mainSessionAuthFailure && !dualControlScoped));
     if (res.status === 401) {
       if (sessionInvalid && !dcSessionIssue && !superseded) {
         if (realm === "staff") tokens.staff = null;
         else if (realm === "application") { tokens.appSession = null; tokens.device = null; }
         else { tokens.platform = null; tokens.orgUser = null; }
       }
-      if (realm === "application" && relogin && !dcSessionIssue && !superseded) {
+      if (realm === "application" && hadBearer && relogin && !dcSessionIssue && !superseded) {
         window.location.assign("/login");
       }
     }

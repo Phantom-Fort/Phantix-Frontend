@@ -352,7 +352,7 @@ export default function Remediation() {
     <div className="space-y-5">
       <PageHeader
         title="Remediation"
-        description="Verified findings that are not yet retested and fixed. Each carries the AI verification rationale, reproduction steps, business impact and fix guidance."
+        description="Verified findings that are not yet retested and fixed."
         actions={
           <>
             <DocLink docId="howto-app-12" label="Remediation how-to" />

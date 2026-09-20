@@ -98,7 +98,7 @@ export default function Mobile() {
     <div>
       <PageHeader
         title="Mobile"
-        description="Static analysis of Android APK/AAB and iOS IPA packages, and governed handoff of discovered mobile API endpoints to authorized reassessment."
+        description="Static analysis of Android APK/AAB and iOS IPA packages"
         actions={<DocLink docId="howto-app-21" label="Mobile testing how-to" />}
       />
 

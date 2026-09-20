@@ -87,7 +87,7 @@ export default function VaptProcedures() {
     <div>
       <PageHeader
         title="Procedures & correlation"
-        description="What the testing engine can run, how it correlates findings, and which new rules it has mined from observed patterns."
+        description="Know what the engine can run and how it correlates results."
         actions={<>
             <DocLink docId="howto-app-23" label="VAPT scheduling how-to" />
           <div className="flex items-center gap-2">

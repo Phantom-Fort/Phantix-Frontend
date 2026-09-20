@@ -738,7 +738,16 @@ export interface TrackerFinding {
   detection_count?: number;
   retest_status?: string | null;
   description?: string | null;
+  /**
+   * How well the finding is evidenced, independent of `status`. Unverified
+   * candidates stay off the client report but remain on the board, so the two
+   * dimensions must not be collapsed into one.
+   */
+  verification_status?: TrackerVerification;
 }
+
+/** The three evidence levels the tracker board carries. */
+export type TrackerVerification = "unverified" | "auto_verified" | "manually_verified";
 
 export interface TrackerSummary {
   total?: number;
@@ -748,6 +757,7 @@ export interface TrackerSummary {
   retest_failed?: number;
   regressed?: number;
   accepted?: number;
+  byVerification?: Partial<Record<TrackerVerification, number>>;
   bySeverity?: Record<string, number>;
   bySurface?: Record<string, number>;
   unassigned?: number;
@@ -804,6 +814,7 @@ export interface CommandCenter {
     commandCenter?: string;
     intelligence?: string;
     soc?: string;
+    availability?: string;
     protocol?: string;
     auth?: string;
     eventTypes?: string[];
@@ -910,6 +921,7 @@ export interface AlertSettings {
 
 export interface AuditEvent {
   id: number;
+  event_uid?: string;
   action_key: string;
   action_label: string;
   /** Operator application the action happened in; null for control-plane work. */

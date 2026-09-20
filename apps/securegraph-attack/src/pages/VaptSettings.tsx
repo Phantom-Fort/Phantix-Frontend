@@ -68,7 +68,7 @@ export default function VaptSettings() {
     <div>
       <PageHeader
         title="VAPT settings"
-        description="How the testing engine behaves for your organization — data-mining consent and the severity floor at which the AI planner gets involved."
+        description="How the testing engine behaves for your organization"
        actions={<DocLink docId="howto-app-23" label="VAPT scheduling how-to" />} />
 
       {loading && !settings ? (

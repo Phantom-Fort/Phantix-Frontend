@@ -62,7 +62,7 @@ export default function VaptSchedules() {
     <div>
       <PageHeader
         title="VAPT schedules"
-        description="Recurring authorized testing. Each schedule runs one procedure against a scope on a cadence, with blackout windows to keep it away from your busy hours."
+        description="Recurring authorized testing. Outside your busy hours."
         actions={<>
             <DocLink docId="howto-app-23" label="VAPT scheduling how-to" />
           <div className="flex items-center gap-2">

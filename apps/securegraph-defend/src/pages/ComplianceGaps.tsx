@@ -102,7 +102,7 @@ export default function ComplianceGaps() {
     <div>
       <PageHeader
         title="Compliance gaps"
-        description="Your live findings mapped onto framework controls. What is left is the set of controls nothing in your current security posture demonstrates."
+        description="Your live findings mapped onto framework controls."
         actions={<>
             <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">
@@ -169,23 +169,26 @@ export default function ComplianceGaps() {
             <CardHeader
               title="Uncovered controls"
               subtitle={`${visible.length} shown${data.gaps.length !== visible.length ? ` of ${data.gaps.length}` : ""}`}
-              action={
-                <div className="flex flex-wrap gap-1.5">
-                  {frameworks.map((f) => (
-                    <button
-                      key={f}
-                      onClick={() => setFramework(f)}
-                      className={cx(
-                        "chip uppercase transition-colors",
-                        framework === f ? "border-gold-400/40 bg-gold-400/10 text-gold-200" : "border-phantix-700 text-slate-400 hover:text-slate-200",
-                      )}
-                    >
-                      {f === "all" ? "All" : f}
-                    </button>
-                  ))}
-                </div>
-              }
             />
+            {/* Full-width, wrapping framework filter. It previously lived in the
+                CardHeader `action` slot, which is shrink-0 and so never wrapped —
+                more than a couple of frameworks overflowed the card header. */}
+            {frameworks.length > 1 && (
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {frameworks.map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFramework(f)}
+                    className={cx(
+                      "chip uppercase transition-colors",
+                      framework === f ? "border-gold-400/40 bg-gold-400/10 text-gold-200" : "border-phantix-700 text-slate-400 hover:text-slate-200",
+                    )}
+                  >
+                    {f === "all" ? "All" : f}
+                  </button>
+                ))}
+              </div>
+            )}
             {!visible.length ? (
               <EmptyState
                 icon={<ShieldCheck size={22} />}

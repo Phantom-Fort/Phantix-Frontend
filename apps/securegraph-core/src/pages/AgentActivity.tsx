@@ -84,7 +84,7 @@ export default function AgentActivity() {
     <div>
       <PageHeader
         title="Agent activity"
-        description="What the agent did for your organization — run, domain, intent, authorization and outcome for every action."
+        description="Know what the agent did. {intent, tool, domain, run, outcome} for every action."
         actions={<>
             <DocLink docId="howto-app-20" label="Agent activity how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">

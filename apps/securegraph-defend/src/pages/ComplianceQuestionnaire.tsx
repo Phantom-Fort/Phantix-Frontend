@@ -166,7 +166,7 @@ export default function ComplianceQuestionnaire() {
     <div>
       <PageHeader
         title="Compliance questionnaire"
-        description="Self-attestation across every control that applies to your organization. Answers are attributed to the person and the role they declared, so the trail stands up in an audit."
+        description="We ask and you answer. This is a self-attestation questionnaire, not a certified audit."
         actions={<>
             <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@sg/ui";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import CrossAppLink from "@sg/components/CrossAppLink";
 import AppSwitcher from "@sg/components/AppSwitcher";
 import TrendChart from "@sg/components/TrendChart";
 import FindingsBreakdown from "@sg/charts/FindingsBreakdown";
@@ -14,9 +15,14 @@ import PostureDonut from "@sg/charts/PostureDonut";
 import SurfaceScoreRow from "@sg/charts/SurfaceScoreRow";
 import { SURFACES } from "@sg/charts/palette";
 import { loadTrackerSummary } from "@sg/data";
+import {
+  loadAvailabilityIncidents,
+  loadAvailabilitySummary,
+} from "@sg/data";
 import { loadPostureSnapshot } from "@sg/vaptOps";
 import type { PostureSnapshot } from "@sg/vaptOps";
 import type { TrackerSummary } from "@sg/types";
+import type { AvailabilityIncident, AvailabilitySummary } from "@sg/types";
 import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@sg/data";
 import { useResource } from "@sg/useResource";
 import { useSmartPoll } from "@sg/usePolling";
@@ -30,6 +36,33 @@ const emptyDash = {
   securityDbBlocked: false,
   error: null as string | null,
 };
+
+/** Server-heartbeat status → chip tone. */
+function availabilityTone(status: string): string {
+  const s = (status || "").toLowerCase();
+  if (s === "up") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+  if (s === "down")
+    return "border-severity-critical/30 bg-severity-critical/10 text-severity-critical";
+  if (s === "degraded")
+    return "border-severity-medium/30 bg-severity-medium/10 text-severity-medium";
+  return "border-slate-500/50 bg-slate-500/10 text-slate-400";
+}
+
+/** One row on the server-heartbeat rail (availability, not findings). */
+type ServerEvent = { type: string; label: string; detail: string; tone: string; ts: string };
+
+function incidentToServerEvent(i: AvailabilityIncident): ServerEvent {
+  const open = (i.status || "open") === "open";
+  return {
+    type: open ? "Server down" : "Server recovered",
+    label: i.title || i.last_error || `Check ${i.check_id ?? ""}`,
+    detail: open
+      ? `Down since ${timeAgo(i.down_at)}`
+      : `MTTR ${i.time_to_resolve_seconds != null ? `${i.time_to_resolve_seconds}s` : "—"} · recovered ${timeAgo(i.recovered_at || i.down_at)}`,
+    tone: open ? "text-severity-critical" : "text-emerald-300",
+    ts: i.recovered_at || i.down_at,
+  };
+}
 
 function num(v: unknown, fallback = 0): number {
   // `Number(null)` is 0, which would report a real "0" for a value we simply
@@ -83,7 +116,8 @@ export default function Dashboard() {
     });
   }, [posture]);
   const trendRes = useResource<PosturePoint[]>(() => loadPostureTrend(), [] as PosturePoint[], "posture-trend");
-  const [liveEvents, setLiveEvents] = useState<Array<{ type: string; label: string; ts: string }>>([]);
+  const [serverEvents, setServerEvents] = useState<ServerEvent[]>([]);
+  const [availability, setAvailability] = useState<AvailabilitySummary | null>(null);
   const [lastHeartbeatAt, setLastHeartbeatAt] = useState<string | null>(null);
   const skipFirstPoll = useRef(true);
   // Min gap between SSE-triggered full reloads — the stream can emit event
@@ -100,10 +134,10 @@ export default function Dashboard() {
 
   const onSse = useCallback(
     (evt: { event: string; data: unknown; ts: string }) => {
-      if (evt.event === "heartbeat") {
-        setLastHeartbeatAt(evt.ts);
-        return;
-      }
+      // The command-centre stream patches findings/reports/risk. Its transport
+      // heartbeat is NOT the server heartbeat — that comes from the availability
+      // stream below.
+      if (evt.event === "heartbeat") return;
       if (evt.event === "connected") return;
       const payload =
         evt.data && typeof evt.data === "object" ? (evt.data as Record<string, unknown>) : {};
@@ -112,31 +146,35 @@ export default function Dashboard() {
           ? (payload.payload as Record<string, unknown>)
           : payload;
       const type = String(payload.type ?? evt.event ?? "event");
-      const label =
-        str(inner.title ?? inner.findingKey ?? inner.reportId ?? inner.assetId ?? type, type);
-      setLiveEvents((prev) => [{ type, label, ts: evt.ts }, ...prev].slice(0, 24));
 
       // Patch panels in place for tracker / report / risk signals; full refresh on reconnect only.
       if (type === "trackerUpdated" || type === "agiFindingRecorded") {
         setData((prev) => {
           if (!prev.cc) return prev;
           const key = String(inner.findingKey ?? inner.trackerKey ?? "");
+          if (!key) return prev;
           const critical = [...(prev.cc.tracker?.criticalOpen ?? [])];
-          if (key) {
-            const idx = critical.findIndex(
-              (r) => String((r as any).findingKey ?? (r as any).finding_key) === key,
-            );
-            const row = {
-              findingKey: key,
-              title: str(inner.title, key),
-              severity: str(inner.severity, "info"),
-              status: str(inner.status, "open"),
-              priority: str(inner.priority, "P2"),
-              assetId: inner.assetId ?? null,
-              assignedOwner: inner.assignedOwner ?? null,
-            };
-            if (idx >= 0) critical[idx] = { ...critical[idx], ...row };
-            else critical.unshift(row);
+          const idx = critical.findIndex(
+            (r) => String((r as any).findingKey ?? (r as any).finding_key) === key,
+          );
+          const row = {
+            findingKey: key,
+            title: str(inner.title, key),
+            severity: str(inner.severity, "info"),
+            status: str(inner.status, "open"),
+            priority: str(inner.priority, "P2"),
+            assetId: inner.assetId ?? null,
+            assignedOwner: inner.assignedOwner ?? null,
+          };
+          if (idx >= 0) {
+            critical[idx] = { ...critical[idx], ...row };
+          } else if (String(row.severity).toLowerCase() === "critical") {
+            // Only critical findings belong in the "critical open" panel — an
+            // agent can record info/low findings too, and injecting those here
+            // made the panel lie about severity.
+            critical.unshift(row);
+          } else {
+            return prev;
           }
           return {
             ...prev,
@@ -189,13 +227,105 @@ export default function Dashboard() {
     [reload, setData],
   );
 
+  // Server heartbeat is a separate feed: the organization's own infrastructure
+  // availability, never the pentest-agent finding stream.
+  const loadServerHealth = useCallback(async () => {
+    const [summary, incidents] = await Promise.all([
+      loadAvailabilitySummary().catch(() => null),
+      loadAvailabilityIncidents(undefined, 12).catch(() => [] as AvailabilityIncident[]),
+    ]);
+    setAvailability(summary);
+    const sorted = [...incidents].sort(
+      (a, b) =>
+        new Date(b.recovered_at || b.down_at).getTime() -
+        new Date(a.recovered_at || a.down_at).getTime(),
+    );
+    setServerEvents(sorted.slice(0, 12).map(incidentToServerEvent));
+  }, []);
+
+  React.useEffect(() => {
+    void loadServerHealth();
+    const t = window.setInterval(() => void loadServerHealth(), 30_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void loadServerHealth();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [loadServerHealth]);
+
+  const onServerSse = useCallback(
+    (evt: { event: string; data: unknown; ts: string }) => {
+      if (!evt.event || evt.event === "connected") return;
+      setLastHeartbeatAt(evt.ts);
+      if (evt.event !== "availabilityUpdated" && evt.event !== "availabilityIncident") return;
+      const payload =
+        evt.data && typeof evt.data === "object" ? (evt.data as Record<string, unknown>) : {};
+      const inner =
+        payload.payload && typeof payload.payload === "object"
+          ? (payload.payload as Record<string, unknown>)
+          : payload;
+      if (evt.event === "availabilityIncident") {
+        const open = String(inner.state || "opened") !== "recovered";
+        setServerEvents((prev) =>
+          [
+            {
+              type: open ? "Server down" : "Server recovered",
+              label: str(inner.title ?? inner.target, "Server incident"),
+              detail: open
+                ? `Down since ${timeAgo(String(inner.downAt || evt.ts))}`
+                : `MTTR ${inner.timeToResolveSeconds ?? "—"}s`,
+              tone: open ? "text-severity-critical" : "text-emerald-300",
+              ts: evt.ts,
+            },
+            ...prev,
+          ].slice(0, 12),
+        );
+      } else {
+        const status = String(inner.status || "unknown");
+        setServerEvents((prev) =>
+          [
+            {
+              type:
+                status === "down"
+                  ? "Server down"
+                  : status === "degraded"
+                    ? "Server degraded"
+                    : "Server up",
+              label: str(inner.name ?? inner.target, "Availability check"),
+              detail: `Status ${status}${inner.latencyMs != null ? ` · ${inner.latencyMs}ms` : ""}`,
+              tone: availabilityTone(status),
+              ts: evt.ts,
+            },
+            ...prev,
+          ].slice(0, 12),
+        );
+      }
+      void loadServerHealth();
+    },
+    [loadServerHealth],
+  );
+
   const streamPath =
     data.cc?.stream?.commandCenter?.replace(/^\/api\/v1/, "") ||
     "/org/command-center/stream";
-  const { connected } = useSseStream(streamPath.startsWith("/") ? streamPath : `/${streamPath}`, {
+  // Command-centre stream patches the tracker/report panels (findings, risk).
+  useSseStream(streamPath.startsWith("/") ? streamPath : `/${streamPath}`, {
     enabled: !loading && !data.securityDbBlocked,
     onEvent: onSse,
   });
+  // Server-heartbeat stream drives the heartbeat rail + its connected state.
+  const availabilityPath =
+    data.cc?.stream?.availability?.replace(/^\/api\/v1/, "") || "/soc/availability/stream";
+  const { connected: serverConnected } = useSseStream(
+    availabilityPath.startsWith("/") ? availabilityPath : `/${availabilityPath}`,
+    {
+      enabled: !loading && !data.securityDbBlocked,
+      onEvent: onServerSse,
+    },
+  );
 
   if (loading) {
     return <PageSkeleton variant="dashboard" />;
@@ -627,66 +757,85 @@ export default function Dashboard() {
           <Card className="h-full overflow-hidden !p-0">
             <div className="px-5 pt-5">
               <CardHeader
-                title="Live event rail"
-                subtitle="Live command-centre updates"
+                title="Server heartbeat"
+                subtitle="Organization uptime · checks & incidents"
                 action={
                   <span className={cx(
                     "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-[12px] font-medium",
-                    connected ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
+                    serverConnected ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium",
                   )}>
-                    <span className={cx("inline-flex h-2 w-2 rounded-full", connected ? "bg-gold-400" : "bg-severity-medium")} />
-                    {connected ? "Stream connected" : "Reconnecting…"}
+                    <span className={cx("inline-flex h-2 w-2 rounded-full", serverConnected ? "bg-emerald-400" : "bg-severity-medium")} />
+                    {serverConnected ? "Monitoring live" : "Reconnecting…"}
                   </span>
                 }
               />
             </div>
-            {/* Heartbeat status strip */}
+            {/* Heartbeat status strip — the org's own servers, not pentest findings. */}
             <div className="flex items-center gap-3 border-y border-phantix-700 bg-phantix-950/60 px-5 py-3">
               <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-gold-400/25 bg-gold-400/10 text-gold-400">
                 <HeartPulse size={16} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-100">{connected ? "Server responsive" : "Waiting for heartbeat"}</p>
+                <p className="text-sm font-semibold text-slate-100">
+                  {serverConnected
+                    ? "Server monitoring live"
+                    : availability
+                      ? "Uptime checks configured"
+                      : "No server checks yet"}
+                </p>
                 <p className="text-xs text-slate-500">
-                  {lastHeartbeatAt
-                    ? <>Last heartbeat ping <span className="font-mono text-gold-300/90">{timeAgo(lastHeartbeatAt)}</span> · stream healthy</>
-                    : connected ? "Connected — awaiting the first heartbeat ping…" : "Reconnecting to the command-centre stream…"}
+                  {availability
+                    ? <>
+                        {availability.checks.up ?? 0}/{availability.checks.total ?? 0} up
+                        {availability.checks.down ? ` · ${availability.checks.down} down` : ""}
+                        {availability.checks.degraded ? ` · ${availability.checks.degraded} degraded` : ""}
+                        {availability.openIncidents ? ` · ${availability.openIncidents} incident${availability.openIncidents === 1 ? "" : "s"} open` : ""}
+                        {lastHeartbeatAt ? <> · last probe <span className="font-mono text-gold-300/90">{timeAgo(lastHeartbeatAt)}</span></> : null}
+                      </>
+                    : serverConnected
+                      ? "Connected — awaiting the first probe…"
+                      : "Configure uptime checks in Defend → SOC availability."}
                 </p>
               </div>
               <svg width="90" height="30" viewBox="0 0 90 30" className="shrink-0 overflow-hidden" aria-hidden>
                 <polyline
                   points="0,15 10,15 15,15 18,7 21,23 24,13 27,15 44,15 49,15 54,9 57,21 60,13 63,15 90,15"
                   fill="none"
-                  stroke="#E8B54D"
+                  stroke={availability?.checks.down ? "#ef4444" : "#E8B54D"}
                   strokeWidth="2"
                   strokeLinejoin="round"
                   strokeLinecap="round"
-                  className={cx("ecg-line", !connected && "stopped")}
+                  className={cx("ecg-line", !serverConnected && "stopped")}
                 />
               </svg>
             </div>
-            {liveEvents.length === 0 ? (
+            {serverEvents.length === 0 ? (
               <p className="px-5 py-6 text-center text-sm text-slate-500">
-                {connected ? "Waiting for events…" : "Stream disconnected — reconnecting."}
+                {availability && (availability.checks.total ?? 0) > 0
+                  ? (serverConnected ? "All monitored servers are up." : "Server heartbeat reconnecting…")
+                  : "No server uptime checks configured yet."}
               </p>
             ) : (
               <div className="max-h-72 space-y-2 overflow-y-auto px-5 py-4">
-                {liveEvents.map((e, i) => (
+                {serverEvents.map((e, i) => (
                   <div key={`${e.ts}-${i}`} className="flex items-start gap-2 text-xs">
-                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-gold-400" />
+                    <span className={cx("mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-current", e.tone)} />
                     <div className="min-w-0">
-                      <p className="font-mono text-[12px] uppercase tracking-wider text-gold-400/80">{e.type}</p>
+                      <p className="font-mono text-[12px] uppercase tracking-wider text-slate-500">{e.type}</p>
                       <p className="truncate text-slate-300">{e.label}</p>
-                      <p className="text-slate-600">{timeAgo(e.ts)}</p>
+                      <p className="text-slate-600">{e.detail} · {timeAgo(e.ts)}</p>
                     </div>
                   </div>
                 ))}
               </div>
             )}
             <div className="flex flex-wrap gap-2 border-t border-phantix-700 px-5 py-3 text-xs">
-              <Link to={href("intelligence", "/assets/intelligence")} className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
+              <CrossAppLink app="defend" to="/soc" className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
+                Server monitoring <ArrowRight size={12} />
+              </CrossAppLink>
+              <CrossAppLink app="defend" to="/assets/intelligence" className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
                 Intelligence <ArrowRight size={12} />
-              </Link>
+              </CrossAppLink>
               <Link to={href("tracker", "/reports?tab=tracker")} className="inline-flex items-center gap-1 font-semibold text-gold-400 hover:text-gold-300">
                 Tracker <ArrowRight size={12} />
               </Link>

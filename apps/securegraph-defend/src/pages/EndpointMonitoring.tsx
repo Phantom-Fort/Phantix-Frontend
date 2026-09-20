@@ -316,7 +316,7 @@ export default function EndpointMonitoring() {
     <div>
       <PageHeader
         title="Endpoint monitoring"
-        description="The standard 24/7 monitor for your own endpoints. Set the expected response, flagging thresholds and access preconditions per endpoint; we watch health and security posture (TLS, auth enforcement, response drift) and raise incidents."
+        description="Configure, and monitor your endpoints."
         actions={
           <button
             className="btn-primary"

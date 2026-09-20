@@ -18,6 +18,7 @@ import { groupStreamRows, openClarificationFrom } from "../agiStreamGroup";
 import { activityFor } from "../agiGraph";
 import { AgentActivityLine, QueuedPromptStrip, type QueuedPrompt } from "./AgiStream";
 import { loadAssetsBundle, loadAiUsage } from "../data";
+import { tokens, isDemoMode } from "../api";
 import type { Asset } from "../types";
 import {
   loadAgiAccess,
@@ -46,7 +47,6 @@ import { useStore } from "../store";
 import { useStickToBottom } from "../useStickToBottom";
 import { useChatSend } from "../useChatSend";
 import { sanitizeAgiChunks } from "../agiSanitize";
-import { useNavigate } from "react-router-dom";
 
 const POLL_MS = 5000;
 const ACTION_POLL_MS = 8000;
@@ -115,7 +115,6 @@ function blockerGuidance(code: string): string | null {
 
 export default function AgiWorkspace({ variant = "drawer" }: { variant?: WorkspaceVariant }) {
   const { toast, requireDualControl, demoActive } = useStore();
-  const navigate = useNavigate();
   const reportSubmitted = useRef(false);
   const [access, setAccess] = useState<AgiAccess | null>(null);
   const [booting, setBooting] = useState(true);
@@ -224,6 +223,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   }, [thinking]);
 
   const boot = useCallback(async () => {
+    // /agi/access requires an app session. AgiDrawer mounts this component
+    // globally (outside the shell's auth gate), so on a cross-app handoff it can
+    // mount before the session is redeemed; calling the endpoint then returns a
+    // 401 "Not authenticated". Wait for the session — the shell fires
+    // `phantix:app-authenticated` when it is ready, which re-runs boot.
+    if (!(tokens.appSession || isDemoMode())) {
+      setBooting(false);
+      return;
+    }
     setBooting(true);
     try {
       const a = await loadAgiAccess();
@@ -248,7 +256,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         }
       }
     } catch (e) {
-      toast("error", "Could not load AGI access", e instanceof Error ? e.message : "");
+      // A 401 means the session is not ready yet (or was just lost) — not a real
+      // AGI failure. Stay quiet; the app-authenticated / open listeners re-boot.
+      if ((e as { status?: number } | null)?.status !== 401) {
+        toast("error", "Could not load AGI access", e instanceof Error ? e.message : "");
+      }
     } finally {
       setBooting(false);
     }
@@ -264,7 +276,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   }, [toast]);
 
-  useEffect(() => { void boot(); }, [boot]);
+  useEffect(() => {
+    // `boot` itself waits for an app session; the shell's
+    // `phantix:app-authenticated` event (handled below) re-runs it on arrival.
+    void boot();
+  }, [boot]);
 
   // Opening the console re-boots when the first (app-boot) attempt failed — e.g.
   // it ran before auth was ready. Guarded by `bootedOkRef` so a successful load
@@ -272,7 +288,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   useEffect(() => {
     const onOpen = () => { if (!bootedOkRef.current) void boot(); };
     window.addEventListener("phantix:agi-open", onOpen);
-    return () => window.removeEventListener("phantix:agi-open", onOpen);
+    window.addEventListener("phantix:app-authenticated", onOpen);
+    return () => {
+      window.removeEventListener("phantix:agi-open", onOpen);
+      window.removeEventListener("phantix:app-authenticated", onOpen);
+    };
   }, [boot]);
 
   useEffect(() => {
@@ -387,13 +407,6 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
-  const goToReports = (s: AgiSession) => {
-    const reportId = (s.meta as { report?: { report_id?: number } } | null)?.report?.report_id;
-    const qs = new URLSearchParams({ from: "agi", session: String(s.id) });
-    if (reportId) qs.set("report", String(reportId));
-    navigate(`/reports?${qs.toString()}`);
-  };
-
   const stop = async () => {
     if (!session) return;
     if (!(await requireDualControl("Stopping an Autonomous Pentest Agent session requires a dual-control operate session."))) return;
@@ -403,8 +416,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       setSession(s);
       setRunning(false);
       reportSubmitted.current = true;
-      toast("success", "Report submitted", "Opening the report engine…");
-      goToReports(s);
+      // Reports are not part of the Attack app. On stop the agent's findings are
+      // tagged `phantix_agi` and submitted to the reporting backend; the operator
+      // generates the deliverable from Report Solutions on the Core app. So we
+      // surface that instruction instead of navigating to a /reports route that
+      // only exists in the Core app (here it would just 404).
+      toast("success", "Assessment complete", "Findings submitted — generate reports from Report Solutions on the Core app.");
     } catch (e) {
       toast("error", "Stop failed", e instanceof Error ? e.message : "");
     } finally {
@@ -565,7 +582,19 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       }).catch(() => {});
     load();
     const t = window.setInterval(load, 12000);
-    return () => { cancelled = true; window.clearInterval(t); };
+    // Realtime nudge: keep the compact drawer's findings current without
+    // relying on the poll interval alone.
+    const onFinding = (e: Event) => {
+      const detail = (e as CustomEvent<{ sessionId?: number }>).detail;
+      if (detail?.sessionId && Number(detail.sessionId) !== Number(session.id)) return;
+      void load();
+    };
+    window.addEventListener("phantix:agi-finding", onFinding);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+      window.removeEventListener("phantix:agi-finding", onFinding);
+    };
   }, [session, running]);
 
   const drawerIssueRows = useMemo(
