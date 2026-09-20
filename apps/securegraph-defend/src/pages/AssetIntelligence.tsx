@@ -212,7 +212,7 @@ export default function AssetIntelligenceDashboard() {
     <div>
       <PageHeader
         title="Asset Intelligence"
-        description="Security posture overview powered by automated enrichment, relationship mapping, and plain-language summaries"
+        description="Find out more on each asset you own"
         actions={
           <div className="flex items-center gap-2">
             <DocLink docId="howto-app-04" label="Discovery how-to" />

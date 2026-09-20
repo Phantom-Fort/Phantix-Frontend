@@ -201,7 +201,7 @@ export default function Code() {
     <div>
       <PageHeader
         title="Code"
-        description="Source control, AutoFix, Continuous PR, connected repositories and branch/merge-request reviews."
+        description="Source control, AutoFix, Continuous PR, and branch/merge-request reviews."
         actions={<>
             <DocLink docId="howto-app-21" label="Code security how-to" />
           <button onClick={() => void load()} className="btn-ghost text-xs !py-2" title="Refresh">

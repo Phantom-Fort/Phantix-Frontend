@@ -14,6 +14,7 @@
 import { apiRequest, clearStoredSession, setStoredSession, type ApplicationKey } from "./api";
 import { APP_URL } from "../config";
 import { enterDemoMode, exitDemoMode, isDemoFlagSet, tokens } from "../api";
+import { seedAppIdentity } from "../applications";
 
 /** URL fragment key carrying a handoff code, e.g. `https://attack…/#sg=abc`. */
 const HANDOFF_FRAGMENT_KEY = "sg";
@@ -32,6 +33,8 @@ interface HandoffRedeemed {
   device_token?: string;
   dual_control_session?: string;
   organization_id?: number;
+  organization_slug?: string;
+  organization_name?: string;
   organization_user_id?: number;
   email?: string;
   full_name?: string;
@@ -143,6 +146,17 @@ export function consumeHandoff(application: ApplicationKey): Promise<boolean> {
         accessToken: session.access_token,
         deviceToken: session.device_token || "",
         dualControlSession: session.dual_control_session || "",
+      });
+      // The redeem already validated the session, so carry the tenant + account
+      // naming straight into this origin's store — the shell and store can name
+      // the org and user immediately instead of after another `/app/auth/me`.
+      seedAppIdentity({
+        organization_id: session.organization_id,
+        organization_slug: session.organization_slug,
+        organization_name: session.organization_name,
+        organization_user_id: session.organization_user_id,
+        email: session.email,
+        full_name: session.full_name,
       });
       return true;
     } catch {

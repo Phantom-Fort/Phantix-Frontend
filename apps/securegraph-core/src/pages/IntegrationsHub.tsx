@@ -70,7 +70,7 @@ export default function IntegrationsHub() {
     <div>
       <PageHeader
         title="Integrations Hub"
-        description="Connect your tools and services: alert channels, SSO providers, source control, SIEM, cloud, webhooks and SCIM provisioning."
+        description="Connect your tools and services."
         actions={<DocLink docId="howto-app-27" label="Integrations how-to" />}
       />
 

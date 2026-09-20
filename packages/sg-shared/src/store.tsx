@@ -13,6 +13,9 @@ import {
 } from "./data";
 import * as demo from "./demo-data";
 import type { DualControlState, Organization } from "./types";
+import { claimExchange, newExchangeGuard } from "./deviceConfirm";
+import { clearResourceCache } from "./useResource";
+import { clearAppIdentity, loadAppIdentity, readPersistedAppIdentity, type AppIdentity } from "./applications";
 
 export type Session = {
   authenticated: boolean;
@@ -77,16 +80,37 @@ const Ctx = createContext<Store | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const demoSession: Session = { authenticated: true, realm: "platform", userEmail: "demo@acme.ng", userName: "Demo Explorer", isInitiator: true, isAuthorizer: false, initiatorName: "Ada Okonkwo", authorizerName: "Chidi Eze" };
-  const [session, setSession] = useState<Session>(() =>
-    isDemoFlagSet()
-      ? demoSession
-      : tokens.appSession
-        ? { authenticated: true, realm: "application", userEmail: "", userName: "", isInitiator: false, isAuthorizer: false, initiatorName: "", authorizerName: "" }
-        : tokens.platform
-          ? { authenticated: true, realm: "platform", userEmail: "", userName: "", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" }
-          : null,
-  );
-  const [org, setOrg] = useState<Organization>(() => (isDemoMode() ? demo.organization : emptyOrganization));
+  const [session, setSession] = useState<Session>(() => {
+    if (isDemoFlagSet()) return demoSession;
+    // Seed the account naming from this origin's last identity so a reload does
+    // not flash an empty name before `/app/auth/me` returns.
+    const id = readPersistedAppIdentity();
+    if (tokens.appSession) {
+      return { authenticated: true, realm: "application", userEmail: id?.email ?? "", userName: id?.full_name ?? "", isInitiator: id?.is_initiator ?? false, isAuthorizer: id?.is_authorizer ?? false, initiatorName: "", authorizerName: "" };
+    }
+    if (tokens.platform) {
+      return { authenticated: true, realm: "platform", userEmail: "", userName: "", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" };
+    }
+    return null;
+  });
+  const [org, setOrg] = useState<Organization>(() => {
+    if (isDemoMode()) return demo.organization;
+    // Tenant naming persists per origin; refresh it from the API right after.
+    // Only trust it while a session token exists — a stale name must not show
+    // on the signed-out login screen.
+    if (!tokens.appSession && !tokens.platform) return emptyOrganization;
+    const id = readPersistedAppIdentity();
+    if (id?.organization_id) {
+      return normalizeOrganization({
+        id: id.organization_id,
+        slug: id.organization_slug ?? "",
+        name: id.organization_name ?? "",
+        creator_user_id: id.creator_user_id ?? null,
+        parent_organization_id: id.parent_organization_id ?? null,
+      });
+    }
+    return emptyOrganization;
+  });
   const [dualControl, setDualControl] = useState<DualControlState>(() =>
     isDemoMode() ? demo.dualControl : emptyDualControl,
   );
@@ -99,6 +123,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const onStorage = () => {
       if (!tokens.appSession && !tokens.platform && !isDemoFlagSet()) {
+        clearAppIdentity();
         setSession(null);
       }
     };
@@ -106,6 +131,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Also poll for direct token clearing (api.ts clears tokens synchronously)
     const interval = setInterval(() => {
       if (session?.authenticated && !tokens.appSession && !tokens.platform && !isDemoFlagSet()) {
+        clearAppIdentity();
         setSession(null);
       }
     }, 2000);
@@ -114,9 +140,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       clearInterval(interval);
     };
   }, [session?.authenticated]);
+
   const [operate, setOperate] = useState<OperateState>({
     unlocked: !!tokens.dualControl,
-    actingUser: tokens.dualControl ? (isDemoMode() ? "Ada Okonkwo" : null) : null,
+    actingUser: tokens.dualControl
+      ? (isDemoMode() ? "Ada Okonkwo" : readPersistedAppIdentity()?.full_name ?? null)
+      : null,
     actingRole: tokens.dualControl ? "initiator" : null,
     expiresAt: tokens.dualControl ? Date.now() + 30 * 60_000 : null,
   });
@@ -130,6 +159,54 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const dcEmail = useRef("");
   const dcMfaToken = useRef("");
   const dcDeviceToken = useRef("");
+  const dcExchange = useRef(newExchangeGuard<{ done: boolean }>());
+
+  // Cross-app handoff: `consumeHandoff` writes the token + identity into this
+  // origin's storage, but StoreProvider already initialised (with no token) —
+  // the shell fires this once the session is verified, so hydrate here. This is
+  // what makes tenant + account naming show on a switched-to app.
+  useEffect(() => {
+    const onAuthenticated = (e: Event) => {
+      if (isDemoFlagSet() || !tokens.appSession) return;
+      const detail = (e as CustomEvent<{ identity?: AppIdentity | null }>).detail;
+      const id = detail?.identity ?? readPersistedAppIdentity();
+      if (!id) return;
+      setSession((s) => {
+        if (s?.authenticated && s.realm === "application") return s;
+        return {
+          authenticated: true,
+          realm: "application",
+          userEmail: id.email ?? s?.userEmail ?? "",
+          userName: id.full_name ?? s?.userName ?? "",
+          isInitiator: id.is_initiator ?? s?.isInitiator ?? false,
+          isAuthorizer: id.is_authorizer ?? s?.isAuthorizer ?? false,
+          initiatorName: s?.initiatorName ?? "",
+          authorizerName: s?.authorizerName ?? "",
+        };
+      });
+      if (id.organization_id) {
+        setOrg((o) =>
+          o.id
+            ? o
+            : normalizeOrganization({
+                id: id.organization_id,
+                slug: id.organization_slug ?? "",
+                name: id.organization_name ?? "",
+                creator_user_id: id.creator_user_id ?? null,
+                parent_organization_id: id.parent_organization_id ?? null,
+              }),
+        );
+      }
+      // A persisted dual-control token must name who is operating.
+      if (tokens.dualControl) {
+        setOperate((o) =>
+          o.actingUser ? o : { ...o, actingUser: id.full_name ?? id.email ?? o.actingUser },
+        );
+      }
+    };
+    window.addEventListener("phantix:app-authenticated", onAuthenticated);
+    return () => window.removeEventListener("phantix:app-authenticated", onAuthenticated);
+  }, []);
 
   // Apply a dual-control snapshot and derive the session's dual-control
   // eligibility from the assignment emails. Application-realm users sign in via
@@ -239,19 +316,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // is_authorizer, dual_control_configured, ...) — not nested objects.
       if (tokens.appSession && !tokens.platform) {
         try {
-          const appIdentity = await api.get<{
-            organization_id?: number;
-            organization_slug?: string;
-            organization_name?: string;
-            creator_user_id?: number | null;
-            parent_organization_id?: number | null;
-            email?: string;
-            full_name?: string;
-            role?: string;
-            effective_role?: string;
-            is_initiator?: boolean;
-            is_authorizer?: boolean;
-          }>("/app/auth/me", { realm: "application" });
+          // Shared, deduplicated with the shell's render-gate call: one
+          // `/app/auth/me` per app load instead of two.
+          const appIdentity = await loadAppIdentity();
           if (cancelled) return;
           if (appIdentity?.organization_id) {
             setOrg(normalizeOrganization({
@@ -275,6 +342,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             authorizerName: s.authorizerName,
           } : s));
           setSecurityDbReady(true);
+          // Name the operator in the "Operating as …" widget when a dual-control
+          // session survived the reload and the UI has not yet recorded a name.
+          if (tokens.dualControl) {
+            setOperate((o) =>
+              o.actingUser
+                ? o
+                : {
+                    ...o,
+                    actingUser: appIdentity?.full_name || appIdentity?.email || o.actingUser,
+                    actingRole:
+                      o.actingRole ?? (appIdentity?.is_authorizer ? "authorizer" : "initiator"),
+                  },
+            );
+          }
         } catch { /* keep demo/empty */ }
 
         // Fallback: fetch the full dual-control assignment (initiator/authorizer
@@ -354,6 +435,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       );
       if (res.access_token) {
         tokens.platform = res.access_token;
+        clearResourceCache();
+        clearAppIdentity();
         setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email, isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
         return { mfaRequired: false };
       }
@@ -369,6 +452,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       await delay(700);
       if (code.length !== 6) throw new Error("Enter the 6-digit code");
       tokens.platform = "demo.company.jwt";
+      clearResourceCache();
+      clearAppIdentity();
       setSession({ authenticated: true, realm: "platform", userEmail: "ada@acme.ng", userName: "Ada Okonkwo", isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
       return;
     }
@@ -379,10 +464,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     tokens.platform = res.access_token;
     sessionStorage.removeItem("pending_login_email");
+    clearResourceCache();
+    clearAppIdentity();
     setSession({ authenticated: true, realm: "platform", userEmail: email, userName: email, isInitiator: true, isAuthorizer: false, initiatorName: "", authorizerName: "" });
   }, []);
 
   const logout = useCallback(() => {
+    clearResourceCache();
+    clearAppIdentity();
     tokens.platform = null;
     tokens.orgUser = null;
     tokens.dualControl = null;
@@ -398,10 +487,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const completeAppLogin = useCallback((email: string, name: string, isInitiator = false, isAuthorizer = false) => {
+    clearResourceCache();
+    clearAppIdentity();
     setSession({ authenticated: true, realm: "application", userEmail: email, userName: name || email, isInitiator, isAuthorizer, initiatorName: "", authorizerName: "" });
   }, []);
 
   const enterDemo = useCallback(() => {
+    clearResourceCache();
+    clearAppIdentity();
     enterDemoMode();
     setOrg(demo.organization);
     setDualControl(demo.dualControl);
@@ -411,6 +504,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const switchToRealOrg = useCallback(() => {
+    clearResourceCache();
+    clearAppIdentity();
     exitDemoMode();
     tokens.platform = null;
     tokens.orgUser = null;
@@ -694,21 +789,29 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       // Poll the device-confirm status — the user opens the org-specific link
       // from email; once confirmed the backend issues the operate session.
-      const res = await api.post<{
-        confirmed?: boolean;
-        access_token?: string;
-        session_token?: string;
-        dual_control_session?: string;
-        inactivity_expires_at?: string;
-        user?: { full_name?: string; email?: string };
-      }>("/org-users/auth/device-status", {
-        challenge: dcDeviceToken.current,
-        device_id: deviceId(),
-      }, { realm: "application" });
-      if (!res || res.confirmed === false || !res.access_token) return { done: false };
-      applyOperateSession(res);
-      if (!tokens.dualControl) throw new Error("Operate session was not issued");
-      return { done: true };
+      const challenge = dcDeviceToken.current;
+      const exchange = async (): Promise<{ done: boolean }> => {
+        const res = await api.post<{
+          confirmed?: boolean;
+          already_completed?: boolean;
+          access_token?: string;
+          session_token?: string;
+          dual_control_session?: string;
+          inactivity_expires_at?: string;
+          user?: { full_name?: string; email?: string };
+        }>("/org-users/auth/device-status", {
+          challenge,
+          device_id: deviceId(),
+        }, { realm: "application" });
+        if (!res || res.confirmed === false || !res.access_token) return { done: false };
+        applyOperateSession(res);
+        if (!tokens.dualControl) throw new Error("Operate session was not issued");
+        return { done: true };
+      };
+      // Single-use: the overlay fires this from a timer, a refocus check and
+      // two cross-tab signals at once, and a second exchange would revoke the
+      // operate session the first one just issued.
+      return claimExchange(dcExchange.current, challenge, exchange, (r) => r.done);
     },
     [applyOperateSession],
   );

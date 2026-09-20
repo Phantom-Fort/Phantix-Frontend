@@ -88,7 +88,7 @@ export default function Audit() {
     <div>
       <PageHeader
         title="Audit trail"
-        description="Who did what, and when. Every action carries the person who initiated it, the person who authorised it, and where from — grouped by application."
+        description="Review every action taken in the organization, by application and by user."
         actions={<>
             <DocLink docId="howto-app-27" label="Audit how-to" />
           <button className="btn-secondary" onClick={() => void handleExport()} disabled={exporting}>

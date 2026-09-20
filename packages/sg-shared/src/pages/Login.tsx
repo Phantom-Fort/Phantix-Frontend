@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,7 +9,7 @@ import { api, ApiError, isDemoMode, isDemoFlagSet, exitDemoMode, tokens, API_BAS
 import { useStore } from "@sg/store";
 import { PLATFORM_URL } from "@sg/links";
 import { cx, humanize } from "@sg/utils";
-import { listenDeviceConfirmed } from "@sg/deviceConfirm";
+import { listenDeviceConfirmed, claimExchange, newExchangeGuard } from "@sg/deviceConfirm";
 import { BrandLogo } from "@sg/components/BrandLogo";
 import AuthShowcase from "@sg/components/AuthShowcase";
 import { ThemeToggle } from "@sg/ThemeToggle";
@@ -295,17 +295,31 @@ function ReturningLogin({
   };
 
   // Poll /app/auth/device-status once the link is opened; completes when confirmed.
+  // The exchange is single-use: it is guarded so the timer, the refocus check
+  // and both cross-tab signals cannot spend the link more than once.
+  const deviceExchange = useRef(newExchangeGuard<boolean>());
   const checkDeviceConfirmed = useCallback(async (): Promise<boolean> => {
     if (!deviceToken) return false;
-    try {
-      const res = await api.post<MfaResult & { confirmed?: boolean }>("/app/auth/device-status", {
+    const exchange = async (): Promise<boolean> => {
+      const res = await api.post<MfaResult & { confirmed?: boolean; already_completed?: boolean }>("/app/auth/device-status", {
         device_token: deviceToken,
         device_id: deviceId(),
       }, { realm: "application" });
       if (res && res.confirmed === false) return false;
-      if (!res?.access_token) return false;
+      if (!res?.access_token) {
+        // Someone already finished this sign-in with this link. Say so rather
+        // than waiting out the timeout on a link that can never complete here.
+        if (res?.already_completed) {
+          setError("This confirmation link was already used to finish a sign-in. Sign in again to get a fresh one.");
+          return true;
+        }
+        return false;
+      }
       finishLogin(res, true);
       return true;
+    };
+    try {
+      return await claimExchange(deviceExchange.current, deviceToken, exchange, (ok) => ok);
     } catch {
       return false;
     }
@@ -659,14 +673,26 @@ function AppLoginFlow({
   };
 
   // Poll /app/auth/device-status once the link is opened; completes when confirmed.
+  // The exchange is single-use: it is guarded so the timer, the refocus check
+  // and both cross-tab signals cannot spend the link more than once.
+  const deviceExchange = useRef(newExchangeGuard<boolean>());
   const checkDeviceConfirmed = useCallback(async (): Promise<boolean> => {
     if (!deviceToken) return false;
-    try {
-      const res = await api.post<{ access_token?: string; device_token?: string; confirmed?: boolean; user?: { full_name?: string; email?: string }; user_email?: string; dual_control?: { session_token?: string; can_operate?: boolean; is_initiator?: boolean; is_authorizer?: boolean }; dual_control_session_token?: string }>("/app/auth/device-status", {
+    const exchange = async (): Promise<boolean> => {
+      const res = await api.post<{ access_token?: string; device_token?: string; confirmed?: boolean; already_completed?: boolean; user?: { full_name?: string; email?: string }; user_email?: string; dual_control?: { session_token?: string; can_operate?: boolean; is_initiator?: boolean; is_authorizer?: boolean }; dual_control_session_token?: string }>("/app/auth/device-status", {
         device_token: deviceToken,
         device_id: deviceId(),
       }, { realm: "application" });
-      if (!res || res.confirmed === false || !res.access_token) return false;
+      if (!res || res.confirmed === false) return false;
+      if (!res.access_token) {
+        // Someone already finished this sign-in with this link. Say so rather
+        // than waiting out the timeout on a link that can never complete here.
+        if (res.already_completed) {
+          setError("This confirmation link was already used to finish a sign-in. Sign in again to get a fresh one.");
+          return true;
+        }
+        return false;
+      }
 
       tokens.appSession = res.access_token ?? "";
       tokens.device = res.device_token ?? "";
@@ -681,6 +707,9 @@ function AppLoginFlow({
       toast("success", "Device confirmed", "Welcome" + (name ? " " + name : " back"));
       navigate(chooseAppHref());
       return true;
+    };
+    try {
+      return await claimExchange(deviceExchange.current, deviceToken, exchange, (ok) => ok);
     } catch {
       return false;
     }

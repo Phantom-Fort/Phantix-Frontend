@@ -184,7 +184,7 @@ export default function Scans() {
       {securityDbBlocked && <SecurityDbBanner message={loadError} />}
       <PageHeader
         title="Scans"
-        description="On-demand Nmap + Nuclei jobs and separate GitHub analysis jobs. The 409 lock is per job family: one active network/vuln scan plus one active GitHub analysis can run at the same time."
+        description="On-demand scan jobs"
         actions={
           <>
           <DocLink docId="howto-app-05" label="Launch a scan" />

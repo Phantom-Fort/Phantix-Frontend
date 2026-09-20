@@ -479,7 +479,12 @@ export const alertSettings: AlertSettings = {
   notify: { scan_completed: true, scan_failed: true, risk_created: true, risk_critical: true, treatment_events: true },
 };
 
-export const auditEvents: AuditEvent[] = [
+// An authorizer is only real for an action that went through dual-control
+// authorization. Reads and single-operator writes must not claim one, so the
+// demo trail mirrors the backend rule.
+const DUAL_CONTROL_AUDIT_KEYS = new Set(["risk.treatment.approve"]);
+
+export const auditEvents: AuditEvent[] = ([
   { id: 601, action_key: "risk.treatment.approve", action_label: "Approve risk treatment", category: "risks", status: "completed", summary: "Approved treatment: TLS baseline remediation", details: { path: "/api/v1/risks/treatments/3/approve", method: "PATCH", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-20T08:05:00Z" },
   { id: 600, action_key: "vapt.campaign.start", action_label: "Start VAPT campaign", category: "vapt", status: "completed", summary: "Started campaign: Q3 External Assessment", details: { path: "/api/v1/vapt/campaigns/13/start", method: "POST", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-14T10:30:00Z" },
   { id: 599, action_key: "data.access", action_label: "View asset intelligence", category: "data_access", status: "completed", summary: "Viewed the asset intelligence dashboard", details: { path: "/api/v1/assets/intelligence/dashboard", method: "GET", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "SecureGraph Test Org", authorizer_title: "org_admin", created_at: "2026-07-13T15:22:00Z" },
@@ -488,7 +493,11 @@ export const auditEvents: AuditEvent[] = [
   { id: 596, action_key: "data.access", action_label: "View prioritized risks", category: "data_access", status: "completed", summary: "Viewed the prioritized risk register", details: { path: "/api/v1/risks/prioritized", method: "GET", actor_user_id: 3, actor_email: "chidi@phantixlabs.com", token_type: "app_session", passive: true }, source: "api_middleware", ip_address: "102.89.34.13", initiator_name: "Chidi Eze", initiator_title: "CISO", authorizer_name: "SecureGraph Test Org", authorizer_title: "org_admin", created_at: "2026-07-12T09:30:00Z" },
   { id: 595, action_key: "report.generate", action_label: "Generate report", category: "reports", status: "completed", summary: "Generated vapt_campaign report for campaign #12", details: { path: "/api/v1/reports", method: "POST", actor_user_id: 2, actor_email: "ada@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.12", initiator_name: "Ada Okonkwo", initiator_title: "IT Admin", authorizer_name: "Chidi Eze", authorizer_title: "CISO", created_at: "2026-07-11T14:00:00Z" },
   { id: 594, action_key: "auth.org_user.login", action_label: "Operator sign-in", category: "auth", status: "completed", summary: "Org user login (dual_control)", details: { path: "/api/v1/auth/login", method: "POST", actor_user_id: 3, actor_email: "chidi@phantixlabs.com", token_type: "app_session", passive: false }, source: "api_middleware", ip_address: "102.89.34.13", initiator_name: "Chidi Eze", initiator_title: "CISO", authorizer_name: null, authorizer_title: null, created_at: "2026-07-10T07:02:00Z" },
-];
+]).map((e) => ({
+  ...e,
+  authorizer_name: DUAL_CONTROL_AUDIT_KEYS.has(e.action_key) ? e.authorizer_name : null,
+  authorizer_title: DUAL_CONTROL_AUDIT_KEYS.has(e.action_key) ? e.authorizer_title : null,
+}));
 
 export const pendingActions: PendingAction[] = [
   { id: 41, action_key: "risk.treatment.approve", action_label: "Approve IDOR fix compensation plan", category: "risks", initiated_by: "Ada Okonkwo", status: "pending", created_at: "2026-07-21T05:40:00Z" },

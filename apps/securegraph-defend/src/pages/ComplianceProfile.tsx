@@ -105,7 +105,7 @@ export default function ComplianceProfile() {
     <div>
       <PageHeader
         title="Business profile"
-        description="What your organization does, where it operates and what data it touches. This is the input that decides which compliance frameworks apply to you."
+        description="Evaluate the rules that applies to your organization."
         actions={<>
             <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <button onClick={() => void persist()} disabled={saving} className="btn-primary text-xs !py-2">

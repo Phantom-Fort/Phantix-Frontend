@@ -71,3 +71,15 @@ if (typeof window !== "undefined") {
     }
   }, 30_000);
 }
+
+/**
+ * Drop the in-memory stale-while-revalidate cache.
+ *
+ * The cache key is usually static ("audit", "command-center", "applications"),
+ * so it must be cleared whenever the tenant changes (logout, demo↔real) —
+ * otherwise a page renders the previous org's/demo data and any id taken from it
+ * produces a foreign 403/404 on the next action.
+ */
+export function clearResourceCache(): void {
+  _swrCache.clear();
+}

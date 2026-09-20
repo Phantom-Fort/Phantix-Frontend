@@ -359,7 +359,19 @@ export default function AgiConsole({
       }).catch(() => {});
     load();
     const t = window.setInterval(load, 15000);
-    return () => { cancelled = true; window.clearInterval(t); };
+    // Realtime nudge from the notification stream: refresh the findings pane the
+    // moment the agent records a finding instead of waiting for the next poll.
+    const onFinding = (e: Event) => {
+      const detail = (e as CustomEvent<{ sessionId?: number }>).detail;
+      if (detail?.sessionId && Number(detail.sessionId) !== Number(session.id)) return;
+      void load();
+    };
+    window.addEventListener("phantix:agi-finding", onFinding);
+    return () => {
+      cancelled = true;
+      window.clearInterval(t);
+      window.removeEventListener("phantix:agi-finding", onFinding);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.id]);
 

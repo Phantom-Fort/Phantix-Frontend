@@ -1,8 +1,9 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { BrandLogo } from "../components/BrandLogo";
 import { ThemeToggle } from "../ThemeToggle";
+import { PageSkeleton } from "../ui";
 
 /**
  * Chrome for the documentation pages across the SecureGraph applications.
@@ -51,7 +52,11 @@ export default function DocsChrome() {
 
       <main className="px-5 py-8 sm:px-6">
         <div className="mx-auto w-full max-w-[1200px]">
-          <Outlet />
+          {/* Doc-to-doc navigation suspends here and shows a skeleton, rather
+              than bubbling up to the app-level BrandLoader spinner. */}
+          <Suspense fallback={<PageSkeleton variant="detail" />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 

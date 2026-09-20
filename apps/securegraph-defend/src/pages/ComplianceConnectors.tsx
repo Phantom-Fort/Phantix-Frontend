@@ -76,7 +76,7 @@ export default function ComplianceConnectors() {
     <div>
       <PageHeader
         title="Evidence connectors"
-        description="Automated control evidence. Configure a connector once and each collection run stores fresh evidence against the controls it covers."
+        description="Automated control evidence. Configure, then collect."
         actions={<>
             <DocLink docId="howto-app-24" label="Compliance review how-to" />
           <div className="flex items-center gap-2">

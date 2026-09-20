@@ -56,6 +56,123 @@ export interface ApplicationsSnapshot {
   };
 }
 
+/**
+ * The signed-in operator as ``GET /app/auth/me`` reports them (app_session
+ * realm). The shell uses it to gate rendering; the store uses it to hydrate the
+ * tenant chrome — so it is loaded once through :func:`loadAppIdentity`.
+ */
+export interface AppIdentity {
+  organization_id?: number;
+  organization_slug?: string;
+  organization_name?: string;
+  organization_user_id?: number;
+  creator_user_id?: number | null;
+  parent_organization_id?: number | null;
+  email?: string;
+  full_name?: string;
+  role?: string;
+  effective_role?: string;
+  is_initiator?: boolean;
+  is_authorizer?: boolean;
+  dual_control_configured?: boolean;
+}
+
+// ── Deduplicated identity load + cross-app persistence ───────────────────────
+// Both the shell (render gate) and the store (tenant hydration) need
+// `/app/auth/me` on every app load. They used to issue two parallel requests.
+// One in-flight promise + a short-lived value cache collapses them into one
+// network call.
+//
+// The identity is also cached in ``sessionStorage`` so tenant + account naming
+// survives a reload and a cross-app handoff: the redeem response carries the
+// same fields, so the target origin can show the org and user name immediately
+// while `/app/auth/me` is still in flight.
+let _identityPromise: Promise<AppIdentity | null> | null = null;
+let _identityValue: { value: AppIdentity; ts: number } | null = null;
+const IDENTITY_TTL_MS = 5_000;
+const IDENTITY_STORAGE_KEY = "phantix_app_identity";
+
+function _storeStorage(): Storage | null {
+  try {
+    if (typeof window === "undefined") return null;
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+
+/** The last identity seen on this origin (immediate tenant/name paint). */
+export function readPersistedAppIdentity(): AppIdentity | null {
+  const storage = _storeStorage();
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(IDENTITY_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AppIdentity;
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist the identity for this origin. */
+export function persistAppIdentity(identity: AppIdentity): void {
+  const storage = _storeStorage();
+  if (!storage) return;
+  try {
+    storage.setItem(IDENTITY_STORAGE_KEY, JSON.stringify(identity));
+  } catch {
+    /* quota / private mode — in-memory cache still holds it */
+  }
+}
+
+/**
+ * Trust an identity we already validated elsewhere (the handoff redeem) so the
+ * shell and store use it without a second `/app/auth/me` round-trip.
+ */
+export function seedAppIdentity(identity: AppIdentity): void {
+  _identityValue = { value: identity, ts: Date.now() };
+  persistAppIdentity(identity);
+}
+
+/** Drop the cached identity (logout / demo↔real / org switch). */
+export function clearAppIdentity(): void {
+  _identityPromise = null;
+  _identityValue = null;
+  try {
+    _storeStorage()?.removeItem(IDENTITY_STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Load the current app principal, deduplicating concurrent callers and briefly
+ * caching the success. Rejections are never cached, so a transient failure is
+ * retried by the next caller. The result is persisted for the next load.
+ */
+export function loadAppIdentity(opts: { force?: boolean } = {}): Promise<AppIdentity | null> {
+  if (isDemoMode()) return Promise.resolve(null);
+  const now = Date.now();
+  if (!opts.force && _identityValue && now - _identityValue.ts < IDENTITY_TTL_MS) {
+    return Promise.resolve(_identityValue.value);
+  }
+  if (_identityPromise) return _identityPromise;
+  _identityPromise = api
+    .get<AppIdentity>("/app/auth/me", { realm: "application" })
+    .then((value) => {
+      if (value) {
+        _identityValue = { value, ts: Date.now() };
+        persistAppIdentity(value);
+      }
+      return value ?? null;
+    })
+    .finally(() => {
+      _identityPromise = null;
+    });
+  return _identityPromise;
+}
+
 /** Apps in launcher order. */
 export const APPLICATION_ORDER: ApplicationKey[] = ["core", "attack", "defend", "code"];
 

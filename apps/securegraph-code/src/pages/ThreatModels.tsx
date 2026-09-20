@@ -122,7 +122,7 @@ export default function ThreatModels() {
     <div>
       <PageHeader
         title="Threat models"
-        description="STRIDE-style threats derived from a product's real components, data flows and product information, graded by how well the evidence supports them."
+        description="STRIDE-style threats with multiple data points."
         actions={<>
             <DocLink docId="howto-app-16" label="Threat modelling how-to" />
           <div className="flex items-center gap-2">

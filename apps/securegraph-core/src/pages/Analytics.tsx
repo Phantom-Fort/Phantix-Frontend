@@ -204,7 +204,7 @@ export default function Analytics() {
     <div>
       <PageHeader
         title="Analytics"
-        description="Live analysis of your organization's security data across every surface and engine — no report generation required."
+        description="Visualize your organization's security data across every surface and engine."
         actions={
           <span className="flex items-center gap-2">
             <DocLink docId="howto-app-28" label="Analytics how-to" />
