@@ -13,7 +13,7 @@
  */
 import { apiRequest, clearStoredSession, setStoredSession, type ApplicationKey } from "./api";
 import { APP_URL } from "../config";
-import { enterDemoMode, exitDemoMode, isDemoFlagSet, tokens } from "../api";
+import { enterDemoMode, exitDemoMode, isDemoFlagSet, tokens, ApiError } from "../api";
 import { seedAppIdentity } from "../applications";
 
 /** URL fragment key carrying a handoff code, e.g. `https://attack…/#sg=abc`. */
@@ -106,7 +106,14 @@ export async function handoffUrl(target: ApplicationKey, fallbackHost: string, p
     const base = (fallbackHost || minted.open_url || "").replace(/\/+$/, "");
     if (!base || !minted.code) return fallbackHost;
     return `${base}${path}#${HANDOFF_FRAGMENT_KEY}=${encodeURIComponent(minted.code)}`;
-  } catch {
+  } catch (err) {
+    // A 401/403 means this origin's session is gone. Navigating to the target
+    // without a code would land the operator on its login screen and look like
+    // "switching apps signed me out". Surface it so the caller can send them
+    // to sign-in explicitly (the api client has already cleared the tokens).
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      throw err;
+    }
     return fallbackHost;
   }
 }

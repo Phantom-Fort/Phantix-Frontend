@@ -7,7 +7,7 @@
 //
 // This module owns the browser-side resolution: the hosts, the "where do you
 // want to work today" picker, and the dashboard router.
-import { api, getActiveApplication, isDemoMode, delay } from "./api";
+import { api, getActiveApplication, isDemoMode, delay, ApiError } from "./api";
 import { APP_URL, ATTACK_URL, CODE_URL, DEFEND_URL, IS_DEV_HOSTS } from "./config";
 
 export type ApplicationKey = "core" | "attack" | "defend" | "code";
@@ -381,7 +381,15 @@ export async function applicationHandoffHref(
           ? path
           : "/";
     return `${base}${suffix}#sg=${encodeURIComponent(minted.code)}`;
-  } catch {
+  } catch (err) {
+    // Expired/invalid session: go to Core sign-in (remembering the intended
+    // application) instead of the target's login screen, which reads as a
+    // silent logout on app switch.
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      const core = (APPLICATION_HOSTS.core || "").replace(/\/+$/, "");
+      const next = key === "core" ? "" : `?next=${encodeURIComponent(key)}`;
+      return core ? `${core}/login${next}` : "/login";
+    }
     return fallback;
   }
 }

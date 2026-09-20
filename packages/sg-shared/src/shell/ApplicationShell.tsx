@@ -302,6 +302,44 @@ export function ApplicationShell({
     }
   }, [authReady, me]);
 
+  // Keep an *attended* app session warm. The backend signs out after
+  // APP_SESSION_INACTIVITY_MINUTES of no requests, and the app only discovers
+  // that on the next call — so switching applications would revoke the session
+  // and silently bounce to the login screen. A visible tab the operator is
+  // using should not idle out; a hidden/abandoned tab still does (the keep-alive
+  // stops when the document is not visible). App realm only — platform/company
+  // JWTs have their own clocks.
+  useEffect(() => {
+    if (!authReady || session?.realm !== "application" || isDemoFlagSet()) return;
+    let timer: number | undefined;
+    const touch = () => {
+      if (document.visibilityState !== "visible") return;
+      // `/app/auth/me` validates + touches the server-side session and renews
+      // the tokens when due; failures are handled by the api client (re-login).
+      void loadAppIdentity({ force: true }).catch(() => {});
+    };
+    const start = () => {
+      touch();
+      timer = window.setInterval(touch, 5 * 60_000);
+    };
+    const stop = () => {
+      if (timer) window.clearInterval(timer);
+      timer = undefined;
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", touch);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", touch);
+    };
+  }, [authReady, session?.realm]);
+
   useEffect(() => {
     const fn = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -341,7 +379,17 @@ export function ApplicationShell({
     const base = IS_DEV_HOSTS ? hosts[card.key] || card.open_url : card.open_url || hosts[card.key];
     // Core's "/" is its public marketing page, not the dashboard — every
     // other application's "/" already is its authenticated home.
-    const url = await handoffUrl(card.key, base || "", card.key === "core" ? "/dashboard" : "/");
+    let url: string;
+    try {
+      url = await handoffUrl(card.key, base || "", card.key === "core" ? "/dashboard" : "/");
+    } catch {
+      // Session expired/invalid: send the operator to sign in on Core with the
+      // intended application remembered, instead of navigating to the target
+      // without a handoff code (which just shows its login as a silent logout).
+      setOpening("");
+      window.location.assign(coreLoginUrl(card.key === "core" ? undefined : card.key));
+      return;
+    }
     setSwitcherOpen(false);
     setOpening("");
     if (url) window.location.assign(url);
