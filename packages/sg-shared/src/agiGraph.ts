@@ -523,9 +523,21 @@ export function deriveFindings(
 ): AgiFinding[] {
   const target = engagement?.scope_definition.target_allowlist[0] ?? "in-scope target";
   const out: AgiFinding[] = [];
-  const blob = transcript.map((t) => t.content).join("\n");
+  // Only REAL evidence counts. Previously the blob was every transcript chunk,
+  // including the initial system/instruction text, so broad patterns ("title",
+  // "HTTP 200", "nuclei") synthesized 1-3 findings before the agent had
+  // produced any output. Require at least one tool run, and read only tool or
+  // assistant evidence (never the system prompt / operator instruction).
+  const toolChunks = transcript.filter((t) => t.role === "tool" && (t.content ?? "").trim());
+  if (toolChunks.length === 0) return [];
+  const evidence = transcript.filter(
+    (t) => (t.role === "tool" || t.role === "assistant") && (t.content ?? "").trim(),
+  );
+  const blob = evidence.map((t) => t.content).join("\n");
 
-  if (/HTTP\s+200|title/i.test(blob)) {
+  // A real fingerprint signal: an HTTP status line / bracketed code from a tool
+  // response, not the bare word "title" appearing anywhere.
+  if (/\[200\]|\bStatus:\s*200|HTTP\/[\d.]*\s*200/i.test(blob)) {
     out.push({
       id: "f-title",
       title: "Application fingerprint exposed",
