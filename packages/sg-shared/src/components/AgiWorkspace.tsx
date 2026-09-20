@@ -603,14 +603,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   }, [running]);
 
   useEffect(() => {
-    if (!session || !running) return;
+    if (!session) return;
     let cancelled = false;
     const load = () =>
       loadAgiFindings(session.id).then((fs) => {
         if (!cancelled) setDrawerFindings(Array.isArray(fs) ? fs : []);
       }).catch(() => {});
+    // Always fetch once first — this is the FINAL fetch that used to be skipped:
+    // the old guard (`!running`) returned early the moment the session stopped,
+    // so findings recorded at/after completion never appeared. Keep polling only
+    // while the session is live.
     load();
-    const t = window.setInterval(load, 12000);
     // Realtime nudge: keep the compact drawer's findings current without
     // relying on the poll interval alone.
     const onFinding = (e: Event) => {
@@ -619,9 +622,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       void load();
     };
     window.addEventListener("phantix:agi-finding", onFinding);
+    const t = running ? window.setInterval(load, 12000) : undefined;
     return () => {
       cancelled = true;
-      window.clearInterval(t);
+      if (t) window.clearInterval(t);
       window.removeEventListener("phantix:agi-finding", onFinding);
     };
   }, [session, running]);
