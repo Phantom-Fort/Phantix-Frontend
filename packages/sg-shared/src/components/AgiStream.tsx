@@ -253,11 +253,22 @@ const TOOL_LABELS: Record<string, string> = {
   pi_subagent: "Pi helper",
   pi_quick: "Pi helper",
   opencode_contract: "OpenCode handoff",
+  engine_call: "Engine call",
 };
+
+// Generic engine-call shape: `ENGINE_CALL <engine_id>.<op> [| {...}]`. The FE
+// only parses the id.op the agent produced — it asserts nothing about which
+// engines or ops exist (that lives in the backend catalog, not the UI).
+const ENGINE_RE = /^ENGINE_CALL\s+([\w.-]+)/i;
 
 function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {
   const rawTool = typeof t.meta?.tool === "string" ? (t.meta.tool as string) : "tool";
-  const toolName = TOOL_LABELS[rawTool] ?? rawTool;
+  const firstLine = (t.content ?? "").split("\n")[0].trim();
+  const engineHit = ENGINE_RE.exec(firstLine);
+  const isEngine = rawTool === "engine_call" || !!engineHit;
+  const toolName = isEngine ? "Engine call" : TOOL_LABELS[rawTool] ?? rawTool;
+  const okState = (t.meta as Record<string, unknown> | null)?.ok;
+  const durMs = runDurationMs(t);
 
   // First line that looks like a shell command becomes the "Input"; the rest is output.
   const { command, body } = useMemo(() => {
@@ -273,6 +284,13 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
 
   return (
     <div className="group relative min-w-0">
+      {(okState != null || durMs != null || engineHit) && (
+        <p className="mb-1 font-mono text-[11px] text-slate-500">
+          {okState === false ? "failed" : okState === true ? "ok" : ""}
+          {durMs != null ? `${okState != null ? " ·" : ""} ${fmtDuration(durMs)}` : ""}
+          {engineHit ? `${okState != null || durMs != null ? " ·" : ""} ${engineHit[1]}` : ""}
+        </p>
+      )}
       <Tool
         defaultOpen={!dense}
         toolPart={{
