@@ -4,6 +4,7 @@ import {
   Bot,
   CalendarClock,
   Crosshair,
+  FileText,
   FileSignature,
   LayoutDashboard,
   Radar,
@@ -36,6 +37,7 @@ export const NAV: NavSection[] = [
   {
     label: "VAPT",
     items: [
+      { to: "/prior-reports", label: "Prior reports", icon: <FileText size={17} /> },
       { to: "/vapt", label: "Campaigns", icon: <Crosshair size={17} /> },
       { to: "/vapt/schedules", label: "Schedules", icon: <CalendarClock size={17} /> },
       { to: "/vapt/procedures", label: "Procedures & rules", icon: <BookOpen size={17} /> },

@@ -66,6 +66,52 @@ const SEV_DOT: Record<Severity, string> = {
   info: "bg-severity-info",
 };
 
+const SEV_SET: ReadonlySet<string> = new Set(SEV_ORDER);
+
+/**
+ * Map a backend `/agi/sessions/:id/findings` record into the console's
+ * AgiFinding shape. The backend is the real record of what the agent found
+ * (LDAP/SMB/DB exposure, missing headers, …); the transcript heuristic in
+ * `deriveFindings()` only recognizes a handful of demo patterns and must not
+ * be allowed to hide findings.
+ */
+function toAgiFinding(raw: Record<string, unknown>): AgiFinding {
+  const sevRaw = String(raw.severity ?? "info").toLowerCase();
+  const severity: Severity = (SEV_SET.has(sevRaw) ? sevRaw : "info") as Severity;
+  const statusRaw = String(raw.status ?? "").toLowerCase();
+  const status: AgiFinding["status"] =
+    statusRaw === "validated" || statusRaw === "confirmed"
+      ? "validated"
+      : statusRaw === "rejected" || statusRaw === "dismissed"
+        ? "rejected"
+        : "candidate";
+  const evidence = raw.evidence && typeof raw.evidence === "object"
+    ? (raw.evidence as Record<string, unknown>)
+    : {};
+  const pick = (key: string): string | undefined => {
+    const value = evidence[key] ?? raw[key];
+    return value != null && value !== "" ? String(value) : undefined;
+  };
+  return {
+    id: String(raw.id ?? `${String(raw.title ?? "finding")}|${String(raw.target ?? "")}`),
+    title: String(raw.title ?? "Untitled finding"),
+    severity,
+    target: String(raw.target ?? raw.asset ?? raw.asset_value ?? ""),
+    status,
+    cve: raw.cve != null ? String(raw.cve) : undefined,
+    verification: (raw.verification as AgiFinding["verification"]) ?? undefined,
+    business_impact: raw.business_impact != null ? String(raw.business_impact) : undefined,
+    impact_level: raw.impact_level != null ? String(raw.impact_level) : undefined,
+    report_highlight: Boolean(raw.report_highlight),
+    evidence: {
+      request: pick("request"),
+      response: pick("response"),
+      hash: pick("hash"),
+      notes: pick("notes") ?? (raw.description != null ? String(raw.description) : undefined),
+    },
+  };
+}
+
 const COMPOSER_SUGGESTIONS = [
   "Summarize findings so far",
   "What is the next planned step?",
@@ -293,7 +339,7 @@ export type AgiConsoleProps = {
   /** Open ASK_OPERATOR clarification awaiting an operator answer. */
   clarification?: AgiClarification | null;
   /** Sends { clarification_id, answer } to /agi/sessions/{id}/clarify. */
-  onAnswer?: (clarificationId: string, answer: string) => void;
+  onAnswer?: (clarificationId: string, answer: string) => void | boolean | Promise<void | boolean>;
   policyBanner: string | null;
   overrideDrafts: Record<number, string>;
   onOverrideDraft: (id: number, cmd: string) => void;
@@ -391,19 +437,31 @@ export default function AgiConsole({
   }, [liveFindings]);
 
   const findings = useMemo(() => {
-    const derived = deriveFindings(transcript, actions, engagement);
-    return derived.map((f) => {
-      const live = verificationMap[`${f.title.toLowerCase()}|${f.target.toLowerCase()}`];
-      if (!live?.verification) return f;
-      return { ...f, verification: live.verification as AgiFinding["verification"] };
-    });
-  }, [transcript, actions, engagement, verificationMap]);
+    // Backend findings are the source of truth for the pane. The agent records
+    // real findings the transcript heuristic never recognizes, so show the
+    // live list first and keep derived entries only for titles the backend has
+    // not surfaced yet (demo mode / before the first finding lands).
+    const live = liveFindings.map(toAgiFinding);
+    const liveTitles = new Set(live.map((f) => f.title.trim().toLowerCase()));
+    const derived = deriveFindings(transcript, actions, engagement)
+      .filter((f) => !liveTitles.has(f.title.trim().toLowerCase()))
+      .map((f) => {
+        const liveMatch = verificationMap[`${f.title.toLowerCase()}|${f.target.toLowerCase()}`];
+        if (!liveMatch?.verification) return f;
+        return { ...f, verification: liveMatch.verification as AgiFinding["verification"] };
+      });
+    return [...live, ...derived];
+  }, [liveFindings, transcript, actions, engagement, verificationMap]);
 
   const handleFindingVerify = async (finding: AgiFinding, verdict: "confirmed" | "rejected") => {
     if (!session?.id) return false;
-    const live = verificationMap[`${finding.title.toLowerCase()}|${finding.target.toLowerCase()}`];
-    if (!live?.id) return false;
-    const ok = await decideAgiFindingVerification(session.id, live.id, verdict);
+    // Live findings carry their backend id directly; derived ones only have a
+    // synthetic id, so fall back to the title/target lookup for those.
+    const liveMatch = verificationMap[`${finding.title.toLowerCase()}|${finding.target.toLowerCase()}`];
+    const liveById = liveFindings.find((f) => String(f.id ?? "") === finding.id);
+    const findingId = liveMatch?.id || (liveById ? String(liveById.id ?? "") : "");
+    if (!findingId) return false;
+    const ok = await decideAgiFindingVerification(session.id, findingId, verdict);
     if (ok) {
       const fs = await loadAgiFindings(session.id);
       setLiveFindings(Array.isArray(fs) ? fs : []);
