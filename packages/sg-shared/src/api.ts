@@ -541,3 +541,51 @@ export function mediaUrl(path?: string | null): string {
 
 // Simulated latency for demo mode so loading states are visible
 export const delay = (ms = 420) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Server-sent events reader with the caller's auth headers.
+ *
+ * Used by the Autonomous Pentest Agent workspace so loop briefs, approvals,
+ * findings and harness events paint the moment they happen instead of on the
+ * next 5s poll. Callers keep their polling loop as a fallback; this only makes
+ * the live surface smoother.
+ */
+export async function streamSse(
+  path: string,
+  onEvent: (event: string, data: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "GET",
+    headers: { ...buildAuthHeaders("GET"), Accept: "text/event-stream" },
+    signal,
+  });
+  if (!res.ok) {
+    let detail: unknown = `Stream failed: ${res.status}`;
+    try {
+      const j = await res.clone().json();
+      detail = (j && typeof j === "object" && "detail" in j ? (j as { detail?: unknown }).detail : j) ?? detail;
+    } catch { /* non-JSON */ }
+    throw new ApiError(res.status, detail);
+  }
+  if (!res.body) return;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() || "";
+    for (const block of parts) {
+      let event = "message";
+      const dataLines: string[] = [];
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+      }
+      if (dataLines.length) onEvent(event, dataLines.join("\n"));
+    }
+  }
+}

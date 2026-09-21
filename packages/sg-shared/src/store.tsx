@@ -560,11 +560,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return Promise.resolve(true);
       }
 
-      const openOverlay = () =>
-        new Promise<boolean>((resolve) => {
+      const openOverlay = () => {
+        // An expiry event can race the pre-flight gate: if an overlay is already
+        // pending, reuse it instead of clobbering its resolver.
+        if (dcPromptResolve.current) return Promise.resolve(false);
+        return new Promise<boolean>((resolve) => {
           dcPromptResolve.current = resolve;
           setDualControlPrompt({ open: true, reason });
         });
+      };
 
       let configured = dualControl.configured;
       // Derive eligibility from the org's dual-control assignment when the login
@@ -647,19 +651,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // The backend reports the operate session is gone/expired (401/403 dual-control).
   // Per 00-shared-auth-and-client.md §1/§8: clear the operate token ONLY — never
-  // sign the operator out. Flip the header back to "Unlock operate" and let the
-  // next gated action prompt for a fresh operate session.
+  // sign the operator out. Open the unlock overlay straight away so the operator
+  // can mint a fresh token and retry the action they were already attempting,
+  // instead of only being told the session ended.
   useEffect(() => {
     const onExpired = () => {
       tokens.dualControl = null;
       setOperate({ unlocked: false, actingUser: null, actingRole: null, expiresAt: null });
-      // Do NOT auto-open the overlay here. The operator is re-prompted only when
-      // they next attempt an action that requires operate access.
-      toast("info", "Operate session ended", "You stay signed in. Unlock operate when you need to make changes.");
+      toast("info", "Operate session ended", "You stay signed in. Unlock operate to continue.");
+      void requireDualControl("Your dual-control operate session ended. Unlock it to continue where you left off.");
     };
     window.addEventListener("phantix:operate-expired", onExpired);
     return () => window.removeEventListener("phantix:operate-expired", onExpired);
-  }, [toast]);
+  }, [requireDualControl, toast]);
 
   // 403 dual-control (header missing, session still fine): open the unlock overlay.
   useEffect(() => {

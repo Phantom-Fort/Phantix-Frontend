@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Lock, ShieldCheck, Trash2, Loader2, Radar, ShieldAlert, Scale,
   Crosshair, Boxes, Globe2, Timer, Square, BrainCircuit, ChevronDown, ChevronRight,
-  ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound,
+  ThumbsUp, AlertTriangle, RotateCcw, Cpu, KeyRound, FileText,
 } from "lucide-react";
 import { PageHeader, Card } from "../ui";
 import LottiePlayer from "../components/LottiePlayer";
@@ -255,6 +255,15 @@ export default function Agent({ initialMode = "agent", allowAgi = false }: { ini
         description="Your security assistant."
         actions={
           <span className="flex items-center gap-2">
+            {mode === "agi" && allowAgi && (
+              <a
+                href="/prior-reports"
+                className="chip border-gold-400/30 bg-gold-400/10 text-gold-200 transition-colors hover:bg-gold-400/20"
+                title="Share a previous pentest/VAPT report so the agent can read and retest it"
+              >
+                <FileText size={11} className="mr-1 inline" /> Prior reports
+              </a>
+            )}
             <DocLink docId="howto-app-13" label="Agent how-to" />
             <ModelPicker
               surface={mode === "agi" ? "pentest" : "general"}

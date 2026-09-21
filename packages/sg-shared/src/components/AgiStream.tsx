@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Bot, BrainCircuit, Check, ChevronDown, ChevronRight, Clock, Copy, Crosshair, HelpCircle, Loader2, Radar, Send, ShieldAlert, ShieldCheck, Terminal, User,
+  ArrowRight, Bot, BrainCircuit, Check, ChevronDown, ChevronRight, Clock, Copy, Crosshair, Gauge, HelpCircle, ListChecks, Loader2, Pause, Play, Radar, Send, ShieldAlert, ShieldCheck, Terminal, User, XCircle, type LucideIcon,
 } from "lucide-react";
 import { Markdown } from "../prompt-kit/markdown";
 import { Tool } from "../prompt-kit/tool";
@@ -429,16 +429,18 @@ export function ClarificationAsk({
   dense = false,
 }: {
   clarification: { clarification_id: string; question: string; options?: string[]; allow_free_text?: boolean };
-  onAnswer: (clarificationId: string, answer: string) => void;
+  onAnswer: (clarificationId: string, answer: string) => void | boolean | Promise<void | boolean>;
   busy?: boolean;
   dense?: boolean;
 }) {
   const [text, setText] = useState("");
-  const submit = (answer: string) => {
+  const submit = async (answer: string) => {
     const a = answer.trim();
     if (!a || busy) return;
-    onAnswer(clarification.clarification_id, a);
-    setText("");
+    // Only clear once the answer is accepted. A dual-control expiry resolves
+    // false, so the operator's text stays put until they unlock and resend.
+    const result = await onAnswer(clarification.clarification_id, a);
+    if (result !== false) setText("");
   };
   const options = clarification.options ?? [];
   return (
@@ -459,7 +461,7 @@ export function ClarificationAsk({
               key={o}
               type="button"
               disabled={busy}
-              onClick={() => submit(o)}
+              onClick={() => void submit(o)}
               className="rounded-full border border-gold-400/40 bg-gold-400/10 px-2.5 py-1 text-xs font-medium text-gold-200 transition-colors hover:bg-gold-400/20 disabled:opacity-50"
             >
               {o}
@@ -473,11 +475,11 @@ export function ClarificationAsk({
             className="input flex-1 !py-1.5 text-xs"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && text.trim() && !busy) submit(text); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && text.trim() && !busy) void submit(text); }}
             placeholder="Type your answer…"
             disabled={busy}
           />
-          <button className="btn-primary !px-3 !py-1.5 wb-xs" disabled={!text.trim() || busy} onClick={() => submit(text)}>
+          <button className="btn-primary !px-3 !py-1.5 wb-xs" disabled={!text.trim() || busy} onClick={() => void submit(text)}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />} Reply
           </button>
         </div>
@@ -529,6 +531,112 @@ export function IssuesStrip({
 
 // ── Engine / system events ────────────────────────────────────────────────────
 
+//: System-line chip label by event, so every line says what it actually is
+//: instead of labeling session notes, policy blocks and verifications "engine".
+const EVENT_LABEL: Record<string, string> = {
+  session_start: "session",
+  info_request: "info needed",
+  instruction: "operator",
+  tools_to_provision: "tools",
+  tool_install_request: "tools",
+  tool_install_session_ok: "tools",
+  skill_search: "skill",
+  skill_load: "skill",
+  skill_select: "skill",
+  policy_block: "policy",
+  loop_stop: "loop",
+  job_done_accepted: "job done",
+  job_done_rejected: "job open",
+  job_blocked: "blocked",
+  teardown: "session",
+  ai_credit_spend: "credits",
+  finding_dropped: "verification",
+};
+
+const EVENT_CARD: Record<string, { label: string; icon: LucideIcon; tone: string }> = {
+  campaign_done: { label: "Breadth campaign", icon: Radar, tone: "text-sky-300 border-sky-400/25 bg-sky-500/5" },
+  decision_review: { label: "Decision review", icon: ListChecks, tone: "text-gold-300 border-gold-400/25 bg-gold-400/5" },
+  verify_all: { label: "Verification", icon: ShieldCheck, tone: "text-emerald-300 border-emerald-400/25 bg-emerald-400/5" },
+  finding_dropped: { label: "Candidate dropped", icon: XCircle, tone: "text-slate-400 border-phantix-700/40 bg-phantix-900/50" },
+  loop_paused: { label: "Paused", icon: Pause, tone: "text-amber-300 border-amber-400/25 bg-amber-400/5" },
+  loop_resumed: { label: "Resumed", icon: Play, tone: "text-emerald-300 border-emerald-400/25 bg-emerald-400/5" },
+};
+
+function StatChip({ label, value, tone = "text-slate-200" }: { label: string; value: React.ReactNode; tone?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-phantix-700/40 bg-phantix-950/60 px-2 py-1">
+      <span className="wb-2xs uppercase tracking-wider text-slate-500">{label}</span>
+      <span className={cx("wb-sm font-semibold tabular-nums", tone)}>{value}</span>
+    </span>
+  );
+}
+
+/** Rich card for the harness events the operator should never have to guess at. */
+function SystemEventCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {
+  const meta = (t.meta || {}) as Record<string, unknown>;
+  const kind = String(meta.kind || "");
+  const cfg = EVENT_CARD[kind];
+  if (!cfg) return <SystemLine t={t} dense={dense} />;
+  const Icon = cfg.icon;
+  const time = streamTime(t.created_at);
+  const summary = (meta.summary as Record<string, unknown> | undefined) || {};
+
+  return (
+    <div className={cx("group flex justify-start", dense ? "w-full" : "max-w-[94%]")}>
+      <div className={cx("w-full rounded-xl border px-3 py-2", cfg.tone)}>
+        <p className="mb-1.5 flex items-center gap-2">
+          <Icon size={12} />
+          <span className="wb-2xs font-semibold uppercase tracking-wider">{cfg.label}</span>
+          {time && <span className="wb-2xs ml-auto tabular-nums text-slate-500">{time}</span>}
+        </p>
+        {kind === "decision_review" && (
+          <div className="space-y-1.5">
+            <p className="wb-sm text-slate-200">{t.content}</p>
+            {Array.isArray(meta.unresolved) && (meta.unresolved as string[]).length > 0 && (
+              <div>
+                <p className="wb-2xs uppercase tracking-wider text-slate-500">Open leads</p>
+                <ul className="wb-sm list-disc space-y-0.5 pl-4 text-slate-300">
+                  {(meta.unresolved as string[]).slice(0, 8).map((u, i) => (
+                    <li key={i}>{u}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {Array.isArray(meta.next) && (meta.next as string[]).length > 0 && (
+              <p className="wb-sm text-gold-200">Next: {(meta.next as string[]).join(", ")}</p>
+            )}
+          </div>
+        )}
+        {kind === "verify_all" && (
+          <div className="flex flex-wrap gap-1.5">
+            <StatChip label="checked" value={Number(meta.count || 0)} />
+            <StatChip label="confirmed" value={Number(meta.verified || 0)} tone="text-emerald-300" />
+            <StatChip label="dismissed" value={Number(meta.dismissed || 0)} tone="text-severity-critical" />
+            <StatChip label="inconclusive" value={Number(meta.inconclusive || 0)} tone="text-amber-300" />
+          </div>
+        )}
+        {kind === "campaign_done" && (
+          <div className="flex flex-wrap gap-1.5">
+            <StatChip label="assets" value={Number(meta.assets || 0)} />
+            <StatChip label="findings" value={Number(meta.found || 0)} tone="text-gold-300" />
+            <StatChip label="time" value={`${Number(summary.elapsed || 0)}s`} />
+            {Array.isArray(summary.categories) && (
+              <StatChip label="categories" value={((summary.categories as string[]) || []).join(", ") || "none"} />
+            )}
+          </div>
+        )}
+        {kind === "finding_dropped" && (
+          <div className="space-y-1">
+            <p className="wb-sm text-slate-300">{t.content}</p>
+            <p className="wb-2xs text-slate-500">Dropped before recording — the evidence is kept, the noise is not.</p>
+          </div>
+        )}
+        {(kind === "loop_paused" || kind === "loop_resumed") && <p className="wb-sm text-slate-300">{t.content}</p>}
+      </div>
+    </div>
+  );
+}
+
 const FINDING_RE = /^(.*?)\[(critical|high|medium|low|info)\]\s*:?\s*(.*)$/i;
 
 function SystemLine({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boolean }) {
@@ -566,7 +674,7 @@ function SystemLine({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boole
     <div className="group flex justify-start">
       <p className={cx("max-w-[94%] font-mono leading-5 text-slate-500", dense ? "wb-xs" : "wb-sm")}>
         <span className="wb-2xs mr-1.5 inline-flex items-center gap-1 rounded border border-phantix-700/40 bg-phantix-900/60 px-1 py-px font-sans font-semibold uppercase tracking-wider text-slate-500">
-          <Radar size={8} /> engine
+          <Radar size={8} /> {EVENT_LABEL[String((t.meta || {}).event || "")] || "engine"}
         </span>
         <span className="whitespace-pre-wrap break-words">{t.content}</span>
         {time && <span className="wb-2xs ml-1.5 tabular-nums text-slate-600">{time}</span>}
@@ -788,7 +896,7 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   if (t.role === "system") {
     return (
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: "easeOut" }}>
-        <SystemLine t={t} dense={dense} />
+        <SystemEventCard t={t} dense={dense} />
       </motion.div>
     );
   }

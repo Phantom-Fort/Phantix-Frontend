@@ -2,7 +2,7 @@
 // Mirrors app/engines/ai_engine/agi/customer_api.py. Demo-mode fallbacks so the
 // UI is testable without a live runner.
 
-import { api, ApiError, delay, isDemoMode } from "./api";
+import { api, ApiError, delay, isDemoMode, streamSse } from "./api";
 import { AGI_ENABLED as AGI_FLAG } from "./config";
 import type {
   AgiAccess,
@@ -600,8 +600,13 @@ export async function loadAgiFindings(sessionId: number): Promise<Array<Record<s
   try {
     const res = await api.get<unknown>(`/agi/sessions/${sessionId}/findings`);
     if (Array.isArray(res)) return res as Array<Record<string, unknown>>;
-    if (res && typeof res === "object" && Array.isArray((res as { findings?: unknown }).findings)) {
-      return (res as { findings: Array<Record<string, unknown>> }).findings;
+    if (res && typeof res === "object") {
+      // Mirror the canonical list unwrapping used across the API (some builds
+      // wrap list payloads in items/data/results instead of findings).
+      const o = res as Record<string, unknown>;
+      for (const key of ["findings", "items", "data", "results", "rows"]) {
+        if (Array.isArray(o[key])) return o[key] as Array<Record<string, unknown>>;
+      }
     }
     return [];
   } catch {
@@ -934,4 +939,133 @@ function demoNotifications(): AgiNotification[] {
     });
   }
   return base;
+}
+
+/** Live SSE stream for a session (customer surface). No-op in demo mode. */
+export async function streamAgiSession(
+  sessionId: number,
+  onEvent: (event: string, data: string) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (isDemoMode()) return;
+  return streamSse(`/agi/sessions/${sessionId}/stream`, onEvent, signal);
+}
+
+/** Pause the loop. Enforced runner-side: no tokens or shell work while paused. */
+export async function pauseAgiSession(sessionId: number): Promise<AgiSession> {
+  if (isDemoMode()) {
+    await delay(150);
+    return normalizeAgiSession({ id: sessionId, status: "paused", engagement_id: 0 } as AgiSession);
+  }
+  const raw = await api.post<AgiSession>(`/agi/sessions/${sessionId}/pause`, undefined, { dualControl: true });
+  return normalizeAgiSession(raw);
+}
+
+/** Resume a paused loop. */
+export async function resumeAgiSession(sessionId: number): Promise<AgiSession> {
+  if (isDemoMode()) {
+    await delay(150);
+    return normalizeAgiSession({ id: sessionId, status: "running", engagement_id: 0 } as AgiSession);
+  }
+  const raw = await api.post<AgiSession>(`/agi/sessions/${sessionId}/resume`, undefined, { dualControl: true });
+  return normalizeAgiSession(raw);
+}
+
+// ── Prior pentest/VAPT reports (org-wide knowledge) ──────────────────────────
+
+/** Accepted upload formats; the backend converts each to markdown. */
+export const AGI_REPORT_ACCEPT = ".docx,.pdf,.md,.markdown,.html,.htm,.txt";
+export const AGI_REPORT_MAX_BYTES = 8 * 1024 * 1024;
+
+export interface AgiPriorReport {
+  id: number;
+  organization_id: number | null;
+  kind: string;
+  title: string;
+  body_md: string;
+  tags: string[];
+  categories: string[];
+  status: string;
+  meta: Record<string, unknown>;
+  created_at: string | null;
+  updated_at: string | null;
+  /** Conversion notes from the upload (e.g. "scanned PDF needs OCR"). */
+  warnings?: string[];
+}
+
+export class AgiReportError extends Error {
+  code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** Client-side guard so the operator gets a clear reason before the upload. */
+export function validateAgiReportFile(file: File): void {
+  const ext = (file.name.split(".").pop() || "").toLowerCase();
+  if (!["docx", "pdf", "md", "markdown", "html", "htm", "txt"].includes(ext)) {
+    throw new AgiReportError("unsupported_type", `Unsupported file type “.${ext}”. Use DOCX, PDF, MD, HTML, or TXT.`);
+  }
+  if (file.size === 0) throw new AgiReportError("empty_file", "That file is empty.");
+  if (file.size > AGI_REPORT_MAX_BYTES) {
+    throw new AgiReportError("too_large", `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB; the limit is 8 MB.`);
+  }
+}
+
+export async function loadAgiPriorReports(query = ""): Promise<AgiPriorReport[]> {
+  if (isDemoMode()) {
+    return [
+      {
+        id: 1,
+        organization_id: 1,
+        kind: "prior_report",
+        title: "Q2 2026 External VAPT",
+        body_md: "# Q2 2026 External VAPT\n\n- Critical: default credentials on the admin console\n- High: IDOR on /api/v1/orders/{id}",
+        tags: ["prior_report"],
+        categories: ["default_credentials", "idor"],
+        status: "active",
+        meta: { source_file: "q2-2026-vapt.pdf", file_type: "pdf", byte_size: 482113, conversion_warnings: [] },
+        created_at: new Date(Date.now() - 86_400_000).toISOString(),
+        updated_at: new Date(Date.now() - 86_400_000).toISOString(),
+      },
+    ];
+  }
+  const qs = query.trim() ? `&q=${encodeURIComponent(query.trim())}` : "";
+  const res = await api.get<{ items?: AgiPriorReport[] } | AgiPriorReport[]>(
+    `/agi/knowledge?kind=prior_report${qs}`,
+  );
+  const items = Array.isArray(res) ? res : res.items || [];
+  return items.map((r) => ({ ...r, meta: asObj(r.meta) }));
+}
+
+export async function uploadAgiPriorReport(
+  file: File,
+  opts: { title?: string; tags?: string; categories?: string; reportDate?: string } = {},
+): Promise<AgiPriorReport> {
+  validateAgiReportFile(file);
+  if (isDemoMode()) {
+    await delay(600);
+    return {
+      id: Date.now(),
+      organization_id: 1,
+      kind: "prior_report",
+      title: opts.title?.trim() || file.name,
+      body_md: `# ${opts.title?.trim() || file.name}\n\n_(demo upload)_`,
+      tags: ["prior_report"],
+      categories: (opts.categories || "").split(",").map((s) => s.trim()).filter(Boolean),
+      status: "active",
+      meta: { source_file: file.name, file_type: (file.name.split(".").pop() || "").toLowerCase() },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      warnings: [],
+    };
+  }
+  const fd = new FormData();
+  fd.append("file", file);
+  if (opts.title?.trim()) fd.append("title", opts.title.trim());
+  if (opts.tags?.trim()) fd.append("tags", opts.tags.trim());
+  if (opts.categories?.trim()) fd.append("categories", opts.categories.trim());
+  if (opts.reportDate?.trim()) fd.append("report_date", opts.reportDate.trim());
+  return api.upload<AgiPriorReport>("/agi/knowledge/upload", fd);
 }

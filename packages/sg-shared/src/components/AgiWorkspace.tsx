@@ -40,6 +40,10 @@ import {
   promoteAgiFinding,
   confirmAgiJob,
   answerAgiClarification,
+  streamAgiSession,
+  pauseAgiSession,
+  resumeAgiSession,
+  normalizeAgiLoop,
 } from "../agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk, AiUsage } from "../types";
 import { cx, humanize } from "../utils";
@@ -212,6 +216,8 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   // poll skips the backend's persisted twin exactly once.
   const pollBusyRef = useRef(false);
   const localKeysRef = useRef<Map<string, number>>(new Map());
+  // Keys of SSE rows already painted, so a reconnect or replay cannot double them.
+  const streamKeysRef = useRef<Set<string>>(new Set());
   // Streaming signal: fresh engine output within the window means the agent is
   // actively producing (turn briefs, tool rows, replies) — the activity line
   // shows cognitive verbs then; only true silence falls back to "Waiting for
@@ -458,6 +464,26 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }
   };
 
+  // Pause/resume must reach the runner. Toggling local state only would show
+  // "paused" while the agent kept spending credits and probing.
+  const togglePause = useCallback(async () => {
+    if (!session) return;
+    const next = !paused;
+    setPaused(next);
+    try {
+      const s = next ? await pauseAgiSession(session.id) : await resumeAgiSession(session.id);
+      setPaused(s.status === "paused");
+      toast(
+        "success",
+        next ? "Agent paused" : "Agent resumed",
+        next ? "No model tokens or shell work start while paused." : "The loop continues from where it stopped.",
+      );
+    } catch (e) {
+      setPaused(!next); // never keep a paused UI the runner did not confirm
+      toast("error", next ? "Pause failed" : "Resume failed", e instanceof Error ? e.message : "");
+    }
+  }, [session, paused, toast]);
+
   // Leave the console back to the engagement picker so a fresh session can be
   // started (previously you were stuck in the stopped-session view).
   const exitToPicker = useCallback(() => {
@@ -477,11 +503,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     reportSubmitted.current = false;
   }, []);
 
-  const dispatchChat = async (msg: string) => {
-    if (!session || !running || paused) return;
+  const dispatchChat = async (msg: string): Promise<boolean> => {
+    if (!session || !running || paused) return false;
     // Optimistic resume: sending an instruction restarts the loop server-side.
     setLoopStopped(null);
-    if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return;
+    if (!(await requireDualControl("Sending instructions to the Autonomous Pentest Agent requires a dual-control operate session."))) return false;
     setConnError(null);
     pendingOpsRef.current.push(msg);
     const promptId = `pp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -512,18 +538,19 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       if (typeof res.transcript_seq === "number" && res.transcript_seq > afterSeqRef.current) {
         afterSeqRef.current = res.transcript_seq;
       }
+      return true;
     } catch (e: any) {
       setThinking(false);
       setPendingPrompts((prev) => prev.filter((p) => p.id !== promptId));
       const blocked = isAgiPolicyBlocked(e);
-      if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return; }
+      if (blocked) { setPolicyBanner(blocked.message); toast("warning", "Policy blocked", blocked.message); return false; }
       const name = String(e?.name ?? "");
       const message = String(e?.message ?? "");
       // Dual-control expired while session still running — clearer copy
       if (/dual.?control|authenticator session|X-Dual-Control/i.test(message) && running) {
-        setConnError("Operate session was released — re-unlock dual-control to continue approvals.");
-        toast("warning", "Operate session released", "Re-unlock dual-control to continue approvals.");
-        return;
+        setConnError("Operate session expired — unlock it in the dialog, then resend your message.");
+        toast("warning", "Operate session expired", "Unlock the operate session to continue, then resend.");
+        return false;
       }
       if (name === "TimeoutError" || name === "AbortError" || /timeout|timed out/i.test(message)) {
         setConnError("Timed out — the agent server is unavailable. Check your connection and try again.");
@@ -533,6 +560,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         setConnError(message || "Failed to reach the agent server.");
       }
       toast("error", "Chat failed", e instanceof Error ? e.message : "");
+      return false;
     } finally {
       setThinking(false);
     }
@@ -542,8 +570,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     const msg = instruction.trim();
     if (!session || !running || paused) return;
     if (!msg) return;
-    setInstruction("");
-    chatSend.requestSend(msg, dispatchChat);
+    // Keep the operator's text until the send actually lands. A dual-control
+    // expiry (or any failure) leaves the response in the composer to resend.
+    chatSend.requestSend(msg, async (m) => {
+      const ok = await dispatchChat(m);
+      if (ok) setInstruction((cur) => (cur.trim() === m ? "" : cur));
+    });
   };
 
   // ── Clarification asks (ASK_OPERATOR) ────────────────────────────────────
@@ -560,7 +592,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   );
 
   const handleAnswer = useCallback(async (clarificationId: string, answer: string) => {
-    if (!session) return;
+    if (!session) return false;
     setAnswering(true);
     setThinking(false);
     try {
@@ -569,8 +601,10 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       toast("success", "Clarification answered", "The agent is resuming the assessment.");
       // Force a session refresh so the cleared ask + resumed loop reflect quickly.
       loadAgiSession(session.id).then((s) => { if (s) setSession(s); }).catch(() => {});
+      return true;
     } catch (e) {
       toast("error", "Answer failed", e instanceof Error ? e.message : "");
+      return false;
     } finally {
       setAnswering(false);
     }
@@ -770,6 +804,122 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
     }, demoActive ? 350 : POLL_MS);
     return () => window.clearInterval(t);
   }, [running, session, paused, demoActive]);
+
+  // Live SSE: paint loop briefs, approvals, findings and harness events the
+  // moment they happen. The 5s/8s polls above remain the correctness fallback;
+  // this is what makes the console feel live instead of lagged.
+  useEffect(() => {
+    if (!running || !session || paused || isDemoMode()) return;
+    const controller = new AbortController();
+    const streamKeys = streamKeysRef.current;
+    const pushLive = (key: string, content: string, meta: Record<string, unknown>) => {
+      if (streamKeys.has(key)) return;
+      streamKeys.add(key);
+      setTranscript((prev) => [
+        ...prev,
+        {
+          seq: afterSeqRef.current + 1,
+          role: "system",
+          content,
+          meta: { ...meta, streamKey: key },
+          created_at: new Date().toISOString(),
+        },
+      ]);
+    };
+    const refreshActions = () => { void loadAgiPendingActions(session.id).then(setActions).catch(() => {}); };
+    const refreshFindings = () => { void loadAgiFindings(session.id).then((fs) => setDrawerFindings(Array.isArray(fs) ? fs : [])).catch(() => {}); };
+
+    void streamAgiSession(session.id, (event, data) => {
+      try {
+        if (event === "loop_status" || event === "loop_progress") {
+          const loop = normalizeAgiLoop(JSON.parse(data));
+          if (loop.working_on) setWorkingOn(loop.working_on);
+          if (event === "loop_status") { setThinking(true); setLoopStopped(null); }
+          if (event === "loop_progress") {
+            setThinking(false);
+            if (loop.content) {
+              setTranscript((prev) => {
+                if (prev.some((p) => p.role === "assistant" && p.content === loop.content)) return prev;
+                localKeysRef.current.set(`assistant|${loop.content ?? ""}`, Date.now());
+                return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: loop.content || "", meta: { kind: "turn_brief", event: "loop_progress" }, created_at: new Date().toISOString() }];
+              });
+            }
+            lastOutputAtRef.current = Date.now();
+          }
+          return;
+        }
+        if (event === "token") { setThinking(true); return; }
+        if (event === "assistant_done") { setThinking(false); return; }
+        if (event === "action_pending" || event === "action_executed" || event === "action_rejected") {
+          refreshActions();
+          return;
+        }
+        if (event === "finding" || event === "finding_verified") {
+          refreshFindings();
+          return;
+        }
+        if (event === "finding_dropped") {
+          refreshFindings();
+          const p = JSON.parse(data) as { title?: string; verdict?: string; confidence?: number; reason?: string };
+          pushLive(
+            `dropped-${p.title ?? ""}-${p.confidence ?? ""}`,
+            `Candidate dropped as a non-vulnerability — "${p.title || "candidate"}" (${p.verdict || p.reason || "control"}, confidence ${p.confidence ?? "?"})`,
+            { kind: "finding_dropped", event, ...p },
+          );
+          return;
+        }
+        if (event === "teardown") { setRunning(false); setLoopStopped(null); return; }
+        if (event === "loop_stop") {
+          const reason = String((JSON.parse(data) as { reason?: string })?.reason || "stopped");
+          setLoopStopped(reason);
+          setThinking(false);
+          return;
+        }
+        if (event === "loop_paused") { setPaused(true); pushLive(`paused-${Date.now()}`, "Operator paused the agent.", { kind: "loop_paused", event }); return; }
+        if (event === "loop_resumed") { setPaused(false); pushLive(`resumed-${Date.now()}`, "Operator resumed the agent.", { kind: "loop_resumed", event }); return; }
+        if (event === "campaign_done") {
+          const p = JSON.parse(data) as { found?: number; assets?: number; summary?: { elapsed?: number; categories?: string[] } };
+          pushLive(
+            `campaign-${p.summary?.elapsed ?? ""}-${p.assets ?? 0}-${p.found ?? 0}`,
+            `Campaign complete — ${p.found ?? 0} finding(s) across ${p.assets ?? 0} asset(s) in ${p.summary?.elapsed ?? "?"}s.`,
+            { kind: "campaign_done", event, ...p },
+          );
+          return;
+        }
+        if (event === "decision_review") {
+          const p = JSON.parse(data) as { verdict?: string; unresolved?: string[]; next?: string[]; findings?: number };
+          pushLive(
+            `review-${(p.unresolved || []).length}-${(p.next || []).join(",")}`,
+            `Decision review — verdict: ${p.verdict || "continue"}. ${(p.unresolved || []).length} open lead(s).`,
+            { kind: "decision_review", event, ...p },
+          );
+          return;
+        }
+        if (event === "verify_all") {
+          const p = JSON.parse(data) as { count?: number; verified?: number; dismissed?: number; inconclusive?: number };
+          if (typeof p.count === "number") {
+            pushLive(
+              `verify-${p.count}-${p.verified ?? 0}-${p.dismissed ?? 0}-${p.inconclusive ?? 0}`,
+              `Verification — ${p.count} finding(s): ${p.verified ?? 0} confirmed, ${p.dismissed ?? 0} dismissed, ${p.inconclusive ?? 0} inconclusive`,
+              { kind: "verify_all", event, ...p },
+            );
+            refreshFindings();
+          }
+          return;
+        }
+        if (event === "ai_credit_spend") {
+          const p = JSON.parse(data) as { estimated_credits?: number; total_tokens?: number };
+          pushLive(
+            `credits-${p.estimated_credits ?? 0}-${p.total_tokens ?? 0}`,
+            `AI spend — ${p.estimated_credits ?? 0} credit(s) across ${p.total_tokens ?? 0} token(s).`,
+            { kind: "ai_credit_spend", event, ...p },
+          );
+          return;
+        }
+      } catch { /* ignore malformed frames — polling still reconciles */ }
+    }, controller.signal).catch(() => { /* SSE fallback: polling continues */ });
+    return () => controller.abort();
+  }, [running, session?.id, paused]);
 
   useEffect(() => {
     if (!running || !session || paused) return;
@@ -1245,7 +1395,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
             <AgiConsole
               running={running}
               paused={paused}
-              onTogglePause={() => setPaused((v) => !v)}
+              onTogglePause={() => void togglePause()}
               stopping={stopping}
               onStop={() => void stop()}
               onExit={exitToPicker}

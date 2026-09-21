@@ -25,6 +25,7 @@ const VaptProcedures = React.lazy(() => import("./pages/VaptProcedures"));
 const VaptSettings = React.lazy(() => import("./pages/VaptSettings"));
 const Mobile = React.lazy(() => import("./pages/Mobile"));
 const Remediation = React.lazy(() => import("./pages/Remediation"));
+const PriorReports = React.lazy(() => import("./pages/PriorReports"));
 
 export default function App() {
   return (
@@ -43,6 +44,14 @@ export default function App() {
           <Route path="/" element={<Overview application={"attack" as ApplicationKey} nav={NAV} />} />
           <Route path="/targets" element={<Targets title="Targets" />} />
           <Route path="/pentest-scope" element={<PentestScope />} />
+          <Route
+            path="/prior-reports"
+            element={
+              <SectionGate section="attack.pentest_agent">
+                <PriorReports />
+              </SectionGate>
+            }
+          />
           <Route
             path="/pentest-agent"
             element={
