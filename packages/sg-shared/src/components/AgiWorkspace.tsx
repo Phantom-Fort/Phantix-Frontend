@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Send, ShieldCheck, Loader2, Radar, Square, ChevronDown,
   Plus, Lock, CheckCircle2, XCircle, Globe2, ArrowDown, CornerUpLeft, ShieldAlert,
-  AlertTriangle,
+  AlertTriangle, Pencil,
 } from "lucide-react";
 import { Modal, SkeletonBlock } from "../ui";
 import DocLink from "./DocLink";
@@ -26,6 +26,7 @@ import {
   acceptAgiAgreement,
   loadAgiEngagements,
   createAgiEngagement,
+  patchAgiEngagement,
   startAgiSession,
   agiChat,
   loadAgiTranscript,
@@ -47,6 +48,16 @@ import {
 } from "../agi";
 import type { AgiAccess, AgiAction, AgiEngagement, AgiSession, AgiTranscriptChunk, AiUsage } from "../types";
 import { cx, humanize } from "../utils";
+import {
+  EngagementContextFields,
+  TestingModePicker,
+  TESTING_MODES,
+  DEFAULT_TESTING_MODE,
+  EMPTY_ENGAGEMENT_CONTEXT,
+  buildEngagementConfig,
+  type EngagementContext,
+  type TestingMode,
+} from "../testingMode";
 import { useStore } from "../store";
 import { useStickToBottom } from "../useStickToBottom";
 import { useChatSend } from "../useChatSend";
@@ -171,6 +182,12 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRoe, setNewRoe] = useState("");
+  const [newMode, setNewMode] = useState<TestingMode>(DEFAULT_TESTING_MODE);
+  const [engContext, setEngContext] = useState<EngagementContext>(EMPTY_ENGAGEMENT_CONTEXT);
+  const [editEng, setEditEng] = useState<AgiEngagement | null>(null);
+  const [editMode, setEditMode] = useState<TestingMode>(DEFAULT_TESTING_MODE);
+  const [editContext, setEditContext] = useState<EngagementContext>(EMPTY_ENGAGEMENT_CONTEXT);
+  const [savingEdit, setSavingEdit] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Asset picker — engagements may only target the org's already-added assets.
@@ -383,12 +400,19 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           forbidden_actions: ["dos", "ransomware", "data_exfil_bulk"],
           rules_of_engagement: newRoe.trim() || "Authorized targets only. No destructive actions.",
         },
+        config: buildEngagementConfig(newMode, engContext, {
+          prompts: {},
+          tools: ["httpx", "nmap_safe", "nuclei_safe"],
+          skills: { auto_select: true, auto_select_limit: 6 },
+        }),
       });
       setEngagements((prev) => [eng, ...prev]);
       setSelectedEng(eng.id);
       setCreateOpen(false);
       setNewName("");
       setNewRoe("");
+      setNewMode(DEFAULT_TESTING_MODE);
+      setEngContext(EMPTY_ENGAGEMENT_CONTEXT);
       setSelectedAssetIds(new Set());
       setSelectAllAssets(false);
       setAssetSearch("");
@@ -399,6 +423,50 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       else toast("error", "Create failed", e instanceof Error ? e.message : "");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openEdit = (eng: AgiEngagement) => {
+    const cfg = (eng.config || {}) as Record<string, unknown>;
+    setEditEng(eng);
+    setEditMode((cfg.testing_mode as TestingMode) || DEFAULT_TESTING_MODE);
+    setEditContext({
+      process_flow: (cfg.process_flow as string) || "",
+      critical_workflows: (cfg.critical_workflows as string) || "",
+      out_of_scope_behaviours: (cfg.out_of_scope_behaviours as string) || "",
+      rate_limit: (cfg.rate_limit as string) || "",
+      tenant_model: (cfg.tenant_model as string) || "",
+      source_paths: (cfg.source_paths as string) || "",
+      repo: (cfg.repo as string) || "",
+      known_findings: (cfg.known_findings as string) || "",
+      secrets_locations: (cfg.secrets_locations as string) || "",
+      fix_lifecycle: (cfg.fix_lifecycle as string) || "",
+      active_exploitation_authorized: cfg.active_exploitation_authorized as boolean | undefined,
+      registration_open: cfg.registration_open as boolean | undefined,
+      api_spec_urls: Array.isArray(cfg.api_spec_urls)
+        ? (cfg.api_spec_urls as string[]).join(", ")
+        : (cfg.api_spec_urls as string) || "",
+      test_accounts: Array.isArray(cfg.credential_accounts)
+        ? (cfg.credential_accounts as Array<{ login_url: string; username: string; password: string }>)
+            .map((c) => `${c.username}:${c.password}@${c.login_url}`)
+            .join("\n")
+        : "",
+    });
+  };
+
+  const saveEdit = async () => {
+    if (!editEng) return;
+    setSavingEdit(true);
+    try {
+      const config = buildEngagementConfig(editMode, editContext, (editEng.config || {}) as Record<string, unknown>);
+      const updated = await patchAgiEngagement(editEng.id, { config });
+      setEngagements((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      setEditEng(null);
+      toast("success", "Engagement updated", `${TESTING_MODES.find((m) => m.id === editMode)?.label} mode saved`);
+    } catch (e) {
+      toast("error", "Update failed", e instanceof Error ? e.message : "");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -849,6 +917,16 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           return;
         }
         if (event === "token") { setThinking(true); return; }
+        if (event === "job_progress" || event === "todo") {
+          // Live checklist: the runner emits the job view directly on every change
+          // (plan declared, tool advances an item, finding satisfies it). Without
+          // this the to-do list only refreshed on the 10s session poll.
+          try {
+            const view = JSON.parse(data) as Record<string, unknown>;
+            setSession((s) => (s ? { ...s, job: { ...(s.job ?? {}), ...view } } : s));
+          } catch { /* ignore malformed frame */ }
+          return;
+        }
         if (event === "assistant_done") { setThinking(false); return; }
         if (event === "action_pending" || event === "action_executed" || event === "action_rejected") {
           refreshActions();
@@ -1304,6 +1382,24 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     />
                     <span className="mt-1 block text-[12px] leading-4 text-slate-600">Optional. Defaults to authorized targets only, no destructive actions.</span>
                   </label>
+                  <div className="space-y-2">
+                    <span className="block text-xs font-semibold text-slate-400">Testing mode</span>
+                    <TestingModePicker value={newMode} onChange={setNewMode} disabled={creating} />
+                    <span className="block text-[12px] leading-4 text-slate-600">
+                      {TESTING_MODES.find((m) => m.id === newMode)?.description}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="block text-xs font-semibold text-slate-400">
+                      Engagement context — answers the agent up front so it does not stop to ask
+                    </span>
+                    <EngagementContextFields
+                      mode={newMode}
+                      values={engContext}
+                      onChange={setEngContext}
+                      disabled={creating}
+                    />
+                  </div>
                   <button onClick={() => void createEngagement()} disabled={creating} className="btn-primary w-full !py-2 wb-sm">
                     {creating ? <Loader2 size={12} className="mr-1 animate-spin inline" /> : <Plus size={12} className="mr-1 inline" />} Create engagement
                   </button>
@@ -1321,11 +1417,11 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                     <p className="wb-sm rounded-xl border border-dashed border-phantix-700/50 px-3 py-4 text-center text-slate-500">No engagements yet. Create one with a tight allowlist to start.</p>
                   )}
                   {engagements.map((e) => (
+                    <div key={e.id} className="relative">
                     <button
-                      key={e.id}
                       onClick={() => setSelectedEng(e.id)}
                       className={cx(
-                        "w-full rounded-xl border px-3 py-2.5 text-left transition-colors",
+                        "w-full rounded-xl border px-3 py-2.5 pr-9 text-left transition-colors",
                         selectedEng === e.id ? "border-gold-400/50 bg-gold-400/5" : "border-phantix-700/40 bg-phantix-900/40 hover:border-phantix-500/40",
                       )}
                     >
@@ -1345,6 +1441,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                         <p className="wb-2xs mt-1 line-clamp-1 text-slate-600">ROE: {e.scope_definition.rules_of_engagement}</p>
                       )}
                     </button>
+                    <button
+                      type="button"
+                      onClick={(ev) => { ev.stopPropagation(); openEdit(e); }}
+                      title="Edit testing mode & engagement context"
+                      className="absolute right-2 top-2 rounded-md border border-phantix-700/50 bg-phantix-900/80 p-1 text-slate-500 transition-colors hover:text-gold-300"
+                    >
+                      <Pencil size={11} />
+                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1701,6 +1806,31 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
       )}
 
       {/* Agreement modal */}
+      <Modal open={!!editEng} onClose={() => setEditEng(null)} title={`Engagement settings · ${editEng?.name ?? ""}`} wide>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <span className="block text-xs font-semibold text-slate-400">Testing mode</span>
+            <TestingModePicker value={editMode} onChange={setEditMode} disabled={savingEdit} />
+            <span className="block text-[12px] leading-4 text-slate-600">
+              {TESTING_MODES.find((m) => m.id === editMode)?.description}
+            </span>
+          </div>
+          <EngagementContextFields mode={editMode} values={editContext} onChange={setEditContext} disabled={savingEdit} />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditEng(null)}
+              className="wb-sm rounded-lg border border-phantix-700/50 px-3 py-2 text-slate-300 hover:border-phantix-500/50"
+            >
+              Cancel
+            </button>
+            <button type="button" onClick={() => void saveEdit()} disabled={savingEdit} className="btn-primary wb-sm">
+              {savingEdit ? <Loader2 size={12} className="mr-1 inline animate-spin" /> : null} Save settings
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal open={agreementOpen} onClose={() => setAgreementOpen(false)} title="Autonomous Pentest Agent — Usage Agreement">
         <div className="space-y-3">
           <div className="max-h-[40vh] overflow-y-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-4">

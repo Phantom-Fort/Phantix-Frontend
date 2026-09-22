@@ -25,3 +25,17 @@ export {
   type NavLeaf,
   type NavSection,
 } from "./shell/types";
+export {
+  TESTING_MODES,
+  DEFAULT_TESTING_MODE,
+  CONTEXT_FIELDS,
+  EMPTY_ENGAGEMENT_CONTEXT,
+  fieldsForMode,
+  buildEngagementConfig,
+  parseTestAccounts,
+  TestingModePicker,
+  EngagementContextFields,
+  type TestingMode,
+  type EngagementContext,
+  type ContextField,
+} from "./testingMode";

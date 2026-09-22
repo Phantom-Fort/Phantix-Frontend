@@ -85,11 +85,24 @@ function toAgiFinding(raw: Record<string, unknown>): AgiFinding {
       : statusRaw === "rejected" || statusRaw === "dismissed"
         ? "rejected"
         : "candidate";
-  const evidence = raw.evidence && typeof raw.evidence === "object"
+  const rawEvidence = raw.evidence && typeof raw.evidence === "object"
     ? (raw.evidence as Record<string, unknown>)
     : {};
+  // The runner's structured proof (request/response/summary) is preferred over
+  // the raw evidence blob so the drawer shows the request/response pair.
+  const detail = raw.evidence_detail && typeof raw.evidence_detail === "object"
+    ? (raw.evidence_detail as Record<string, unknown>)
+    : null;
+  const evidence: Record<string, unknown> = detail
+    ? {
+        request: detail.request,
+        response: detail.response_excerpt ?? detail.response,
+        notes: detail.summary ?? detail.notes,
+        hash: detail.hash,
+      }
+    : rawEvidence;
   const pick = (key: string): string | undefined => {
-    const value = evidence[key] ?? raw[key];
+    const value = evidence[key] ?? rawEvidence[key] ?? raw[key];
     return value != null && value !== "" ? String(value) : undefined;
   };
   return {
@@ -250,10 +263,22 @@ function EvidenceDrawer({
                   {badge.icon} {badge.label}
                 </span>
                 {v?.verifier && <span className="wb-2xs font-mono text-slate-500">{humanize(v.verifier)}</span>}
+                {typeof v?.confidence === "number" && (
+                  <span className="wb-2xs text-slate-500">conf {v.confidence.toFixed(2)}</span>
+                )}
+                {v?.needs_review && (
+                  <span className="wb-2xs rounded border border-severity-medium/30 bg-severity-medium/10 px-1.5 py-0.5 text-severity-medium">
+                    needs review
+                  </span>
+                )}
                 {v?.by && <span className="wb-2xs text-slate-600">by {v.by}</span>}
               </div>
               {v?.reason && <p className="wb-2xs mt-1.5 leading-relaxed text-slate-400">{v.reason}</p>}
-              {v?.attempted_at && <p className="wb-2xs mt-1 text-slate-600">checked {new Date(v.attempted_at).toLocaleString()}</p>}
+              {(v?.decided_at || v?.attempted_at) && (
+                <p className="wb-2xs mt-1 text-slate-600">
+                  checked {new Date((v.decided_at || v.attempted_at) as string).toLocaleString()}
+                </p>
+              )}
               {onVerify && finding.status !== "validated" && finding.status !== "rejected" && (
                 <div className="mt-2 flex gap-1.5">
                   <button

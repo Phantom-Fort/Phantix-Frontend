@@ -50,7 +50,7 @@ export interface AgiFinding {
   report_highlight?: boolean;
   business_impact?: string;
   impact_level?: string;
-  /** Findings verification layer: verdict + which layer decided + why. */
+  /** Findings verification layer: verdict + which tier decided + why. */
   verification?: {
     verdict?: string;
     verifier?: string;
@@ -58,6 +58,9 @@ export interface AgiFinding {
     evidence?: string;
     by?: string;
     attempted_at?: string;
+    decided_at?: string;
+    confidence?: number | null;
+    needs_review?: boolean;
     subagent?: string;
   };
 }
