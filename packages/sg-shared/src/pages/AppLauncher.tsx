@@ -7,6 +7,7 @@ import { cx } from "@sg/utils";
 import { apiGet } from "@sg/shell/api";
 import { useStore } from "@sg/store";
 import { APPLICATION_LABEL, type ApplicationKey, type NavSection } from "@sg/shell/types";
+import LatestAssessmentPanel from "../components/LatestAssessment";
 
 /**
  * An application's landing page: what this application is, and every page it
@@ -153,6 +154,9 @@ export default function AppLauncher({
           </div>
         </Card>
       </motion.div>
+
+      {/* Shared feed: what the last completed assessment left for this app. */}
+      <LatestAssessmentPanel app={application} className="mb-6" />
 
       {/* Launchpad: every page, grouped the way the sidebar groups them. */}
       {sections.map((section) => (

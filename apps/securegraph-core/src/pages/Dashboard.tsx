@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Card, CardHeader, StatCard, AnimatedNumber, ProgressRing, SeverityBadge, StatusBadge, PageSkeleton, ErrorState } from "@sg/ui";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
+import LatestAssessmentPanel from "@sg/components/LatestAssessment";
 import CrossAppLink from "@sg/components/CrossAppLink";
 import AppSwitcher from "@sg/components/AppSwitcher";
 import TrendChart from "@sg/components/TrendChart";
@@ -491,6 +492,9 @@ export default function Dashboard() {
           )}
         </Card>
       </motion.div>
+
+      {/* Shared feed: what the last completed assessment left for Core. */}
+      <LatestAssessmentPanel app="core" className="mt-5" />
 
       {/* Posture and findings — the same charts the Analytics page opens on, so
           the dashboard and the deep dive never disagree. */}

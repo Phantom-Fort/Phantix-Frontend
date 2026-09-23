@@ -39,3 +39,19 @@ export {
   type EngagementContext,
   type ContextField,
 } from "./testingMode";
+export { default as LatestAssessmentPanel } from "./components/LatestAssessment";
+export {
+  loadKnowledgeEntries,
+  loadKnowledgeEntry,
+  type KnowledgeEntry,
+  type KnowledgeReference,
+} from "./knowledge";
+export {
+  loadLatestAssessment,
+  emptyAssessment,
+  type LatestAssessment,
+  type AssessmentSummary,
+  type AssessmentFinding,
+  type AssessmentAction,
+  type AssessmentApp,
+} from "./assessments";
