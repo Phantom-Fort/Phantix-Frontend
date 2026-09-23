@@ -615,6 +615,8 @@ export interface Risk {
   likelihood: number;
   impact: number;
   owner_department: string | null;
+  /** Backend RiskUpdate/RiskRead owner field (org user id). */
+  owner_user_id?: number | null;
   priority_band: "P1" | "P2" | "P3" | "P4" | "P5";
   priority_score: number;
   priority_factors: Record<string, number>;

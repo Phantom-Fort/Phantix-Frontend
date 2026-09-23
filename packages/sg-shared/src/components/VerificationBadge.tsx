@@ -8,6 +8,9 @@ export interface VerificationInfo {
   evidence?: string;
   by?: string;
   attempted_at?: string;
+  decided_at?: string;
+  confidence?: number | null;
+  needs_review?: boolean;
   subagent?: string;
 }
 
@@ -29,12 +32,25 @@ export function verificationBadge(v: VerificationInfo | null | undefined) {
     const cls =
       verifier === "human"
         ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-        : verifier === "exploit_subagent"
+        : verifier === "deepseek" || verifier === "exploit_subagent"
           ? "border-gold-400/40 bg-gold-400/10 text-gold-300"
           : "border-blue-400/30 bg-blue-400/10 text-blue-300";
     const icon =
-      verifier === "human" ? <UserCheck size={11} /> : verifier === "exploit_subagent" ? <FlaskConical size={11} /> : <Bot size={11} />;
-    const label = verifier === "human" ? "Human verified" : verifier === "exploit_subagent" ? "Exploit verified" : "Auto verified";
+      verifier === "human"
+        ? <UserCheck size={11} />
+        : verifier === "deepseek" || verifier === "exploit_subagent"
+          ? <FlaskConical size={11} />
+          : <Bot size={11} />;
+    const label =
+      verifier === "human"
+        ? "Human verified"
+        : verifier === "deepseek"
+          ? "DeepSeek verified"
+          : verifier === "typesafe"
+            ? "TypeSafe verified"
+            : verifier === "exploit_subagent"
+              ? "Exploit verified"
+              : "Auto verified";
     return { cls, icon, label };
   }
   if (verdict === "rejected") {

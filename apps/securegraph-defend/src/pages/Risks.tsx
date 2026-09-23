@@ -12,6 +12,20 @@ import { priorityBandMeta, riskLevelHex, timeAgo, titleCase, cx, clickableRowPro
 import { useStore } from "@sg/store";
 import type { Risk } from "@sg/types";
 
+/** Exact `owner_department` enum accepted by the backend RiskUpdate schema. */
+const RISK_OWNER_DEPARTMENTS = [
+  "IT",
+  "Security",
+  "Finance",
+  "Operations",
+  "Legal",
+  "Compliance",
+  "Engineering",
+  "Executive",
+  "Other",
+] as const;
+type RiskOwnerDepartment = (typeof RISK_OWNER_DEPARTMENTS)[number];
+
 export default function Risks() {
   const { toast, requireDualControl, dualControl } = useStore();
   const { data, loading, error, setData, reload } = useResource(loadRisksBundle, { risks: [], securityDbBlocked: false, error: null });
@@ -57,8 +71,8 @@ export default function Risks() {
     setTreating(true);
     try {
       const treatment = await api.post<any>(`/risks/${selected.id}/treatments`, {
-        description: "Proposed treatment plan",
-        strategy: "mitigate",
+        treatment_type: "mitigate",
+        treatment_plan: "Proposed treatment plan",
       });
       const treatmentId = treatment.id ?? treatment.treatment_id;
       toast("success", "Treatment created", "The treatment is recorded against this risk.");
@@ -79,17 +93,23 @@ export default function Risks() {
     if (!(await requireDualControl("Assigning a risk owner requires a dual-control operate session."))) return;
     const owner = assignedOwner.trim();
     if (!owner) {
-      toast("error", "Validation", "Enter an owner email or name.");
+      toast("error", "Validation", "Choose an owner department.");
+      return;
+    }
+    if (!RISK_OWNER_DEPARTMENTS.includes(owner as RiskOwnerDepartment)) {
+      toast("error", "Validation", `Owner department must be one of ${RISK_OWNER_DEPARTMENTS.join(", ")}.`);
       return;
     }
     setAssigning(true);
     const previous = data;
     setData((bundle) => ({
       ...bundle,
-      risks: bundle.risks.map((r) => (r.id === selected.id ? { ...r, owner } : r)),
+      risks: bundle.risks.map((r) => (r.id === selected.id ? { ...r, owner_department: owner } : r)),
     }));
     try {
-      await api.patch(`/risks/${selected.id}`, { owner });
+      // Backend RiskUpdate accepts exactly `owner_department` (this enum) or
+      // `owner_user_id`. A bare `owner` is ignored by the API and never persisted.
+      await api.patch(`/risks/${selected.id}`, { owner_department: owner });
       toast("success", "Owner updated", `${owner} now owns this risk.`);
       setAssignedOwner("");
     } catch (err: any) {
@@ -319,12 +339,16 @@ export default function Risks() {
                 {treating ? "Proposing..." : "Propose treatment"}
               </button>
               <div className="flex items-center gap-2">
-                <input
+                <select
                   className="input w-40 text-xs"
-                  placeholder="Owner email"
                   value={assignedOwner}
                   onChange={(e) => setAssignedOwner(e.target.value)}
-                />
+                >
+                  <option value="">Owner department…</option>
+                  {RISK_OWNER_DEPARTMENTS.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
                 <button className="btn-secondary" onClick={handleAssignOwner} disabled={assigning}>
                   {assigning ? "Saving..." : "Assign owner"}
                 </button>

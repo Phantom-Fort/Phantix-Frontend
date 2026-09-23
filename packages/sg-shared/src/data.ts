@@ -1319,7 +1319,9 @@ export async function loadSocDetectionTrend(days = 14): Promise<TrendSeriesPoint
     return demoSocDetectionTrend(days);
   }
   try {
-    const res = await loadSocDetections({ limit: 500 });
+    // 200 is the backend's page ceiling for list endpoints (LIST_PAGE_SIZE);
+    // asking for more returns a 422 and the trend silently reads as empty.
+    const res = await loadSocDetections({ limit: 200 });
     return buildDetectionTrend(res.items ?? [], days);
   } catch {
     return [];
@@ -3143,6 +3145,35 @@ export async function loadReportTypes(): Promise<ReportCatalog> {
 }
 
 /**
+ * Read the summary block from any shape `/reports/tracker` returns.
+ *
+ * Some builds nest it under `summary`, others `tracker_summary`; when it is
+ * absent entirely we derive standing counts from the returned rows instead of
+ * rendering an empty board over data that is actually there.
+ */
+function trackerSummaryFrom(raw: unknown): TrackerSummary | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const direct = obj.summary ?? obj.tracker_summary ?? obj.summary_counts;
+  if (direct && typeof direct === "object") return direct as TrackerSummary;
+  const rows = asList<Record<string, unknown>>(raw);
+  if (!rows.length) return null;
+  const rowStatus = (r: Record<string, unknown>) =>
+    String(r.status ?? "open").toLowerCase().replace(/-/g, "_");
+  const count = (s: string) => rows.filter((r) => rowStatus(r) === s).length;
+  return {
+    total: rows.length,
+    open: count("open"),
+    in_progress: count("in_progress"),
+    fixed: count("fixed"),
+    accepted: count("accepted"),
+    retest_failed: count("retest_failed"),
+    regressed: count("regressed"),
+    unassigned: rows.filter((r) => !(r.assigned_owner ?? r.owner)).length,
+  } as TrackerSummary;
+}
+
+/**
  * Standing finding counts for the dashboard charts.
  *
  * The reports bundle already fetches this alongside report rows; the dashboard
@@ -3153,8 +3184,7 @@ export async function loadReportTypes(): Promise<ReportCatalog> {
 export async function loadTrackerSummary(): Promise<TrackerSummary | null> {
   if (isDemoMode()) { await delay(250); return demo.trackerSummary; }
   const raw = await softOne<any>("/reports/tracker?limit=1000");
-  const summary = raw && typeof raw === "object" ? raw.summary : null;
-  return summary && typeof summary === "object" ? (summary as TrackerSummary) : null;
+  return trackerSummaryFrom(raw);
 }
 
 export interface TrackerTimelinePoint {
@@ -3213,9 +3243,8 @@ export async function loadTrackerAnalytics(): Promise<{
     return { rows: demo.trackerFindings as TrackerFinding[], summary: demo.trackerSummary };
   }
   const raw = await softOne<any>("/reports/tracker?limit=1000");
-  const items = Array.isArray(raw?.items) ? raw.items : Array.isArray(raw) ? raw : [];
   return {
-    rows: items.map((t: any) => normalizeTrackerFinding(t) as TrackerFinding),
-    summary: raw?.summary && typeof raw.summary === "object" ? (raw.summary as TrackerSummary) : null,
+    rows: asList<any>(raw).map((t) => normalizeTrackerFinding(t) as TrackerFinding),
+    summary: trackerSummaryFrom(raw),
   };
 }

@@ -414,7 +414,8 @@ export async function loadAgiEngagements(): Promise<AgiEngagement[]> {
 export async function createAgiEngagement(payload: {
   name: string;
   description?: string;
-  scope: { target_allowlist: string[]; forbidden_actions: string[]; rules_of_engagement?: string };
+  scope: { target_allowlist: string[]; forbidden_actions: string[]; rules_of_engagement?: string; max_session_minutes?: number };
+  config?: Record<string, unknown>;
 }): Promise<AgiEngagement> {
   if (isDemoMode()) {
     await delay(300);
@@ -427,10 +428,10 @@ export async function createAgiEngagement(payload: {
         target_allowlist: payload.scope.target_allowlist,
         forbidden_actions: payload.scope.forbidden_actions,
         rules_of_engagement: payload.scope.rules_of_engagement ?? "",
-        max_session_minutes: 60,
+        max_session_minutes: payload.scope.max_session_minutes ?? 60,
       },
       status: "ready",
-      config: { prompts: {}, tools: ["httpx", "nmap_safe", "nuclei_safe"], skills: { auto_select: true, auto_select_limit: 6 } },
+      config: payload.config ?? { prompts: {}, tools: ["httpx", "nmap_safe", "nuclei_safe"], skills: { auto_select: true, auto_select_limit: 6 } },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -445,8 +446,24 @@ export async function createAgiEngagement(payload: {
       rules_of_engagement: payload.scope.rules_of_engagement ?? "",
       target_environment: "staging",
       production_ack: false,
+      max_session_minutes: payload.scope.max_session_minutes,
     },
   }, { dualControl: true });
+}
+
+/** Update an engagement's mutable config (testing mode, operator context). */
+export async function patchAgiEngagement(
+  id: number,
+  payload: { name?: string; description?: string; config?: Record<string, unknown> },
+): Promise<AgiEngagement> {
+  if (isDemoMode()) {
+    await delay(200);
+    const existing = demoEngagements.find((e) => e.id === id) ?? demoEngagements[0];
+    const next = { ...existing, ...payload } as AgiEngagement;
+    demoEngagements = demoEngagements.map((e) => (e.id === id ? next : e));
+    return next;
+  }
+  return api.patch<AgiEngagement>(`/agi/engagements/${id}`, payload, { dualControl: true });
 }
 
 // ── Sessions ──────────────────────────────────────────────────────────────────

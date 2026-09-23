@@ -140,7 +140,7 @@ export async function gatherAssetBrief(asset: Asset, preloadedTags?: AssetTag[])
     safe(loadAssetIntelligence(asset.id)),
     safe(loadScansBundle()),
     safe(loadRisks()),
-    safe(loadSocDetections({ limit: 500 })),
+    safe(loadSocDetections({ limit: 200 })),
     safe(loadRelationshipGraph()),
   ]);
 

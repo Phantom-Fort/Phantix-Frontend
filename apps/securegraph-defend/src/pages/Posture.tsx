@@ -116,7 +116,7 @@ export default function Posture() {
   const resurface = async () => {
     setBusy(true);
     try {
-      const res = await api.post<any>(`/posture/reviews-due/resurface?limit=${Math.max(1, due.length)}`);
+      const res = await api.post<any>(`/posture/reviews-due/resurface?limit=${Math.min(500, Math.max(1, due.length))}`);
       toast("success", "Resurfaced", `${res?.resurfaced ?? 0} accepted risk(s) returned to triage.`);
       await load();
     } catch (e: any) {
