@@ -10,6 +10,7 @@ import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "
 import { useResource } from "@sg/useResource";
 import { timeAgo, titleCase, cx, severityMeta, clickableRowProps } from "@sg/utils";
 import { useStore } from "@sg/store";
+import { useSseStream } from "@sg/useSse";
 import { api, tokens, API_BASE, ApiError } from "@sg/api";
 import { classifyAsset, createAssetTag, deleteAssetTag, TAG_COLORS, type AssetClassification } from "@sg/assetTags";
 import { sanitizeSingleLine, validateUploadFile } from "@sg/uploadValidation";
@@ -56,7 +57,7 @@ export interface AssetInventoryProps {
 
 export default function AssetInventory({ title = "Assets" }: AssetInventoryProps) {
   const { toast, requireDualControl } = useStore();
-  const { data, loading, error, reload } = useResource(loadAssetsBundle, {
+  const { data, loading, error, reload, demo } = useResource(loadAssetsBundle, {
     assets: [],
     assetTags: [],
     discoveryJobs: [],
@@ -65,6 +66,34 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   }, "assets");
   const { data: prioritized, loading: prioritizedLoading } = useResource(loadPrioritizedAssets, [], "prioritized_assets");
   const { assets, assetTags, discoveryJobs, securityDbBlocked, error: loadError } = data;
+
+  // Live sync across every app and tab: the backend pushes asset events on
+  // create, update, delete and enrichment, so a change made in one application
+  // (or by the discovery jobs) shows up on every open asset page. Debounced so
+  // a burst of events triggers one authoritative refetch.
+  const realtimeReload = useRef<number | null>(null);
+  useSseStream("/assets/intelligence/stream", {
+    enabled: !demo,
+    onEvent: (evt) => {
+      if (
+        evt.event !== "assetUpdated" &&
+        evt.event !== "assetDiscovered" &&
+        evt.event !== "assetDeleted" &&
+        evt.event !== "intelligenceUpdated" &&
+        evt.event !== "riskScoreChanged"
+      ) {
+        return;
+      }
+      if (realtimeReload.current) window.clearTimeout(realtimeReload.current);
+      realtimeReload.current = window.setTimeout(() => {
+        reload();
+        realtimeReload.current = null;
+      }, 400);
+    },
+  });
+  useEffect(() => () => {
+    if (realtimeReload.current) window.clearTimeout(realtimeReload.current);
+  }, []);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [invPage, setInvPage] = useState(1);
