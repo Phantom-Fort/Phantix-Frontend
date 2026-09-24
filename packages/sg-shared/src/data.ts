@@ -1531,8 +1531,11 @@ export async function loadAiUsage(): Promise<AiUsage | null> {
 
 export async function loadAiStatus(): Promise<AiStatus> {
   if (isDemoMode()) { await delay(300); return demo.aiStatus; }
-  const raw = await softOne<any>("/ai/settings");
-  const agentRaw = await softOne<any>("/ai/agent/status");
+  const [raw, agentRaw, usage] = await Promise.all([
+    softOne<any>("/ai/settings"),
+    softOne<any>("/ai/agent/status"),
+    softOne<any>("/ai/usage"),
+  ]);
   if (!raw && !agentRaw) return demo.aiStatus;
   const stream = agentRaw?.stream && typeof agentRaw.stream === "object" ? agentRaw.stream : null;
   return {
@@ -1542,8 +1545,15 @@ export async function loadAiStatus(): Promise<AiStatus> {
     ai_pentest_ready: Boolean(agentRaw?.deepseek_ready ?? raw?.ai_pentest_ready ?? false),
     mode: (raw?.mode ?? "balanced") as AiStatus["mode"],
     providers: (raw?.providers ?? []).map((p: any) => ({ id: String(p.id ?? p.name ?? "provider"), configured: Boolean(p.configured) })),
-    monthly_tokens: Number(raw?.monthly_tokens ?? 0),
-    monthly_cost_usd: Number(raw?.monthly_cost_usd ?? 0),
+    // Usage lives on GET /ai/usage (tokens_used / cost_usd / token_budget /
+    // spend_limit_usd). /ai/settings only carries the *budget* fields, so reading
+    // usage from it pinned tokens and cost at 0.
+    monthly_tokens: Number(usage?.tokens_used ?? 0),
+    monthly_token_budget: Number(usage?.token_budget ?? 0),
+    monthly_cost_usd: Number(usage?.cost_usd ?? 0),
+    monthly_cost_ngn: usage?.cost_ngn != null ? Number(usage.cost_ngn) : null,
+    monthly_spend_limit_usd: Number(usage?.spend_limit_usd ?? 0),
+    ai_allowed: usage?.allowed !== false,
     agent: {
       enabled: Boolean(agentRaw?.enabled ?? agentRaw?.agent_enabled ?? false),
       provider: String(agentRaw?.provider ?? "deepseek"),

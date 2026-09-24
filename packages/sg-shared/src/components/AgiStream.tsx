@@ -145,7 +145,7 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
             {b.workingOn ? <span className="text-slate-400"> — {b.workingOn}</span> : null}
           </span>
           <span className={cx("block text-[12px] text-slate-500", dense ? "hidden" : "")}>
-            {b.turn ? `Turn ${b.turn}${b.total ? ` of ${b.total}` : ""}` : "Turn"}
+            {b.turn ? `Turn ${b.turn}` : "Turn"}
             {b.phase ? ` · ${humanize(b.phase)}` : ""}
             {b.status ? ` · ${humanize(b.status)}` : ""}
             {b.totals ? ` · ${b.totals}` : ""}

@@ -30,9 +30,10 @@ export default function DualControlOverlay() {
   const reason = dualControlPrompt.reason;
   const initiator = dualControl.initiator;
   const authorizer = dualControl.authorizer;
-  // The assigned controller (or the signed-in operator) is already known, so the
-  // email entry step can be skipped and reduced to a single tap.
-  const knownEmail = (initiator?.email || authorizer?.email || session?.userEmail || "").trim();
+  // Every organization user initiates for themselves: the operate OTP always goes
+  // to the signed-in account, never a colleague's mailbox. The assigned
+  // authorizer is only *who approves* held steps, in their own grid.
+  const signedInEmail = (session?.userEmail || "").trim();
 
   const [stage, setStage] = useState<"email" | "otp" | "device">("email");
   const [email, setEmail] = useState("");
@@ -42,14 +43,12 @@ export default function DualControlOverlay() {
   const [error, setError] = useState<string | null>(null);
   const [devOtp, setDevOtp] = useState<string | null>(null);
   const [deviceWait, setDeviceWait] = useState(false);
-  const [useCustomEmail, setUseCustomEmail] = useState(false);
 
   // Full reset when the overlay opens.
   useEffect(() => {
     if (!open) return;
     setStage("email");
-    setEmail(initiator?.email || authorizer?.email || session?.userEmail || "");
-    setUseCustomEmail(false);
+    setEmail(session?.userEmail || "");
     setCode("");
     setMasked("");
     setError(null);
@@ -65,7 +64,7 @@ export default function DualControlOverlay() {
   // already typed or reset the stage they reached.
   useEffect(() => {
     if (!open) return;
-    const prefill = initiator?.email || authorizer?.email || session?.userEmail || "";
+    const prefill = session?.userEmail || "";
     if (prefill) setEmail((prev) => (prev.trim() ? prev : prefill));
   }, [open, initiator?.email, authorizer?.email, session?.userEmail]);
 
@@ -156,14 +155,16 @@ export default function DualControlOverlay() {
 
   const sendCode = async () => {
     setError(null);
-    if (!email.includes("@")) {
+    // Always the signed-in user's own account when we know it.
+    const target = (signedInEmail || email).trim();
+    if (!target.includes("@")) {
       setError("Enter a valid work email");
       return;
     }
     setBusy(true);
     try {
-      const res = await requestDualControlOtp(email.trim());
-      setMasked(res.destinationMasked || maskEmail(email));
+      const res = await requestDualControlOtp(target);
+      setMasked(res.destinationMasked || maskEmail(target));
       setDevOtp(res.devOtp || null);
       setStage("otp");
       setCode("");
@@ -255,7 +256,7 @@ export default function DualControlOverlay() {
             <div className="relative space-y-4 px-6 py-5">
               {(initiator || authorizer) && (
                 <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-3.5 py-3 text-[13px] leading-5 text-slate-400">
-                  <p className="mb-1 font-semibold uppercase tracking-wider text-slate-500">Assigned controllers</p>
+                  <p className="mb-1 font-semibold uppercase tracking-wider text-slate-500">Who approves</p>
                   {initiator && (
                     <p>
                       Initiator: <span className="text-slate-200">{initiator.full_name}</span>
@@ -273,14 +274,17 @@ export default function DualControlOverlay() {
 
               {stage === "email" && (
                 <>
-                  {knownEmail && !useCustomEmail ? (
+                  {signedInEmail ? (
                     <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-3.5 py-3">
-                      <p className="text-sm text-slate-200">One-time code goes to</p>
-                      <p className="mt-0.5 truncate font-mono text-[13px] text-gold-300">{knownEmail}</p>
+                      <p className="text-sm text-slate-200">One-time code goes to your account</p>
+                      <p className="mt-0.5 truncate font-mono text-[13px] text-gold-300">{signedInEmail}</p>
+                      <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                        You unlock your own operate session. The authorizer approves held steps in their own grid.
+                      </p>
                     </div>
                   ) : (
                     <div>
-                      <label className="label">Initiator or authorizer email</label>
+                      <label className="label">Your account email</label>
                       <div className="relative">
                         <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
@@ -292,7 +296,7 @@ export default function DualControlOverlay() {
                           onKeyDown={(e) => e.key === "Enter" && void sendCode()}
                         />
                       </div>
-                      <p className="mt-1 text-[13px] text-slate-500">Assigned initiator or authorizer work email — the code goes to this address.</p>
+                      <p className="mt-1 text-[13px] text-slate-500">Your own organization address --- the code goes to this account.</p>
                     </div>
                   )}
                   {error && <p className="text-sm text-severity-critical">{error}</p>}
@@ -303,20 +307,10 @@ export default function DualControlOverlay() {
                       </>
                     ) : (
                       <>
-                        <ShieldCheck size={15} /> {knownEmail && !useCustomEmail ? "Send code" : "Email me a one-time code"}
+                        <ShieldCheck size={15} /> Send code
                       </>
                     )}
                   </button>
-                  {knownEmail && !useCustomEmail && (
-                    <button
-                      type="button"
-                      className="w-full text-center text-xs text-slate-500 hover:text-slate-300"
-                      disabled={busy}
-                      onClick={() => setUseCustomEmail(true)}
-                    >
-                      Use a different email
-                    </button>
-                  )}
                 </>
               )}
 
@@ -353,9 +347,6 @@ export default function DualControlOverlay() {
                   </button>
                   <button type="button" className="w-full text-center text-xs text-slate-500 hover:text-slate-300" disabled={busy} onClick={() => void sendCode()}>
                     Resend code
-                  </button>
-                  <button type="button" className="w-full text-center text-xs text-slate-500 hover:text-slate-300" disabled={busy} onClick={() => { setUseCustomEmail(true); setStage("email"); }}>
-                    Use a different email
                   </button>
                 </>
               )}
