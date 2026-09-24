@@ -23,3 +23,4 @@ graphify-out/
 scripts/
 session.txt
 .dev-logs/
+e2e-test-prompt.txt

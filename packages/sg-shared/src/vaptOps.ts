@@ -5,6 +5,7 @@
 // Contracts mirror app/engines/vapt_engine/api/{schedules,procedures,approvals}.py.
 // These are the *org* routers (get_current_active_organization) — the staff
 // portal's /admin/vapt/* equivalents are a separate, admin-gated surface.
+import { timeZoneForApi } from "./time";
 import { api, delay, isDemoMode } from "./api";
 import * as demo from "./demo-data";
 
@@ -85,7 +86,7 @@ export async function createSchedule(body: VaptScheduleCreate) {
       asset_scope_template: body.asset_scope_template ?? {},
       campaign_config: body.campaign_config ?? {},
       cron_expression: body.cron_expression ?? "7d",
-      timezone: body.timezone ?? "UTC",
+      timezone: body.timezone ?? timeZoneForApi(),
       max_concurrent_per_org: body.max_concurrent_per_org ?? 1,
       allowed_days_of_week: null,
       blackout_windows: [],
@@ -103,7 +104,7 @@ export async function createSchedule(body: VaptScheduleCreate) {
   }
   return api.post<VaptSchedule>("/vapt/schedules", {
     cron_expression: "7d",
-    timezone: "UTC",
+    timezone: timeZoneForApi(),
     max_concurrent_per_org: 1,
     is_active: true,
     asset_scope_template: {},

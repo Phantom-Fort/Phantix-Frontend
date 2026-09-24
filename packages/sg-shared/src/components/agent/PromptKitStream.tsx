@@ -104,7 +104,7 @@ export const PromptKitStream = memo(function PromptKitStream({ t, last = false }
 
   // Loop-progress turn briefs render as a compact status card, not a raw
   // markdown wall ("Turn X of 100. Loop phase: recon…").
-  if (/Turn\s+\d+\s+of\s+\d+/i.test(t.content) && /(Loop phase|Job status|Working on|What happened)/i.test(t.content)) {
+  if (/Turn\s+\d+(?:\s+of\s+\d+)?/i.test(t.content) && /(Loop phase|Job status|Working on|What happened)/i.test(t.content)) {
     return <TurnBriefCard content={t.content} dense />;
   }
 
