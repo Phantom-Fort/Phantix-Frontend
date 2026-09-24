@@ -919,10 +919,15 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           if (event === "loop_progress") {
             setThinking(false);
             if (hasRealBrief(loop)) {
+              // The persisted row is stored through strip_emojis() -> .strip(), so
+              // the streamed text (which ends with a newline) never byte-matched
+              // its own stored twin and every brief was painted twice. Compare and
+              // paint the trimmed form so both copies agree.
+              const briefText = (loop.content ?? "").trim();
               setTranscript((prev) => {
-                if (prev.some((p) => p.role === "assistant" && p.content === loop.content)) return prev;
-                localKeysRef.current.set(`assistant|${loop.content ?? ""}`, Date.now());
-                return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: loop.content || "", meta: { kind: "turn_brief", event: "loop_progress" }, created_at: new Date().toISOString() }];
+                if (prev.some((p) => p.role === "assistant" && (p.content ?? "").trim() === briefText)) return prev;
+                localKeysRef.current.set(`assistant|${briefText}`, Date.now());
+                return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: briefText, meta: { kind: "turn_brief", event: "loop_progress", turn: loop.turn }, created_at: new Date().toISOString() }];
               });
             }
             lastOutputAtRef.current = Date.now();
@@ -1035,15 +1040,17 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         else if (s.loop_status === "running") setLoopStopped(null);
         if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
         if (s.loop?.event === "loop_progress" && hasRealBrief(s.loop)) {
+          const briefText = (s.loop?.content ?? "").trim();
           setTranscript((prev) => {
-            // Each brief embeds a unique turn counter, so an exact match anywhere
-            // in the transcript means it is already painted (by this poll or by
-            // the transcript poll) — never re-append it.
-            if (prev.some((p) => p.role === "assistant" && p.content === s.loop?.content)) return prev;
+            // Each brief embeds a unique turn counter, so a match anywhere in the
+            // transcript means it is already painted (by this poll or by the
+            // transcript poll) — never re-append it. Compare on the trimmed text:
+            // the stored row is stripped, the streamed copy is not.
+            if (prev.some((p) => p.role === "assistant" && (p.content ?? "").trim() === briefText)) return prev;
             // Remember the locally-painted brief so the transcript poll skips
             // its persisted twin (key consumed on first match).
-            localKeysRef.current.set(`assistant|${s.loop?.content ?? ""}`, Date.now());
-            return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: s.loop?.content || "", meta: { kind: "turn_brief", event: "loop_progress" }, created_at: new Date().toISOString() }];
+            localKeysRef.current.set(`assistant|${briefText}`, Date.now());
+            return [...prev, { seq: afterSeqRef.current + 1, role: "assistant", content: briefText, meta: { kind: "turn_brief", event: "loop_progress", turn: s.loop?.turn }, created_at: new Date().toISOString() }];
           });
           lastOutputAtRef.current = Date.now();
           setThinking(false);
