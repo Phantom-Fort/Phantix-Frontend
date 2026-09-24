@@ -38,6 +38,14 @@ function fmtNgn(n: number | undefined): string {
     : "—";
 }
 
+/** Which ceiling refused the work — the AI-credit pool is the pricing-v3 gate. */
+function exhaustionReason(usage: AiUsage): string {
+  if (usage.credits_exhausted) return "AI credits exhausted — top up to continue";
+  if (usage.over_tokens) return "Monthly token ceiling reached — AI work is refused";
+  if (usage.over_spend) return "Monthly spend limit reached — AI work is refused";
+  return "Budget exhausted — new AI work is refused until it is raised or the window rolls over";
+}
+
 /** Elapsed run time. Ends at `ended_at` so a finished run stops counting up. */
 export function sessionElapsed(session: AgiSession | null): string {
   if (!session?.started_at) return "—";
@@ -226,6 +234,7 @@ export default function AgiMetrics({
           )}
         </p>
         {usage ? (
+          <>
           <div className={cx("grid gap-3", compact ? "grid-cols-1" : "grid-cols-2")}>
             <Budget label="Tokens" used={usage.tokens_used} total={usage.token_budget} render={fmtInt} />
             <Budget
@@ -235,13 +244,30 @@ export default function AgiMetrics({
               render={fmtNgn}
             />
           </div>
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+              AI credits
+            </span>
+            <span
+              className={cx(
+                "font-mono text-[12px]",
+                usage.credits_exhausted ? "text-severity-critical" : "text-slate-500",
+              )}
+            >
+              {typeof usage.credits_remaining === "number"
+                ? `${usage.credits_remaining.toLocaleString()} remaining`
+                : "—"}
+              {usage.free_models_only ? " · free models only" : ""}
+            </span>
+          </div>
+          </>
         ) : (
           <p className="text-[12px] text-slate-600">Budget snapshot unavailable.</p>
         )}
-        {budgetBlocked && (
+        {budgetBlocked && usage && (
           <p className="mt-1.5 text-[12px] text-severity-critical">
             <AlertTriangle size={9} className="mr-1 inline" />
-            Budget exhausted — new AI work is refused until it is raised or the window rolls over.
+            {exhaustionReason(usage)}
           </p>
         )}
         {usage?.mode && (

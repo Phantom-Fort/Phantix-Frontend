@@ -387,7 +387,7 @@ export default function Analytics() {
               <h2 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                 Automation
               </h2>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
                 <StatCard
                   label="Tokens used"
                   value={Number(usage.tokens_used ?? 0).toLocaleString()}
@@ -403,9 +403,34 @@ export default function Analytics() {
                   }
                 />
                 <StatCard
+                  label="AI credits"
+                  value={
+                    typeof usage.credits_remaining === "number"
+                      ? Number(usage.credits_remaining).toLocaleString()
+                      : "—"
+                  }
+                  hint={
+                    usage.credits_exhausted
+                      ? "exhausted — top up to continue"
+                      : usage.free_models_only
+                        ? "free models only"
+                        : "remaining this cycle"
+                  }
+                />
+                <StatCard
                   label="Budget window"
                   value={usage.year_month ?? "—"}
-                  hint={usage.allowed === false ? "exhausted — AI work refused" : `mode ${usage.mode ?? "—"}`}
+                  hint={
+                    usage.allowed === false
+                      ? usage.credits_exhausted
+                        ? "credits exhausted — AI work refused"
+                        : usage.over_tokens
+                          ? "token ceiling reached — AI work refused"
+                          : usage.over_spend
+                            ? "spend limit reached — AI work refused"
+                            : "exhausted — AI work refused"
+                      : `mode ${usage.mode ?? "—"}`
+                  }
                 />
               </div>
             </section>
