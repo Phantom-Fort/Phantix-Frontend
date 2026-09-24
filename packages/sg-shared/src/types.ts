@@ -991,6 +991,18 @@ export interface AiUsage {
   /** False once a budget is exhausted — AI calls are refused, not degraded. */
   allowed?: boolean;
   mode?: string;
+  /** AI-credit pool attached to the plan — the real gate in pricing v3.
+   *  One credit = $0.001 of provider spend. */
+  credits_remaining?: number | null;
+  credits_exhausted?: boolean;
+  /** True when the org is degraded to the free open-source model pools. */
+  free_models_only?: boolean;
+  /** Which ceiling refused the work — the API returns all three. */
+  over_tokens?: boolean;
+  over_spend?: boolean;
+  /** Endpoint to raise the credit pool, when one exhausted. */
+  top_up?: string | null;
+  ai_enabled?: boolean;
 }
 
 export interface AiStatus {
