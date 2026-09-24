@@ -63,8 +63,8 @@ interface TurnBrief {
 }
 
 export function parseTurnBrief(content: string): TurnBrief | null {
-  if (!/Turn\s+\d+\s+of\s+\d+/i.test(content)) return null;
-  const turn = content.match(/Turn\s+(\d+)\s+of\s+(\d+)/i);
+  if (!/Turn\s+\d+(?:\s+of\s+\d+)?/i.test(content)) return null;
+  const turn = content.match(/Turn\s+(\d+)(?:\s+of\s+(\d+))?/i);
   const phase = content.match(/Loop phase:\s*([\w\s-]+)/i)?.[1]?.trim();
   const status = content.match(/Job status:\s*(\w+)/i)?.[1];
   const note = content.match(/Loop note:\s*(.+)/i)?.[1]?.trim();
@@ -940,7 +940,7 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
 
   // Loop-progress turn briefs render as a compact status card instead of a raw
   // markdown wall ("Turn X of 100. Loop phase: recon…").
-  if (/Turn\s+\d+\s+of\s+\d+/i.test(t.content) && /(Loop phase|Job status|Working on|What happened)/i.test(t.content)) {
+  if (/Turn\s+\d+(?:\s+of\s+\d+)?/i.test(t.content) && /(Loop phase|Job status|Working on|What happened)/i.test(t.content)) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 6 }}

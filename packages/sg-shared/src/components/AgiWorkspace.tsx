@@ -157,6 +157,19 @@ function blockerGuidance(code: string): string | null {
   }
 }
 
+/** A turn brief is only worth painting when it describes a real turn.
+ *
+ *  The backend contract exposes an always-complete brief (safe for rendering),
+ *  so an idle/placeholder brief arrives with ``turn: 0``, no findings and no
+ *  working_on — and previously was appended as a "Turn 0 … 0 tool calls"
+ *  summary that contradicted the live counters shown in the header. */
+function hasRealBrief(loop: any): boolean {
+  if (!loop || !loop.content) return false;
+  if (Number(loop.turn ?? 0) > 0) return true;
+  if (loop.summary || loop.working_on) return true;
+  return (loop.found?.length ?? 0) > 0 || (loop.next?.length ?? 0) > 0;
+}
+
 export default function AgiWorkspace({ variant = "drawer" }: { variant?: WorkspaceVariant }) {
   const { toast, requireDualControl, demoActive } = useStore();
   const reportSubmitted = useRef(false);
@@ -905,7 +918,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
           if (event === "loop_status") { setThinking(true); setLoopStopped(null); }
           if (event === "loop_progress") {
             setThinking(false);
-            if (loop.content) {
+            if (hasRealBrief(loop)) {
               setTranscript((prev) => {
                 if (prev.some((p) => p.role === "assistant" && p.content === loop.content)) return prev;
                 localKeysRef.current.set(`assistant|${loop.content ?? ""}`, Date.now());
@@ -1021,7 +1034,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
         if (s.loop_status === "stopped") { setLoopStopped(s.loop_stop_reason || "stopped"); setThinking(false); }
         else if (s.loop_status === "running") setLoopStopped(null);
         if (s.loop?.working_on) setWorkingOn(s.loop.working_on);
-        if (s.loop?.content && s.loop.event === "loop_progress") {
+        if (s.loop?.event === "loop_progress" && hasRealBrief(s.loop)) {
           setTranscript((prev) => {
             // Each brief embeds a unique turn counter, so an exact match anywhere
             // in the transcript means it is already painted (by this poll or by
