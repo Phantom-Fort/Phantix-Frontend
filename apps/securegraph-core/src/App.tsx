@@ -33,6 +33,7 @@ const AgentActivity = React.lazy(() => import("./pages/AgentActivity"));
 const AuthorizerInbox = React.lazy(() => import("./pages/AuthorizerInbox"));
 const Support = React.lazy(() => import("./pages/Support"));
 const Sandbox = React.lazy(() => import("./pages/Sandbox"));
+const DangerZone = React.lazy(() => import("./pages/DangerZone"));
 const Agent = React.lazy(() => import("@sg/pages/Agent"));
 const NotFound = React.lazy(() => import("@sg/pages/NotFound"));
 
@@ -99,6 +100,7 @@ export default function App() {
             <Route path="/authorizations" element={<RequireAuthorizer><AuthorizerInbox /></RequireAuthorizer>} />
             <Route path="/support" element={<Support />} />
             <Route path="/sandbox" element={<Sandbox />} />
+            <Route path="/danger-zone" element={<DangerZone />} />
             <Route path="/assistant" element={<Agent />} />
             <Route path="*" element={<NotFound homePath="/dashboard" />} />
           </Route>
