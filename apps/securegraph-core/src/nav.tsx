@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   BookOpen,
   Bot,
@@ -62,6 +63,12 @@ export function coreNav({ isAuthorizer = false }: { isAuthorizer?: boolean } = {
       items: [
         { to: "/support", label: "Support", icon: <LifeBuoy size={17} /> },
         { to: "/sandbox", label: "Sandbox", icon: <FlaskConical size={17} /> },
+      ],
+    },
+    {
+      label: "Danger zone",
+      items: [
+        { to: "/danger-zone", label: "Asset removal", icon: <AlertTriangle size={17} /> },
       ],
     },
     {
