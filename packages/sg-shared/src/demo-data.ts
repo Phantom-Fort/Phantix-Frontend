@@ -555,7 +555,11 @@ export const aiStatus: AiStatus = {
     { id: "mock", configured: true },
   ],
   monthly_tokens: 1_284_500,
+  monthly_token_budget: 5_000_000,
   monthly_cost_usd: 6.42,
+  monthly_cost_ngn: 9630,
+  monthly_spend_limit_usd: 50,
+  ai_allowed: true,
   agent: {
     enabled: true,
     provider: "deepseek",

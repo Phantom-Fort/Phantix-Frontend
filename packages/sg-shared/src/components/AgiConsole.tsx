@@ -262,7 +262,11 @@ function EvidenceDrawer({
                 <span className={cx("inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-medium", badge.cls)}>
                   {badge.icon} {badge.label}
                 </span>
-                {v?.verifier && <span className="wb-2xs font-mono text-slate-500">{humanize(v.verifier)}</span>}
+                {v?.verifier && (
+                  <span className="wb-2xs font-mono text-slate-500">
+                    {String(v.verifier).toLowerCase() === "agi_verifier" ? "Verifier" : humanize(v.verifier)}
+                  </span>
+                )}
                 {typeof v?.confidence === "number" && (
                   <span className="wb-2xs text-slate-500">conf {v.confidence.toFixed(2)}</span>
                 )}

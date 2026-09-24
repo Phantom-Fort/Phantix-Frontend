@@ -2,11 +2,11 @@ import React, { Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { ApplicationShell } from "@sg/shell/ApplicationShell";
 import type { ApplicationKey } from "@sg/shell/types";
-import { StoreProvider, ToastViewport } from "@sg/store";
+import { StoreProvider, ToastViewport, useStore } from "@sg/store";
 import DualControlOverlay from "@sg/components/DualControlOverlay";
 import BrandLoader from "@sg/components/BrandLoader";
 import { HOSTS } from "./hosts";
-import { NAV } from "./nav";
+import { coreNav } from "./nav";
 import Home from "./pages/Home";
 import Login from "@sg/pages/Login";
 import ChooseApp from "@sg/pages/ChooseApp";
@@ -36,6 +36,27 @@ const Sandbox = React.lazy(() => import("./pages/Sandbox"));
 const Agent = React.lazy(() => import("@sg/pages/Agent"));
 const NotFound = React.lazy(() => import("@sg/pages/NotFound"));
 
+/** The authenticated Core shell. The Authorizations entry is offered only to the
+ *  organization's assigned authorizer — that inbox is their own grid. */
+function CoreShell() {
+  const { session } = useStore();
+  return (
+    <ApplicationShell
+      application={"core" as ApplicationKey}
+      subtitle="Core"
+      nav={coreNav({ isAuthorizer: Boolean(session?.isAuthorizer) })}
+      hosts={HOSTS}
+    />
+  );
+}
+
+/** Guard the authorizer inbox route itself, so a direct URL cannot open it. */
+function RequireAuthorizer({ children }: { children: React.ReactNode }) {
+  const { session } = useStore();
+  if (!session?.isAuthorizer) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <StoreProvider>
@@ -64,14 +85,7 @@ export default function App() {
 
           {/* Authenticated Core shell */}
           <Route
-            element={
-              <ApplicationShell
-                application={"core" as ApplicationKey}
-                subtitle="Core"
-                nav={NAV}
-                hosts={HOSTS}
-              />
-            }
+            element={<CoreShell />}
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/assets" element={<Assets title="Assets" />} />
@@ -82,7 +96,7 @@ export default function App() {
             <Route path="/audit" element={<Audit />} />
             <Route path="/agent" element={<Navigate to="/assistant" replace />} />
             <Route path="/agent-activity" element={<AgentActivity />} />
-            <Route path="/authorizations" element={<AuthorizerInbox />} />
+            <Route path="/authorizations" element={<RequireAuthorizer><AuthorizerInbox /></RequireAuthorizer>} />
             <Route path="/support" element={<Support />} />
             <Route path="/sandbox" element={<Sandbox />} />
             <Route path="/assistant" element={<Agent />} />

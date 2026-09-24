@@ -1001,7 +1001,14 @@ export interface AiStatus {
   mode: "economy" | "balanced" | "enterprise";
   providers: { id: string; configured: boolean }[];
   monthly_tokens: number;
+  /** Monthly token ceiling (`token_budget` from GET /ai/usage). */
+  monthly_token_budget?: number;
   monthly_cost_usd: number;
+  /** Same spend in Naira — the product prices in NGN. */
+  monthly_cost_ngn?: number | null;
+  monthly_spend_limit_usd?: number;
+  /** False once a budget is exhausted — AI calls are refused, not degraded. */
+  ai_allowed?: boolean;
   /** Agent platform status (PHANTIX_AGENT_FE.md / PHANTIX_AGENT_SSE_FE.md). */
   agent?: {
     enabled: boolean;
