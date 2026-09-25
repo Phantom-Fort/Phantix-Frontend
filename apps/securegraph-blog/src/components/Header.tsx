@@ -8,8 +8,11 @@ export function Header() {
 
   return (
     <header className="site-header">
-      <Link className="site-brand" to="/" aria-label="The SecureGraph Weekly, this week's issue">
-        The SecureGraph <span>Weekly</span>
+      <Link className="site-brand" to="/" aria-label="The SecureGraph Weekly — this week's issue">
+        {/* Shared brand lockup: the same /logo-white.svg the operator apps
+            render on dark surfaces. */}
+        <img className="site-brand-logo" src="/logo-white.svg" alt="SecureGraph" />
+        <span className="site-brand-issue">The Weekly</span>
       </Link>
       <nav className="site-nav" aria-label="The Weekly">
         {onPost && (

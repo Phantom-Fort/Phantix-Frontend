@@ -11,8 +11,7 @@ import {
   Loader2,
   AlertTriangle,
   Sparkles,
-  Eye,
-} from "lucide-react";
+  Eye, ChevronRight } from "lucide-react";
 import { PageHeader, Card, Modal, SeverityBadge, VerificationBadge, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import { api } from "@sg/api";
 import { useResource } from "@sg/useResource";
@@ -107,13 +106,17 @@ function numberedSteps(steps: string[] | undefined) {
   );
 }
 
-function RemediationCard({
+function RemediationRow({
   item,
+  open,
+  onToggle,
   generating,
   onGenerate,
   onView,
 }: {
   item: RemediationItem;
+  open: boolean;
+  onToggle: () => void;
   generating: boolean;
   onGenerate: (item: RemediationItem) => void;
   onView: (item: RemediationItem) => void;
@@ -124,98 +127,86 @@ function RemediationCard({
   const repro = Array.isArray(ver.reproducibility_steps) ? ver.reproducibility_steps : [];
 
   return (
-    <Card className="overflow-hidden">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-phantix-800/50 px-5 py-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <SeverityBadge severity={(item.severity || "info") as Severity} />
-            <VerificationBadge status={(ver.status || "unverified") as VerificationStatus} />
-            {generated && rem.priority ? (
-              <span className={cx("chip capitalize", priorityClass(rem.priority))}>{rem.priority}</span>
+    <>
+      <tr
+        onClick={onToggle}
+        aria-expanded={open}
+        className={cx("group h-10 cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35", open && "bg-phantix-800/25")}
+      >
+        <td className="td w-8 pr-0 text-slate-500">
+          <ChevronRight size={14} className={cx("transition-transform", open && "rotate-90 text-gold-300")} aria-hidden="true" />
+        </td>
+        <td className="td max-w-[22rem]">
+          <span className="block truncate font-medium text-slate-100" title={item.title || undefined}>{item.title || "Untitled finding"}</span>
+        </td>
+        <td className="td whitespace-nowrap"><SeverityBadge severity={(item.severity || "info") as Severity} /></td>
+        <td className="td hidden whitespace-nowrap lg:table-cell"><VerificationBadge status={(ver.status || "unverified") as VerificationStatus} /></td>
+        <td className="td max-w-[14rem]">
+          <span className="block truncate font-mono text-[13px] text-slate-400" title={item.asset_value || undefined}>{item.asset_value || "—"}</span>
+        </td>
+        <td className="td hidden whitespace-nowrap text-[13px] text-slate-400 xl:table-cell">{item.tool || "—"}</td>
+        <td className="td hidden whitespace-nowrap xl:table-cell">
+          {generated && rem.priority ? <span className={cx("chip capitalize", priorityClass(rem.priority))}>{rem.priority}</span> : <span className="text-slate-600">—</span>}
+        </td>
+        <td className="td hidden whitespace-nowrap text-[13px] capitalize text-slate-400 2xl:table-cell">{generated && rem.effort ? rem.effort : "—"}</td>
+        <td className="td hidden whitespace-nowrap text-[13px] text-slate-400 lg:table-cell">{item.created_at ? timeAgo(item.created_at) : "—"}</td>
+        <td className="td whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+          <span className="inline-flex items-center justify-end gap-1">
+            {generated && !generating ? (
+              <button type="button" onClick={() => onView(item)} className="rounded px-2 py-0 text-[13px] font-medium leading-6 text-gold-300 hover:bg-gold-400/10">
+                View fix
+              </button>
             ) : null}
-            {generated && rem.effort ? (
-              <span className="chip capitalize text-slate-400 bg-slate-400/10 border-slate-500/30">
-                effort: {rem.effort}
-              </span>
-            ) : null}
-          </div>
-          <h3 className="mt-2 font-semibold text-slate-100">{item.title || "Untitled finding"}</h3>
-          <p className="mt-0.5 text-[12px] text-slate-500">
-            {item.asset_value || "—"}
-            {item.tool ? ` · ${item.tool}` : ""}
-            {item.created_at ? ` · ${timeAgo(item.created_at)}` : ""}
-          </p>
-        </div>
-        {ver.verified_by ? (
-          <span className="chip shrink-0 border-emerald-400/30 bg-emerald-400/10 text-emerald-300" title="Verified by">
-            <ShieldCheck size={12} /> {ver.verified_by}
-          </span>
-        ) : null}
-      </div>
-
-      {item.description ? (
-        <p className="border-b border-phantix-800/40 px-5 py-3 text-[13px] leading-relaxed text-slate-400">
-          {item.description}
-        </p>
-      ) : null}
-
-      {/* Why it is real — the verification artifact stays inline as list context. */}
-      <div className="grid grid-cols-1 gap-4 px-5 py-4 md:grid-cols-2">
-        <section className="space-y-2">
-          <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
-            <ShieldCheck size={13} /> Why it was verified
-          </p>
-          <p className="text-[13px] leading-relaxed text-slate-300">
-            {ver.why_verified || "No verification rationale recorded."}
-          </p>
-          {ver.business_impact ? (
-            <>
-              <p className="flex items-center gap-1.5 pt-1 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
-                <AlertTriangle size={13} /> Business impact
-              </p>
-              <p className="text-[13px] leading-relaxed text-slate-300">{ver.business_impact}</p>
-            </>
-          ) : null}
-        </section>
-        <section className="space-y-2 md:border-l md:border-phantix-800/40 md:pl-4">
-          <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-500">
-            <FlaskConical size={13} /> Reproduce it
-          </p>
-          {numberedSteps(repro) || (
-            <p className="text-[13px] text-slate-500">No reproduction steps recorded for this finding.</p>
-          )}
-        </section>
-      </div>
-
-      {/* Fix guidance lives in the overlay — the row here summarizes + opens it. */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-phantix-800/40 bg-phantix-950/40 px-5 py-3">
-        <p className="flex items-center gap-1.5 text-[12px] text-slate-500">
-          <Wrench size={13} className="text-slate-500" />
-          {generating
-            ? "Generating fix guidance…"
-            : generated
-            ? "AI fix guidance is ready."
-            : "No AI fix guidance yet — queued for the daily sweep, or generate it now."}
-        </p>
-        <div className="flex shrink-0 items-center gap-2">
-          {generated && !generating ? (
-            <button type="button" onClick={() => onView(item)} className="btn-primary !px-3 !py-1.5 text-xs">
-              <Eye size={13} /> View guidance
+            <button
+              type="button"
+              onClick={() => onGenerate(item)}
+              disabled={generating}
+              className="inline-flex items-center gap-1 rounded px-2 py-0 text-[13px] leading-6 text-slate-400 hover:bg-phantix-800 hover:text-slate-100 disabled:opacity-50"
+              title={generated ? "Regenerate AI fix guidance" : "Generate AI fix guidance now"}
+            >
+              {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              {generating ? "Generating" : generated ? "Regenerate" : "Generate"}
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onGenerate(item)}
-            disabled={generating}
-            className="btn-secondary !px-3 !py-1.5 text-xs disabled:opacity-50"
-            title="Queue AI remediation guidance for this finding"
-          >
-            {generating ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            {generated ? "Regenerate" : "Generate guidance"}
-          </button>
-        </div>
-      </div>
-    </Card>
+          </span>
+        </td>
+      </tr>
+      {open && (
+        <tr className="border-b border-phantix-800/40 bg-phantix-950/40">
+          <td colSpan={10} className="px-5 py-4">
+            {item.description ? (
+              <p className="mb-3 text-[13px] leading-relaxed text-slate-400">{item.description}</p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <section className="space-y-2">
+                <p className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-300">
+                  <ShieldCheck size={13} /> Why it was verified
+                  {ver.verified_by ? <span className="font-normal text-slate-500">· by {ver.verified_by}</span> : null}
+                </p>
+                <p className="text-[13px] leading-relaxed text-slate-300">{ver.why_verified || "No verification rationale recorded."}</p>
+                {ver.business_impact ? (
+                  <>
+                    <p className="flex items-center gap-1.5 pt-1 text-[13px] font-semibold text-slate-300">
+                      <AlertTriangle size={13} /> Business impact
+                    </p>
+                    <p className="text-[13px] leading-relaxed text-slate-300">{ver.business_impact}</p>
+                  </>
+                ) : null}
+              </section>
+              <section className="space-y-2 md:border-l md:border-phantix-800/40 md:pl-4">
+                <p className="flex items-center gap-1.5 text-[13px] font-semibold text-slate-300">
+                  <FlaskConical size={13} /> Reproduce it
+                </p>
+                {numberedSteps(repro) || <p className="text-[13px] text-slate-500">No reproduction steps recorded for this finding.</p>}
+              </section>
+            </div>
+            <p className="mt-3 flex items-center gap-1.5 text-[12px] text-slate-500">
+              <Wrench size={13} />
+              {generating ? "Generating fix guidance…" : generated ? "AI fix guidance is ready — open it with View fix." : "No AI fix guidance yet — queued for the daily sweep, or generate it now."}
+            </p>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -294,6 +285,7 @@ export default function Remediation() {
   );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [expandedId, setExpandedId] = useState<number | string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [generatingId, setGeneratingId] = useState<number | null>(null);
   const [viewingId, setViewingId] = useState<number | null>(null);
@@ -395,17 +387,37 @@ export default function Remediation() {
           body="Every verified finding has been retested and fixed. New verified findings appear here until their fix is confirmed."
         />
       ) : (
-        <Card className="overflow-hidden">
-          <div className="space-y-4 p-4">
-            {pageItems.map((item) => (
-              <RemediationCard
-                key={item.id}
-                item={item}
-                generating={generatingId === item.id}
-                onGenerate={generate}
-                onView={(it) => setViewingId(it.id)}
-              />
-            ))}
+        <Card className="!p-0 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[860px]">
+              <thead>
+                <tr className="border-b border-phantix-700/40">
+                  <th className="th w-8"><span className="sr-only">Details</span></th>
+                  <th className="th">Finding</th>
+                  <th className="th">Severity</th>
+                  <th className="th hidden lg:table-cell">Verification</th>
+                  <th className="th">Asset</th>
+                  <th className="th hidden xl:table-cell">Tool</th>
+                  <th className="th hidden xl:table-cell">Priority</th>
+                  <th className="th hidden 2xl:table-cell">Effort</th>
+                  <th className="th hidden lg:table-cell">Found</th>
+                  <th className="th text-right">Fix guidance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((item) => (
+                  <RemediationRow
+                    key={item.id}
+                    item={item}
+                    open={expandedId === item.id}
+                    onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+                    generating={generatingId === item.id}
+                    onGenerate={generate}
+                    onView={(it) => setViewingId(it.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
           <Pagination
             totalItems={data.items.length}
@@ -413,6 +425,7 @@ export default function Remediation() {
             pageSize={pageSize}
             onPageChange={setPage}
             onPageSizeChange={setPageSize}
+            itemLabel="findings"
           />
         </Card>
       )}

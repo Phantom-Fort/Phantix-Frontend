@@ -372,7 +372,9 @@ export default function Support() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-phantix-700/40">
-                <th className="th">Ticket</th>
+                <th className="th w-28">Reference</th>
+                <th className="th">Subject</th>
+                <th className="th text-right">Messages</th>
                 <th className="th">Category</th>
                 <th className="th">Priority</th>
                 <th className="th">Status</th>
@@ -387,23 +389,17 @@ export default function Support() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => setSelected(t)}
-                  className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                  className="h-10 cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
                   {...clickableRowProps(() => setSelected(t))}
                 >
-                  <td className="td">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
-                        <MessageSquare size={14} />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-200">{t.subject}</p>
-                        <p className="text-[12px] text-slate-500">
-                          {t.reference ?? `#${t.id}`}
-                          {` · ${t.message_count ?? t.messages?.length ?? 0} message${(t.message_count ?? t.messages?.length ?? 0) === 1 ? "" : "s"}`}
-                        </p>
-                      </div>
-                    </div>
+                  <td className="td whitespace-nowrap font-mono text-[13px] text-gold-300">{t.reference ?? `#${t.id}`}</td>
+                  <td className="td max-w-[28rem]">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <MessageSquare size={14} className="shrink-0 text-gold-400" aria-hidden="true" />
+                      <span className="truncate font-medium text-slate-100" title={t.subject}>{t.subject}</span>
+                    </span>
                   </td>
+                  <td className="td text-right font-mono text-[13px] text-slate-400">{t.message_count ?? t.messages?.length ?? 0}</td>
                   <td className="td text-slate-400 capitalize">{t.category ? t.category.replace(/_/g, " ") : "—"}</td>
                   <td className="td">
                     <span className="chip border-phantix-600/50 bg-phantix-800/60 capitalize text-slate-400">{t.priority}</span>

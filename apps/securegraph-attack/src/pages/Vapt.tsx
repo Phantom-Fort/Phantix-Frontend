@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Crosshair, Play, Pause, XCircle, GitBranch, ShieldCheck, Sparkles, ChevronRight, UserCheck, Radar, Globe, Activity, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import VaptPlanReview from "@sg/components/VaptPlanReview";
 import DocLink from "@sg/components/DocLink";
@@ -126,6 +127,7 @@ export default function Vapt() {
     quota: null,
   }, "vapt");
   const vaptCampaigns = data.campaigns;
+  const { pageItems: campaignPageItems, pagination: campaignPagination } = usePaged(vaptCampaigns, "attack-vapt-campaigns");
   const vaptFindings = data.findings;
   const vaptApprovals = data.approvals;
   const securityDbBlocked = data.securityDbBlocked;
@@ -545,51 +547,59 @@ export default function Vapt() {
             </div>
           )}
           {/* Campaign list */}
-          <div className="space-y-3 xl:col-span-2">
-            {vaptCampaigns.map((c, i) => (
-              <motion.div key={c.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                <button onClick={() => setSelected(c)} className={cx("w-full text-left")}>
-                  <Card hover className={cx("!p-4 transition-all", activeSelected?.id === c.id && "border-gold-400/50 shadow-glow")}>
-                    <div className="flex items-center gap-3">
-                      <span className={cx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", c.status === "active" ? "bg-emerald-400/12 text-emerald-400" : c.status === "pending_approval" ? "bg-severity-medium/12 text-severity-medium" : c.status === "completed" ? "bg-emerald-400/12 text-emerald-400" : "bg-phantix-800/70 text-slate-400")}>
-                        <Crosshair size={17} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-slate-100">{c.name}</p>
-                        <p className="text-xs text-slate-500">{titleCase(c.campaign_type)} · {c.procedure_key}</p>
-                      </div>
-                      <StatusBadge status={c.status} />
-                      {c.quota_status === "queued" && (
-                        <span
-                          className="chip text-[12px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium"
-                          title={c.quota_message ?? "Queued for the shared free pool"}
-                        >
-                          Queued
-                          {c.queued_for ? ` · ${new Date(c.queued_for).toLocaleDateString()}` : ""}
+          <div className="xl:col-span-2">
+            <Card className="!p-0 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-phantix-700/40 px-3 py-2 text-[13px] font-semibold text-slate-300">
+                <span>Campaign</span>
+                <span>Status</span>
+              </div>
+              <ul className="divide-y divide-phantix-800/50">
+                {campaignPageItems.map((c) => {
+                  const selectedRow = activeSelected?.id === c.id;
+                  return (
+                    <li key={c.id}>
+                      <button
+                        onClick={() => setSelected(c)}
+                        aria-current={selectedRow ? "true" : undefined}
+                        className={cx(
+                          "relative flex min-h-[2.75rem] w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors hover:bg-phantix-800/35",
+                          selectedRow && "bg-gold-400/[0.06] shadow-[inset_2px_0_0_rgb(232_181_77)]",
+                        )}
+                      >
+                        <Crosshair
+                          size={14}
+                          aria-hidden="true"
+                          className={cx("shrink-0", c.status === "active" || c.status === "completed" ? "text-emerald-400" : c.status === "pending_approval" ? "text-severity-medium" : "text-slate-500")}
+                        />
+                        <span className="min-w-0 flex-1 truncate" title={`${c.name} · ${titleCase(c.campaign_type)} · ${c.procedure_key}`}>
+                          <span className="font-medium text-slate-100">{c.name}</span>
+                          <span className="ml-2 text-[13px] text-slate-500">{titleCase(c.campaign_type)}</span>
                         </span>
-                      )}
-                      {c.quota_status === "weekly_blocked" && (
-                        <span
-                          className="chip text-[12px] border-severity-high/30 bg-severity-high/10 text-severity-high"
-                          title={c.quota_message ?? "Free plan allows 1 request per week"}
-                        >
-                          Weekly limit
-                        </span>
-                      )}
-                      <ChevronRight size={15} className="shrink-0 text-slate-600" />
-                    </div>
-                    {c.status === "active" && (
-                      <div className="mt-3">
-                        <div className="mb-1 flex justify-between text-[13px] text-slate-500">
-                          <span>{humanize(c.phase)}</span><span className="font-mono">{c.progress}%</span>
-                        </div>
-                        <ProgressBar value={c.progress} />
-                      </div>
-                    )}
-                  </Card>
-                </button>
-              </motion.div>
-            ))}
+                        {c.status === "active" && <span className="shrink-0 font-mono text-[12px] text-slate-400">{c.progress}%</span>}
+                        {c.quota_status === "queued" && (
+                          <span className="chip shrink-0 text-[12px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium" title={c.quota_message ?? "Queued for the shared free pool"}>
+                            Queued{c.queued_for ? ` · ${new Date(c.queued_for).toLocaleDateString()}` : ""}
+                          </span>
+                        )}
+                        {c.quota_status === "weekly_blocked" && (
+                          <span className="chip shrink-0 text-[12px] border-severity-high/30 bg-severity-high/10 text-severity-high" title={c.quota_message ?? "Free plan allows 1 request per week"}>
+                            Weekly limit
+                          </span>
+                        )}
+                        <span className="shrink-0 [&_.chip]:py-0.5"><StatusBadge status={c.status} /></span>
+                        <ChevronRight size={14} className="shrink-0 text-slate-600" />
+                        {c.status === "active" && (
+                          <span className="absolute inset-x-0 bottom-0 h-0.5 bg-phantix-800/60" aria-hidden="true">
+                            <span className="block h-full bg-gold-400" style={{ width: `${Math.min(100, Math.max(0, c.progress ?? 0))}%` }} />
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Pagination {...campaignPagination} itemLabel="campaigns" />
+            </Card>
           </div>
 
           {/* Campaign detail --- pinned alongside the list and scrolls on its

@@ -27,7 +27,7 @@ import {
 import { useSidebarCollapsed } from "../useSidebarCollapsed";
 import { useApplicationNav } from "./useApplicationNav";
 import { ThemeToggle } from "../ThemeToggle";
-import { BrandLogo } from "../components/BrandLogo";
+import { BrandMark, BrandWordmark } from "../components/BrandLogo";
 import { BrandLoader } from "../components/BrandLoader";
 import { PageSkeleton } from "../ui";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
@@ -500,14 +500,10 @@ export function ApplicationShell({
           }`}
         >
           <div className="flex items-center gap-3 px-4 pb-3 pt-4">
-            <BrandLogo className="h-8 w-8 shrink-0" />
-            <div className="sg-hide-collapsed">
-              <p className="font-display text-[15px] font-bold leading-tight text-white">
-                SecureGraph
-              </p>
-              <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-gold-400">
-                {subtitle}
-              </p>
+            <BrandMark className="sg-show-collapsed h-8 w-8 shrink-0" />
+            <div className="sg-hide-collapsed flex flex-col">
+              <BrandWordmark className="h-8 self-start" />
+              <p className="mt-0.5 pl-[2.25rem] text-[12px] font-medium uppercase tracking-[0.18em] text-gold-400">{subtitle}</p>
             </div>
           </div>
 

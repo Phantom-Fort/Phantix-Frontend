@@ -331,7 +331,7 @@ export default function SocAvailability() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-phantix-700/40 text-[13px] uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-phantix-700/40 text-[13px] text-slate-300">
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Type</th>

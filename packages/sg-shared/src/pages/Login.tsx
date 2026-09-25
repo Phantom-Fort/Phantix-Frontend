@@ -10,7 +10,7 @@ import { useStore } from "@sg/store";
 import { PLATFORM_URL } from "@sg/links";
 import { cx, humanize } from "@sg/utils";
 import { listenDeviceConfirmed, claimExchange, newExchangeGuard } from "@sg/deviceConfirm";
-import { BrandLogo } from "@sg/components/BrandLogo";
+import { BrandWordmark } from "@sg/components/BrandLogo";
 import AuthShowcase from "@sg/components/AuthShowcase";
 import { ThemeToggle } from "@sg/ThemeToggle";
 
@@ -150,7 +150,7 @@ function LoginBrand({ subtitle, note, children }: { subtitle: string; note?: str
   return (
     <div className="mb-8 text-center">
       <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.7, delay: 0.1 }} className="mx-auto">
-        <BrandLogo className="mx-auto h-20 w-20 drop-shadow-[0_0_24px_rgba(232,181,77,0.35)]" />
+        <BrandWordmark className="mx-auto block h-12" />
       </motion.div>
       <h1 className="mt-5 font-display text-2xl font-bold text-slate-100">Command Centre</h1>
       <p className="mt-1.5 text-sm text-slate-500">

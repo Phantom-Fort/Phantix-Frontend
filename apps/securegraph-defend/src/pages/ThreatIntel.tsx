@@ -250,13 +250,13 @@ export default function ThreatIntel() {
                         const isNew = (intel.data.newSignals ?? []).includes(s.ioc);
                         const matched = s.matchedAssetIds ?? (s as { matched_asset_ids?: number[] }).matched_asset_ids ?? [];
                         return (
-                          <tr key={s.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset", isNew && "bg-emerald-400/5")} onClick={() => setOpenIoc(s)} {...clickableRowProps(() => setOpenIoc(s))}>
+                          <tr key={s.id} className={cx("h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset", isNew && "bg-emerald-400/5")} onClick={() => setOpenIoc(s)} {...clickableRowProps(() => setOpenIoc(s))}>
                             <td className="td">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <span className="font-mono text-[13px] text-slate-100 truncate max-w-[240px]">{s.ioc}</span>
+                              <div className="flex max-w-[26rem] min-w-0 items-center gap-2" title={s.title ? `${s.ioc} — ${s.title}` : s.ioc}>
+                                <span className="shrink-0 font-mono text-[13px] text-slate-100">{s.ioc}</span>
                                 {isNew && <span className="chip text-[12px] shrink-0 text-emerald-300 bg-emerald-400/10 border-emerald-400/20">NEW</span>}
+                                {s.title && <span className="truncate text-[13px] text-slate-500">{s.title}</span>}
                               </div>
-                              <p className="text-[13px] text-slate-500 truncate max-w-[280px]">{s.title}</p>
                             </td>
                             <td className="td"><IocBadge type={s.iocType} /></td>
                             <td className="td"><SeverityBadge severity={sevOf(String(s.severity))} /></td>
@@ -302,14 +302,16 @@ export default function ThreatIntel() {
                       {events.data.slice(0, 50).map((e: CloudEvent) => (
                         <tr key={e.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35 transition-colors">
                           <td className="td">
-                            <p className="font-medium text-slate-100 truncate max-w-[240px]">{e.title ?? e.title}</p>
-                            {e.summary && <p className="text-[13px] text-slate-500 truncate max-w-[280px]">{e.summary}</p>}
+                            <span className="block max-w-[26rem] truncate" title={e.summary || e.title || undefined}>
+                              <span className="font-medium text-slate-100">{e.title}</span>
+                              {e.summary && <span className="ml-2 text-[13px] text-slate-500">{e.summary}</span>}
+                            </span>
                           </td>
                           <td className="td"><span className="chip text-[12px]">{e.provider ?? e.provider}</span></td>
                           <td className="td"><SeverityBadge severity={sevOf(e.severity ?? e.severity)} /></td>
                           <td className="td"><span className="chip text-[12px] text-slate-300">{e.eventKind ?? titleCase(e.event_kind ?? "")}</span></td>
                           <td className="td">
-                            <div className="flex flex-wrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[12px] text-slate-400">{m}</span>)}</div>
+                            <div className="flex flex-nowrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[12px] text-slate-400">{m}</span>)}</div>
                           </td>
                           <td className="td text-xs text-slate-500 whitespace-nowrap">{e.receivedAt ?? e.received_at ? timeAgo((e.receivedAt ?? e.received_at) as string) : "—"}</td>
                         </tr>

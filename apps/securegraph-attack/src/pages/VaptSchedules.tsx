@@ -3,6 +3,7 @@ import {
   CalendarClock, CalendarOff, CheckCircle2, Loader2, Moon, PauseCircle, Plus, RefreshCw,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, ErrorState, Modal, PageHeader, StatCard, PageBodySkeleton } from "@sg/ui";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 import { useStore } from "@sg/store";
 import {
   addBlackout, asArray, CRON_PRESETS, createSchedule, listProcedures, listSchedules,
@@ -32,6 +33,7 @@ export default function VaptSchedules() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [blackoutFor, setBlackoutFor] = useState<VaptSchedule | null>(null);
+  const { pageItems: schedulePageItems, pagination: schedulePagination } = usePaged(rows, "attack-vapt-schedules");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -109,55 +111,79 @@ export default function VaptSchedules() {
               />
             </Card>
           ) : (
-            <div className="space-y-3">
-              {rows.map((s) => (
-                <Card key={s.id}>
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-100">{s.schedule_name}</span>
-                        <span className={cx("chip", s.is_active ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" : "border-phantix-700 text-slate-500")}>
-                          {s.is_active ? <CheckCircle2 size={10} className="mr-1 inline" /> : <PauseCircle size={10} className="mr-1 inline" />}
-                          {s.is_active ? "Active" : "Paused"}
-                        </span>
-                        {s.skip_next && <span className="chip border-severity-medium/30 text-severity-medium">Skipping next</span>}
-                      </div>
-                      {s.description && <p className="mt-1 text-xs leading-5 text-slate-400">{s.description}</p>}
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <span className="chip border-phantix-700 font-mono text-phantix-300">{s.procedure_key}</span>
-                        {s.campaign_config?.adaptive_procedure !== false && (
-                          <span className="chip border-gold-400/30 bg-gold-400/10 text-gold-200" title="The procedure is chosen from the inferred surfaces of the scoped assets on each run.">
-                            adaptive
+            <Card className="!p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[960px]">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Schedule</th>
+                      <th className="th">Status</th>
+                      <th className="th">Procedure</th>
+                      <th className="th">Cadence</th>
+                      <th className="th hidden xl:table-cell">Timezone</th>
+                      <th className="th hidden 2xl:table-cell">Blackouts</th>
+                      <th className="th">Last run</th>
+                      <th className="th">Next run</th>
+                      <th className="th text-right">Runs</th>
+                      <th className="th text-right">Failures</th>
+                      <th className="th text-right"><span className="sr-only">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedulePageItems.map((s) => (
+                      <tr key={s.id} className="h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                        <td className="td max-w-[18rem]">
+                          <span className="block truncate" title={s.description || s.schedule_name}>
+                            <span className="font-medium text-slate-100">{s.schedule_name}</span>
+                            {s.description && <span className="ml-2 text-[13px] text-slate-500">{s.description}</span>}
                           </span>
-                        )}
-                        <span className="chip border-phantix-700 font-mono text-slate-400">{s.cron_expression}</span>
-                        <span className="chip border-phantix-700 text-slate-400">{s.timezone}</span>
-                        <span className="chip border-phantix-700 text-slate-400">max {s.max_concurrent_per_org} concurrent</span>
-                      </div>
-                      <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-[13px] text-slate-500 sm:grid-cols-4">
-                        <span>Last run <span className="text-slate-400">{when(s.last_run_at)}</span></span>
-                        <span>Next run <span className="text-slate-400">{when(s.next_run_at)}</span></span>
-                        <span>Runs <span className="text-slate-400">{s.total_runs}</span></span>
-                        <span>Failures <span className={cx(s.total_failures ? "text-severity-high" : "text-slate-400")}>{s.total_failures}</span></span>
-                      </div>
-                      {s.blackout_windows?.length > 0 && (
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          <Moon size={11} className="text-slate-500" />
-                          {s.blackout_windows.map((w, i) => (
-                            <span key={i} className="chip border-phantix-700 text-slate-400">
-                              {w.start ?? "?"}–{w.end ?? "?"}{w.days?.length ? ` · ${w.days.join(",")}` : ""}
+                        </td>
+                        <td className="td whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className={cx("chip", s.is_active ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-400" : "border-phantix-700 text-slate-500")}>
+                              {s.is_active ? <CheckCircle2 size={10} /> : <PauseCircle size={10} />}
+                              {s.is_active ? "Active" : "Paused"}
                             </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <button onClick={() => setBlackoutFor(s)} className="btn-ghost shrink-0 text-xs !py-1.5">
-                      <CalendarOff size={12} className="mr-1.5 inline" /> Blackout
-                    </button>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                            {s.skip_next && <span className="chip border-severity-medium/30 text-severity-medium">Skipping next</span>}
+                          </span>
+                        </td>
+                        <td className="td whitespace-nowrap">
+                          <span className="font-mono text-[13px] text-phantix-300">{s.procedure_key}</span>
+                          {s.campaign_config?.adaptive_procedure !== false && (
+                            <span className="ml-1.5 text-[12px] text-gold-300" title="The procedure is chosen from the inferred surfaces of the scoped assets on each run.">adaptive</span>
+                          )}
+                        </td>
+                        <td className="td whitespace-nowrap font-mono text-[13px] text-slate-400" title={`max ${s.max_concurrent_per_org} concurrent`}>{s.cron_expression}</td>
+                        <td className="td hidden whitespace-nowrap text-[13px] text-slate-400 xl:table-cell">{s.timezone}</td>
+                        <td className="td hidden max-w-[12rem] 2xl:table-cell">
+                          {s.blackout_windows?.length > 0 ? (
+                            <span
+                              className="block truncate text-[13px] text-slate-400"
+                              title={s.blackout_windows.map((w) => `${w.start ?? "?"}–${w.end ?? "?"}${w.days?.length ? ` · ${w.days.join(",")}` : ""}`).join("; ")}
+                            >
+                              <Moon size={11} className="mr-1 inline text-slate-500" />
+                              {s.blackout_windows.length === 1
+                                ? `${s.blackout_windows[0].start ?? "?"}–${s.blackout_windows[0].end ?? "?"}`
+                                : `${s.blackout_windows.length} windows`}
+                            </span>
+                          ) : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="td whitespace-nowrap text-[13px] text-slate-400">{when(s.last_run_at)}</td>
+                        <td className="td whitespace-nowrap text-[13px] text-slate-300">{when(s.next_run_at)}</td>
+                        <td className="td text-right font-mono text-[13px] text-slate-300">{s.total_runs}</td>
+                        <td className={cx("td text-right font-mono text-[13px]", s.total_failures ? "text-severity-high" : "text-slate-400")}>{s.total_failures}</td>
+                        <td className="td text-right">
+                          <button onClick={() => setBlackoutFor(s)} className="inline-flex items-center gap-1 rounded px-2 py-0 text-[13px] leading-6 text-slate-300 hover:bg-phantix-800 hover:text-white">
+                            <CalendarOff size={12} /> Blackout
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Pagination {...schedulePagination} itemLabel="schedules" />
+            </Card>
           )}
         </div>
       )}
