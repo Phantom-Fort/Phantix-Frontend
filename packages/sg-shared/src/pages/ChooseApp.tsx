@@ -306,7 +306,7 @@ export default function ChooseApp() {
         {/* Identity */}
         <motion.div variants={rise} className="mb-8 text-center">
           <motion.img
-            src="/logo-transparent.png"
+            src="/logo-white.png"
             alt=""
             className="mx-auto h-12 w-12 object-contain"
             animate={calm ? undefined : { y: [0, -5, 0] }}

@@ -346,13 +346,28 @@ export default function Vapt() {
       setPendingPlan(null);
       reload();
     } catch (e: any) {
-      // A draft that could not auto-start is the documented outcome when the
-      // inventory is empty, not a failure of the plan itself.
-      if (e.status === 400) {
-        toast("warning", "Draft created", e.detail?.message || "Review the plan and start when ready.");
+      // The backend returns 400 in two very different situations:
+      //  (a) structured detail with `campaign_id` — the draft WAS created but
+      //      could not auto-start (empty inventory / missing security DB);
+      //  (b) anything else — creation was refused (quota, entitlement,
+      //      procedure error) and NO draft exists. Never claim a draft was
+      //      created unless the response actually carries a campaign_id.
+      const detail = e?.detail;
+      const draftCreated =
+        e?.status === 400 &&
+        detail &&
+        typeof detail === "object" &&
+        (detail as Record<string, unknown>).campaign_id != null;
+      if (draftCreated) {
+        toast("warning", "Draft created", (detail as { message?: string })?.message || "Review the plan and start when ready.");
         setPendingPlan(null);
         reload();
-      } else if (e.status === 409) {
+      } else if (e?.status === 400) {
+        const msg = typeof detail === "string" ? detail : (detail as { message?: string })?.message || e.message || "";
+        toast("error", "Could not create campaign", msg);
+        // Keep the review open so the operator can retry once the refusal is
+        // resolved (quota rollover, billing) without regenerating the plan.
+      } else if (e?.status === 409) {
         reportConflict(e);
       } else {
         toast("error", "Could not create campaign", e.message || "");
