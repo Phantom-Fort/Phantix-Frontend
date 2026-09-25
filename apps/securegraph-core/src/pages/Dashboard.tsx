@@ -512,7 +512,7 @@ export default function Dashboard() {
             <CalendarRange size={14} className="text-gold-400" /> {rangeLabel}
           </span>
           <AppSwitcher current="core" />
-          <Link to={href("tracker", "/reports?tab=tracker")} className="btn-primary">
+          <Link to={href("tracker", "/tracker")} className="btn-primary">
             <KanbanSquare size={15} /> Tracker
           </Link>
         </motion.div>
@@ -538,7 +538,7 @@ export default function Dashboard() {
           value={openFindings}
           delta={<Delta value={findingsDelta} goodWhen="down" />}
           hint={findingsDelta != null ? "vs 14 days ago" : "From intelligence and the tracker"}
-          to={href("tracker", "/reports?tab=tracker")}
+          to={href("tracker", "/tracker")}
           delay={0.04}
         />
         <KpiTile
@@ -633,12 +633,12 @@ export default function Dashboard() {
             empty="No critical assets flagged."
           />
         </Panel>
-        <Panel title="Critical tracker items" delay={0.2} action={<ViewAll to={href("tracker", "/reports?tab=tracker")} />}>
+        <Panel title="Critical tracker items" delay={0.2} action={<ViewAll to={href("tracker", "/tracker")} />}>
           <MiniTable
             rows={trackerCritical.slice(0, 6)}
             columns={trackerCols}
             rowKey={(t, i) => str(t.findingKey ?? t.finding_key, `row-${i}`)}
-            rowHref={(t) => `/reports?tab=tracker&key=${encodeURIComponent(str(t.findingKey ?? t.finding_key, ""))}`}
+            rowHref={(t) => `/tracker?key=${encodeURIComponent(str(t.findingKey ?? t.finding_key, ""))}`}
             empty="No critical open tracker items."
           />
         </Panel>

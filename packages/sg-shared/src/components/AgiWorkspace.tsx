@@ -1634,7 +1634,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                       <button onClick={exitToPicker} className="btn-primary !px-2.5 !py-1 wb-xs shrink-0"><Plus size={11} className="mr-1 inline" /> New session</button>
                     </div>
                   )}
-                  <IssuesStrip findings={drawerIssueRows} href="/reports?tab=tracker" />
+                  <IssuesStrip findings={drawerIssueRows} href="/tracker" />
                   {drawerFindings.length > 0 && (
                     <div className="space-y-1.5">
                       {drawerFindings.slice(0, 6).map((f, i) => {

@@ -1,6 +1,7 @@
 // Central resource loaders --- demo-data only when isDemoMode() is true.
 import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked, tokens, API_BASE } from "./api";
 import * as demo from "./demo-data";
+import { deriveParents } from "./assetChain";
 import type {
   AgentRun,
   AgentScopeCard,
@@ -298,8 +299,9 @@ export async function loadDualControl(users?: OrgUser[]): Promise<DualControlSta
 export async function loadAssetsBundle() {
   if (isDemoMode()) {
     await delay();
+    const parents = deriveParents(demo.assets as Asset[]);
     return {
-      assets: demo.assets,
+      assets: (demo.assets as Asset[]).map((x) => ({ ...x, parent_asset_id: parents.get(x.id) ?? null })),
       assetTags: demo.assetTags,
       discoveryJobs: demo.discoveryJobs,
       securityDbBlocked: false as boolean,
@@ -825,6 +827,35 @@ export async function loadReportsBundle() {
   return { reports, trackerFindings, trackerSummary, trackerNote };
 }
 
+/** The findings tracker on its own: board rows + summary. Reports are only
+ *  fetched when the tracker is empty, to surface findings from AGI sessions
+ *  that never seeded it (same fallback the report library used). */
+export async function loadTrackerBundle() {
+  if (isDemoMode()) {
+    const { trackerFindings, trackerSummary, trackerNote } = await loadReportsBundle();
+    return { trackerFindings, trackerSummary, trackerNote };
+  }
+  let trackerSummary: TrackerSummary | null = null;
+  let trackerNote: string | null = null;
+  let rawTrackerItems: any[] = [];
+  try {
+    const envelope = await api.get<any>("/reports/tracker?limit=1000");
+    if (envelope && typeof envelope === "object") {
+      trackerSummary = (envelope.summary ?? null) as TrackerSummary | null;
+      trackerNote = envelope.note != null ? String(envelope.note) : null;
+      rawTrackerItems = asList<any>(envelope);
+    }
+  } catch {
+    rawTrackerItems = await softList<any>("/reports/tracker");
+  }
+  let trackerFindings = (rawTrackerItems ?? []).map((t) => normalizeTrackerFinding(t) as TrackerFinding);
+  if (trackerFindings.length === 0) {
+    const reports = (await softList<Report>("/reports")).map((r) => normalizeReportRow(r) as Report);
+    if (reports.length > 0) trackerFindings = trackerFromReports(reports);
+  }
+  return { trackerFindings, trackerSummary, trackerNote };
+}
+
 /** PATCH tracker row — dual-control when org has DC configured. */
 export async function patchTrackerFinding(
   findingKey: string,
@@ -913,7 +944,7 @@ export async function loadCommandCenter(): Promise<{
         risks: "/risks",
         soc: "/soc",
         reports: "/reports",
-        tracker: "/reports?tab=tracker",
+        tracker: "/tracker",
       },
       stream: {
         commandCenter: "/org/command-center/stream",

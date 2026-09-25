@@ -17,6 +17,8 @@
     "dev:defend": "npm run dev --workspace @phantix/securegraph-defend",
     "build:code": "npm run build --workspace @phantix/securegraph-code",
     "dev:code": "npm run dev --workspace @phantix/securegraph-code",
+    "build:blog": "npm run build --workspace @phantix/securegraph-blog",
+    "dev:blog": "npm run dev --workspace @phantix/securegraph-blog",
     "typecheck:all": "npm run typecheck --workspaces --if-present"
   },
   "dependencies": {

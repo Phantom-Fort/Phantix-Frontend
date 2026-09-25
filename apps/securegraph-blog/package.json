@@ -1,0 +1,29 @@
+{
+  "name": "@phantix/securegraph-blog",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "The SecureGraph Weekly: a Markdown-driven magazine blog. Reads published posts from the SecureGraph API (or bundled demo posts); writing and publishing happen only in the Staff Portal.",
+  "scripts": {
+    "dev": "vite --port 5178",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview --port 5178",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.28.0",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

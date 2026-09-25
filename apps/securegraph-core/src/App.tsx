@@ -26,6 +26,7 @@ const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Assets = React.lazy(() => import("./pages/Assets"));
 const Analytics = React.lazy(() => import("./pages/Analytics"));
 const Reports = React.lazy(() => import("./pages/Reports"));
+const Tracker = React.lazy(() => import("./pages/Tracker"));
 const ReportViewer = React.lazy(() => import("./pages/ReportViewer"));
 const IntegrationsHub = React.lazy(() => import("./pages/IntegrationsHub"));
 const Audit = React.lazy(() => import("./pages/Audit"));
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/assets" element={<Assets title="Assets" />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/tracker" element={<Tracker />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/reports/:id/view" element={<ReportViewer />} />
             <Route path="/integrations" element={<IntegrationsHub />} />

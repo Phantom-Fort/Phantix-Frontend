@@ -79,6 +79,10 @@ export interface Asset {
   risk_level?: "critical" | "high" | "medium" | "low" | "info";
   open_findings?: number;
   exposure?: string;
+  /** Asset chain: the less specific asset this one sits under. */
+  parent_asset_id?: number | null;
+  /** Kept out of scopes inherited from its parent. */
+  chain_scope_excluded?: boolean;
 }
 
 export interface IntelligenceDashboard {

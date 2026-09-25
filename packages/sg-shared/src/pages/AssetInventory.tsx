@@ -1,14 +1,17 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2 } from "lucide-react";
+import { Plus, Search, ShieldCheck, Boxes, Globe, Smartphone, Github, FileJson, Radar, Tag, Sparkles, RefreshCw, KeyRound, Trash2, ListTree, List, ChevronRight, FileSearch, EyeOff, Eye } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, EmptyState, Tabs, ProgressBar, Spinner, PageSkeleton, ErrorState, TableSkeleton } from "@sg/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import DocLink from "@sg/components/DocLink";
 import MobileHandoffCard from "@sg/components/MobileHandoffCard";
+import AssetTreeView from "@sg/components/AssetTreeView";
+import AssetListView from "@sg/components/AssetListView";
+import { chainLabel, discoverAssetPaths, loadAssetChain, setChainScopeExcluded } from "@sg/assetChain";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@sg/data";
 import { useResource } from "@sg/useResource";
-import { timeAgo, titleCase, cx, severityMeta, clickableRowProps } from "@sg/utils";
+import { timeAgo, titleCase, cx, severityMeta } from "@sg/utils";
 import { useStore } from "@sg/store";
 import { useSseStream } from "@sg/useSse";
 import { api, tokens, API_BASE, ApiError } from "@sg/api";
@@ -24,6 +27,7 @@ const typeIcon: Record<string, React.ReactNode> = {
   api: <FileJson size={15} />,
   mobile_apk: <Smartphone size={15} />,
   web_app: <Globe size={15} />,
+  web_path: <FileSearch size={15} />,
   port_service: <Radar size={15} />,
   database_connection: <Boxes size={15} />,
 };
@@ -96,9 +100,45 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   }, []);
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
-  const [invPage, setInvPage] = useState(1);
-  const [invPageSize, setInvPageSize] = useState(DEFAULT_PAGE_SIZE);
-  useEffect(() => { setInvPage(1); }, [q, typeFilter, invPageSize]);
+  // Tree (the asset chain) or the flat list; remembered per browser.
+  const [view, setView] = useState<"tree" | "flat">(() => {
+    try {
+      return localStorage.getItem("sg_asset_view") === "flat" ? "flat" : "tree";
+    } catch {
+      return "tree";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem("sg_asset_view", view);
+    } catch { /* storage unavailable */ }
+  }, [view]);
+  // Bumped whenever the inventory reloads so open tree levels refetch too.
+  const [treeRefresh, setTreeRefresh] = useState(0);
+  const firstAssets = useRef(true);
+  useEffect(() => {
+    if (firstAssets.current) {
+      firstAssets.current = false;
+      return;
+    }
+    setTreeRefresh((n) => n + 1);
+  }, [assets]);
+  const assetById = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
+  /** "example.com › sub.example.com" — the ancestors of an asset, from the loaded inventory. */
+  const breadcrumb = useCallback(
+    (a: Asset): string => {
+      const names: string[] = [];
+      let cur = a.parent_asset_id != null ? assetById.get(a.parent_asset_id) : undefined;
+      while (cur && names.length < 12) {
+        names.unshift(chainLabel(cur));
+        cur = cur.parent_asset_id != null ? assetById.get(cur.parent_asset_id) : undefined;
+      }
+      return names.join(" › ");
+    },
+    [assetById],
+  );
+  const [selectedChain, setSelectedChain] = useState<Asset[]>([]);
+  const [chainBusy, setChainBusy] = useState<"" | "scope" | "paths">("");
   const [prioPage, setPrioPage] = useState(1);
   const [prioPageSize, setPrioPageSize] = useState(DEFAULT_PAGE_SIZE);
   const prioTotalPages = Math.max(1, Math.ceil((prioritized?.length ?? 0) / prioPageSize));
@@ -268,24 +308,47 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   };
 
   useEffect(() => {
-    if (!selected) { setSelectedIntel(null); return; }
+    if (!selected) { setSelectedIntel(null); setSelectedChain([]); return; }
+    loadAssetChain(selected.id).then((c) => setSelectedChain(c)).catch(() => setSelectedChain([]));
     let cancelled = false;
     loadAssetIntelligence(selected.id).then((i) => { if (!cancelled) setSelectedIntel(i); });
     return () => { cancelled = true; };
   }, [selected?.id]);
 
   // Merge discovery status into asset rows
+  // Risk from the prioritized feed, so list rows show level + open findings.
+  const riskById = useMemo(() => {
+    const m = new Map<number, { risk_level?: string; open_findings?: number; risk_score?: number }>();
+    for (const p of (prioritized ?? []) as any[]) {
+      const id = Number(p.id ?? p.assetId ?? p.asset_id);
+      if (!id) continue;
+      m.set(id, {
+        risk_level: String(p.riskLevel ?? p.risk_level ?? "").toLowerCase() || undefined,
+        open_findings: Number(p.openFindingsCount ?? p.open_findings ?? 0),
+        risk_score: Number(p.riskScore ?? p.risk_score ?? 0) || undefined,
+      });
+    }
+    return m;
+  }, [prioritized]);
+
   const assetsWithDiscovery = useMemo(() => {
     return assets.map((a) => {
+      const risk = riskById.get(a.id);
       const job = discoveryJobs.find(
         (j: DiscoveryJob) => {
           const domain = (j.config as any)?.domain || (j.config as any)?.target || "";
           return domain.toLowerCase() === (a.value || "").toLowerCase();
         }
       );
-      return { ...a, discoveryStatus: job?.status as string | undefined, discoveryJobId: job?.id };
+      return {
+        ...a,
+        risk_level: (a.risk_level ?? risk?.risk_level) as Asset["risk_level"],
+        open_findings: a.open_findings ?? risk?.open_findings,
+        discoveryStatus: job?.status as string | undefined,
+        discoveryJobId: job?.id,
+      };
     });
-  }, [assets, discoveryJobs]);
+  }, [assets, discoveryJobs, riskById]);
 
   // Auto-poll discovery when active jobs exist
   const activeJobs = useMemo(() =>
@@ -317,6 +380,11 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
   }, [activeJobs.length, pollDiscovery]);
 
   const types = useMemo(() => ["all", ...Array.from(new Set(assets.map((a) => a.asset_type)))], [assets]);
+  const typeCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of assets) m.set(a.asset_type, (m.get(a.asset_type) ?? 0) + 1);
+    return m;
+  }, [assets]);
 
   const handleAddAsset = async () => {
     if (!addForm.value) { toast("error", "Enter a value"); return; }
@@ -589,6 +657,7 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
             )}
             <Pagination
               totalItems={prioritized?.length ?? 0}
+              itemLabel="assets"
               page={prioSafePage}
               pageSize={prioPageSize}
               onPageChange={setPrioPage}
@@ -602,150 +671,84 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="!p-0 overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 border-b border-phantix-700/40 p-4">
-              <div className="relative w-72">
+              <div className="flex rounded-lg border border-phantix-700 bg-phantix-950/60 p-0.5" role="group" aria-label="Inventory view">
+                {([
+                  ["tree", "Tree", <ListTree key="t" size={14} />],
+                  ["flat", "List", <List key="l" size={14} />],
+                ] as const).map(([id, label, icon]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setView(id)}
+                    aria-pressed={view === id}
+                    className={cx(
+                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                      view === id ? "bg-phantix-800 text-slate-100" : "text-slate-400 hover:text-slate-200",
+                    )}
+                  >
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+              <div className="relative w-72 max-w-full">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input className="input !pl-10" placeholder="Search value or name..." value={q} onChange={(e) => setQ(e.target.value)} />
+                <input
+                  className="input !pl-10"
+                  placeholder="Search value, name or tag..."
+                  aria-label="Search assets"
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Escape") setQ(""); }}
+                />
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {types.map((t) => (
                   <button
                     key={t}
                     onClick={() => setTypeFilter(t)}
+                    aria-pressed={typeFilter === t}
                     className={cx(
                       "rounded-lg px-2.5 py-1.5 text-xs font-medium capitalize transition-colors",
                       typeFilter === t ? "bg-gold-400/15 text-gold-300 border border-gold-400/30" : "text-slate-400 hover:bg-phantix-800/60 border border-transparent",
                     )}
                   >
                     {titleCase(t)}
+                    <span className={cx("ml-1.5 font-mono text-[12px]", typeFilter === t ? "text-gold-300/80" : "text-slate-500")}>
+                      {t === "all" ? assets.length : typeCounts.get(t) ?? 0}
+                    </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {(() => {
-              const filtered = assetsWithDiscovery.filter(
-                (a) =>
-                  (typeFilter === "all" || a.asset_type === typeFilter) &&
-                  (a.value.toLowerCase().includes(q.toLowerCase()) || a.name.toLowerCase().includes(q.toLowerCase())),
-              );
-              if (filtered.length === 0) {
-                return <EmptyState icon={<Boxes size={22} />} title="No assets match" body="Adjust filters or add your first in-scope host." />;
-              }
-              const selectedInView = filtered.filter((a) => checked.has(a.id));
-              const allChecked = selectedInView.length === filtered.length;
-              const toggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-                const s = new Set(checked);
-                if (e.target.checked) filtered.forEach((a) => s.add(a.id));
-                else filtered.forEach((a) => s.delete(a.id));
-                setChecked(s);
-              };
-              const invTotalPages = Math.max(1, Math.ceil(filtered.length / invPageSize));
-              const invSafePage = Math.min(invPage, invTotalPages);
-              const pageItems = filtered.slice((invSafePage - 1) * invPageSize, invSafePage * invPageSize);
-              return (
-                <>
-                  {checked.size > 0 && (
-                    <div className="flex flex-wrap items-center gap-3 border-b border-phantix-700/40 bg-phantix-800/40 px-4 py-2.5">
-                      <span className="text-xs font-medium text-slate-300">{checked.size} selected</span>
-                      <button
-                        onClick={() => void runDiscovery(assets.filter((a) => checked.has(a.id)))}
-                        className="btn-primary !py-1.5 !text-xs"
-                      >
-                        <Radar size={13} className="mr-1 inline" /> Run discovery
-                      </button>
-                      <button onClick={() => setChecked(new Set())} className="btn-ghost !py-1.5 !text-xs">Clear</button>
-                    </div>
-                  )}
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-phantix-700/40">
-                        <th className="th w-10"><input type="checkbox" checked={allChecked} onChange={toggleAll} className="accent-gold-400" aria-label="Select all assets" /></th>
-                        <th className="th">Asset</th>
-                        <th className="th">Type</th>
-                        <th className="th">Discovery</th>
-                        <th className="th">Criticality</th>
-                        <th className="th">Verified</th>
-                        <th className="th">Last seen</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pageItems.map((a, i) => (
-                        <motion.tr
-                          key={a.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: i * 0.03 }}
-                          onClick={() => setSelected(a)}
-                          className="cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
-                          {...clickableRowProps(() => setSelected(a))}
-                        >
-                          <td className="td w-10" onClick={(e) => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              checked={checked.has(a.id)}
-                              onChange={(e) => {
-                                const s = new Set(checked);
-                                if (e.target.checked) s.add(a.id);
-                                else s.delete(a.id);
-                                setChecked(s);
-                              }}
-                              className="accent-gold-400"
-                              aria-label={`Select ${a.value}`}
-                            />
-                          </td>
-                          <td className="td">
-                            <div className="flex items-center gap-3">
-                              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-phantix-800/70 text-phantix-300">
-                                {typeIcon[a.asset_type] ?? <Boxes size={15} />}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="truncate font-medium text-slate-200">{a.value}</p>
-                                <p className="text-xs text-slate-500">{a.name || a.asset_type}</p>
-                                {(() => {
-                                  const t = assetTierBadge(a);
-                                  return t ? <span className={`mt-1 inline-flex rounded border px-1.5 py-0.5 text-[12px] font-medium ${t.cls}`}>{t.label}</span> : null;
-                                })()}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="td"><span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span></td>
-                          <td className="td">
-                            {a.discoveryStatus ? (
-                              <span className="flex items-center gap-1.5">
-                                <span className={cx("h-1.5 w-1.5 rounded-full", a.discoveryStatus === "running" ? "bg-severity-low animate-pulse-soft" : a.discoveryStatus === "completed" ? "bg-emerald-400" : a.discoveryStatus === "failed" ? "bg-severity-critical" : "bg-slate-500")} />
-                                <StatusBadge status={a.discoveryStatus} />
-                              </span>
-                            ) : (
-                              <span className="text-xs text-slate-600">--</span>
-                            )}
-                          </td>
-                          <td className="td">
-                            <span className={cx("text-xs font-semibold capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
-                              {a.criticality}
-                            </span>
-                          </td>
-                          <td className="td">
-                            {a.is_verified ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-emerald-400"><ShieldCheck size={13} /> Verified</span>
-                            ) : (
-                              <span className="text-xs text-severity-medium">Unverified</span>
-                            )}
-                          </td>
-                          <td className="td"><span className="text-xs text-slate-500">{timeAgo(a.last_seen_at)}</span></td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <Pagination
-                    totalItems={filtered.length}
-                    page={invSafePage}
-                    pageSize={invPageSize}
-                    onPageChange={setInvPage}
-                    onPageSizeChange={setInvPageSize}
-                  />
-                </>
-              );
-            })()}
+            {view === "tree" && !q.trim() && typeFilter === "all" ? (
+              <AssetTreeView
+                onSelect={(a) => setSelected(assets.find((x) => x.id === a.id) ?? a)}
+                refreshKey={treeRefresh}
+                onFirstLoad={() => { if (!demo) reload(); }}
+              />
+            ) : (
+              <AssetListView
+                assets={assetsWithDiscovery}
+                typeIcon={typeIcon}
+                q={q}
+                typeFilter={typeFilter}
+                onClearSearch={() => setQ("")}
+                onClearType={() => setTypeFilter("all")}
+                onSelect={(a) => setSelected(assets.find((x) => x.id === a.id) ?? a)}
+                checked={checked}
+                onCheckedChange={setChecked}
+                onRunDiscovery={(list) => void runDiscovery(list)}
+                breadcrumb={breadcrumb}
+                notice={
+                  view === "tree" ? (
+                    <p className="border-b border-phantix-700/40 bg-phantix-900/40 px-4 py-2 text-xs text-slate-400">
+                      Showing matches with their place in the chain. Clear the search and type filter to see the tree.
+                    </p>
+                  ) : undefined
+                }
+              />
+            )}
             </Card>
           </motion.div>
       )}
@@ -765,6 +768,7 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
             <Card className="!p-0">
               <Pagination
                 totalItems={discoveryJobs.length}
+                itemLabel="jobs"
                 page={discSafePage}
                 pageSize={discPageSize}
                 onPageChange={setDiscPage}
@@ -1028,6 +1032,105 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
               ))}
             </div>
             <div>
+              <p className="label">Chain</p>
+              {selectedChain.length > 1 ? (
+                <nav aria-label="Asset chain" className="flex flex-wrap items-center gap-1 text-sm">
+                  {selectedChain.map((c, i) => (
+                    <React.Fragment key={c.id}>
+                      {i > 0 && <ChevronRight size={13} className="text-slate-600" aria-hidden />}
+                      {c.id === selected.id ? (
+                        <span className="font-mono font-medium text-slate-100" aria-current="page">{chainLabel(c)}</span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="rounded px-1 font-mono text-gold-300 hover:bg-gold-400/10"
+                          onClick={() => setSelected(assets.find((x) => x.id === c.id) ?? c)}
+                        >
+                          {chainLabel(c)}
+                        </button>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </nav>
+              ) : (
+                <p className="text-sm text-slate-500">Top of its chain — subdomains and paths found under it appear beneath it in the tree.</p>
+              )}
+              {selected.verification_method === "inherited" && selectedChain.length > 1 && (() => {
+                const host = [...selectedChain.slice(0, -1)].reverse().find((c) => c.asset_type === "domain" || c.asset_type === "subdomain" || c.asset_type === "ip_address");
+                return host ? (
+                  <p className="mt-1.5 text-xs text-slate-400">
+                    Verified through <span className="font-mono text-slate-300">{host.value}</span> — ownership is inherited from the verified host above it.
+                  </p>
+                ) : null;
+              })()}
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selected.parent_asset_id != null && (
+                  <button
+                    type="button"
+                    className="btn-secondary !py-1.5 !text-xs"
+                    disabled={chainBusy === "scope"}
+                    onClick={() =>
+                      void (async () => {
+                        if (!(await requireDualControl("Changing inherited scope requires a dual-control operate session."))) return;
+                        setChainBusy("scope");
+                        try {
+                          const next = !selected.chain_scope_excluded;
+                          await setChainScopeExcluded(selected.id, next);
+                          setSelected({ ...selected, chain_scope_excluded: next });
+                          toast("success", next ? "Kept out of parent scope" : "Included in parent scope", next
+                            ? "Scans and campaigns scoped to its parent will skip this asset and everything under it."
+                            : "Scans and campaigns scoped to its parent will include this asset again.");
+                          reload();
+                        } catch (e) {
+                          toast("error", "Could not change scope", e instanceof Error ? e.message : "");
+                        } finally {
+                          setChainBusy("");
+                        }
+                      })()
+                    }
+                  >
+                    {chainBusy === "scope" ? <Spinner className="h-3.5 w-3.5" /> : selected.chain_scope_excluded ? <Eye size={13} /> : <EyeOff size={13} />}
+                    {selected.chain_scope_excluded ? "Include when parent is scoped" : "Exclude from parent scope"}
+                  </button>
+                )}
+                {(selected.asset_type === "domain" || selected.asset_type === "subdomain") && selected.is_verified && (
+                  <button
+                    type="button"
+                    className="btn-secondary !py-1.5 !text-xs"
+                    disabled={chainBusy === "paths"}
+                    onClick={() =>
+                      void (async () => {
+                        if (!(await requireDualControl("Path discovery requires a dual-control operate session."))) return;
+                        setChainBusy("paths");
+                        try {
+                          const r = await discoverAssetPaths(selected.id);
+                          toast(
+                            "success",
+                            r.paths_added ? `${r.paths_added} path${r.paths_added === 1 ? "" : "s"} added` : "No new paths",
+                            r.robots_found || r.sitemap_urls
+                              ? `Read robots.txt${r.sitemap_urls ? ` and ${r.sitemap_urls} sitemap URL${r.sitemap_urls === 1 ? "" : "s"}` : ""}.`
+                              : "No robots.txt or sitemap was found on this host.",
+                          );
+                          reload();
+                        } catch (e) {
+                          toast("error", "Path discovery failed", e instanceof Error ? e.message : "");
+                        } finally {
+                          setChainBusy("");
+                        }
+                      })()
+                    }
+                  >
+                    {chainBusy === "paths" ? <Spinner className="h-3.5 w-3.5" /> : <FileSearch size={13} />} Discover paths (robots.txt &amp; sitemap)
+                  </button>
+                )}
+              </div>
+              {selected.chain_scope_excluded && (
+                <p className="mt-2 text-xs text-slate-400">
+                  <EyeOff size={12} className="mr-1 inline" /> Not included when its parent is scoped. Pick it explicitly to scan it.
+                </p>
+              )}
+            </div>
+            <div>
               <p className="label">Tags</p>
               <div className="flex flex-wrap gap-1.5">
                 {(selected.tags?.length ?? 0) ? selected.tags!.map((t) => (
@@ -1159,14 +1262,19 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
               <div>
                 <label className="label">Type</label>
                 <select className="input" value={addForm.type} onChange={(e) => setAddForm((f) => ({ ...f, type: e.target.value }))}>
-                  {["domain", "subdomain", "ip_address", "api", "web_app", "github_repo", "other"].map((t) => (
+                  {["domain", "subdomain", "web_path", "ip_address", "api", "web_app", "github_repo", "other"].map((t) => (
                     <option key={t} value={t}>{titleCase(t)}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="label">Value</label>
-                <input className="input font-mono" placeholder="api.example.com" value={addForm.value} onChange={(e) => setAddForm((f) => ({ ...f, value: e.target.value, name: e.target.value }))} />
+                {addForm.type === "web_path" && (
+                  <p className="-mt-1 mb-1.5 text-xs text-slate-400">
+                    A directory or file on a host you already track. It is placed under that host and verified through it.
+                  </p>
+                )}
+                <input className="input font-mono" placeholder={addForm.type === "web_path" ? "sub.example.com/robots.txt" : "api.example.com"} value={addForm.value} onChange={(e) => setAddForm((f) => ({ ...f, value: e.target.value, name: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
