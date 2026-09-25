@@ -1,20 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, FileCode, ExternalLink, Lock } from "lucide-react";
-import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
+import { FileText, Download, Plus, ShieldCheck, ShieldAlert, FileDown, KanbanSquare, RefreshCw, FileCode, ExternalLink } from "lucide-react";
+import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Modal, Tabs, ProgressBar, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
 import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
 import DocLink from "@sg/components/DocLink";
 import ReportSolutions from "@sg/components/ReportSolutions";
-import { loadReportsBundle, loadReportTypes, patchTrackerFinding, retestTrackerFinding } from "@sg/data";
+import { loadReportsBundle, loadReportTypes } from "@sg/data";
 import type { ReportTypeEntry } from "@sg/types";
 import { api, ApiError } from "@sg/api";
 import { useResource } from "@sg/useResource";
-import { timeAgo, formatBytes, titleCase, cx, humanize, normalizeReportRow, extractReportFindings, normalizeTrackerVerification, TRACKER_STATUSES, TRACKER_VERIFICATIONS } from "@sg/utils";
+import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings } from "@sg/utils";
 import { useStore } from "@sg/store";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
 import { isDemoMode } from "@sg/api";
 import { marked } from "marked";
-import type { TrackerFinding, TrackerSummary, TrackerVerification } from "@sg/types";
+import type { TrackerSummary } from "@sg/types";
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -124,20 +124,6 @@ async function handleDownload(
   }
 }
 
-const trackerStatuses = TRACKER_STATUSES;
-
-/**
- * Evidence filter for the board. Verification is a separate axis from
- * remediation status: the report gate holds unverified candidates back from the
- * client deliverable, but they are still open work and belong on the tracker.
- */
-const VERIFICATION_FILTERS: { key: TrackerVerification | "all"; label: string }[] = [
-  { key: "all", label: "All evidence" },
-  { key: "auto_verified", label: "Auto-verified" },
-  { key: "unverified", label: "Unverified" },
-  { key: "manually_verified", label: "Human-verified" },
-];
-
 function JsonPre({ data }: { data: unknown }) {
   return (
     <pre className="mt-2 overflow-auto rounded-xl border border-phantix-700/40 bg-phantix-950/60 p-3 text-[13px] leading-relaxed text-slate-300 max-h-[400px]">
@@ -198,10 +184,9 @@ export default function Reports() {
     { reports: [], trackerFindings: [], trackerSummary: null as TrackerSummary | null, trackerNote: null as string | null },
     "reports",
   );
-  const { reports, trackerFindings, trackerSummary } = data;
+  const { reports } = data;
   const requestedTab = params.get("tab");
-  const initialTab =
-    requestedTab === "tracker" || requestedTab === "reports" ? requestedTab : "solutions";
+  const initialTab = requestedTab === "reports" ? "reports" : "solutions";
   const [tab, setTab] = useState(initialTab);
   const [reportTypes, setReportTypes] = useState<ReportTypeEntry[]>([]);
   const [retention, setRetention] = useState<{ max_versions_per_type?: number } | null>(null);
@@ -212,29 +197,6 @@ export default function Reports() {
   const reportsTotalPages = Math.max(1, Math.ceil(reports.length / reportsPageSize));
   const reportsSafePage = Math.min(reportsPage, reportsTotalPages);
   const reportsPageItems = reports.slice((reportsSafePage - 1) * reportsPageSize, reportsSafePage * reportsPageSize);
-  const [trackerPage, setTrackerPage] = useState(1);
-  const [trackerPageSize, setTrackerPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [verificationFilter, setVerificationFilter] = useState<TrackerVerification | "all">("all");
-  const verificationCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: trackerFindings.length };
-    for (const v of TRACKER_VERIFICATIONS) counts[v] = 0;
-    for (const f of trackerFindings) {
-      counts[normalizeTrackerVerification(f.verification_status)] += 1;
-    }
-    return counts;
-  }, [trackerFindings]);
-  const visibleTrackerFindings = useMemo(
-    () =>
-      verificationFilter === "all"
-        ? trackerFindings
-        : trackerFindings.filter(
-            (f) => normalizeTrackerVerification(f.verification_status) === verificationFilter,
-          ),
-    [trackerFindings, verificationFilter],
-  );
-  const trackerTotalPages = Math.max(1, Math.ceil(visibleTrackerFindings.length / trackerPageSize));
-  const trackerSafePage = Math.min(trackerPage, trackerTotalPages);
-  const trackerPageItems = visibleTrackerFindings.slice((trackerSafePage - 1) * trackerPageSize, trackerSafePage * trackerPageSize);
   const [genSubmitting, setGenSubmitting] = useState(false);
   const [genForm, setGenForm] = useState({ report_type: "vapt_campaign", campaign_id: "", formats: ["markdown", "json", "xlsx", "pdf", "pptx", "html"] as string[], run_inline: false });
   // Only campaign-scoped report types need a campaign (from the backend catalog's
@@ -267,7 +229,6 @@ export default function Reports() {
       cancelled = true;
     };
   }, []);
-  const highlightKey = params.get("key") || "";
 
   // Verification gate (AUGUST_2026_REPORTING…_FE.md §A): preview verified vs
   // pending counts before generate; 409 verification_pending must be acked.
@@ -320,64 +281,13 @@ export default function Reports() {
     void loadGate(genForm.campaign_id, genForm.report_type);
   }, [genOpen, genForm.campaign_id, genForm.report_type, fromAgi, requiresCampaign, loadGate]);
 
-  // Unit retest state
-  const [retestTarget, setRetestTarget] = useState<TrackerFinding | null>(null);
-  const [retestBusy, setRetestBusy] = useState(false);
-  const [retestForm, setRetestForm] = useState({ tool: "", note: "" });
-
-  const runRetest = async () => {
-    if (!retestTarget) return;
-    if (!(await requireDualControl("Running a unit retest requires a dual-control operate session."))) return;
-    setRetestBusy(true);
-    const key = retestTarget.finding_key;
-    const previous = data;
-    try {
-      const updated = await retestTrackerFinding(key, {
-        tool: retestForm.tool.trim() || undefined,
-        note: retestForm.note.trim() || undefined,
-      });
-      const status = updated?.status ?? "retest_failed";
-      setData((bundle) => ({
-        ...bundle,
-        trackerFindings: bundle.trackerFindings.map((tf) =>
-          tf.finding_key === key
-            ? ({ ...tf, ...(updated ?? {}), status: status as TrackerFinding["status"] } as TrackerFinding)
-            : tf,
-        ),
-      }));
-      toast(
-        status === "fixed" ? "success" : status === "retest_failed" ? "error" : "info",
-        status === "fixed" ? "Fix confirmed — finding closed" : "Retest complete",
-        status === "fixed"
-          ? `${key} re-scanned clean — auto-closed as fixed`
-          : status === "retest_failed"
-            ? `${key} still matches — remains open for remediation`
-            : `${key} retest inconclusive — status unchanged`,
-      );
-      setRetestTarget(null);
-      setRetestForm({ tool: "", note: "" });
-      reload();
-    } catch (err: any) {
-      setData(previous);
-      if (err?.status === 403) {
-        toast("error", "Dual-control required", err.message ?? "Unlock operate and retry");
-      } else {
-        toast("error", "Retest failed", err?.message ?? "Could not run retest");
-      }
-    } finally {
-      setRetestBusy(false);
-    }
-  };
-
   // Detail modal
   const [detail, setDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailTab, setDetailTab] = useState("");
 
   useEffect(() => {
-    const t = params.get("tab");
-    if (t === "tracker") setTab("tracker");
-    else if (params.get("id")) setTab("reports");
+    if (params.get("id")) setTab("reports");
   }, [params]);
 
   useEffect(() => {
@@ -539,6 +449,11 @@ export default function Reports() {
     return <PageSkeleton variant="list" rows={5} actions />;
   }
 
+  if (requestedTab === "tracker") {
+    const key = params.get("key");
+    return <Navigate to={`/tracker${key ? `?key=${encodeURIComponent(key)}` : ""}`} replace />;
+  }
+
   if (error && reports.length === 0) {
     return (
       <ErrorState
@@ -567,7 +482,6 @@ export default function Reports() {
         tabs={[
           { id: "solutions", label: "Report solutions", count: reportTypes.length || undefined },
           { id: "reports", label: "Report library", count: reports.length },
-          { id: "tracker", label: "Findings tracker", count: trackerFindings.length },
         ]}
         active={tab}
         onChange={setTab}
@@ -710,202 +624,6 @@ export default function Reports() {
             For large campaigns, generate in the background to avoid timeouts, then check back as
             the report completes.
           </p>
-        </motion.div>
-      )}
-
-      {tab === "tracker" && (
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-phantix-700/50 bg-phantix-900/50 px-4 py-3">
-            <KanbanSquare size={16} className="mt-0.5 shrink-0 text-gold-400" />
-            <p className="text-xs leading-5 text-slate-400">
-              Living remediation board (not a download). Statuses:{" "}
-              <strong className="text-slate-200">open → in_progress → fixed</strong> (or{" "}
-              <strong className="text-slate-200">accepted</strong>). A fixed finding is marked{" "}
-              <strong className="text-severity-critical">regressed</strong> when it reappears. Changing status needs
-              dual-control when configured. <strong className="text-slate-200">Evidence</strong> is a separate axis:
-              unverified candidates are held out of the client report but stay on the board until someone
-              confirms or dismisses them.
-            </p>
-          </div>
-
-          {trackerSummary && (
-            <div className="mb-4 flex flex-wrap gap-2 text-xs">
-              {(
-                [
-                  ["open", trackerSummary.open],
-                  ["in_progress", trackerSummary.in_progress],
-                  ["fixed", trackerSummary.fixed],
-                  ["accepted", trackerSummary.accepted],
-                  ["retest_failed", trackerSummary.retest_failed],
-                  ["regressed", trackerSummary.regressed],
-                  ["unassigned", trackerSummary.unassigned],
-                ] as const
-              ).map(([k, v]) =>
-                v != null ? (
-                  <span key={k} className="chip border-phantix-600/50 bg-phantix-800/50 text-slate-300">
-                    {titleCase(k)}: <strong className="ml-1 text-slate-100">{v}</strong>
-                  </span>
-                ) : null,
-              )}
-            </div>
-          )}
-
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs">
-            <span className="text-slate-500">Evidence:</span>
-            {VERIFICATION_FILTERS.map(({ key, label }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => { setVerificationFilter(key); setTrackerPage(1); }}
-                aria-pressed={verificationFilter === key}
-                className={cx(
-                  "chip transition-colors",
-                  verificationFilter === key
-                    ? "border-gold-400/50 bg-gold-400/15 text-gold-200"
-                    : "border-phantix-600/50 bg-phantix-800/50 text-slate-400 hover:text-slate-200",
-                )}
-              >
-                {label}
-                <strong className="ml-1 text-slate-100">{verificationCounts[key] ?? 0}</strong>
-              </button>
-            ))}
-          </div>
-
-          <Card className="!p-0 overflow-hidden">
-            {visibleTrackerFindings.length === 0 ? (
-              <EmptyState
-                icon={<KanbanSquare size={24} />}
-                title={trackerFindings.length === 0 ? "No tracker findings" : "Nothing at this evidence level"}
-                body={
-                  trackerFindings.length === 0
-                    ? "Findings appear here from completed report sessions. Never render PDF/HTML in this tab."
-                    : "Every tracked finding sits at a different evidence level — clear the filter to see them."
-                }
-              />
-            ) : (
-              <div className="max-h-[min(70vh,720px)] overflow-auto">
-                <table className="w-full">
-                  <thead className="sticky top-0 z-10 bg-phantix-900/95 backdrop-blur-sm">
-                    <tr className="border-b border-phantix-700/40">
-                      <th className="th">Key</th>
-                      <th className="th">Finding</th>
-                      <th className="th">Severity</th>
-                      <th className="th">Asset</th>
-                      <th className="th">Owner</th>
-                      <th className="th">Evidence</th>
-                      <th className="th">Status</th>
-                      <th className="th">Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trackerPageItems.map((f) => (
-                      <tr
-                        key={f.finding_key}
-                        id={`tracker-${f.finding_key}`}
-                        className={cx(
-                          "border-b border-phantix-800/40 hover:bg-phantix-800/35",
-                          highlightKey === f.finding_key && "bg-gold-400/10 ring-1 ring-inset ring-gold-400/30",
-                        )}
-                      >
-                        <td className="td font-mono text-xs font-semibold text-gold-300 max-w-[120px] truncate" title={f.finding_key}>{f.finding_key}</td>
-                        <td className="td max-w-[280px]">
-                          <p className="truncate font-medium text-slate-200">{f.title}</p>
-                          <p className="text-xs text-slate-500 truncate">
-                            {f.campaign_name}
-                            {f.priority ? ` · ${f.priority}` : ""}
-                            {f.surface ? ` · ${humanize(f.surface)}` : ""}
-                          </p>
-                        </td>
-                        <td className="td"><SeverityBadge severity={f.severity} /></td>
-                        <td className="td font-mono text-xs text-slate-400 max-w-[160px] truncate" title={f.asset_value}>
-                          {f.asset_id != null ? (
-                            <a href={`/assets?id=${f.asset_id}`} className="hover:text-gold-300">{f.asset_value}</a>
-                          ) : (
-                            f.asset_value
-                          )}
-                        </td>
-                        <td className="td text-xs text-slate-400">{f.owner ?? <span className="text-slate-600">unassigned</span>}</td>
-                        <td className="td">
-                          <VerificationBadge status={normalizeTrackerVerification(f.verification_status)} />
-                        </td>
-                        <td className="td">
-                          <div className="flex items-center gap-1.5">
-                            {f.status === "regressed" && (
-                              <span className="chip border-severity-critical/40 bg-severity-critical/10 text-[12px] text-severity-critical">regressed</span>
-                            )}
-                            <select
-                              value={trackerStatuses.includes(f.status as any) ? f.status : "open"}
-                              onChange={async (e) => {
-                                const newStatus = e.target.value;
-                                if (!(await requireDualControl("Updating tracker status requires a dual-control operate session."))) return;
-                                const previous = data;
-                                setData((bundle) => ({
-                                  ...bundle,
-                                  trackerFindings: bundle.trackerFindings.map((tf) =>
-                                    tf.finding_key === f.finding_key ? { ...tf, status: newStatus as TrackerFinding["status"] } : tf,
-                                  ),
-                                }));
-                                try {
-                                  await patchTrackerFinding(f.finding_key, { status: newStatus });
-                                  toast("success", "Tracker updated", `${f.finding_key} → ${newStatus}`);
-                                } catch (err: any) {
-                                  setData(previous);
-                                  if (err?.status === 403) {
-                                    toast("error", "Dual-control required", err.message ?? "Unlock operate and retry");
-                                  } else {
-                                    toast("error", "Failed", err.message ?? "Status update failed");
-                                  }
-                                }
-                              }}
-                              className="input !w-auto !py-1 text-xs"
-                            >
-                              {trackerStatuses.map((s) => (
-                                <option key={s} value={s}>{titleCase(s)}</option>
-                              ))}
-                            </select>
-                            <button
-                              title="Run a targeted unit retest of just this finding's asset; auto-closes when the fix is confirmed"
-                              className="rounded-lg border border-gold-400/30 bg-gold-400/10 px-2 py-1 text-xs font-medium text-gold-300 transition-colors hover:bg-gold-400/20 disabled:opacity-50"
-                              disabled={f.status === "fixed" || f.status === "accepted"}
-                              onClick={() => {
-                                setRetestTarget(f);
-                                setRetestForm({ tool: "", note: "" });
-                              }}
-                            >
-                              <RefreshCw size={12} className="mr-1 inline" /> Retest
-                            </button>
-                            {f.retest_status && (
-                              <span
-                                title={f.retest_status}
-                                className={cx(
-                                  "chip text-[12px]",
-                                  f.retest_status === "confirmed"
-                                    ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-                                    : f.retest_status === "failed"
-                                      ? "border-severity-critical/40 bg-severity-critical/10 text-severity-critical"
-                                      : "border-slate-500/40 bg-slate-500/10 text-slate-400",
-                                )}
-                              >
-                                {f.retest_status}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="td text-xs text-slate-500 whitespace-nowrap">{timeAgo(f.updated_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <Pagination
-                  totalItems={visibleTrackerFindings.length}
-                  page={trackerSafePage}
-                  pageSize={trackerPageSize}
-                  onPageChange={setTrackerPage}
-                  onPageSizeChange={setTrackerPageSize}
-                />
-              </div>
-            )}
-          </Card>
         </motion.div>
       )}
 
@@ -1103,7 +821,7 @@ export default function Reports() {
                 onClick={() => {
                   setAckOpen(false);
                   setGenOpen(false);
-                  setTab("tracker");
+                  navigate("/tracker?evidence=unverified&status=all");
                 }}
               >
                 <KanbanSquare size={14} /> Verify findings
@@ -1275,63 +993,6 @@ export default function Reports() {
         )}
       </Modal>
 
-      {/* Unit retest modal */}
-      <Modal
-        open={!!retestTarget}
-        onClose={() => setRetestTarget(null)}
-        title={retestTarget ? `Unit retest — ${retestTarget.finding_key}` : "Unit retest"}
-      >
-        {retestTarget && (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-phantix-700/50 bg-phantix-950/50 p-3 text-sm">
-              <p className="font-medium text-slate-100">{retestTarget.title}</p>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                <SeverityBadge severity={retestTarget.severity} />
-                {retestTarget.asset_value && <span className="font-mono">{retestTarget.asset_value}</span>}
-                {retestTarget.priority && <span>· {retestTarget.priority}</span>}
-              </div>
-            </div>
-            <p className="rounded-lg bg-phantix-800/40 p-2.5 text-[13px] leading-5 text-slate-500">
-              Runs a targeted scan of only this finding's asset with the tool family that originally flagged it
-              (or the override below). If the retest comes back clean, the finding is{" "}
-              <strong className="text-emerald-300">closed automatically (fixed)</strong>.
-            </p>
-            <form
-              className="space-y-3"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void runRetest();
-              }}
-            >
-              <div>
-                <label className="label">Tool override (optional)</label>
-                <input
-                  className="input"
-                  placeholder="nmap · nuclei · web · mobile ..."
-                  value={retestForm.tool}
-                  onChange={(e) => setRetestForm((f) => ({ ...f, tool: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="label">Note (optional)</label>
-                <textarea
-                  className="input min-h-[64px] w-full resize-y"
-                  placeholder="e.g. patch applied 2026-08-19, expecting clean retest"
-                  value={retestForm.note}
-                  onChange={(e) => setRetestForm((f) => ({ ...f, note: e.target.value }))}
-                />
-              </div>
-              <button className="btn-primary w-full" type="submit" disabled={retestBusy}>
-                {retestBusy ? <Spinner className="h-4 w-4" /> : <RefreshCw size={14} />} Run unit retest
-              </button>
-              <p className="text-[12px] text-slate-500">
-                <Lock size={10} className="mr-1 inline text-gold-400" />
-                Retesting this finding needs an operate session when dual control is configured.
-              </p>
-            </form>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

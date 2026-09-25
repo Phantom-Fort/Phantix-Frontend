@@ -12,6 +12,7 @@ import { normalizeAgiMarkdown } from "../agiMarkdown";
 import { personaForChunk, PHASE_ACTIVITY, PHASE_ACTIVITY_BY_ID, activityFor, type AgentPersona, type AttackPhase } from "../agiGraph";
 import type { AgiTranscriptChunk, Severity } from "../types";
 import { cx, humanize } from "../utils";
+import CrossAppLink from "./CrossAppLink";
 
 // ── Shared live-stream primitives for the Autonomous Pentest Agent console ────
 // Used by the fullscreen operator console (AgiConsole) and the compact drawer
@@ -505,23 +506,24 @@ export function IssuesStrip({
         <p className="text-[12px] font-semibold uppercase tracking-wider text-slate-400">
           Issues found ({findings.length})
         </p>
-        <a href={href} className="text-[12px] font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200">
+        <CrossAppLink app="core" to={href} className="text-[12px] font-medium text-gold-300 underline decoration-gold-400/40 underline-offset-2 hover:text-gold-200">
           Open tracker →
-        </a>
+        </CrossAppLink>
       </div>
       <div className="mt-1.5 space-y-1">
         {findings.slice(0, 8).map((f, i) => {
           const sev = (f.severity ?? "info").toLowerCase() as Severity;
           return (
-            <a
+            <CrossAppLink
               key={i}
-              href={href}
+              app="core"
+              to={href}
               className="flex items-center gap-2 rounded-lg bg-phantix-950/50 px-2 py-1 text-xs transition-colors hover:bg-phantix-800/50"
             >
               <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", SEV_DOT[sev] ?? "bg-slate-500")} />
               <span className="min-w-0 flex-1 truncate text-slate-300">{f.title}</span>
               {f.cve && <span className="shrink-0 font-mono text-[12px] text-gold-400">{f.cve}</span>}
-            </a>
+            </CrossAppLink>
           );
         })}
       </div>
