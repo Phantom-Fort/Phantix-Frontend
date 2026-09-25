@@ -62,7 +62,7 @@ function SubstepRow({
             <span className="text-[13px] font-medium text-slate-200">{substep.label}</span>
             <SeverityBadge
               severity={(substep.worst_severity || "info") as Severity}
-              className="!px-1.5 !py-0 !text-[11px]"
+              className="!px-1.5 !py-0 !text-[12px]"
             />
             <span className="text-[12px] text-slate-500">
               {substep.check_count} {substep.check_count === 1 ? "check" : "checks"}
@@ -71,12 +71,12 @@ function SubstepRow({
               <span className="text-[12px] text-slate-600">~{substep.max_duration_minutes}m</span>
             )}
             {substep.regression && (
-              <span className="chip border-severity-critical/30 bg-severity-critical/10 text-[11px] text-severity-critical">
+              <span className="chip border-severity-critical/30 bg-severity-critical/10 text-[12px] text-severity-critical">
                 <RotateCcw size={9} className="mr-1 inline" /> regression
               </span>
             )}
             {substep.accepted_risk && (
-              <span className="chip border-amber-400/30 bg-amber-400/10 text-[11px] text-amber-300">
+              <span className="chip border-amber-400/30 bg-amber-400/10 text-[12px] text-amber-300">
                 accepted risk
               </span>
             )}
@@ -106,7 +106,7 @@ function SubstepRow({
                   <span className="truncate text-[12px] text-slate-400">
                     {check.display_name || check.name}
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] text-slate-600">{check.name}</span>
+                  <span className="shrink-0 font-mono text-[12px] text-slate-600">{check.name}</span>
                 </li>
               ))}
               {(substep.checks ?? []).length === 0 && (
@@ -115,7 +115,7 @@ function SubstepRow({
             </ul>
           )}
           {(substep.vuln_classes ?? []).length > 0 && (
-            <p className="mt-1 font-mono text-[11px] text-slate-600">
+            <p className="mt-1 font-mono text-[12px] text-slate-600">
               verifies: {(substep.vuln_classes ?? []).join(", ")}
             </p>
           )}
@@ -143,7 +143,7 @@ function StepBlock({
           <Layers size={13} className="shrink-0 text-gold-300" />
           <span className="text-[13px] font-semibold text-slate-100">{step.step_name}</span>
           {step.process_flow && (
-            <span className="chip border-gold-400/20 bg-gold-400/[0.06] font-mono text-[11px] text-gold-200">
+            <span className="chip border-gold-400/20 bg-gold-400/[0.06] font-mono text-[12px] text-gold-200">
               {step.process_flow}
             </span>
           )}
@@ -155,7 +155,7 @@ function StepBlock({
           )}
         </div>
         {(step.vuln_focus ?? []).length > 0 && (
-          <span className="truncate font-mono text-[11px] text-slate-600">
+          <span className="truncate font-mono text-[12px] text-slate-600">
             hunting: {(step.vuln_focus ?? []).slice(0, 3).map((f) => f.vuln_class).join(", ")}
           </span>
         )}
@@ -241,7 +241,7 @@ export default function VaptPlanReview({
               <SeverityBadge
                 key={sev}
                 severity={sev}
-                className="!px-1.5 !py-0 !text-[11px]"
+                className="!px-1.5 !py-0 !text-[12px]"
               />
             ) : null,
           )}

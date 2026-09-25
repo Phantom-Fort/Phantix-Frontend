@@ -266,7 +266,7 @@ export default function SocAvailability() {
         <CardHeader
           title="Open downtime"
           subtitle="Live outages — elapsed time ticks while open"
-          action={<button onClick={() => void refresh()} className="btn-ghost text-sm px-3 py-1.5"><RefreshCw size={14} /></button>}
+          action={<button onClick={() => void refresh()} className="btn-ghost text-sm px-3 py-1.5" aria-label="Refresh availability" title="Refresh availability"><RefreshCw size={14} /></button>}
         />
         {openIncidents.length === 0 ? (
           <p className="py-6 text-center text-sm text-slate-500">All monitors are up.</p>

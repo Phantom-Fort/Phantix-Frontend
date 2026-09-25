@@ -184,7 +184,7 @@ function PostureChips({ posture }: { posture: Record<string, unknown> }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map((c) => (
-        <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[11px] font-medium text-slate-400">{c}</span>
+        <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[12px] font-medium text-slate-400">{c}</span>
       ))}
     </div>
   );
@@ -393,11 +393,11 @@ export default function EndpointMonitoring() {
                           <button className="text-left font-medium text-slate-200 hover:text-gold-300" onClick={() => setDetail(m)}>
                             {m.name}
                           </button>
-                          {!m.enabled && <span className="ml-2 rounded bg-phantix-800/80 px-1.5 py-0.5 text-[10px] uppercase text-slate-500">paused</span>}
+                          {!m.enabled && <span className="ml-2 rounded bg-phantix-800/80 px-1.5 py-0.5 text-[12px] uppercase text-slate-500">paused</span>}
                         </td>
                         <td className="td">
                           <span className="inline-flex items-center gap-1.5 font-mono text-xs text-slate-400">
-                            <span className="rounded bg-phantix-800/80 px-1.5 py-0.5 text-[10px] uppercase text-slate-400">{m.method}</span>
+                            <span className="rounded bg-phantix-800/80 px-1.5 py-0.5 text-[12px] uppercase text-slate-400">{m.method}</span>
                             <span className="max-w-[280px] truncate">{m.url}</span>
                           </span>
                         </td>
@@ -674,11 +674,11 @@ function MonitorDetail({ monitor, onClose }: { monitor: EndpointMonitor; onClose
           <StatusBadge status={monitor.last_status === "up" ? "ready" : monitor.last_status} />
         </div>
         <div className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3">
-          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Latest posture</p>
+          <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-wider text-slate-500">Latest posture</p>
           <PostureChips posture={monitor.last_posture ?? {}} />
         </div>
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Recent probes</p>
+          <p className="mb-2 text-[12px] font-semibold uppercase tracking-wider text-slate-500">Recent probes</p>
           {loading ? (
             <div className="flex justify-center py-6"><Spinner /></div>
           ) : results.length === 0 ? (

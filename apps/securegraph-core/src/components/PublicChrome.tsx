@@ -34,15 +34,15 @@ export default function PublicChrome() {
             <span className="hidden sm:inline">Back</span>
           </button>
 
-          <span className="h-6 w-px bg-phantix-700/60" aria-hidden="true" />
+          <span className="hidden h-6 w-px bg-phantix-700/60 sm:block" aria-hidden="true" />
 
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
-            <span className="leading-tight">
+          <Link to="/" className="flex min-w-0 items-center gap-3">
+            <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 shrink-0 object-contain" />
+            <span className="min-w-0 truncate leading-tight">
               <span className="block font-display text-[15px] font-bold text-white">
                 SecureGraph
               </span>
-              <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">
+              <span className="block text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">
                 Documentation
               </span>
             </span>
@@ -69,8 +69,9 @@ export default function PublicChrome() {
           <div className="ml-auto flex items-center gap-2.5">
             <ThemeToggle />
             {session?.authenticated ? (
-              <Link to="/choose-app" className="btn-primary !py-2">
-                Open console <ArrowRight size={15} />
+              <Link to="/choose-app" className="btn-primary whitespace-nowrap !px-3 !py-2 sm:!px-4">
+                <span className="sm:hidden">Console</span>
+                <span className="hidden sm:inline">Open console</span> <ArrowRight size={15} />
               </Link>
             ) : (
               <Link to="/login" className="btn-ghost !py-2">

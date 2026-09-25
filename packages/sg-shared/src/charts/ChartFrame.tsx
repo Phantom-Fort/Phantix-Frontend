@@ -59,7 +59,7 @@ export default function ChartFrame({
               title={asTable ? "Show the chart" : "Show the numbers"}
               aria-label={asTable ? "Show the chart" : "Show the numbers"}
             >
-              {asTable ? <BarChart3 size={12} /> : <Table2 size={12} />}
+              {asTable ? <BarChart3 size={14} /> : <Table2 size={14} />}
             </button>
           )}
         </div>
@@ -122,7 +122,7 @@ export function tooltipStyles(theme: "dark" | "light") {
       background: bg,
       border: `1px solid ${border}`,
       borderRadius: 6,
-      fontSize: 11.5,
+      fontSize: 12.5,
       color: ink,
       padding: "6px 9px",
     },

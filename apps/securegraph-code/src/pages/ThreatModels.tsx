@@ -284,7 +284,7 @@ export default function ThreatModels() {
                       onClick={() => {
                         setRemembered((rows) => rows.filter((x) => x.modelId !== r.modelId));
                       }}
-                      className="shrink-0 rounded p-1 text-slate-500 hover:text-slate-300"
+                      className="shrink-0 rounded-md p-2 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300"
                       aria-label={`Hide model ${r.modelId}`}
                     >
                       <X size={13} />

@@ -143,7 +143,7 @@ export default function AssetGraph() {
             <input type="checkbox" checked={showTypes} onChange={(e) => setShowTypes(e.target.checked)} className="sr-only" />
             <Boxes size={11} /> Asset types
           </label>
-          <div className="ml-auto flex items-center gap-3 font-mono text-[13px] text-slate-500">
+          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[13px] text-slate-500">
             <span>{prunedModel.counts.assets} assets</span>
             <span>·</span>
             <span>{prunedModel.counts.tags} tags</span>
@@ -161,7 +161,7 @@ export default function AssetGraph() {
         </div>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-12 lg:items-start">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
         <Card className="lg:col-span-8 min-w-0">
           <CardHeader
             title={<><Network size={15} className="inline mr-1.5 text-gold-400" />Force graph</>}

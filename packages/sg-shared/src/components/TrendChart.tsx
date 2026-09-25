@@ -40,14 +40,14 @@ export default function TrendChart({ points, color = "#E8B54D", secondaryColor =
         <CartesianGrid stroke="rgba(113,113,122,0.12)" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fill: "#71717A", fontSize: 10, fontFamily: MONO }}
+          tick={{ fill: "#71717A", fontSize: 12, fontFamily: MONO }}
           axisLine={{ stroke: "#3F3F46" }}
           tickLine={false}
           interval="preserveStartEnd"
           minTickGap={28}
         />
         <YAxis
-          tick={{ fill: "#71717A", fontSize: 10, fontFamily: MONO }}
+          tick={{ fill: "#71717A", fontSize: 12, fontFamily: MONO }}
           axisLine={false}
           tickLine={false}
           width={42}
@@ -63,7 +63,7 @@ export default function TrendChart({ points, color = "#E8B54D", secondaryColor =
             padding: "6px 10px",
             fontFamily: MONO,
           }}
-          labelStyle={{ color: "#A1A1AA", fontSize: 11, marginBottom: 2 }}
+          labelStyle={{ color: "#A1A1AA", fontSize: 12, marginBottom: 2 }}
           itemStyle={{ color: "#E4E4E7" }}
         />
         <Area

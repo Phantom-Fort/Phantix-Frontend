@@ -70,13 +70,13 @@ export default function MovementTimeline({
             <CartesianGrid stroke={chrome.grid} vertical={false} strokeDasharray="2 4" />
             <XAxis
               dataKey="label"
-              tick={{ fill: chrome.axis, fontSize: 10 }}
+              tick={{ fill: chrome.axis, fontSize: 12 }}
               axisLine={{ stroke: chrome.grid }}
               tickLine={false}
               interval={step - 1}
             />
             <YAxis
-              tick={{ fill: chrome.axis, fontSize: 10 }}
+              tick={{ fill: chrome.axis, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
               allowDecimals={false}

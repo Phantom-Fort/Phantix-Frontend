@@ -60,7 +60,7 @@ export default function SocAdvisor() {
                 {dashboard.trend.map((pt, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full rounded-t bg-gold-400/60" style={{ height: `${Math.max(4, (pt.score / 100) * 80)}px` }} />
-                    <span className="text-[11px] text-slate-500">{pt.date.slice(5)}</span>
+                    <span className="text-[12px] text-slate-500">{pt.date.slice(5)}</span>
                   </div>
                 ))}
               </div>

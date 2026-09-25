@@ -175,7 +175,7 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
           )}
           {b.tools.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[11px]" : "text-[12px]")}>Tools</span>
+              <span className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[12px]" : "text-[12px]")}>Tools</span>
               {b.tools.map((t, i) => (
                 <span key={i} className="chip !px-1.5 !py-0 font-mono text-[12px] text-gold-300">{t}</span>
               ))}
@@ -192,7 +192,7 @@ export function TurnBriefCard({ content, dense = false }: { content: string; den
 function BriefSection({ title, items, dense = false, accent }: { title: string; items: string[]; dense?: boolean; accent?: string }) {
   return (
     <div>
-      <p className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[11px]" : "text-[12px]")}>{title}</p>
+      <p className={cx("font-semibold uppercase tracking-wider text-slate-500", dense ? "text-[12px]" : "text-[12px]")}>{title}</p>
       <ul className={cx("mt-1 space-y-1", dense ? "text-[12px]" : "text-[13px]")}>
         {items.slice(0, 6).map((it, i) => (
           <li key={i} className="flex items-start gap-1.5 leading-relaxed text-slate-300">
@@ -285,7 +285,7 @@ function ToolCallCard({ t, dense = false }: { t: AgiTranscriptChunk; dense?: boo
   return (
     <div className="group relative min-w-0">
       {(okState != null || durMs != null || engineHit) && (
-        <p className="mb-1 font-mono text-[11px] text-slate-500">
+        <p className="mb-1 font-mono text-[12px] text-slate-500">
           {okState === false ? "failed" : okState === true ? "ok" : ""}
           {durMs != null ? `${okState != null ? " ·" : ""} ${fmtDuration(durMs)}` : ""}
           {engineHit ? `${okState != null || durMs != null ? " ·" : ""} ${engineHit[1]}` : ""}
@@ -396,7 +396,7 @@ export function ToolGroupCard({
                     <span className="flex-1" />
                   )}
                   {durMs != null && (
-                    <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500" title="Time to run and respond">
+                    <span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-500" title="Time to run and respond">
                       {fmtDuration(durMs)}
                     </span>
                   )}
@@ -520,7 +520,7 @@ export function IssuesStrip({
             >
               <span className={cx("h-1.5 w-1.5 shrink-0 rounded-full", SEV_DOT[sev] ?? "bg-slate-500")} />
               <span className="min-w-0 flex-1 truncate text-slate-300">{f.title}</span>
-              {f.cve && <span className="shrink-0 font-mono text-[11px] text-gold-400">{f.cve}</span>}
+              {f.cve && <span className="shrink-0 font-mono text-[12px] text-gold-400">{f.cve}</span>}
             </a>
           );
         })}
@@ -794,8 +794,8 @@ function PiHelperCard({ t, dense = false, observe = false }: { t: AgiTranscriptC
         <span className="min-w-0 flex-1">
           <span className={cx("flex items-center gap-1.5", dense ? "text-[13px]" : "text-xs")}>
             <span className="truncate font-semibold text-slate-200">{title}</span>
-            <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[11px] uppercase text-slate-400">{p.profile}</span>
-            {p.latencyMs != null && <span className="shrink-0 font-mono text-[11px] tabular-nums text-slate-500">{(p.latencyMs / 1000).toFixed(1)}s</span>}
+            <span className="chip shrink-0 !px-1.5 !py-0 font-mono text-[12px] uppercase text-slate-400">{p.profile}</span>
+            {p.latencyMs != null && <span className="shrink-0 font-mono text-[12px] tabular-nums text-slate-500">{(p.latencyMs / 1000).toFixed(1)}s</span>}
           </span>
           <span className={cx("block truncate text-slate-400", dense ? "text-[12px]" : "wb-xs")}>
             {p.failed && p.error
@@ -1104,7 +1104,7 @@ export function QueuedPromptStrip({ prompts, dense = false }: { prompts: QueuedP
           </span>
           <div className="min-w-0 flex-1">
             <p className={cx("truncate font-medium text-gold-100", dense ? "text-[13px]" : "wb-sm")}>{p.content}</p>
-            <p className={cx("text-gold-300/60", dense ? "text-[11px]" : "wb-2xs")}>
+            <p className={cx("text-gold-300/60", dense ? "text-[12px]" : "wb-2xs")}>
               {p.delivered ? "Received — waiting for the agent to act on it" : "Queued — the agent picks this up on its next turn"}
             </p>
           </div>

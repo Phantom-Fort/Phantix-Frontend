@@ -308,7 +308,7 @@ export default function Scans() {
                     <td className="td">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-slate-200">#{j.id}</span>
-                        <span className={cx("chip text-[11px]", isGitHub ? "border-phantix-500/30 bg-phantix-500/10 text-phantix-300" : "border-phantix-700/40 bg-phantix-800/50 text-slate-400")}>
+                        <span className={cx("chip text-[12px]", isGitHub ? "border-phantix-500/30 bg-phantix-500/10 text-phantix-300" : "border-phantix-700/40 bg-phantix-800/50 text-slate-400")}>
                           {isGitHub ? <><Github size={9} /> GitHub analysis</> : "network/vuln"}
                         </span>
                       </div>

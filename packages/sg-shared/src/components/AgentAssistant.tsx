@@ -43,9 +43,15 @@ function loadChat(email: string): Msg[] {
 /** Event any surface can fire to open the assistant panel. */
 export const ASSISTANT_OPEN_EVENT = "sg:assistant:open";
 
-/** Open the floating assistant, optionally straight into support. */
+export const ASSISTANT_TOGGLE_EVENT = "sg:assistant:toggle";
+
+/** Open the assistant panel, optionally straight into support. */
 export function openAssistant(mode?: "agent" | "support"): void {
   window.dispatchEvent(new CustomEvent(ASSISTANT_OPEN_EVENT, { detail: { mode } }));
+}
+
+export function toggleAssistant(): void {
+  window.dispatchEvent(new CustomEvent(ASSISTANT_TOGGLE_EVENT));
 }
 
 export default function AgentAssistant() {
@@ -96,15 +102,20 @@ export default function AgentAssistant() {
 
   // Anything in the product can ask for the assistant — the Assistant page in
   // the sidebar does, so an operator who went looking for it in the nav gets
-  // the same panel as the floating button rather than a second chat.
+  // the same panel as the header's AI Assistant button rather than a second chat.
   useEffect(() => {
     const openFn = (e: Event) => {
       const detail = (e as CustomEvent<{ mode?: "agent" | "support" }>).detail;
       if (detail?.mode) setMode(detail.mode);
       setOpen(true);
     };
+    const toggleFn = () => setOpen((v) => !v);
     window.addEventListener(ASSISTANT_OPEN_EVENT, openFn);
-    return () => window.removeEventListener(ASSISTANT_OPEN_EVENT, openFn);
+    window.addEventListener(ASSISTANT_TOGGLE_EVENT, toggleFn);
+    return () => {
+      window.removeEventListener(ASSISTANT_OPEN_EVENT, openFn);
+      window.removeEventListener(ASSISTANT_TOGGLE_EVENT, toggleFn);
+    };
   }, []);
 
   useEffect(() => {
@@ -208,33 +219,23 @@ export default function AgentAssistant() {
 
   return (
     <>
-      {/* Floating launcher (bottom-right) */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-4 right-8 z-[75] flex h-14 w-14 items-center justify-center overflow-hidden bg-transparent text-phantix-950 transition-transform hover:scale-105 sm:bottom-8 sm:right-16 sm:h-20 sm:w-20"
-        title="SecureGraph Agent assistant"
-        aria-label="Toggle SecureGraph Agent assistant"
-      >
-        <LottiePlayer animationData={chatbotData} className="h-14 w-14 sm:h-20 sm:w-20" loop />
-      </button>
-
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.97 }}
+            initial={{ opacity: 0, y: -12, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="fixed bottom-5 right-5 z-[85] flex flex-col overflow-hidden rounded-2xl border border-phantix-700/40 bg-phantix-950/95 shadow-card"
-              style={{ width: WIDTH, maxWidth: "calc(100vw - 40px)", height: "min(72vh, 660px)" }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              style={{ width: WIDTH, maxWidth: "calc(100vw - 24px)", height: "min(calc(100vh - 88px), 660px)", transformOrigin: "top right" }}
+              className="fixed right-3 top-[68px] z-[85] flex flex-col overflow-hidden rounded-2xl border border-phantix-700/40 bg-phantix-950/95 shadow-card sm:right-6"
             >
               {/* Header */}
               <div className="flex items-center gap-3 border-b border-phantix-700/40 bg-phantix-950/90 px-4 py-3">
-                <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
-                <div className="min-w-0">
-                  <p className="font-display text-sm font-semibold text-white">SecureGraph Agent</p>
-                  <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
-                    Security operations assistant
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl"><LottiePlayer animationData={chatbotData} className="h-8 w-8" loop /></span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-sm font-semibold text-white">SecureGraph Agent</p>
+                  <p className="flex items-center gap-1.5 truncate whitespace-nowrap text-[12px] text-slate-500">
+                    Security operations
                     {streaming && <span className="flex items-center gap-1 text-gold-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-gold-400" /> live</span>}
                   </p>
                 </div>

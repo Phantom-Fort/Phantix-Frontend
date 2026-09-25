@@ -152,7 +152,7 @@ export default function VaptProcedures() {
                         <td className="td">
                           <div className="flex flex-col gap-1">
                             <span className="font-medium text-slate-200">{procedureName(p)}</span>
-                            {p.required_role && <span className="chip w-fit border-gold-400/30 text-[11px] text-gold-200">needs {text(p.required_role)}</span>}
+                            {p.required_role && <span className="chip w-fit border-gold-400/30 text-[12px] text-gold-200">needs {text(p.required_role)}</span>}
                           </div>
                         </td>
                         <td className="td font-mono text-[13px] text-slate-500">{procedureKey(p)}</td>

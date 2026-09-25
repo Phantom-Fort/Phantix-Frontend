@@ -254,7 +254,7 @@ export default function ThreatIntel() {
                             <td className="td">
                               <div className="flex items-center gap-2 min-w-0">
                                 <span className="font-mono text-[13px] text-slate-100 truncate max-w-[240px]">{s.ioc}</span>
-                                {isNew && <span className="chip text-[11px] shrink-0 text-emerald-300 bg-emerald-400/10 border-emerald-400/20">NEW</span>}
+                                {isNew && <span className="chip text-[12px] shrink-0 text-emerald-300 bg-emerald-400/10 border-emerald-400/20">NEW</span>}
                               </div>
                               <p className="text-[13px] text-slate-500 truncate max-w-[280px]">{s.title}</p>
                             </td>
@@ -309,7 +309,7 @@ export default function ThreatIntel() {
                           <td className="td"><SeverityBadge severity={sevOf(e.severity ?? e.severity)} /></td>
                           <td className="td"><span className="chip text-[12px] text-slate-300">{e.eventKind ?? titleCase(e.event_kind ?? "")}</span></td>
                           <td className="td">
-                            <div className="flex flex-wrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[11px] text-slate-400">{m}</span>)}</div>
+                            <div className="flex flex-wrap gap-1">{(e.mappedEngines ?? e.mapped_engines ?? []).map((m) => <span key={m} className="chip text-[12px] text-slate-400">{m}</span>)}</div>
                           </td>
                           <td className="td text-xs text-slate-500 whitespace-nowrap">{e.receivedAt ?? e.received_at ? timeAgo((e.receivedAt ?? e.received_at) as string) : "—"}</td>
                         </tr>

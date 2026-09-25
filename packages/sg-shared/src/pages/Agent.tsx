@@ -630,7 +630,7 @@ function AgentChat({
           >
             <Lock size={10} /> {operate.unlocked ? "Operate unlocked" : "Dual-control required"}
           </span>
-          <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="text-slate-500 hover:text-slate-300" title="Clear conversation"><Trash2 size={15} /></button>
+          <button onClick={() => { setMessages([]); resetLive(); try { localStorage.removeItem(storageKey); } catch { /* ignore */ } }} className="rounded-md p-2 text-slate-500 hover:bg-phantix-800/70 hover:text-slate-300" title="Clear conversation" aria-label="Clear conversation"><Trash2 size={15} /></button>
         </div>
 
         {/* Domain specialists — driven by GET /ai/agent/domains, scoped to this

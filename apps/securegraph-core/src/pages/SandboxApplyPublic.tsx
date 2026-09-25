@@ -105,7 +105,7 @@ export default function SandboxApplyPublic() {
           <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div>
             <p className="font-display text-sm font-bold text-white">SecureGraph</p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </a>
         <div className="flex items-center gap-2">

@@ -61,7 +61,7 @@ export default function SocCloudIntegration() {
                         <button className="btn-ghost !px-2 !py-1 !text-xs" onClick={() => { void syncCloudConnection(conn.id); toast("info", "Sync started", "Cloud connection sync initiated."); }}>
                           <RefreshCw size={12} /> Sync
                         </button>
-                        <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" onClick={() => { void deleteCloudConnection(conn.id); reload(); }}>
+                        <button className="btn-ghost !px-2 !py-1 !text-xs text-severity-critical" aria-label="Remove connection" title="Remove connection" onClick={() => { void deleteCloudConnection(conn.id); reload(); }}>
                           <Trash2 size={12} />
                         </button>
                       </div>

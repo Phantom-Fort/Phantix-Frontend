@@ -138,7 +138,7 @@ export default function FindingsBreakdown({
               <BarChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -18 }} barCategoryGap="26%">
                 <XAxis
                   dataKey="name"
-                  tick={{ fill: chrome.axis, fontSize: 10 }}
+                  tick={{ fill: chrome.axis, fontSize: 12 }}
                   axisLine={{ stroke: chrome.grid }}
                   tickLine={false}
                   interval={0}
@@ -147,7 +147,7 @@ export default function FindingsBreakdown({
                   height={data.length > 4 ? 38 : 22}
                 />
                 <YAxis
-                  tick={{ fill: chrome.axis, fontSize: 10 }}
+                  tick={{ fill: chrome.axis, fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   allowDecimals={false}

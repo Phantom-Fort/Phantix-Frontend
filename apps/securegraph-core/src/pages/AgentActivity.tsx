@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Bot, ChevronLeft, ChevronRight, KeyRound, RefreshCw, ShieldCheck, XCircle } from "lucide-react";
 import { PageHeader, Card, TableCardSkeleton, ErrorState, EmptyState } from "@sg/ui";
 import { isDenied, loadAgentActivity, type AgentAction } from "@sg/agentActivity";
 import { cx, timeAgo, formatDateTime, clickableRowProps } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
+import { useSseStream } from "@sg/useSse";
 
 // ── Agent activity ───────────────────────────────────────────────────────────
 // The agent acts as the signed-in user and inherits no authority. Every tool call
@@ -73,6 +74,34 @@ export default function AgentActivity() {
     const t = window.setInterval(() => setReloadKey((k) => k + 1), 30000);
     return () => window.clearInterval(t);
   }, []);
+
+  // Live agent activity: the hub publishes `activityRecorded` for every agent
+  // action (allowed or denied) and `agiActionRecorded` for AGI steps. Refresh on
+  // arrival (debounced) so the feed updates as the agent works, rather than on
+  // the 30s poll.
+  const realtimeReload = useRef<number | null>(null);
+  useSseStream("/org/command-center/stream", {
+    onEvent: (evt) => {
+      if (
+        evt.event !== "activityRecorded" &&
+        evt.event !== "agiActionRecorded" &&
+        evt.event !== "agiFindingRecorded"
+      ) {
+        return;
+      }
+      if (realtimeReload.current) window.clearTimeout(realtimeReload.current);
+      realtimeReload.current = window.setTimeout(() => {
+        void load();
+        realtimeReload.current = null;
+      }, 400);
+    },
+  });
+  useEffect(
+    () => () => {
+      if (realtimeReload.current) window.clearTimeout(realtimeReload.current);
+    },
+    [],
+  );
   useEffect(() => {
     if (reloadKey !== 0) void load();
   }, [reloadKey, load]);

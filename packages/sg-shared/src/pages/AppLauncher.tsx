@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, type Variants } from "framer-motion";
 import { ArrowUpRight, Boxes, Code2, Crosshair, ShieldCheck } from "lucide-react";
-import { PageHeader, Card, PageHeaderSkeleton, CardListSkeleton } from "@sg/ui";
 import { cx } from "@sg/utils";
 import { apiGet } from "@sg/shell/api";
+import { isDemoFlagSet } from "@sg/api";
 import { useStore } from "@sg/store";
 import { APPLICATION_LABEL, type ApplicationKey, type NavSection } from "@sg/shell/types";
 import LatestAssessmentPanel from "../components/LatestAssessment";
+import AppMiniDashboard from "../components/AppMiniDashboard";
 
 /**
  * An application's landing page: what this application is, and every page it
@@ -71,9 +72,9 @@ export default function AppLauncher({
 }) {
   const { toast } = useStore();
   const [card, setCard] = useState<LauncherCard | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoFlagSet()) return;
     let alive = true;
     apiGet<Snapshot>("/app/auth/applications")
       .then((s) => alive && setCard(s.applications.find((a) => a.key === application) ?? null))
@@ -84,8 +85,7 @@ export default function AppLauncher({
       .catch((e: unknown) => {
         if (!alive) return;
         toast("error", "Could not load application details", e instanceof Error ? e.message : "");
-      })
-      .finally(() => alive && setLoading(false));
+      });
     return () => {
       alive = false;
     };
@@ -99,76 +99,53 @@ export default function AppLauncher({
     }))
     .filter((section) => section.items.length > 0);
 
-  if (loading) {
-    return (
-      <div>
-        <PageHeaderSkeleton />
-        <CardListSkeleton rows={3} />
-      </div>
-    );
-  }
-
   return (
     <div>
-      <PageHeader title={`${card?.label || APPLICATION_LABEL[application]}`} />
-
-      {/* Hero: what this application is for. */}
+      {/* Header: what this application is for, from the backend catalog. */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="mb-5 flex flex-wrap items-start gap-4"
       >
-        <Card className="mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <span
-              className={cx(
-                "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-phantix-900/70",
-                ACCENT[application],
-              )}
-            >
-              {ICONS[application]}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className={cx("text-xs font-semibold", ACCENT[application].split(" ")[0])}>
-                {card?.tagline || "Application"}
-              </p>
-              {/* What this application does and why it exists, from the backend
-                  catalog — the same words the picker and launcher use. Counting
-                  the pages said nothing the sidebar was not already showing. */}
-              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
-                {card?.description || ""}
-              </p>
-            </div>
-            {card?.capabilities?.length ? (
-              <div className="flex flex-wrap gap-1.5">
-                {card.capabilities.map((c) => (
-                  <span
-                    key={c}
-                    className="chip border-phantix-700 bg-phantix-900 text-[13px] text-slate-300"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
+        <span
+          className={cx(
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-phantix-900/70",
+            ACCENT[application],
+          )}
+        >
+          {ICONS[application]}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-[26px] font-bold leading-tight tracking-tight text-white">
+            {card?.label || APPLICATION_LABEL[application]}
+            {card?.tagline ? (
+              <span className="ml-3 align-middle text-sm font-semibold text-gold-300">{card.tagline}</span>
             ) : null}
-          </div>
-        </Card>
+          </h1>
+          {card?.description ? (
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">{card.description}</p>
+          ) : null}
+        </div>
       </motion.div>
+
+      <AppMiniDashboard application={application} />
 
       {/* Shared feed: what the last completed assessment left for this app. */}
       <LatestAssessmentPanel app={application} className="mb-6" />
 
       {/* Launchpad: every page, grouped the way the sidebar groups them. */}
+      <h2 className="mb-3 font-display text-[17px] font-semibold text-slate-100">Jump to</h2>
       {sections.map((section) => (
-        <div key={section.label} className="mb-6">
-          <p className="mb-2.5 font-mono text-[13px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <div key={section.label} className="mb-5">
+          <p className="mb-2 text-[13px] font-semibold text-slate-400">
             {section.label}
           </p>
           <motion.div
             variants={grid}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+            className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
           >
             {section.items.map((item) => (
               <motion.div key={item.to} variants={tile}>

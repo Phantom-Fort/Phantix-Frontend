@@ -177,7 +177,7 @@ export default function DangerZone() {
         ) : (
           <div className="max-h-[420px] overflow-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-phantix-950 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+              <thead className="sticky top-0 bg-phantix-950 text-[12px] uppercase tracking-[0.14em] text-slate-500">
                 <tr>
                   <th className="w-10 px-4 py-2">
                     <input
@@ -306,7 +306,7 @@ export default function DangerZone() {
               </ul>
             )}
 
-            <p className="text-[11px] text-slate-600">
+            <p className="text-[12px] text-slate-600">
               Every removal is recorded in the audit trail with the acting user and timestamp.
             </p>
           </div>

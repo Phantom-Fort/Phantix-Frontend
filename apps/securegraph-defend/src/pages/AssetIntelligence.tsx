@@ -231,7 +231,7 @@ export default function AssetIntelligenceDashboard() {
         <Card className="lg:col-span-1 flex flex-col items-center justify-center py-6">
           <ProgressRing value={score} size={100} stroke={7}>
             <span className="font-display text-2xl font-bold text-white">{score}</span>
-            <span className="text-[11px] font-medium uppercase tracking-wider text-slate-500">score</span>
+            <span className="text-[12px] font-medium uppercase tracking-wider text-slate-500">score</span>
           </ProgressRing>
           <p className="text-xs text-slate-400 mt-3">Posture Score</p>
           <p className="text-[12px] text-slate-500 mt-0.5">higher = healthier</p>
@@ -242,7 +242,7 @@ export default function AssetIntelligenceDashboard() {
         <StatCard label="Open Findings" value={<AnimatedNumber value={intelData.totals?.openFindings ?? 0} />} icon={<Activity size={18} />} />
       </motion.div>
 
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Critical Assets */}
         <Card>
           <CardHeader
@@ -544,7 +544,7 @@ export default function AssetIntelligenceDashboard() {
                         <span className="block truncate font-mono text-sm text-slate-200">{a.value}</span>
                         <span className="block truncate text-[13px] text-slate-500">{a.name || a.asset_type.replace(/_/g, " ")} · {(a.tags ?? []).length} tag(s)</span>
                       </span>
-                      {!a.is_verified && <span className="chip shrink-0 text-[11px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
+                      {!a.is_verified && <span className="chip shrink-0 text-[12px] text-severity-medium bg-severity-medium/10 border-severity-medium/30">unverified</span>}
                     </button>
                   ))}
                 </div>
@@ -641,7 +641,7 @@ export default function AssetIntelligenceDashboard() {
 
               {/* Risk register + SOC signals */}
               {(explanation.brief.risks.length > 0 || explanation.brief.detections.length > 0) && (
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {explanation.brief.risks.length > 0 && (
                     <Section title={`Risk register (${explanation.brief.risks.length})`} icon={<ShieldAlert size={13} />}>
                       <div className="space-y-1.5">
@@ -683,7 +683,7 @@ export default function AssetIntelligenceDashboard() {
               )}
 
               {/* Relationships + tags + threats + actions */}
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <Section title={`Relationships (${explanation.brief.related.length})`} icon={<GitBranch size={13} />}>
                   {explanation.brief.related.length === 0 ? (
                     <p className="text-xs text-slate-500">No mapped neighbours — a scan or discovery job will build links.</p>
@@ -693,7 +693,7 @@ export default function AssetIntelligenceDashboard() {
                         <div key={`${rel.id}-${rel.via}`} className="flex items-center gap-2 text-xs">
                           <CircleDot size={9} className={cx("shrink-0", rel.via === "intelligence" ? "text-phantix-400" : "text-gold-400")} />
                           <span className="truncate text-slate-300">{rel.value}</span>
-                          <span className="ml-auto shrink-0 chip text-[11px]">{rel.via === "intelligence" ? titleCase(rel.assetType || "asset") : rel.via.replace(/_/g, " ")}</span>
+                          <span className="ml-auto shrink-0 chip text-[12px]">{rel.via === "intelligence" ? titleCase(rel.assetType || "asset") : rel.via.replace(/_/g, " ")}</span>
                         </div>
                       ))}
                       {explanation.brief.related.length > 6 && <p className="pl-4 text-[13px] text-slate-500">+{explanation.brief.related.length - 6} more</p>}
@@ -731,7 +731,7 @@ export default function AssetIntelligenceDashboard() {
                   <div className="space-y-1.5">
                     {explanation.brief.recommendedActions.map((a) => (
                       <div key={a.label} className="flex items-start gap-2.5 rounded-lg bg-phantix-900/40 border border-phantix-700/30 px-3 py-2">
-                        <span className={cx("chip shrink-0 mt-0.5 text-[11px] uppercase", a.priority === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/30" : a.priority === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/30" : "text-slate-400")}>{a.priority}</span>
+                        <span className={cx("chip shrink-0 mt-0.5 text-[12px] uppercase", a.priority === "high" ? "text-severity-high bg-severity-high/10 border-severity-high/30" : a.priority === "medium" ? "text-severity-medium bg-severity-medium/10 border-severity-medium/30" : "text-slate-400")}>{a.priority}</span>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-slate-200">{a.label}</p>
                           <p className="text-[13px] text-slate-500">{a.description}</p>

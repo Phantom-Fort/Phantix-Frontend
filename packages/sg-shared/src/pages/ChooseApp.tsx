@@ -209,7 +209,7 @@ export default function ChooseApp() {
         <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
         <span className="leading-tight">
           <span className="block font-display text-[15px] font-bold text-white">SecureGraph</span>
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">
+          <span className="block text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">
             Applications
           </span>
         </span>

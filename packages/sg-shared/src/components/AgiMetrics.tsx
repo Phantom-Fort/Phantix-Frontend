@@ -70,7 +70,7 @@ function Metric({
 }) {
   return (
     <div className="min-w-0" title={title}>
-      <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+      <p className="truncate text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-600">
         {label}
       </p>
       <p
@@ -107,7 +107,7 @@ function Budget({
   return (
     <div className="min-w-0">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="truncate text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+        <p className="truncate text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-600">
           {label}
         </p>
         <p className="shrink-0 font-mono text-[12px] text-slate-500">
@@ -120,7 +120,7 @@ function Budget({
           <div className={cx("h-full rounded-full transition-all", tone)} style={{ width: `${percentage}%` }} />
         ) : null}
       </div>
-      {!hasBudget && <p className="mt-0.5 text-[11px] text-slate-600">no ceiling set</p>}
+      {!hasBudget && <p className="mt-0.5 text-[12px] text-slate-600">no ceiling set</p>}
     </div>
   );
 }
@@ -176,7 +176,7 @@ export default function AgiMetrics({
           className="flex w-full items-center gap-1.5 text-left"
         >
           <Gauge size={10} className="shrink-0 text-slate-500" />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Session status</span>
+          <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">Session status</span>
           {collapsed && <span className="ml-auto min-w-0 truncate text-[12px] text-slate-400">{summary}</span>}
           <ChevronDown size={12} className={cx("ml-1 shrink-0 text-slate-500 transition-transform", !collapsed && "rotate-180")} />
         </button>
@@ -185,7 +185,7 @@ export default function AgiMetrics({
         <>
       {/* Run */}
       <section>
-        <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           <Gauge size={10} /> Run
         </p>
         <div className={cx("grid gap-3", compact ? "grid-cols-3" : "grid-cols-3 sm:grid-cols-6")}>
@@ -225,10 +225,10 @@ export default function AgiMetrics({
 
       {/* Usage & limits */}
       <section className="border-t border-phantix-800/70 pt-2.5">
-        <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           <Target size={10} /> AI usage
           {usage?.year_month && (
-            <span className="font-mono text-[11px] normal-case tracking-normal text-slate-600">
+            <span className="font-mono text-[12px] normal-case tracking-normal text-slate-600">
               {usage.year_month}
             </span>
           )}
@@ -245,7 +245,7 @@ export default function AgiMetrics({
             />
           </div>
           <div className="mt-2 flex items-baseline justify-between gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-600">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-600">
               AI credits
             </span>
             <span
@@ -279,7 +279,7 @@ export default function AgiMetrics({
 
       {/* Governance & scope */}
       <section className="border-t border-phantix-800/70 pt-2.5">
-        <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <p className="mb-1.5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           <ShieldCheck size={10} /> Scope &amp; governance
         </p>
         <div className={cx("grid gap-3", compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-4")}>
@@ -312,7 +312,7 @@ export default function AgiMetrics({
         <div className="mt-1.5 flex flex-wrap gap-1.5">
           <span
             className={cx(
-              "chip !px-2 !py-0.5 text-[11px]",
+              "chip !px-2 !py-0.5 text-[12px]",
               limits?.allow_state_changing
                 ? "border-amber-400/30 bg-amber-400/10 text-amber-300"
                 : "border-phantix-600/40 bg-phantix-800/50 text-slate-400",
@@ -321,17 +321,17 @@ export default function AgiMetrics({
             {limits?.allow_state_changing ? "state-changing allowed" : "read-only"}
           </span>
           {limits?.require_dual_control_for_active && (
-            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 text-[11px] text-slate-400">
+            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">
               <Lock size={8} className="mr-1 inline" /> dual-control
             </span>
           )}
           {limits?.require_asset_backed_targets && (
-            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 text-[11px] text-slate-400">
+            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 text-[12px] text-slate-400">
               asset-backed targets only
             </span>
           )}
           {agi?.entitlement_code && (
-            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 font-mono text-[11px] text-slate-500">
+            <span className="chip !px-2 !py-0.5 border-phantix-600/40 bg-phantix-800/50 font-mono text-[12px] text-slate-500">
               {agi.entitlement_code}
             </span>
           )}

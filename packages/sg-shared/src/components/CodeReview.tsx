@@ -621,7 +621,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
                               {f.path}
                             </p>
                             <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              <SeverityBadge severity={(f.worst_severity || "info") as Severity} className="!px-1.5 !py-0 !text-[11px]" />
+                              <SeverityBadge severity={(f.worst_severity || "info") as Severity} className="!px-1.5 !py-0 !text-[12px]" />
                               <span className="text-[12px] text-slate-500">{f.findings} finding{f.findings === 1 ? "" : "s"}</span>
                               {f.autofix_pr_url && <GitPullRequest size={10} className="text-emerald-400" />}
                             </div>

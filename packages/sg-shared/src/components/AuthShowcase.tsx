@@ -169,7 +169,7 @@ function IncidentScene() {
           {["8.4K", "23", "4", "0"].map((v, i) => (
             <div key={i} className="rounded-md border border-white/10 bg-white/5 px-2 py-1.5 text-center">
               <p className="font-mono text-sm" style={{ color: GOLD }}>{v}</p>
-              <p className="text-[11px] uppercase tracking-wider text-slate-500">phase {i + 1}</p>
+              <p className="text-[12px] uppercase tracking-wider text-slate-500">phase {i + 1}</p>
             </div>
           ))}
         </div>

@@ -92,7 +92,7 @@ export function NotificationBell() {
         <Bell size={16} />
         {unread > 0 && (
           <span
-            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[11px] font-bold"
+            className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-severity-critical px-1 text-[12px] font-bold"
             style={{ color: "#fff" }}
           >
             {unread > 9 ? "9+" : unread}
@@ -122,7 +122,7 @@ export function NotificationBell() {
                       <span className={cx("mt-0.5 h-2 w-2 shrink-0 rounded-full", meta.bar)} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className={cx("chip !px-1.5 !py-0 !text-[11px]", meta.chip)}>{meta.label}</span>
+                          <span className={cx("chip !px-1.5 !py-0 !text-[12px]", meta.chip)}>{meta.label}</span>
                           <span className="text-[12px] text-slate-500">{timeAgo(n.createdAt)}</span>
                         </div>
                         <p className="mt-0.5 text-[12px] leading-4 text-slate-200">{n.title}</p>

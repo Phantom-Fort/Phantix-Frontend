@@ -424,28 +424,28 @@ export default function Cloud() {
                     </button>
                   ))}
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {filteredProviders.map((p) => (
                     <button key={p.id} onClick={() => pickProvider(p)} className="text-left rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-3 hover:border-phantix-500/50 transition-colors">
                       <div className="flex items-start justify-between gap-2">
                         <p className="flex items-center gap-2 text-sm font-medium text-slate-100">
                           <CloudIcon size={15} className="text-phantix-300" /> {p.name}
                         </p>
-                        {p.africa && <span className="chip shrink-0 text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Globe2 size={9} /> Africa</span>}
+                        {p.africa && <span className="chip shrink-0 text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300"><Globe2 size={9} /> Africa</span>}
                       </div>
                       {p.description && <p className="mt-1 text-[13px] leading-4 text-slate-500">{p.description}</p>}
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <span className="chip text-[11px] border-phantix-700/50 text-slate-400">{categoryLabel(p.category || p.kind)}</span>
+                        <span className="chip text-[12px] border-phantix-700/50 text-slate-400">{categoryLabel(p.category || p.kind)}</span>
                         {p.accountCapable ? (
-                          <span className="chip text-[11px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account</span>
+                          <span className="chip text-[12px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account</span>
                         ) : (
-                          <span className="chip text-[11px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook</span>
+                          <span className="chip text-[12px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook</span>
                         )}
                         {pollers.data.some((x) => x.provider === p.id && x.liveApi) && (
-                          <span className="chip text-[11px] border-phantix-400/30 bg-phantix-400/10 text-phantix-200"><Zap size={9} /> Live API</span>
+                          <span className="chip text-[12px] border-phantix-400/30 bg-phantix-400/10 text-phantix-200"><Zap size={9} /> Live API</span>
                         )}
                         {(p.engines ?? []).map((engine) => (
-                          <span key={engine} className="chip text-[11px] border-phantix-700/50 text-slate-500">{engine}</span>
+                          <span key={engine} className="chip text-[12px] border-phantix-700/50 text-slate-500">{engine}</span>
                         ))}
                       </div>
                     </button>
@@ -466,10 +466,10 @@ export default function Cloud() {
                     <p className="mt-0.5 text-[13px] text-slate-500">{selectedProvider.description}</p>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <span className="chip text-[11px] border-phantix-700/50 text-slate-400">{categoryLabel(selectedProvider.category || selectedProvider.kind)}</span>
+                    <span className="chip text-[12px] border-phantix-700/50 text-slate-400">{categoryLabel(selectedProvider.category || selectedProvider.kind)}</span>
                     {selectedProvider.accountCapable
-                      ? <span className="chip text-[11px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account + webhook</span>
-                      : <span className="chip text-[11px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook only</span>}
+                      ? <span className="chip text-[12px] border-gold-400/30 bg-gold-400/10 text-gold-300"><KeyRound size={9} /> Account + webhook</span>
+                      : <span className="chip text-[12px] border-phantix-700/50 text-slate-500"><Plug size={9} /> Webhook only</span>}
                   </div>
                 </div>
                 <div><label className="label">Label</label><input className="input" value={label} onChange={(e) => setLabel(e.target.value)} placeholder={`${selectedProvider.name} connector`} /></div>
