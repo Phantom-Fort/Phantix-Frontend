@@ -24,7 +24,7 @@ export function Landing() {
   const rest = posts.filter((p) => p.slug !== featuredSlug);
 
   return (
-    <main className="desk desk-full">
+    <main className="desk desk-book">
       <article className="sheet" ref={sheetRef}>
         <section className="page page-left">
           <Masthead issue={issue} />
