@@ -227,8 +227,8 @@ export default function ProviderConnect() {
       />
 
       <div className="mb-4">
-        <Link to="/code-review/providers" className="inline-flex items-center gap-1 text-[13px] text-slate-400 hover:text-slate-200">
-          <ArrowLeft size={13} /> All providers
+        <Link to="/code-review/providers" className="-ml-2 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-[13px] text-slate-400 hover:bg-phantix-800/70 hover:text-slate-200">
+          <ArrowLeft size={14} /> All providers
         </Link>
       </div>
 
@@ -245,7 +245,7 @@ export default function ProviderConnect() {
         ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         {/* Connect / manage */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
           <Card className="h-full">
@@ -339,7 +339,7 @@ export default function ProviderConnect() {
               <ol className="space-y-2 text-sm leading-6 text-slate-300">
                 {steps.map((step, i) => (
                   <li key={i} className="flex gap-2">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-phantix-600/50 bg-phantix-800/60 text-[11px] font-semibold text-slate-300">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-phantix-600/50 bg-phantix-800/60 text-[12px] font-semibold text-slate-300">
                       {i + 1}
                     </span>
                     <span>{step}</span>

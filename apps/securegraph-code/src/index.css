@@ -44,8 +44,8 @@
     --slate-200: 228 228 231;
     --slate-300: 212 212 216;
     --slate-400: 161 161 170;
-    --slate-500: 113 113 122;
-    --slate-600: 82 82 91;
+    --slate-500: 138 138 148;
+    --slate-600: 130 130 140;
     --slate-700: 63 63 70;
     --slate-800: 39 39 42;
     --slate-900: 24 24 27;
@@ -96,8 +96,8 @@
     --slate-200: 228 228 231;
     --slate-300: 212 212 216;
     --slate-400: 161 161 170;
-    --slate-500: 113 113 122;
-    --slate-600: 82 82 91;
+    --slate-500: 138 138 148;
+    --slate-600: 130 130 140;
     --slate-700: 63 63 70;
     --slate-800: 39 39 42;
     --slate-900: 24 24 27;
@@ -575,7 +575,7 @@ p {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold
+    @apply inline-flex min-h-[2rem] items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-semibold
       transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-gold-400/40
       disabled:opacity-50 disabled:pointer-events-none select-none;
   }
@@ -652,7 +652,7 @@ p {
      roomy) so a full nav with several groups still fits without scrolling —
      Cloudflare's flat, ungrouped list is the density target. */
   .nav-section-label {
-    @apply mb-1 px-3 text-[11px] leading-none font-semibold text-slate-500;
+    @apply mb-1 px-3 text-[12px] leading-none font-semibold text-slate-400;
   }
 
   /* Vivid hairline between sidebar groups; the first group has no rule. */

@@ -22,6 +22,8 @@ function ScrollButton({
 
   return (
     <Button
+      aria-label="Scroll to latest"
+      title="Scroll to latest"
       variant={variant}
       size={size}
       className={cn(

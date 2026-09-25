@@ -32,7 +32,7 @@ import { BrandLoader } from "../components/BrandLoader";
 import { PageSkeleton } from "../ui";
 import { NotificationBell, NotificationProvider } from "../components/AlertNotifications";
 import AgiNotifications from "../components/AgiNotifications";
-import AgentAssistant from "../components/AgentAssistant";
+import AgentAssistant, { toggleAssistant } from "../components/AgentAssistant";
 import OperationsWidget from "../components/OperationsWidget";
 import { OperationsProvider } from "../operations";
 import SandboxBanner from "../components/SandboxBanner";
@@ -185,7 +185,7 @@ export function ApplicationShell({
 }: ApplicationShellProps) {
   // Backend is the source of truth for pages, groups and lock state; the static
   // nav passed by the app is the offline fallback and the icon registry.
-  const nav = useApplicationNav(application, fallbackNav);
+  const backendNav = useApplicationNav(application, fallbackNav);
   const { collapsed, toggle } = useSidebarCollapsed();
   const {
     session,
@@ -205,6 +205,17 @@ export function ApplicationShell({
   const [mobileNav, setMobileNav] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [sandboxEnrolled, setSandboxEnrolled] = useState(false);
+  // Sandbox is only offered to organizations enrolled in a cohort. The backend
+  // already filters it; this also covers the offline fallback nav.
+  const nav = useMemo(
+    () =>
+      sandboxEnrolled
+        ? backendNav
+        : backendNav
+            .map((s) => ({ ...s, items: s.items.filter((i) => i.to !== "/sandbox") }))
+            .filter((s) => s.items.length > 0),
+    [backendNav, sandboxEnrolled],
+  );
   const location = useLocation();
   const [cards, setCards] = useState<ApplicationCard[] | null>(null);
   const [opening, setOpening] = useState<ApplicationKey | "">("");
@@ -358,9 +369,9 @@ export function ApplicationShell({
       for (const item of s.items) flat.push({ to: item.to, label: item.label, icon: item.icon });
     }
     flat.push({ to: "/docs", label: "Documentation", icon: <BookOpen size={15} /> });
-    flat.push({ to: "/sandbox", label: "Sandbox", icon: <FlaskConical size={15} /> });
+    if (sandboxEnrolled && !flat.some((i) => i.to === "/sandbox")) flat.push({ to: "/sandbox", label: "Sandbox", icon: <FlaskConical size={15} /> });
     return flat;
-  }, [nav]);
+  }, [nav, sandboxEnrolled]);
 
   const switcherItems: ApplicationCard[] =
     cards ??
@@ -634,7 +645,7 @@ export function ApplicationShell({
         </aside>
 
         <div
-          className={`flex min-h-screen flex-1 flex-col ${
+          className={`flex min-h-screen min-w-0 flex-1 flex-col ${
             collapsed ? "lg:ml-[72px]" : "lg:ml-[248px]"
           }`}
         >
@@ -683,7 +694,7 @@ export function ApplicationShell({
                   className="relative rounded-md border border-phantix-700 bg-phantix-900 p-2 text-slate-400 transition-colors hover:border-phantix-600 hover:text-white"
                 >
                   <FlaskConical size={16} />
-                  <span className="absolute -right-1 -top-1 rounded-full bg-gold-400 px-1 font-mono text-[11px] font-bold leading-[1.2] text-phantix-950">
+                  <span className="absolute -right-1 -top-1 rounded-full bg-gold-400 px-1 font-mono text-[12px] font-bold leading-[1.2] text-phantix-950">
                     β
                   </span>
                 </CoreLink>
@@ -691,7 +702,7 @@ export function ApplicationShell({
               <ThemeToggle />
               <NotificationBell />
               <span
-                className={`chip hidden md:inline-flex ${
+                className={`chip hidden whitespace-nowrap xl:inline-flex ${
                   securityDbReady
                     ? "border-gold-400/30 bg-gold-400/10 text-gold-300"
                     : "border-severity-medium/30 bg-severity-medium/10 text-severity-medium"
@@ -699,9 +710,19 @@ export function ApplicationShell({
               >
                 <Database size={12} /> Security DB · {securityDbReady ? "ready" : "not ready"}
               </span>
-              <span className="chip hidden border-phantix-700 bg-phantix-900 font-mono text-slate-300 md:inline-flex">
+              <span className="chip hidden whitespace-nowrap border-phantix-700 bg-phantix-900 font-mono text-slate-300 2xl:inline-flex">
                 <KeyRound size={12} className="text-gold-400" /> {org.slug}
               </span>
+
+              <button
+                onClick={toggleAssistant}
+                title="AI Assistant"
+                aria-label="Open AI Assistant"
+                className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md border border-gold-400/40 bg-gold-400/10 px-2.5 py-2 text-xs font-semibold text-gold-300 transition-colors hover:border-gold-400/70 hover:bg-gold-400/15 hover:text-gold-200"
+              >
+                <Sparkles size={15} />
+                <span className="hidden lg:inline">AI Assistant</span>
+              </button>
 
               <div className="relative">
                 <button
@@ -880,11 +901,11 @@ export function ApplicationShell({
           {/* The window scrolls, so the footer sits after the content instead of
               being pinned to the viewport. A page that asks for h-full still
               fills the space left between the header and the footer. */}
-          <main className="flex flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
+          <main className="flex min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:px-8">
             {/* The one content measure, defined here so page, skeleton and
                 shell cannot drift apart. 1600px is a backstop: an ultrawide
                 display should not stretch a table across a metre of glass. */}
-            <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
+            <div className="mx-auto flex w-full min-w-0 max-w-[1600px] flex-1 flex-col">
               {session?.authenticated && !demoActive && <SandboxBanner />}
               {/* Page-level Suspense boundary. Moving between pages inside an
                   application only re-mounts the page at the <Outlet/>, so it
@@ -913,9 +934,7 @@ export function ApplicationShell({
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} index={searchIndex} />
 
-      {/* SecureGraph Agent — the floating assistant, and the way to the support
-          desk from any application. It was mounted by the Command Centre layout
-          and was lost when the shells replaced it. */}
+      {/* SecureGraph Agent panel — opened from the header's AI Assistant button. */}
       <AgentAssistant />
 
       {/* Running operations tray — pages start long jobs through useOperations,

@@ -120,6 +120,7 @@ export default function Mobile() {
                   ref={fileRef}
                   type="file"
                   accept=".apk,application/vnd.android.package-archive"
+                  aria-label="Package file (.apk)"
                   className="input !py-2"
                   onChange={(e) => {
                     const f = e.target.files?.[0] ?? null;

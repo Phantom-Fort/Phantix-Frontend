@@ -651,7 +651,7 @@ export default function Reports() {
                     ] as [number | null, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="min-w-[3rem] text-center">
                         <p className={cx("font-display text-lg font-bold tabular-nums", v == null ? "text-slate-600" : c)}>{v == null ? "—" : v}</p>
-                        <p className="text-[11px] uppercase tracking-wider text-slate-600">{l}</p>
+                        <p className="text-[12px] uppercase tracking-wider text-slate-600">{l}</p>
                       </div>
                     ))}
                   </div>
@@ -878,7 +878,7 @@ export default function Reports() {
                               <span
                                 title={f.retest_status}
                                 className={cx(
-                                  "chip text-[11px]",
+                                  "chip text-[12px]",
                                   f.retest_status === "confirmed"
                                     ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
                                     : f.retest_status === "failed"
@@ -1015,7 +1015,7 @@ export default function Reports() {
                     ] as [number, string, string][]).map(([v, l, c]) => (
                       <div key={String(l)} className="rounded-lg bg-phantix-900/60 px-2.5 py-1.5">
                         <p className={cx("font-display text-base font-bold tabular-nums", c)}>{v}</p>
-                        <p className="text-[11px] uppercase tracking-wider text-slate-500">{l}</p>
+                        <p className="text-[12px] uppercase tracking-wider text-slate-500">{l}</p>
                       </div>
                     ))}
                   </div>

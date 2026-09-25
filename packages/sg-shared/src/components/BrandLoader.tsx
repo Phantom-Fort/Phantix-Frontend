@@ -75,7 +75,7 @@ export function BrandLoader({ label, message = "Verifying access" }: BrandLoader
         <div className="mt-7 text-center">
           <p className="font-display text-[15px] font-bold tracking-tight text-white">SecureGraph</p>
           {label ? (
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-gold-400">
+            <p className="mt-1 text-[12px] font-semibold uppercase tracking-[0.32em] text-gold-400">
               {label}
             </p>
           ) : null}

@@ -290,7 +290,7 @@ export default function Code() {
         <button
           type="button"
           onClick={() => setTab("providers")}
-          className="ml-auto text-[13px] text-slate-500 transition-colors hover:text-slate-300"
+          className="ml-auto rounded-md px-2.5 py-1.5 text-[13px] text-slate-400 transition-colors hover:bg-phantix-800/70 hover:text-slate-200"
         >
           Manage providers
         </button>

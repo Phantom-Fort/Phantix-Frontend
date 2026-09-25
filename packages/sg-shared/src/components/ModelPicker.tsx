@@ -198,7 +198,7 @@ export default function ModelPicker({ surface, value, onChange, className }: Pro
                         <span className="block truncate text-xs font-medium text-slate-200">{modelLabel(m)}</span>
                         <span className="block truncate font-mono text-[12px] text-slate-500">{shortModelId(m.id)}</span>
                         {m.free && (
-                          <span className="mt-1 inline-block rounded bg-emerald-400/10 px-1 py-[1px] text-[11px] font-semibold uppercase tracking-wide text-emerald-300">
+                          <span className="mt-1 inline-block rounded bg-emerald-400/10 px-1 py-[1px] text-[12px] font-semibold uppercase tracking-wide text-emerald-300">
                             Free
                           </span>
                         )}
@@ -208,7 +208,7 @@ export default function ModelPicker({ surface, value, onChange, className }: Pro
                               <span
                                 key={c}
                                 className={cx(
-                                  "inline-flex items-center gap-0.5 rounded px-1 py-[1px] text-[11px] uppercase tracking-wide",
+                                  "inline-flex items-center gap-0.5 rounded px-1 py-[1px] text-[12px] uppercase tracking-wide",
                                   c === "vision"
                                     ? "bg-sky-400/10 text-sky-300"
                                     : c === "reasoning"

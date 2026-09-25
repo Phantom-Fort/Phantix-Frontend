@@ -326,7 +326,7 @@ export default function Risks() {
                     .map(([k, v]) => (
                       <div key={k} className="rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-2.5 text-center">
                         <p className="font-mono text-sm font-semibold text-slate-200">{typeof v === "number" ? v.toFixed(1) : v}</p>
-                        <p className="mt-0.5 text-[11px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
+                        <p className="mt-0.5 text-[12px] uppercase tracking-wider text-slate-600">{titleCase(k)}</p>
                       </div>
                     ));
                 })()}

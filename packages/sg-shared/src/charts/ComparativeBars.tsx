@@ -82,7 +82,7 @@ export default function ComparativeBars({
               <CartesianGrid stroke={chrome.grid} horizontal={false} strokeDasharray="2 4" />
               <XAxis
                 type="number"
-                tick={{ fill: chrome.axis, fontSize: 10 }}
+                tick={{ fill: chrome.axis, fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
                 allowDecimals={false}
@@ -90,7 +90,7 @@ export default function ComparativeBars({
               <YAxis
                 type="category"
                 dataKey="name"
-                tick={{ fill: chrome.axis, fontSize: 10.5 }}
+                tick={{ fill: chrome.axis, fontSize: 12 }}
                 axisLine={false}
                 tickLine={false}
                 width={78}

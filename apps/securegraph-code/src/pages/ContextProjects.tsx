@@ -136,7 +136,7 @@ export default function ContextProjects() {
                           <span className="inline-flex items-center gap-1.5">
                             {summary.flows}
                             {summary.cross_boundary_flows > 0 && (
-                              <span className="chip border-severity-medium/30 text-[11px] text-severity-medium">
+                              <span className="chip border-severity-medium/30 text-[12px] text-severity-medium">
                                 {summary.cross_boundary_flows} crossing
                               </span>
                             )}

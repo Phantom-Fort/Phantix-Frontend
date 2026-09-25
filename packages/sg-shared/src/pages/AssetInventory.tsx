@@ -497,6 +497,8 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
             <DocLink docId="howto-app-03" label="Add assets" />
             <button
               className="btn-ghost text-sm px-3 py-1.5"
+              aria-label="Refresh assets"
+              title="Refresh assets"
               onClick={() => reload()}
               disabled={loading}
             >

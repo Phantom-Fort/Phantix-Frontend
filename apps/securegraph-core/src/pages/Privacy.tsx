@@ -173,7 +173,7 @@ export default function Privacy() {
       <Card>
         <CardHeader title="Raise a data subject request" subtitle="Choose the right — each is explained below" />
         <form onSubmit={submit} className="space-y-4 px-5 pb-5">
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {REQUEST_TYPES.map((r) => (
               <button
                 key={r.id}

@@ -77,8 +77,8 @@ function CorrelationChips({ correlation }: { correlation: any }) {
                 <p className="flex flex-wrap items-center gap-1.5 text-slate-300">
                   {g.title || g.issue_family || "Group"}
                   {g.consensus
-                    ? <span className="chip text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">consensus</span>
-                    : <span className="chip text-[11px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">single-tool</span>}
+                    ? <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">consensus</span>
+                    : <span className="chip text-[12px] border-severity-medium/30 bg-severity-medium/10 text-severity-medium">single-tool</span>}
                 </p>
                 {(Array.isArray(g.confirmed_by_tools) && g.confirmed_by_tools.length > 0) && (
                   <p className="mt-0.5 text-[12px] text-emerald-300/90">confirmed: {g.confirmed_by_tools.join(", ")}</p>
@@ -107,7 +107,7 @@ function RoeChips({ roe }: { roe: any }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1.5">
       {chips.map(([label, on]) => (
-        <span key={label} className={cx("chip text-[11px]", on ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-700/40 bg-phantix-900/50 text-slate-600")}>
+        <span key={label} className={cx("chip text-[12px]", on ? "border-gold-400/30 bg-gold-400/10 text-gold-300" : "border-phantix-700/40 bg-phantix-900/50 text-slate-600")}>
           {label}: {on ? "on" : "off"}
         </span>
       ))}
@@ -606,7 +606,7 @@ export default function Vapt() {
                   ].map(([v, l, c]) => (
                     <div key={String(l)} className="rounded-lg bg-phantix-950/50 border border-phantix-700/40 px-3 py-2.5 text-center">
                       <p className={cx("font-display text-lg font-bold", c)}>{v}</p>
-                      <p className="text-[11px] uppercase tracking-wider text-slate-500">{l}</p>
+                      <p className="text-[12px] uppercase tracking-wider text-slate-500">{l}</p>
                     </div>
                   ))}
                 </div>
@@ -675,7 +675,7 @@ export default function Vapt() {
                               <p className={cx("text-sm font-medium flex items-center gap-1.5", isCurrent ? "text-severity-low" : isCompleted ? "text-emerald-300" : "text-slate-200")}>
                                 {icon} {step.step_name}
                                 {step.config?.max_duration_minutes && (
-                                  <span className="text-[11px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
+                                  <span className="text-[12px] text-slate-500 font-normal ml-1">~{step.config.max_duration_minutes}m</span>
                                 )}
                                 {isCurrent && <span className="text-[12px] text-severity-low font-normal">running</span>}
                                 {isCompleted && <span className="text-[12px] text-emerald-400 font-normal">complete</span>}
@@ -691,7 +691,7 @@ export default function Vapt() {
                                       key={sub.key}
                                       title={sub.why || undefined}
                                       className={cx(
-                                        "chip text-[11px]",
+                                        "chip text-[12px]",
                                         sub.enabled === false
                                           ? "border-phantix-700/40 text-slate-600 line-through"
                                           : sub.regression
@@ -704,7 +704,7 @@ export default function Vapt() {
                                     </span>
                                   ))}
                                   {(step.config.substeps as any[]).length > 6 && (
-                                    <span className="chip border-phantix-700/40 text-[11px] text-slate-600">
+                                    <span className="chip border-phantix-700/40 text-[12px] text-slate-600">
                                       +{(step.config.substeps as any[]).length - 6} more
                                     </span>
                                   )}
@@ -962,7 +962,7 @@ export default function Vapt() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-slate-100">{f.title}</p>
-                        {isReportable(f) ? <span className="chip text-[11px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[11px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
+                        {isReportable(f) ? <span className="chip text-[12px] border-emerald-400/30 bg-emerald-400/10 text-emerald-300">reportable</span> : <span className="chip text-[12px] border-slate-500/30 bg-slate-500/10 text-slate-500">held</span>}
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500">campaign #{f.campaign_id} · <span className="font-mono">{f.asset_value || "—"}</span>{f.cve && <> · <span className="font-mono text-gold-400">{f.cve}</span></>}{f.cvss != null && <> · CVSS {f.cvss.toFixed(1)}</>}{f.correlation_rule && <> · <span className="font-mono">{f.correlation_rule}</span></>}</p>
                     </div>

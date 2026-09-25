@@ -121,12 +121,12 @@ export function CardHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-start justify-between gap-4">
-      <div className="min-w-0 flex-1">
+    <div className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="min-w-0 flex-1 basis-[12rem]">
         <h3 className="font-display text-[15px] font-semibold leading-snug text-slate-100">{title}</h3>
         {subtitle && <p className="mt-1 text-xs leading-5 text-slate-400 break-words">{subtitle}</p>}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className="max-w-full shrink-0 [&>div]:flex-wrap">{action}</div> : null}
     </div>
   );
 }
@@ -152,7 +152,11 @@ export function PageHeader({
         <h1 className="font-display text-[26px] font-bold tracking-tight text-white">{title}</h1>
         {description && <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 flex-wrap items-center gap-2.5">{actions}</div>}
+      {/* Pages often nest their buttons in a non-wrapping row; let that row wrap
+          too so a phone gets two lines of buttons, not a sideways-scrolling page. */}
+      {actions && (
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2.5 [&>div]:flex-wrap">{actions}</div>
+      )}
     </motion.div>
   );
 }

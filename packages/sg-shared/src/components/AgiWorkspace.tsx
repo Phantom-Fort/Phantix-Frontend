@@ -1346,7 +1346,7 @@ export default function AgiWorkspace({ variant = "drawer" }: { variant?: Workspa
                                 }}
                                 className="mb-1 flex w-full items-center gap-2 text-left"
                               >
-                                <span className={cx("flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px]", allSelected ? "border-gold-400/50 bg-gold-400/20 text-gold-300" : "border-phantix-600 text-transparent")}>
+                                <span className={cx("flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[12px]", allSelected ? "border-gold-400/50 bg-gold-400/20 text-gold-300" : "border-phantix-600 text-transparent")}>
                                   {allSelected ? "✓" : ""}
                                 </span>
                                 <span className="wb-2xs font-semibold uppercase tracking-wider text-slate-400">{group.name}</span>

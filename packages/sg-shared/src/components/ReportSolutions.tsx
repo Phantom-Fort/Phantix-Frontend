@@ -37,12 +37,12 @@ function SectionChips({ sections }: { sections: string[] }) {
   return (
     <div className="mt-2.5 flex flex-wrap gap-1">
       {shown.map((s) => (
-        <span key={s} className="chip !px-1.5 !py-0 border-phantix-700/40 bg-phantix-900/60 text-[11px] text-slate-500">
+        <span key={s} className="chip !px-1.5 !py-0 border-phantix-700/40 bg-phantix-900/60 text-[12px] text-slate-500">
           {s.replace(/_/g, " ")}
         </span>
       ))}
       {sections.length > shown.length && (
-        <span className="chip !px-1.5 !py-0 border-phantix-700/40 text-[11px] text-slate-600">
+        <span className="chip !px-1.5 !py-0 border-phantix-700/40 text-[12px] text-slate-600">
           +{sections.length - shown.length}
         </span>
       )}

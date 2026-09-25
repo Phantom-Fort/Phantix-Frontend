@@ -277,7 +277,7 @@ export function TestingModePicker({
             }
           >
             <span className="block text-xs font-semibold text-slate-200">{m.label}</span>
-            <span className="block text-[11px] leading-4 text-slate-500">{m.short}</span>
+            <span className="block text-[12px] leading-4 text-slate-500">{m.short}</span>
           </button>
         );
       })}
@@ -317,7 +317,7 @@ export function EngagementContextFields({
               }
             >
               <span className="text-xs text-slate-300">{values[f.key] ? "Yes" : "No"}</span>
-              <span className="text-[11px] text-slate-500">{values[f.key] ? "authorized" : "not authorized"}</span>
+              <span className="text-[12px] text-slate-500">{values[f.key] ? "authorized" : "not authorized"}</span>
             </button>
           ) : f.type === "textarea" ? (
             <textarea
@@ -337,7 +337,7 @@ export function EngagementContextFields({
               className="wb-sm w-full rounded-lg border border-phantix-700/50 bg-phantix-950/60 px-3 py-2 text-slate-200 outline-none placeholder:text-slate-600 focus:border-gold-400/40"
             />
           )}
-          {f.hint && <span className="mt-1 block text-[11px] leading-4 text-slate-600">{f.hint}</span>}
+          {f.hint && <span className="mt-1 block text-[12px] leading-4 text-slate-600">{f.hint}</span>}
         </label>
       ))}
     </div>

@@ -59,7 +59,7 @@ function ReportRow({ report, onPreview }: { report: AgiPriorReport; onPreview: (
         <span className="flex min-w-0 items-center gap-2">
           <span className="truncate text-sm font-semibold text-slate-100">{report.title}</span>
           {warnings.length > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[11px] font-semibold text-amber-300">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[12px] font-semibold text-amber-300">
               <AlertTriangle size={10} /> needs attention
             </span>
           )}
@@ -70,7 +70,7 @@ function ReportRow({ report, onPreview }: { report: AgiPriorReport; onPreview: (
           {typeof report.meta?.byte_size === "number" && <span>{bytes(report.meta.byte_size as number)}</span>}
           {report.created_at && <span>{timeAgo(report.created_at)}</span>}
           {(report.categories || []).slice(0, 4).map((c) => (
-            <span key={c} className="rounded border border-phantix-700/40 bg-phantix-950/60 px-1.5 py-0.5 text-[11px] text-slate-400">{c}</span>
+            <span key={c} className="rounded border border-phantix-700/40 bg-phantix-950/60 px-1.5 py-0.5 text-[12px] text-slate-400">{c}</span>
           ))}
         </span>
       </span>
@@ -335,21 +335,21 @@ function UploadReportModal({
         </div>
 
         {/* Metadata */}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Title</span>
+            <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-500">Title</span>
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Q2 2026 External VAPT" className="input w-full text-sm" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Report date (optional)</span>
+            <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-500">Report date (optional)</span>
             <input type="date" value={reportDate} onChange={(e) => setReportDate(e.target.value)} className="input w-full text-sm" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Categories (optional)</span>
+            <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-500">Categories (optional)</span>
             <input value={categories} onChange={(e) => setCategories(e.target.value)} placeholder="sqli, idor, auth" className="input w-full text-sm" />
           </label>
           <label className="block sm:col-span-2">
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-slate-500">Tags (optional)</span>
+            <span className="mb-1 block text-[12px] font-semibold uppercase tracking-wider text-slate-500">Tags (optional)</span>
             <input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="external, web, 2026" className="input w-full text-sm" />
           </label>
         </div>

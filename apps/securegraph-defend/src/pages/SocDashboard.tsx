@@ -431,10 +431,10 @@ export default function SocDashboard() {
             </Card>
           </motion.div>
 
-          <div className="grid gap-5 lg:grid-cols-12 lg:items-start">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
           {/* Main panels — flexible column */}
           <div className="space-y-5 lg:col-span-8 min-w-0">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {socData.data.panels?.length ? socData.data.panels.map((panel) => (
               <Card key={panel.id} className={cx("h-full", !panel.ready && "opacity-60")}>
                 <CardHeader
@@ -737,7 +737,7 @@ export default function SocDashboard() {
           <Card>
             <CardHeader title="Enrichment adapters" subtitle="Optional external enrichment only — SOC operates fully on internal SecureGraph signals" />
             {adaptersRes.loading && !(adaptersRes.data ?? []).length ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4" style={{ opacity: 1 - i * 0.12 }}>
                     <div className="min-w-0 flex-1 space-y-2">
@@ -751,7 +751,7 @@ export default function SocDashboard() {
             ) : (adaptersRes.data ?? []).length === 0 ? (
               <EmptyState icon={<Boxes size={24} />} title="No adapters" body="No enrichment adapters are configured for this org" />
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {(adaptersRes.data ?? []).map((a) => (
                   <div key={a.id ?? a.vendor} className="flex items-start justify-between gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 p-4">
                     <div>

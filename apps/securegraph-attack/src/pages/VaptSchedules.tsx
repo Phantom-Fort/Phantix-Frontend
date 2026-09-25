@@ -229,7 +229,7 @@ function CreateScheduleModal({
   return (
     <Modal open onClose={onClose} title="New VAPT schedule" wide>
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className="label" htmlFor="sch-name">Schedule name</label>
             <input id="sch-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Weekly external surface test" className="input mt-1" />

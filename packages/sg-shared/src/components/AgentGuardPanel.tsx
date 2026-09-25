@@ -138,8 +138,10 @@ export default function AgentGuardPanel({
                     onClick={() => void decide(row, false)}
                     disabled={busy === row.approval_id}
                     className="btn-ghost !px-2 !py-1 !text-[13px] disabled:opacity-50"
+                    aria-label="Deny"
+                    title="Deny this action"
                   >
-                    <X size={11} />
+                    <X size={14} />
                   </button>
                 </div>
               </div>

@@ -64,6 +64,11 @@ export default function Cookies() {
             You can accept or decline analytics at any time. Declining stops all beacons; nothing else in the
             product is affected.
           </p>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Your answer is remembered in one strictly-necessary preference cookie,{" "}
+            <code>phantix_cookie_consent</code>, shared by Core, Attack, Defend and Code so you are only asked
+            once. It holds only &ldquo;accepted&rdquo; or &ldquo;declined&rdquo; and expires after a year.
+          </p>
           <p className="mt-2 text-xs text-slate-500">
             Current choice:{" "}
             <strong className="text-slate-300">

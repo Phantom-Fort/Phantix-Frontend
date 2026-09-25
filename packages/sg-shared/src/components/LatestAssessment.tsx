@@ -87,9 +87,9 @@ export default function LatestAssessmentPanel({
         <span className="min-w-0 flex-1">
           <span className="block text-xs font-semibold text-slate-200">
             From your last assessment
-            {data?.stale && <span className="ml-2 text-[11px] font-normal text-slate-500">stale</span>}
+            {data?.stale && <span className="ml-2 text-[12px] font-normal text-slate-500">stale</span>}
           </span>
-          <span className="block text-[11px] text-slate-500">
+          <span className="block text-[12px] text-slate-500">
             {summary.source.replace(/_/g, " ")} · {when(data?.as_of)} · {summary.findings_count} finding
             {summary.findings_count === 1 ? "" : "s"}
           </span>
@@ -109,7 +109,7 @@ export default function LatestAssessmentPanel({
           .filter(([, n]) => n > 0)
           .sort((a, b) => (SEV_ORDER[a[0]] ?? 9) - (SEV_ORDER[b[0]] ?? 9))
           .map(([sev, n]) => (
-            <span key={sev} className={cx("rounded border px-1.5 py-0.5 text-[11px]", SEV_CLASS[sev] || SEV_CLASS.info)}>
+            <span key={sev} className={cx("rounded border px-1.5 py-0.5 text-[12px]", SEV_CLASS[sev] || SEV_CLASS.info)}>
               {n} {sev}
             </span>
           ))}
@@ -117,7 +117,7 @@ export default function LatestAssessmentPanel({
 
       {actions.length > 0 && (
         <div className="mt-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Work to do here</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Work to do here</p>
           <ul className="mt-1 space-y-0.5">
             {actions.map((a) => (
               <li key={`${a.kind}:${a.label}`} className="flex items-start gap-1.5 text-[12px] leading-snug text-slate-300">
@@ -146,16 +146,16 @@ export default function LatestAssessmentPanel({
 
       {findings.length > 0 && (
         <div className="mt-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Latest findings</p>
+          <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">Latest findings</p>
           <ul className="mt-1 space-y-0.5">
             {findings.map((f) => (
               <li key={f.id} className="flex items-center gap-1.5 text-[12px] text-slate-400">
-                <span className={cx("rounded border px-1 text-[10px] uppercase", SEV_CLASS[f.severity] || SEV_CLASS.info)}>
+                <span className={cx("rounded border px-1 text-[12px] uppercase", SEV_CLASS[f.severity] || SEV_CLASS.info)}>
                   {f.severity.slice(0, 4)}
                 </span>
                 {f.cvss?.base_score != null && (
                   <span
-                    className="rounded border border-phantix-700/50 px-1 text-[10px] tabular-nums text-slate-400"
+                    className="rounded border border-phantix-700/50 px-1 text-[12px] tabular-nums text-slate-400"
                     title={f.cvss.vector}
                   >
                     {f.cvss.base_score.toFixed(1)}
@@ -163,7 +163,7 @@ export default function LatestAssessmentPanel({
                 )}
                 {f.case_id ? (
                   <span
-                    className="rounded border border-severity-critical/40 px-1 text-[10px] uppercase text-severity-critical"
+                    className="rounded border border-severity-critical/40 px-1 text-[12px] uppercase text-severity-critical"
                     title={`SOC incident #${f.case_id}`}
                   >
                     soc

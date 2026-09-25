@@ -1051,7 +1051,7 @@ export default function AgiConsole({
                 )}
                 {visibleFindings.map((f) => (
                   <button key={f.id} onClick={() => setFindingId(f.id)} className={cx("wb-pad-x flex w-full items-start gap-1.5 border-b border-phantix-700/20 py-1.5 text-left transition-colors hover:bg-phantix-800/40", findingId === f.id && "bg-phantix-800/50")}>
-                    <SeverityBadge severity={f.severity} className="mt-0.5 !px-1 !py-0 !text-[11px]" />
+                    <SeverityBadge severity={f.severity} className="mt-0.5 !px-1 !py-0 !text-[12px]" />
                     <span className="min-w-0 flex-1">
                       <span className="wb-xs block truncate text-slate-200">{f.title}</span>
                       <span className="wb-2xs mt-0.5 flex items-center gap-1 text-slate-500">
@@ -1065,7 +1065,7 @@ export default function AgiConsole({
                       </span>
                       {f.verification && (
                         <span className="mt-1 flex">
-                          <VerificationBadge verification={f.verification} className="!px-1 !py-0 !text-[11px]" />
+                          <VerificationBadge verification={f.verification} className="!px-1 !py-0 !text-[12px]" />
                         </span>
                       )}
                     </span>

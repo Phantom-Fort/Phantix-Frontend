@@ -70,7 +70,7 @@ export default function Home() {
           <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
           <div className="leading-tight">
             <p className="font-display text-[15px] font-bold text-white">SecureGraph</p>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
           </div>
           <nav className="ml-10 hidden items-center gap-6 text-sm text-slate-400 md:flex">
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
@@ -197,7 +197,7 @@ export default function Home() {
               </button>
             ))}
             {cycle === "yearly" && (
-              <span className="ml-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-gold-400/50 bg-gold-400/15 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-gold-300">
+              <span className="ml-1 inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-gold-400/50 bg-gold-400/15 px-3 py-1 text-[12px] font-bold uppercase tracking-wider text-gold-300">
                 Save ~{yearlySavePercent()}% · 2 months free
               </span>
             )}
@@ -235,7 +235,7 @@ export default function Home() {
                 )}
               >
                 {elevated && (
-                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-4 py-1 text-[11px] font-bold uppercase tracking-wider text-phantix-950 shadow-glow">
+                  <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-gold-400 to-gold-600 px-4 py-1 text-[12px] font-bold uppercase tracking-wider text-phantix-950 shadow-glow">
                     {t.badge ?? "Most popular"}
                   </span>
                 )}
