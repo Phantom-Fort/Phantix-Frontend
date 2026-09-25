@@ -8,6 +8,7 @@ import DocLink from "@sg/components/DocLink";
 import MobileHandoffCard from "@sg/components/MobileHandoffCard";
 import AssetTreeView from "@sg/components/AssetTreeView";
 import AssetListView from "@sg/components/AssetListView";
+import AssetCandidatesView from "@sg/components/AssetCandidatesView";
 import { chainLabel, discoverAssetPaths, loadAssetChain, setChainScopeExcluded } from "@sg/assetChain";
 import { loadAssetsBundle, loadPrioritizedAssets, loadAssetIntelligence } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -386,6 +387,13 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
     return m;
   }, [assets]);
 
+  // Domains offered to the passive-search launcher — passive enumeration is
+  // scoped to an apex the organisation owns.
+  const domains = useMemo(
+    () => Array.from(new Set(assets.filter((a) => a.asset_type === "domain").map((a) => a.value))).sort(),
+    [assets],
+  );
+
   const handleAddAsset = async () => {
     if (!addForm.value) { toast("error", "Enter a value"); return; }
     if (!(await requireDualControl("Adding assets requires a dual-control operate session."))) return;
@@ -593,6 +601,7 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
       <Tabs
         tabs={[
           { id: "inventory", label: "Inventory", count: assets.length },
+          { id: "candidates", label: "Candidates" },
           { id: "prioritized", label: "Prioritized", count: prioritized?.length ?? 0 },
           { id: "discovery", label: "Discovery jobs", count: discoveryJobs.length },
           { id: "tags", label: "Tags", count: assetTags.length },
@@ -601,6 +610,10 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
         active={tab}
         onChange={setTab}
       />
+
+      {tab === "candidates" && (
+        <AssetCandidatesView domains={domains} onPromoted={reload} />
+      )}
 
       {tab === "prioritized" && (
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
