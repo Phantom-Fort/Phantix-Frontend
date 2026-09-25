@@ -1,6 +1,7 @@
 // Central resource loaders --- demo-data only when isDemoMode() is true.
 import { api, ApiError, delay, isDemoMode, isSecurityDbBlocked, tokens, API_BASE } from "./api";
 import * as demo from "./demo-data";
+import { deriveParents } from "./assetChain";
 import type {
   AgentRun,
   AgentScopeCard,
@@ -298,8 +299,9 @@ export async function loadDualControl(users?: OrgUser[]): Promise<DualControlSta
 export async function loadAssetsBundle() {
   if (isDemoMode()) {
     await delay();
+    const parents = deriveParents(demo.assets as Asset[]);
     return {
-      assets: demo.assets,
+      assets: (demo.assets as Asset[]).map((x) => ({ ...x, parent_asset_id: parents.get(x.id) ?? null })),
       assetTags: demo.assetTags,
       discoveryJobs: demo.discoveryJobs,
       securityDbBlocked: false as boolean,

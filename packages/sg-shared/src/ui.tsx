@@ -148,7 +148,9 @@ export function PageHeader({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="mb-6 flex flex-wrap items-end justify-between gap-4"
     >
-      <div className="min-w-0 flex-1">
+      {/* The basis keeps the title column readable: when the actions do not fit
+          beside it, they wrap underneath instead of squeezing the text. */}
+      <div className="min-w-0 flex-1 basis-[18rem]">
         <h1 className="font-display text-[26px] font-bold tracking-tight text-white">{title}</h1>
         {description && <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>}
       </div>
