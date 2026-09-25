@@ -118,12 +118,14 @@ export default function ContextProjects() {
                     <tr
                       key={p.id}
                       onClick={() => setSelected(p)}
-                      className="cursor-pointer border-b border-phantix-700/20 hover:bg-phantix-800/40 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
+                      className="h-10 cursor-pointer border-b border-phantix-700/20 hover:bg-phantix-800/40 focus:outline-none focus:ring-1 focus:ring-gold-400/60 focus:ring-inset"
                       {...clickableRowProps(() => setSelected(p))}
                     >
-                      <td className="td">
-                        <p className="truncate text-sm font-semibold text-slate-100">{p.name}</p>
-                        <p className="mt-0.5 font-mono text-[13px] text-slate-500">#{p.id}</p>
+                      <td className="td max-w-[24rem]">
+                        <span className="block truncate" title={p.name}>
+                          <span className="font-medium text-slate-100">{p.name}</span>
+                          <span className="ml-2 font-mono text-[12px] text-slate-500">#{p.id}</span>
+                        </span>
                       </td>
                       <td className="td">
                         <span className={cx("chip", STAGE_TONE[p.stage] ?? STAGE_TONE.planned)}>{stageLabel(p.stage)}</span>

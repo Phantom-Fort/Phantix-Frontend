@@ -11,6 +11,7 @@ import type { PricingTier } from "@sg/pricing";
 import { LANDING_URL, PLATFORM_URL } from "@sg/links";
 import { cx } from "@sg/utils";
 import { ThemeToggle } from "@sg/ThemeToggle";
+import { BrandMark, BrandWordmark } from "@sg/components/BrandLogo";
 
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 22 },
@@ -67,10 +68,9 @@ export default function Home() {
       {/* Nav */}
       <header className="relative z-10 border-b border-white/5">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-6 py-4">
-          <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
-          <div className="leading-tight">
-            <p className="font-display text-[15px] font-bold text-white">SecureGraph</p>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
+          <div className="flex flex-col">
+            <BrandWordmark className="h-8 self-start" />
+            <p className="mt-0.5 pl-[2.25rem] text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Command Centre</p>
           </div>
           <nav className="ml-10 hidden items-center gap-6 text-sm text-slate-400 md:flex">
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
@@ -326,7 +326,7 @@ export default function Home() {
       <footer className="relative z-10 border-t border-phantix-700/30 py-8">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 text-xs text-slate-600">
           <div className="flex items-center gap-2.5">
-            <img src="/logo-transparent.png" alt="" className="h-6 w-6 object-contain" />
+            <BrandMark alt="" className="h-6 w-6" />
             <span>© 2026 Phantix Security Solutions</span>
           </div>
           <div className="flex items-center gap-6">

@@ -525,97 +525,100 @@ export default function Reports() {
             </p>
           </div>
 
-          {reportsPageItems.map((r, i) => (
-            <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-              <Card hover>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openDetail(r)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      openDetail(r);
-                    }
-                  }}
-                  className="flex w-full flex-wrap cursor-pointer items-center gap-4 text-left"
-                >
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-phantix-800/70 text-gold-400">
-                    <FileText size={20} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-100">{r.title}</p>
-                      <StatusBadge status={r.status} />
-                      {(r as any).report_version != null && <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">v{(r as any).report_version ?? (r as any).version}</span>}
-                      <span className="chip border-phantix-600/50 bg-phantix-800/60 text-slate-400">{titleCase(r.report_type)}</span>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {r.campaign_id ? `Campaign #${r.campaign_id} · ` : ""}{timeAgo(r.created_at)}{(r as any).size_bytes ? ` · ${formatBytes((r as any).size_bytes)}` : ""}
-                    </p>
-                  </div>
-
-                  <div className="hidden items-center gap-3 rounded-xl border border-phantix-700/40 bg-phantix-950/50 px-3.5 py-2 lg:flex">
-                    {([
-                      [(r as any).stats?.after_dedupe ?? extractReportFindings(r).length, "findings", "text-phantix-300"],
-                      [(r as any).stats?.after_verification ?? 0, "verified", "text-emerald-400"],
-                      [(r as any).stats?.candidates ?? null, "candidate", "text-amber-400"],
-                      [(r as any).stats?.impact_analyzed ?? null, "impact", "text-blue-400"],
-                      [(r as any).stats?.excluded_from_report ?? 0, "excluded", "text-severity-critical"],
-                    ] as [number | null, string, string][]).map(([v, l, c]) => (
-                      <div key={String(l)} className="min-w-[3rem] text-center">
-                        <p className={cx("font-display text-lg font-bold tabular-nums", v == null ? "text-slate-600" : c)}>{v == null ? "—" : v}</p>
-                        <p className="text-[12px] uppercase tracking-wider text-slate-600">{l}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {r.status === "generating" ? (
-                    <div className="w-40">
-                      <p className="mb-1 text-right text-[13px] text-slate-500">rendering...</p>
-                      <ProgressBar value={72} color="#38BDF8" />
-                    </div>
-                  ) : (
-                    <div className="flex gap-1.5">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/reports/${r.id}/view${reportHasPdf(r) ? "?format=pdf" : ""}`); }}
-                        className="rounded-lg border border-gold-400/40 bg-gold-400/10 px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase text-gold-300 hover:bg-gold-400/20"
+          <Card className="!p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Report</th>
+                    <th className="th">Type</th>
+                    <th className="th">Status</th>
+                    <th className="th hidden text-right lg:table-cell">Findings</th>
+                    <th className="th hidden text-right lg:table-cell">Verified</th>
+                    <th className="th hidden text-right xl:table-cell">Excluded</th>
+                    <th className="th hidden xl:table-cell">Size</th>
+                    <th className="th">Created</th>
+                    <th className="th text-right"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportsPageItems.map((r) => {
+                    const stats = (r as any).stats ?? {};
+                    const version = (r as any).report_version ?? (r as any).version;
+                    const downloads = parseOutputFiles(r.output_files).downloads.length > 0
+                      ? parseOutputFiles(r.output_files).downloads
+                      : (r.formats_requested || []).map((fmt: string) => ({ format: fmt, path: "" }));
+                    return (
+                      <tr
+                        key={r.id}
+                        tabIndex={0}
+                        onClick={() => openDetail(r)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openDetail(r);
+                          }
+                        }}
+                        className="group h-10 cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35 focus-visible:bg-phantix-800/35"
                       >
-                        {reportHasPdf(r) ? "View PDF" : "View"}
-                      </button>
-                      {(parseOutputFiles(r.output_files).downloads.length > 0
-                        ? parseOutputFiles(r.output_files).downloads
-                        : (r.formats_requested || []).map((f: string) => ({ format: f, path: "" }))
-                      ).map(({ format: f }) => (
-                        <button
-                          key={f}
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); handleDownload(r.id, f, onDownloadError); }}
-                          className={cx(
-                            "rounded-lg border px-2.5 py-1.5 font-mono text-[12px] font-semibold uppercase transition-colors",
-                            f === "pdf" || f === "docx" || f === "pptx" || f === "html"
-                              ? "border-gold-400/40 bg-gold-400/10 text-gold-300 hover:bg-gold-400/20"
-                              : "border-phantix-700/50 text-slate-400 hover:bg-phantix-800/60",
+                        <td className="td max-w-[22rem]">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <FileText size={15} className="shrink-0 text-gold-400" aria-hidden="true" />
+                            <span className="truncate font-medium text-slate-100" title={r.title}>{r.title}</span>
+                            {version != null && <span className="shrink-0 font-mono text-[12px] text-slate-500">v{version}</span>}
+                            {r.campaign_id ? <span className="shrink-0 text-[12px] text-slate-500">Campaign #{r.campaign_id}</span> : null}
+                          </span>
+                        </td>
+                        <td className="td whitespace-nowrap text-[13px] text-slate-400">{titleCase(r.report_type)}</td>
+                        <td className="td whitespace-nowrap">
+                          {r.status === "generating" ? (
+                            <span className="flex w-28 items-center gap-2"><ProgressBar value={72} color="#38BDF8" /></span>
+                          ) : <StatusBadge status={r.status} />}
+                        </td>
+                        <td className="td hidden text-right font-mono text-[13px] text-phantix-300 lg:table-cell">{stats.after_dedupe ?? extractReportFindings(r).length}</td>
+                        <td className="td hidden text-right font-mono text-[13px] text-emerald-400 lg:table-cell">{stats.after_verification ?? 0}</td>
+                        <td className="td hidden text-right font-mono text-[13px] text-slate-400 xl:table-cell">{stats.excluded_from_report ?? 0}</td>
+                        <td className="td hidden whitespace-nowrap text-[13px] text-slate-400 xl:table-cell">{(r as any).size_bytes ? formatBytes((r as any).size_bytes) : "—"}</td>
+                        <td className="td whitespace-nowrap text-[13px] text-slate-400" title={r.created_at}>{timeAgo(r.created_at)}</td>
+                        <td className="td whitespace-nowrap text-right" onClick={(e) => e.stopPropagation()}>
+                          {r.status !== "generating" && (
+                            <span className="inline-flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/reports/${r.id}/view${reportHasPdf(r) ? "?format=pdf" : ""}`)}
+                                className="rounded px-2 py-0 text-[13px] font-medium leading-6 text-gold-300 hover:bg-gold-400/10"
+                              >
+                                {reportHasPdf(r) ? "View PDF" : "View"}
+                              </button>
+                              {downloads.map(({ format: fmt }) => (
+                                <button
+                                  key={fmt}
+                                  type="button"
+                                  onClick={() => handleDownload(r.id, fmt, onDownloadError)}
+                                  className="rounded px-1.5 py-0 font-mono text-[12px] font-semibold uppercase leading-6 text-slate-400 hover:bg-phantix-800 hover:text-slate-100"
+                                  title={`Download ${fmt === "pptx" ? "board deck" : fmt.toUpperCase()}`}
+                                >
+                                  {fmt === "pptx" ? "Deck" : fmt}
+                                </button>
+                              ))}
+                            </span>
                           )}
-                        >
-                          {f === "pptx" ? "Board deck" : f}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-
-          <Pagination
-            totalItems={reports.length}
-            page={reportsSafePage}
-            pageSize={reportsPageSize}
-            onPageChange={setReportsPage}
-            onPageSizeChange={setReportsPageSize}
-          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <Pagination
+              totalItems={reports.length}
+              page={reportsSafePage}
+              pageSize={reportsPageSize}
+              onPageChange={setReportsPage}
+              onPageSizeChange={setReportsPageSize}
+              itemLabel="reports"
+            />
+          </Card>
 
           <p className="text-xs text-slate-500">
             Retention is <strong className="text-slate-400">per report type</strong>: each type keeps

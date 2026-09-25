@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Radar, Plus, ShieldCheck, Lock, AlertTriangle, XCircle, Search, CheckCircle2, Ban, ChevronRight, ChevronDown, Github } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, VerificationBadge, ImpactBadge, ImpactPanel, Modal, ProgressBar, Tabs, Spinner, EmptyState, PageSkeleton, ErrorState } from "@sg/ui";
-import { Pagination } from "@sg/components/Pagination";
+import { Pagination, DEFAULT_PAGE_SIZE, usePaged } from "@sg/components/Pagination";
 import SecurityDbBanner from "@sg/components/SecurityDbBanner";
 import DocLink from "@sg/components/DocLink";
 import { loadScansBundle, verifyScanResult, startScan, resumeScan, scanConsentRequired, type ScanConsentDocument } from "@sg/data";
@@ -13,7 +13,16 @@ import { timeAgo, formatDateTime, cx, severityHex, humanize } from "@sg/utils";
 import { useStore } from "@sg/store";
 import type { VerificationStatus, ScanResult, ScanJob } from "@sg/types";
 
-const DEFAULT_PAGE_SIZE = 20;
+
+/** "asset_types: web_app, api" instead of raw JSON, so the scope fits one line. */
+function scopeLabel(filter: unknown): string {
+  if (filter == null) return "All in-scope assets";
+  if (typeof filter !== "object") return String(filter);
+  const parts = Object.entries(filter as Record<string, unknown>)
+    .filter(([, v]) => v != null && !(Array.isArray(v) && v.length === 0))
+    .map(([k, v]) => `${humanize(k)}: ${Array.isArray(v) ? v.map((x) => humanize(String(x))).join(", ") : humanize(String(v))}`);
+  return parts.length ? parts.join(" · ") : "All in-scope assets";
+}
 
 export default function Scans() {
   const { toast, requireDualControl } = useStore();
@@ -49,6 +58,7 @@ export default function Scans() {
     j.resumable !== false;
   const active = scanJobs.find((j) => runningFilter(j) && !isGithubAnalysis(j));
   const githubActive = scanJobs.find((j) => runningFilter(j) && isGithubAnalysis(j));
+  const { pageItems: jobPageItems, pagination: jobPagination } = usePaged(scanJobs, "attack-scan-jobs");
 
   const filterToTargetFilter = (v: string): Record<string, unknown> => {
     if (v.startsWith("tags:")) return { tags: [v.slice(5)] };
@@ -301,10 +311,10 @@ export default function Scans() {
                 </tr>
               </thead>
               <tbody>
-                {scanJobs.map((j) => {
+                {jobPageItems.map((j) => {
                   const isGitHub = isGithubAnalysis(j);
                   return (
-                  <tr key={j.id} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                  <tr key={j.id} className="h-10 border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
                     <td className="td">
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-semibold text-slate-200">#{j.id}</span>
@@ -314,17 +324,17 @@ export default function Scans() {
                       </div>
                     </td>
                     <td className="td">
-                      <div className="flex gap-1.5">
+                      <div className="flex flex-nowrap gap-1.5">
                         {(j.tools ?? []).map((t) => (
                           <span key={t} className="rounded-md bg-phantix-800/80 px-1.5 py-0.5 font-mono text-[12px] text-phantix-300">{t}</span>
                         ))}
                       </div>
                     </td>
-                    <td className="td"><span className="font-mono text-xs text-slate-500">{JSON.stringify(j.target_filter)}</span></td>
+                    <td className="td max-w-[16rem]"><span className="block truncate text-[13px] text-slate-400" title={JSON.stringify(j.target_filter)}>{scopeLabel(j.target_filter)}</span></td>
                     <td className="td"><StatusBadge status={j.status} /></td>
                     <td className="td font-semibold text-slate-200">{j.findings_count}</td>
                     <td className="td text-xs text-slate-400">{j.initiated_by}</td>
-                    <td className="td text-xs text-slate-500">{j.finished_at ? formatDateTime(j.finished_at) : "---"}</td>
+                    <td className="td whitespace-nowrap text-[13px] text-slate-400">{j.finished_at ? formatDateTime(j.finished_at) : "—"}</td>
                     <td className="td">
                       {resumableJob(j) ? (
                         <button
@@ -335,7 +345,7 @@ export default function Scans() {
                           {resumeBusy === j.id ? "Resuming..." : "Resume"}
                         </button>
                       ) : (
-                        <span className="text-xs text-slate-600">---</span>
+                        <span className="text-xs text-slate-600">—</span>
                       )}
                     </td>
                   </tr>
@@ -343,6 +353,7 @@ export default function Scans() {
                 })}
               </tbody>
             </table>
+            <Pagination {...jobPagination} itemLabel="scan jobs" />
           </Card>
         </motion.div>
       )}

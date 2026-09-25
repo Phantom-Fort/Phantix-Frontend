@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import { BrandLogo } from "../components/BrandLogo";
+import { BrandWordmark } from "../components/BrandLogo";
 import { ThemeToggle } from "../ThemeToggle";
 import { PageSkeleton } from "../ui";
 
@@ -33,14 +33,9 @@ export default function DocsChrome() {
           <span className="h-6 w-px bg-phantix-700/60" aria-hidden="true" />
 
           <span className="flex items-center gap-3">
-            <BrandLogo className="h-8 w-8 shrink-0" />
-            <span className="leading-tight">
-              <span className="block font-display text-[15px] font-bold text-white">
-                SecureGraph
-              </span>
-              <span className="block text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">
-                Documentation
-              </span>
+            <span className="flex flex-col">
+              <BrandWordmark className="h-8 self-start" />
+              <span className="mt-0.5 block pl-[2.25rem] text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Documentation</span>
             </span>
           </span>
 

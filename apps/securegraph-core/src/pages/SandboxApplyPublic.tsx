@@ -7,6 +7,7 @@ import { LANDING_URL, PLATFORM_URL, SANDBOX_PROGRAM_SLUG } from "@sg/config";
 import { api, tokens, type ApiError } from "@sg/api";
 import { sanitizeSingleLine } from "@sg/uploadValidation";
 import { cx } from "@sg/utils";
+import { BrandWordmark } from "@sg/components/BrandLogo";
 
 type Status = {
   max: number;
@@ -102,10 +103,9 @@ export default function SandboxApplyPublic() {
 
       <header className="relative z-10 mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
         <a href={LANDING_URL} className="flex items-center gap-2.5">
-          <img src="/logo-white.png" alt="SecureGraph" className="h-9 w-9 object-contain" />
-          <div>
-            <p className="font-display text-sm font-bold text-white">SecureGraph</p>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
+          <div className="flex flex-col">
+            <BrandWordmark className="h-8 self-start" />
+            <p className="mt-0.5 pl-[2.25rem] text-[12px] font-semibold uppercase tracking-[0.18em] text-gold-400">Command Centre</p>
           </div>
         </a>
         <div className="flex items-center gap-2">

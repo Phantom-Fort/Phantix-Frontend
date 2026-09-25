@@ -610,13 +610,13 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
             ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-phantix-700/40 text-left text-[13px] uppercase tracking-wider text-slate-500">
-                  <th className="px-5 py-3 font-medium">Asset</th>
-                  <th className="px-5 py-3 font-medium">Type</th>
-                  <th className="px-5 py-3 font-medium">Risk score</th>
-                  <th className="px-5 py-3 font-medium">Risk level</th>
-                  <th className="px-5 py-3 font-medium">Exposure</th>
-                  <th className="px-5 py-3 font-medium">Findings</th>
+                <tr className="border-b border-phantix-700/40 text-left text-[13px] text-slate-300">
+                  <th className="th">Asset</th>
+                  <th className="th">Type</th>
+                  <th className="th">Risk score</th>
+                  <th className="th">Risk level</th>
+                  <th className="th">Exposure</th>
+                  <th className="th">Findings</th>
                 </tr>
               </thead>
               <tbody>
@@ -628,24 +628,26 @@ export default function AssetInventory({ title = "Assets" }: AssetInventoryProps
                   const assetType = a.assetType ?? a.asset_type ?? "";
                   const displayName = a.name || a.value || `#${a.id}`;
                   return (
-                  <tr key={a.id} className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35 text-sm", i % 2 === 1 && "bg-phantix-950/30")}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-slate-200">{displayName}</p>
-                      <p className="text-xs text-slate-500 font-mono">{a.value || `#${a.id}`}</p>
+                  <tr key={a.id} className={cx("h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35 text-sm", i % 2 === 1 && "bg-phantix-950/30")}>
+                    <td className="td">
+                      <span className="block max-w-[28rem] truncate" title={a.value || undefined}>
+                        <span className="font-medium text-slate-100">{displayName}</span>
+                        {displayName !== (a.value || `#${a.id}`) && <span className="ml-2 font-mono text-[12px] text-slate-500">{a.value || `#${a.id}`}</span>}
+                      </span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="td">
                       <span className="chip text-xs">{titleCase(assetType)}</span>
                     </td>
-                    <td className="px-5 py-3 font-mono text-sm">
+                    <td className="td font-mono text-sm">
                       <span className={cx(score >= 75 ? "text-severity-critical" : score >= 50 ? "text-severity-high" : score >= 25 ? "text-severity-medium" : "text-severity-low")}>
                         {score || "--"}
                       </span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="td">
                       <SeverityBadge severity={level as never} />
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-400">{titleCase(exposure)}</td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-400">{findings}</td>
+                    <td className="td text-xs text-slate-400">{titleCase(exposure)}</td>
+                    <td className="td font-mono text-xs text-slate-400">{findings}</td>
                   </tr>
                   );
                 })}

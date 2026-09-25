@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Card, EmptyState, ErrorState, PageHeader, PageSkeleton, Modal } from "@sg/ui";
 import MarkdownView from "@sg/components/MarkdownView";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 import { useResource } from "@sg/useResource";
 import { useStore } from "@sg/store";
 import { cx, timeAgo } from "@sg/utils";
@@ -46,36 +47,52 @@ function bytes(n: number): string {
 function ReportRow({ report, onPreview }: { report: AgiPriorReport; onPreview: () => void }) {
   const ft = String(report.meta?.file_type || "md").toLowerCase();
   const warnings = (report.meta?.conversion_warnings as string[] | undefined) || report.warnings || [];
+  const cats = report.categories || [];
   return (
-    <button
-      type="button"
+    <tr
+      tabIndex={0}
       onClick={onPreview}
-      className="group flex w-full items-center gap-3 rounded-lg border border-phantix-700/40 bg-phantix-900/40 p-3 text-left transition-colors hover:border-gold-400/30 hover:bg-phantix-800/50"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPreview();
+        }
+      }}
+      className="group h-10 cursor-pointer border-b border-phantix-800/40 hover:bg-phantix-800/35 focus-visible:bg-phantix-800/35"
     >
-      <span className={cx("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border", FILE_BADGE[ft] || FILE_BADGE.txt)}>
-        <FileText size={16} />
-      </span>
-      <span className="min-w-0 flex-1">
+      <td className="td max-w-[24rem]">
         <span className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-semibold text-slate-100">{report.title}</span>
+          <FileText size={15} className={cx("shrink-0", (FILE_BADGE[ft] || FILE_BADGE.txt).split(" ").filter((c) => c.startsWith("text-")).join(" "))} aria-hidden="true" />
+          <span className="truncate font-medium text-slate-100" title={report.title}>{report.title}</span>
           {warnings.length > 0 && (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[12px] font-semibold text-amber-300">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-1.5 text-[12px] font-semibold text-amber-300" title={warnings.join("\n")}>
               <AlertTriangle size={10} /> needs attention
             </span>
           )}
         </span>
-        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-slate-500">
-          <span className="uppercase tracking-wide">{ft}</span>
-          {typeof report.meta?.source_file === "string" && <span className="truncate">{report.meta.source_file}</span>}
-          {typeof report.meta?.byte_size === "number" && <span>{bytes(report.meta.byte_size as number)}</span>}
-          {report.created_at && <span>{timeAgo(report.created_at)}</span>}
-          {(report.categories || []).slice(0, 4).map((c) => (
-            <span key={c} className="rounded border border-phantix-700/40 bg-phantix-950/60 px-1.5 py-0.5 text-[12px] text-slate-400">{c}</span>
-          ))}
-        </span>
-      </span>
-      <ChevronRight size={15} className="shrink-0 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gold-300" />
-    </button>
+      </td>
+      <td className="td whitespace-nowrap text-[13px] uppercase text-slate-400">{ft}</td>
+      <td className="td hidden max-w-[14rem] lg:table-cell">
+        {typeof report.meta?.source_file === "string" ? <span className="block truncate text-[13px] text-slate-400" title={report.meta.source_file}>{report.meta.source_file}</span> : <span className="text-slate-600">—</span>}
+      </td>
+      <td className="td hidden whitespace-nowrap text-right font-mono text-[13px] text-slate-400 md:table-cell">
+        {typeof report.meta?.byte_size === "number" ? bytes(report.meta.byte_size as number) : "—"}
+      </td>
+      <td className="td hidden whitespace-nowrap xl:table-cell">
+        {cats.length ? (
+          <span className="inline-flex items-center gap-1" title={cats.join(", ")}>
+            {cats.slice(0, 2).map((c) => (
+              <span key={c} className="rounded border border-phantix-700/40 bg-phantix-950/60 px-1.5 text-[12px] text-slate-400">{c}</span>
+            ))}
+            {cats.length > 2 && <span className="text-[12px] text-slate-500">+{cats.length - 2}</span>}
+          </span>
+        ) : <span className="text-slate-600">—</span>}
+      </td>
+      <td className="td whitespace-nowrap text-[13px] text-slate-400">{report.created_at ? timeAgo(report.created_at) : "—"}</td>
+      <td className="td w-8 text-right">
+        <ChevronRight size={14} className="inline text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-gold-300" />
+      </td>
+    </tr>
   );
 }
 
@@ -96,6 +113,7 @@ export default function PriorReports() {
         String(r.meta?.source_file || "").toLowerCase().includes(q),
     );
   }, [reports.data, query]);
+  const { pageItems: reportPageItems, pagination: reportPagination } = usePaged(filtered, "attack-prior-reports", query);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
@@ -162,12 +180,31 @@ export default function PriorReports() {
         />
       ) : (
         <div className="space-y-2">
-          {filtered.map((r) => (
-            <ReportRow key={r.id} report={r} onPreview={() => setPreview(r)} />
-          ))}
+          <Card className="!p-0 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-phantix-700/40">
+                    <th className="th">Report</th>
+                    <th className="th">Format</th>
+                    <th className="th hidden lg:table-cell">File</th>
+                    <th className="th hidden text-right md:table-cell">Size</th>
+                    <th className="th hidden xl:table-cell">Categories</th>
+                    <th className="th">Uploaded</th>
+                    <th className="th w-8"><span className="sr-only">Open</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportPageItems.map((r) => (
+                    <ReportRow key={r.id} report={r} onPreview={() => setPreview(r)} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination {...reportPagination} itemLabel="reports" />
+          </Card>
           <p className="pt-1 text-[12px] text-slate-500">
-            {filtered.length} report{filtered.length === 1 ? "" : "s"}
-            {query.trim() ? ` matching “${query.trim()}”` : ""} · available to the agent org-wide
+            {query.trim() ? `${filtered.length} matching “${query.trim()}” · ` : ""}Available to the agent org-wide
           </p>
         </div>
       )}

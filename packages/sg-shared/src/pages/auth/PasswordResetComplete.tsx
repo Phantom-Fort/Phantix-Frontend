@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, KeyRound, Loader2 } from "lucide-react";
 import { api, ApiError } from "@sg/api";
-import { BrandLogo } from "@sg/components/BrandLogo";
+import { BrandWordmark } from "@sg/components/BrandLogo";
 import { ThemeToggle } from "@sg/ThemeToggle";
 
 /**
@@ -63,7 +63,7 @@ export default function PasswordResetComplete() {
 
       <div className="w-full max-w-md">
         <div className="mb-8 flex flex-col items-center">
-          <BrandLogo className="h-10 w-auto object-contain" />
+          <BrandWordmark className="h-10" />
           <p className="mt-3 text-sm text-slate-400">SecureGraph Command Centre</p>
         </div>
 

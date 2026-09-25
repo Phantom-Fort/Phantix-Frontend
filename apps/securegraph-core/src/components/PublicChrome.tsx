@@ -5,6 +5,7 @@ import { useStore } from "@sg/store";
 import { ThemeToggle } from "@sg/ThemeToggle";
 import { PLATFORM_URL } from "@sg/links";
 import { cx } from "@sg/utils";
+import { BrandWordmark } from "@sg/components/BrandLogo";
 
 /**
  * Chrome for the public pages that render outside the application shell.
@@ -37,14 +38,9 @@ export default function PublicChrome() {
           <span className="hidden h-6 w-px bg-phantix-700/60 sm:block" aria-hidden="true" />
 
           <Link to="/" className="flex min-w-0 items-center gap-3">
-            <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 shrink-0 object-contain" />
-            <span className="min-w-0 truncate leading-tight">
-              <span className="block font-display text-[15px] font-bold text-white">
-                SecureGraph
-              </span>
-              <span className="block text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">
-                Documentation
-              </span>
+            <span className="min-w-0 truncate flex flex-col">
+              <BrandWordmark className="h-8 self-start" />
+              <span className="mt-0.5 block pl-[2.25rem] text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Documentation</span>
             </span>
           </Link>
 

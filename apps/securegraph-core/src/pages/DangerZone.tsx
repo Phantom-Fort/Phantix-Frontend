@@ -177,7 +177,7 @@ export default function DangerZone() {
         ) : (
           <div className="max-h-[420px] overflow-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0 bg-phantix-950 text-[12px] uppercase tracking-[0.14em] text-slate-500">
+              <thead className="sticky top-0 bg-phantix-950 text-[13px] font-semibold text-slate-300">
                 <tr>
                   <th className="w-10 px-4 py-2">
                     <input
@@ -199,7 +199,7 @@ export default function DangerZone() {
                   <tr
                     key={a.id}
                     className={cx(
-                      "border-t border-phantix-800/50 hover:bg-phantix-900/50",
+                      "h-10 border-t border-[rgb(var(--border-subtle)/0.85)] hover:bg-phantix-900/50",
                       selected.has(a.id) && "bg-severity-critical/5",
                     )}
                   >
@@ -212,11 +212,11 @@ export default function DangerZone() {
                         className="h-4 w-4 accent-[rgb(var(--severity-critical))]"
                       />
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="font-medium text-slate-200">{a.value || a.name}</div>
-                      {a.name && a.name !== a.value ? (
-                        <div className="text-xs text-slate-500">{a.name}</div>
-                      ) : null}
+                    <td className="max-w-[26rem] px-3 py-2">
+                      <span className="block truncate" title={a.name && a.name !== a.value ? `${a.value} — ${a.name}` : a.value || a.name}>
+                        <span className="font-medium text-slate-200">{a.value || a.name}</span>
+                        {a.name && a.name !== a.value ? <span className="ml-2 text-[13px] text-slate-500">{a.name}</span> : null}
+                      </span>
                     </td>
                     <td className="px-3 py-2 text-slate-400">{titleCase(a.asset_type)}</td>
                     <td className="px-3 py-2 text-slate-400">{titleCase(a.criticality)}</td>

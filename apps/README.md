@@ -10,7 +10,7 @@ not in here.
 | Attack | `securegraph-attack` | `attack.phantixlabs.com` | 5175 |
 | Defend | `securegraph-defend` | `defend.phantixlabs.com` | 5176 |
 | Code | `securegraph-code` | `code.phantixlabs.com` | 5177 |
-| Blog | `securegraph-blog` | (blog host, TBD) | 5178 |
+| Blog | `securegraph-blog` | `blog.phantixlabs.com` | 5178 |
 
 The Blog app is The SecureGraph Weekly, a public-facing magazine (not an
 operator app): a React/Vite SPA that renders the full-screen issue spread and
@@ -18,6 +18,9 @@ full-page Markdown essays. It reads published posts from `/api/v1/blog`; posts
 are written and published only in the Staff Portal (`/weekly`). The bundled
 posts under `src/content/posts/` are the demo fallback (see
 `apps/securegraph-blog/README.md`). The subscribe link defaults to Substack.
+The landing page links to it from the top nav, the mobile menu and the footer
+(`The Weekly`, via `BLOG_URL` in `landing/src/lib/config.ts`) — keep that host
+in step with this app's Vercel project.
 
 The hosts are not a frontend choice: the backend serves them as each
 application's `open_url` in the launcher, and allows them as CORS origins, from

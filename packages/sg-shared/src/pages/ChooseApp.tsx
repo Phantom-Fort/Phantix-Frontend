@@ -6,6 +6,7 @@ import { signOutEverywhere } from "@sg/shell/session";
 import { useStore } from "@sg/store";
 import { ThemeToggle } from "@sg/ThemeToggle";
 import { cx } from "@sg/utils";
+import { BrandMark, BrandWordmark } from "../components/BrandLogo";
 import {
   applicationHandoffHref,
   applicationTarget,
@@ -206,12 +207,9 @@ export default function ChooseApp() {
     // to the docs, and a way out.
     <div className="flex min-h-screen flex-col">
       <header className="relative z-20 flex items-center gap-3 border-b border-phantix-700/60 px-5 py-3.5 sm:px-6">
-        <img src="/logo-white.png" alt="SecureGraph" className="h-8 w-8 object-contain" />
-        <span className="leading-tight">
-          <span className="block font-display text-[15px] font-bold text-white">SecureGraph</span>
-          <span className="block text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">
-            Applications
-          </span>
+        <span className="flex flex-col">
+          <BrandWordmark className="h-8 self-start" />
+          <span className="mt-0.5 block pl-[2.25rem] text-[12px] font-semibold uppercase tracking-[0.22em] text-gold-400">Applications</span>
         </span>
         <div className="ml-auto flex items-center gap-2.5">
           <Link
@@ -305,13 +303,13 @@ export default function ChooseApp() {
       >
         {/* Identity */}
         <motion.div variants={rise} className="mb-8 text-center">
-          <motion.img
-            src="/logo-white.png"
-            alt=""
-            className="mx-auto h-12 w-12 object-contain"
+          <motion.div
+            className="mx-auto h-12 w-12"
             animate={calm ? undefined : { y: [0, -5, 0] }}
             transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          />
+          >
+            <BrandMark alt="" className="h-12 w-12" />
+          </motion.div>
           <p className="mt-3 font-mono text-[13px] font-semibold uppercase tracking-[0.28em] text-gold-400">
             SecureGraph
           </p>
