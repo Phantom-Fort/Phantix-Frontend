@@ -68,9 +68,30 @@ export function loadUserTimeZone(): void {
   }
 }
 
+/**
+ * Parse an API timestamp.
+ *
+ * The API records UTC and hands it back without a zone designator
+ * ("2026-09-26T10:41:00"), which `new Date()` reads as *local* time. In a UTC+1
+ * zone every row the server had just written therefore read "1h ago" — never
+ * "just now" — in the notification bell and the audit trail alike, and drifted
+ * from there. Bare wall-clock strings are pinned to UTC; a value that carries an
+ * offset/zone, or a date-only value, is left to the runtime to interpret.
+ */
+export function parseTimestamp(value: string): Date {
+  const trimmed = value.trim();
+  const bare = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?$/.test(trimmed);
+  return new Date(bare ? `${trimmed.replace(" ", "T")}Z` : trimmed);
+}
+
 function toDate(value: string | number | Date | null | undefined): Date | null {
   if (value === null || value === undefined || value === "") return null;
-  const d = value instanceof Date ? value : new Date(value);
+  const d =
+    value instanceof Date
+      ? value
+      : typeof value === "string"
+        ? parseTimestamp(value)
+        : new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 

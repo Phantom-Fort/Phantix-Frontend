@@ -7,6 +7,7 @@ import {
   loadLatestAssessment,
 } from "../assessments";
 import { api } from "../api";
+import { parseTimestamp } from "../time";
 import { cx } from "../utils";
 
 const SEV_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
@@ -20,7 +21,9 @@ const SEV_CLASS: Record<string, string> = {
 
 function when(iso: string | null | undefined): string {
   if (!iso) return "unknown";
-  const t = Date.parse(iso);
+  // Bare UTC strings from the API must not be read as local time, or a just-
+  // completed assessment reports an hour of age in a UTC+1 zone.
+  const t = parseTimestamp(iso).getTime();
   if (Number.isNaN(t)) return iso;
   const mins = Math.round((Date.now() - t) / 60000);
   if (mins < 60) return `${mins} min ago`;
