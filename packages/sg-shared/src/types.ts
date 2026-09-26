@@ -1296,6 +1296,12 @@ export interface AgiSession {
   loop_stop_reason?: string | null;
   /** Open ASK_OPERATOR clarification (cleared on answer). */
   clarification?: Record<string, unknown> | null;
+  /**
+   * The same ask, surfaced top-level by some payloads. Read it as well: a gate
+   * that only landed here used to render as "Blocked — 1 open information
+   * request" in the brief with no prompt to answer it.
+   */
+  open_clarification?: Record<string, unknown> | null;
 }
 
 /** One terminal history line (AgiTranscriptChunk). */

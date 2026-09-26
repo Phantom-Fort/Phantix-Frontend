@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { KeyboardEvent } from "react";
+import { parseTimestamp } from "./time";
 import type { Severity, TrackerVerification, VerificationStatus } from "./types";
 
 export function cn(...inputs: ClassValue[]): string {
@@ -69,7 +70,10 @@ export const priorityBandMeta: Record<string, { label: string; className: string
 
 export function timeAgo(iso: string | null): string {
   if (!iso) return "---";
-  const then = new Date(iso).getTime();
+  // parseTimestamp, not `new Date(iso)`: the API's bare UTC strings would
+  // otherwise be read as local time and every fresh row start at "1h ago".
+  const then = parseTimestamp(iso).getTime();
+  if (Number.isNaN(then)) return "---";
   const diff = Date.now() - then;
   const mins = Math.floor(diff / 60_000);
   if (mins < 1) return "just now";
@@ -78,12 +82,12 @@ export function timeAgo(iso: string | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return parseTimestamp(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "---";
-  return new Date(iso).toLocaleString(undefined, {
+  return parseTimestamp(iso).toLocaleString(undefined, {
     month: "short",
     day: "numeric",
     hour: "2-digit",

@@ -81,6 +81,7 @@ export function normalizeAgiSession(raw: unknown): AgiSession {
     loop_status: o.loop_status === "stopped" || o.loop_status === "running" ? o.loop_status : null,
     loop_stop_reason: o.loop_stop_reason == null ? null : String(o.loop_stop_reason),
     clarification: o.clarification != null && typeof o.clarification === "object" ? (o.clarification as Record<string, unknown>) : null,
+    open_clarification: o.open_clarification != null && typeof o.open_clarification === "object" ? (o.open_clarification as Record<string, unknown>) : null,
   };
 }
 

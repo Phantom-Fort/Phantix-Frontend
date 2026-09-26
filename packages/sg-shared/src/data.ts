@@ -166,7 +166,9 @@ async function softList<T>(path: string, meta?: LoadMeta): Promise<T[]> {
   } catch (err) {
     if (meta && isSecurityDbBlocked(err)) {
       meta.securityDbBlocked = true;
-      meta.error = err instanceof Error ? err.message : "Security database not ready";
+      // App-authored copy: the backend's message (which names the schema and the
+      // connection) is logged by the API layer, not repeated in the banner.
+      meta.error = SECURITY_DB_NOT_READY;
     } else if (meta && err instanceof ApiError && err.status !== 404) {
       meta.error = err.message;
     }
@@ -180,11 +182,15 @@ async function softOne<T>(path: string, meta?: LoadMeta): Promise<T | null> {
   } catch (err) {
     if (meta && isSecurityDbBlocked(err)) {
       meta.securityDbBlocked = true;
-      meta.error = err instanceof Error ? err.message : "Security database not ready";
+      meta.error = SECURITY_DB_NOT_READY;
     }
     return null;
   }
 }
+
+/** Banner copy for a 409 that means security storage is not bootstrapped. */
+const SECURITY_DB_NOT_READY =
+  "Security storage for this organization is not ready yet. Connect and bootstrap it in Platform settings.";
 
 /** Backend page ceiling for list endpoints (`/assets`, prioritized, …). */
 const LIST_PAGE_SIZE = 200;
@@ -211,6 +217,35 @@ async function softListAll<T>(path: string, meta?: LoadMeta): Promise<T[]> {
     if (items.length < LIST_PAGE_SIZE) break;
   }
   return out;
+}
+
+/**
+ * Paginate an envelope endpoint (`{ items, summary, note, … }`) — the same walk
+ * as `softListAll`, keeping the first page's envelope so callers can still read
+ * server-computed blocks such as `summary`.
+ *
+ * Every page stays at `LIST_PAGE_SIZE`: asking for more than the backend
+ * ceiling in one request (`/reports/tracker?limit=1000`) is a hard 500.
+ */
+async function softListAllEnvelope<T>(
+  path: string,
+  meta?: LoadMeta,
+): Promise<{ items: T[]; envelope: Record<string, unknown> | null }> {
+  const sep = path.includes("?") ? "&" : "?";
+  const items: T[] = [];
+  let envelope: Record<string, unknown> | null = null;
+  for (let page = 0; page < LIST_MAX_PAGES; page++) {
+    const raw = await softOne<Record<string, unknown>>(
+      `${path}${sep}limit=${LIST_PAGE_SIZE}&offset=${page * LIST_PAGE_SIZE}`,
+      meta,
+    );
+    if (!raw || typeof raw !== "object") break;
+    if (!envelope) envelope = raw;
+    const batch = asList<T>(raw);
+    items.push(...batch);
+    if (batch.length < LIST_PAGE_SIZE) break;
+  }
+  return { items, envelope };
 }
 
 function pickUser(u: Record<string, unknown> | null | undefined): DualControlState["initiator"] {
@@ -336,7 +371,7 @@ export async function loadScansBundle() {
   const meta: LoadMeta = {};
   const [rawJobs, scanResults] = await Promise.all([
     softList<ScanJob>("/scans/jobs", meta),
-    softList<ScanResult>("/scans/results?limit=500", meta),
+    softList<ScanResult>(`/scans/results?limit=${LIST_PAGE_SIZE}`, meta),
   ]);
   return {
     scanJobs: rawJobs.map(normalizeScanJob),
@@ -835,19 +870,14 @@ export async function loadTrackerBundle() {
     const { trackerFindings, trackerSummary, trackerNote } = await loadReportsBundle();
     return { trackerFindings, trackerSummary, trackerNote };
   }
-  let trackerSummary: TrackerSummary | null = null;
-  let trackerNote: string | null = null;
-  let rawTrackerItems: any[] = [];
-  try {
-    const envelope = await api.get<any>("/reports/tracker?limit=1000");
-    if (envelope && typeof envelope === "object") {
-      trackerSummary = (envelope.summary ?? null) as TrackerSummary | null;
-      trackerNote = envelope.note != null ? String(envelope.note) : null;
-      rawTrackerItems = asList<any>(envelope);
-    }
-  } catch {
-    rawTrackerItems = await softList<any>("/reports/tracker");
-  }
+  // Paged at the backend ceiling — a single `?limit=1000` call is a hard 500.
+  const { items, envelope } = await softListAllEnvelope<any>("/reports/tracker");
+  const trackerSummary =
+    envelope && typeof envelope === "object"
+      ? ((envelope.summary ?? null) as TrackerSummary | null)
+      : null;
+  const trackerNote = envelope?.note != null ? String(envelope.note) : null;
+  const rawTrackerItems: any[] = items;
   let trackerFindings = (rawTrackerItems ?? []).map((t) => normalizeTrackerFinding(t) as TrackerFinding);
   if (trackerFindings.length === 0) {
     const reports = (await softList<Report>("/reports")).map((r) => normalizeReportRow(r) as Report);
@@ -3224,7 +3254,9 @@ function trackerSummaryFrom(raw: unknown): TrackerSummary | null {
  */
 export async function loadTrackerSummary(): Promise<TrackerSummary | null> {
   if (isDemoMode()) { await delay(250); return demo.trackerSummary; }
-  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  // One page at the backend ceiling is enough: the counts come back computed
+  // server-side, and the local derivation below only needs representative rows.
+  const raw = await softOne<any>(`/reports/tracker?limit=${LIST_PAGE_SIZE}`);
   return trackerSummaryFrom(raw);
 }
 
@@ -3283,9 +3315,10 @@ export async function loadTrackerAnalytics(): Promise<{
     await delay(250);
     return { rows: demo.trackerFindings as TrackerFinding[], summary: demo.trackerSummary };
   }
-  const raw = await softOne<any>("/reports/tracker?limit=1000");
+  // Aging and SLA need every row, so walk the pages instead of one 500-ing request.
+  const { items, envelope } = await softListAllEnvelope<any>("/reports/tracker");
   return {
-    rows: asList<any>(raw).map((t) => normalizeTrackerFinding(t) as TrackerFinding),
-    summary: trackerSummaryFrom(raw),
+    rows: items.map((t) => normalizeTrackerFinding(t) as TrackerFinding),
+    summary: trackerSummaryFrom(envelope),
   };
 }
