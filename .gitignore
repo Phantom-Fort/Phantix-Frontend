@@ -25,3 +25,4 @@ session.txt
 .dev-logs/
 e2e-test-prompt.txt
 .agents/
+brag-output/

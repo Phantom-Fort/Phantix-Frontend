@@ -1,0 +1,60 @@
+<svg viewBox="0 0 960 420" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+  <rect width="960" height="420" fill="#F8F9FB"/>
+  <text x="480" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">MCP as the Agent-to-Tool Action Boundary</text>
+  <text x="480" y="58" text-anchor="middle" font-size="12.5" fill="#5A6579">The LLM requests authority; it does not permanently possess broad authority</text>
+
+  <g font-size="12.5">
+    <rect x="20" y="150" width="120" height="90" rx="9" fill="#FFFFFF" stroke="#2D5F8A" stroke-width="1.7"/>
+    <text x="80" y="190" text-anchor="middle" font-weight="700" fill="#1A2333">AI Agent</text>
+    <text x="80" y="208" text-anchor="middle" fill="#5A6579" font-size="11">proposes</text>
+    <text x="80" y="222" text-anchor="middle" fill="#5A6579" font-size="11">an action</text>
+
+    <line x1="140" y1="195" x2="185" y2="195" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr4)"/>
+
+    <rect x="185" y="120" width="200" height="150" rx="10" fill="#FBF4EA" stroke="#8A5A2D" stroke-width="1.8"/>
+    <text x="285" y="144" text-anchor="middle" font-weight="700" fill="#1A2333" font-size="12.5">Agent Authorization</text>
+    <text x="285" y="160" text-anchor="middle" font-weight="700" fill="#1A2333" font-size="12.5">Engine</text>
+    <text x="205" y="182" fill="#3D4658" font-size="11">&#8226; Identity validation</text>
+    <text x="205" y="199" fill="#3D4658" font-size="11">&#8226; Delegation validation</text>
+    <text x="205" y="216" fill="#3D4658" font-size="11">&#8226; Objective validation</text>
+    <text x="205" y="233" fill="#3D4658" font-size="11">&#8226; Context risk analysis</text>
+    <text x="205" y="250" fill="#3D4658" font-size="11">&#8226; Sequence + approval check</text>
+
+    <line x1="385" y1="195" x2="430" y2="195" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr4)"/>
+    <text x="407" y="185" text-anchor="middle" fill="#5A6579" font-size="10.5">narrow</text>
+    <text x="407" y="215" text-anchor="middle" fill="#5A6579" font-size="10.5">credential</text>
+
+    <rect x="430" y="150" width="150" height="90" rx="9" fill="#FFFFFF" stroke="#3F7D5C" stroke-width="1.7"/>
+    <text x="505" y="190" text-anchor="middle" font-weight="700" fill="#1A2333">Capability</text>
+    <text x="505" y="208" text-anchor="middle" font-weight="700" fill="#1A2333">Broker</text>
+
+    <line x1="580" y1="195" x2="625" y2="195" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr4)"/>
+
+    <rect x="625" y="150" width="150" height="90" rx="9" fill="#FFFFFF" stroke="#375A78" stroke-width="1.7"/>
+    <text x="700" y="190" text-anchor="middle" font-weight="700" fill="#1A2333">MCP Gateway</text>
+
+    <line x1="775" y1="195" x2="815" y2="195" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr4)"/>
+
+    <rect x="815" y="150" width="60" height="40" rx="8" fill="#FFFFFF" stroke="#5C6A78" stroke-width="1.6"/>
+    <text x="845" y="174" text-anchor="middle" font-size="11" fill="#1A2333">MCP</text>
+
+    <line x1="845" y1="190" x2="845" y2="220" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr4)"/>
+    <rect x="815" y="220" width="60" height="40" rx="8" fill="#EFF3F8" stroke="#5C6A78" stroke-width="1.6"/>
+    <text x="845" y="244" text-anchor="middle" font-size="10.5" fill="#1A2333">External</text>
+  </g>
+
+  <text x="480" y="320" text-anchor="middle" font-size="13" fill="#3D4658" font-weight="700">Two complementary but different questions</text>
+  <rect x="90" y="335" width="360" height="60" rx="8" fill="#FFFFFF" stroke="#D8DEE9" stroke-width="1.3"/>
+  <text x="270" y="358" text-anchor="middle" font-size="12" fill="#1A2333">MCP layer asks:</text>
+  <text x="270" y="378" text-anchor="middle" font-size="11.5" fill="#5A6579">"Can this client access this MCP resource?"</text>
+
+  <rect x="510" y="335" width="360" height="60" rx="8" fill="#FFFFFF" stroke="#D8DEE9" stroke-width="1.3"/>
+  <text x="690" y="352" text-anchor="middle" font-size="12" fill="#1A2333">CIBC layer asks:</text>
+  <text x="690" y="370" text-anchor="middle" font-size="11" fill="#5A6579">"Should this exact run perform this exact</text>
+  <text x="690" y="386" text-anchor="middle" font-size="11" fill="#5A6579">action, for this objective, given this context?"</text>
+</svg>

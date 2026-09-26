@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="470" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">The Continuous Security Feedback Loop</text>
+  <text x="450" y="63" text-anchor="middle" font-size="13" fill="#5A6579">A cycle rather than a checklist, drawn in the order the work actually happens</text>
+
+  <rect x="70" y="150" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="155" y="186" text-anchor="middle" font-size="13" fill="#1E293B">Develop</text>
+
+  <line x1="242" y1="179" x2="266" y2="179" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="270" y="150" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="355" y="186" text-anchor="middle" font-size="13" fill="#1E293B">Test</text>
+
+  <line x1="442" y1="179" x2="466" y2="179" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="470" y="150" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="555" y="186" text-anchor="middle" font-size="13" fill="#1E293B">Deploy</text>
+
+  <line x1="642" y1="179" x2="666" y2="179" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="150" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="755" y="186" text-anchor="middle" font-size="13" fill="#1E293B">Monitor</text>
+
+  <line x1="755" y1="208" x2="755" y2="256" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="670" y="260" width="170" height="58" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="755" y="296" text-anchor="middle" font-size="13" font-weight="600" fill="#1E40AF">Detect</text>
+
+  <line x1="668" y1="289" x2="644" y2="289" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="470" y="260" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="555" y="296" text-anchor="middle" font-size="13" fill="#1E293B">Validate</text>
+
+  <line x1="468" y1="289" x2="444" y2="289" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="270" y="260" width="170" height="58" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="355" y="296" text-anchor="middle" font-size="13" fill="#1E293B">Fix</text>
+
+  <line x1="268" y1="289" x2="244" y2="289" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <rect x="70" y="260" width="170" height="58" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="155" y="296" text-anchor="middle" font-size="13" font-weight="600" fill="#166534">Retest</text>
+
+  <path d="M155 318 L155 348 L40 348 L40 179 L64 179" fill="none" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="470" y="366" text-anchor="middle" font-size="11.5" fill="#5A6579">the loop keeps going, release after release</text>
+
+  <rect x="60" y="396" width="780" height="70" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="424" font-size="12.5" font-weight="600" fill="#1E293B">Continuous security does not mean running every tool every second.</text>
+  <text x="80" y="446" font-size="12" fill="#5A6579">It means making security part of the ongoing lifecycle of the product.</text>
+</svg>
