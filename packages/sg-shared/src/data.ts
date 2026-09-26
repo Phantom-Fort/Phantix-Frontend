@@ -756,7 +756,9 @@ export async function collectComplianceEvidence(): Promise<{ ok: boolean; messag
     return { ok: true, message: "Evidence collection started (demo)" };
   }
   const raw = await api.post<any>("/compliance/evidence/collect", {});
-  return { ok: true, message: String(raw?.detail ?? raw?.status ?? "Evidence collection started") };
+  // A fixed sentence, not the server's wording — success surfaces stay generic.
+  void raw;
+  return { ok: true, message: "Evidence collection started." };
 }
 
 /** Register a manual evidence item for a control (POST /compliance/evidence). */

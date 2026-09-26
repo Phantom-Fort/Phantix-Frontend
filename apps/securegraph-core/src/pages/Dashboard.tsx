@@ -17,8 +17,6 @@ import {
   loadAvailabilityIncidents,
   loadAvailabilitySummary,
 } from "@sg/data";
-import { loadPostureSnapshot } from "@sg/vaptOps";
-import type { PostureSnapshot } from "@sg/vaptOps";
 import type { TrackerSummary } from "@sg/types";
 import type { AvailabilityIncident, AvailabilitySummary } from "@sg/types";
 import { loadCommandCenter, loadPostureTrend, type PosturePoint } from "@sg/data";
@@ -108,18 +106,14 @@ export default function Dashboard() {
   /* Posture and findings for the chart row. Loaded alongside the command centre
      rather than folded into it: either can be unavailable without blanking the
      page, and the charts are additive to what was already here. */
-  const [posture, setPosture] = React.useState<PostureSnapshot | null>(null);
   const [tracker, setTracker] = React.useState<TrackerSummary | null>(null);
   React.useEffect(() => {
     let cancelled = false;
-    void Promise.all([
-      loadPostureSnapshot().catch(() => null),
-      loadTrackerSummary().catch(() => null),
-    ]).then(([p, t]) => {
-      if (cancelled) return;
-      setPosture(p as PostureSnapshot | null);
-      setTracker(t);
-    });
+    void loadTrackerSummary()
+      .catch(() => null)
+      .then((t) => {
+        if (!cancelled) setTracker(t);
+      });
     return () => {
       cancelled = true;
     };
@@ -397,7 +391,10 @@ export default function Dashboard() {
   const surfaceRows = SURFACES.map((s) => ({
     key: s,
     label: SURFACE_LABELS[s] ?? titleCase(s),
-    value: Number(bySurface[s] ?? (posture?.surfaces as Record<string, any> | undefined)?.[s]?.total ?? 0),
+    // Tracked findings only. This panel is "tracked findings per attack surface",
+    // so it must never fall back to the posture snapshot (which is built from raw
+    // scan_results): doing so showed findings the tracker/Code app did not have.
+    value: Number(bySurface[s] ?? 0),
     icon: SURFACE_ICONS[s],
     to: `/analytics?surface=${s}`,
   })).sort((a, b) => b.value - a.value);

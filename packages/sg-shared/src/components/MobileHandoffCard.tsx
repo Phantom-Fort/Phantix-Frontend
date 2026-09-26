@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Loader2, Send, Smartphone, ShieldCheck, AlertTriangle } from "lucide-react";
 import { Card } from "../ui";
-import { api } from "../api";
+import { api, publicErrorMessage } from "../api";
 import { useStore } from "../store";
 import { cx } from "../utils";
 

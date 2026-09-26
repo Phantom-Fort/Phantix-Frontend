@@ -6,7 +6,7 @@ import {
   ShieldCheck, TestTube, Trash2, Webhook,
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, EmptyState, Tabs, CardListSkeleton } from "@sg/ui";
-import { API_BASE, api, isPendingApproval } from "@sg/api";
+import { API_BASE, api, isPendingApproval, publicErrorMessage } from "@sg/api";
 import { loadGithubInstallation } from "@sg/codeOps";
 import {
   loadHubCatalog,

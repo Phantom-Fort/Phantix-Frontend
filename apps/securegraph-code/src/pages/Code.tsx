@@ -6,7 +6,7 @@ import {
   Gitlab, Plug, PlugZap, Key, Trash2, TestTube, Webhook, CheckCircle2,
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, EmptyState, Tabs, Modal, CardListSkeleton } from "@sg/ui";
-import { api, isPendingApproval } from "@sg/api";
+import { api, isPendingApproval, publicErrorMessage } from "@sg/api";
 import CodeReview from "@sg/components/CodeReview";
 import {
   loadGithubInstallation,
@@ -158,7 +158,7 @@ export default function Code() {
       setRepos(Array.isArray(r?.items) ? r.items : []);
     } catch (e: any) {
       setRepos([]);
-      setReposError(e?.message || e?.detail?.message || "Repositories unavailable.");
+      setReposError(publicErrorMessage(e, "Repositories unavailable."));
     }
     setLoading(false);
   }, []);

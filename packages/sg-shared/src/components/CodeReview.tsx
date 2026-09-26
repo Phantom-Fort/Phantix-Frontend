@@ -5,6 +5,7 @@ import {
   ShieldCheck, Sparkles, Wrench, EyeOff, Undo2, ShieldAlert, Lock,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, SeverityBadge, CardListSkeleton, DetailSkeleton, SkeletonBlock } from "../ui";
+import { publicErrorMessage } from "../api";
 import { highlightCode } from "../highlighter";
 import {
   loadCodeBlob, loadCodeFinding, loadCodeFindingFiles, loadCodeFindings,
@@ -488,7 +489,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
       setSelectedPath((prev) => (prev && items.some((f) => f.path === prev) ? prev : items[0]?.path ?? null));
     } catch (e: any) {
       setFiles([]);
-      setError(e?.detail?.message || e?.message || "Code findings unavailable.");
+      setError(publicErrorMessage(e, "Code findings unavailable."));
     } finally {
       setLoading(false);
     }

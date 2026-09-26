@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { api } from "@sg/api";
+import { api, publicErrorMessage } from "@sg/api";
 import { BrandLogo } from "@sg/components/BrandLogo";
 import { BrandLoader } from "@sg/components/BrandLoader";
 
@@ -56,7 +56,7 @@ export default function IntegrationOAuthCallback() {
         if (cancelled) return;
         const err = e as { detail?: { message?: string }; message?: string };
         setState("error");
-        setError(err?.detail?.message || err?.message || `Could not complete the ${label} connection.`);
+        setError(publicErrorMessage(err, `Could not complete the ${label} connection.`));
       }
     })();
     return () => {

@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Smartphone, Upload, Loader2, ShieldCheck, FileWarning, ScanSearch } from "lucide-react";
 import { PageHeader, Card, CardHeader } from "@sg/ui";
-import { api } from "@sg/api";
+import { api, publicErrorMessage } from "@sg/api";
 import { sanitizeSingleLine, validateUploadFile } from "@sg/uploadValidation";
 import { useStore } from "@sg/store";
 import { cx } from "@sg/utils";
