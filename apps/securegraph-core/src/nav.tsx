@@ -8,6 +8,7 @@ import {
   Boxes,
   FileText,
   FlaskConical,
+  Inbox,
   KanbanSquare,
   LayoutDashboard,
   LifeBuoy,
@@ -37,6 +38,7 @@ export function coreNav({ isAuthorizer = false }: { isAuthorizer?: boolean } = {
       items: [
         { to: "/assets", label: "Assets", icon: <Boxes size={17} /> },
         { to: "/tracker", label: "Findings tracker", icon: <KanbanSquare size={17} /> },
+        { to: "/findings", label: "Findings intake", icon: <Inbox size={17} /> },
         { to: "/reports", label: "Report solutions", icon: <FileText size={17} /> },
         { to: "/integrations", label: "Integrations hub", icon: <Plug size={17} /> },
         { to: "/audit", label: "Audit trail", icon: <ScrollText size={17} /> },
