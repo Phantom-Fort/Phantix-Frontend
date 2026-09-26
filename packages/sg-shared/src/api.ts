@@ -105,6 +105,23 @@ function logRequestFailure(
   write(context, detail);
 }
 
+/**
+ * Safe, human copy for any thrown value — for inline error panels and toasts
+ * that need a domain-specific line ("Repositories unavailable.") rather than the
+ * status-only default on ``ApiError.message``.
+ *
+ * The raw server message is never returned: a failed request is an ``ApiError``
+ * whose ``message`` is already app-authored (see ``errorCopyFor``), so that is
+ * shown; anything else falls back to the caller's copy. The backend's own words
+ * stay on ``serverMessage`` / the console (see ``logRequestFailure``).
+ */
+export function publicErrorMessage(
+  err: unknown,
+  fallback = "Something went wrong. Please try again.",
+): string {
+  return err instanceof ApiError ? err.message : fallback;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
