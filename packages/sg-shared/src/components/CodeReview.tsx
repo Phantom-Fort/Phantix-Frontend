@@ -5,6 +5,7 @@ import {
   ShieldCheck, Sparkles, Wrench, EyeOff, Undo2, ShieldAlert, Lock,
 } from "lucide-react";
 import { Card, CardHeader, EmptyState, SeverityBadge, CardListSkeleton, DetailSkeleton, SkeletonBlock } from "../ui";
+import { publicErrorMessage } from "../api";
 import { highlightCode } from "../highlighter";
 import {
   loadCodeBlob, loadCodeFinding, loadCodeFindingFiles, loadCodeFindings,
@@ -220,7 +221,7 @@ function FindingDetail({
       setExplanation(detail.ai_explanation ?? null);
     } catch (e: any) {
       setFinding(null);
-      toast("error", "Finding unavailable", e?.message || e?.detail?.message);
+      toast("error", "Finding unavailable", publicErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -284,7 +285,7 @@ function FindingDetail({
       toast("success", next === "dismissed" ? "Finding dismissed" : "Finding re-opened");
       onChanged();
     } catch (e: any) {
-      toast("error", "Could not change status", e?.detail?.message || e?.message);
+      toast("error", "Could not change status", publicErrorMessage(e));
     } finally {
       setStatusBusy(false);
     }
@@ -487,7 +488,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
       setSelectedPath((prev) => (prev && items.some((f) => f.path === prev) ? prev : items[0]?.path ?? null));
     } catch (e: any) {
       setFiles([]);
-      setError(e?.detail?.message || e?.message || "Code findings unavailable.");
+      setError(publicErrorMessage(e, "Code findings unavailable."));
     } finally {
       setLoading(false);
     }
@@ -518,7 +519,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
       setSelectedId((prev) => (prev && items.some((f) => f.id === prev) ? prev : items[0]?.id ?? null));
     } catch (e: any) {
       setPathFindings([]);
-      toast("error", "Findings unavailable", e?.detail?.message || e?.message);
+      toast("error", "Findings unavailable", publicErrorMessage(e));
     } finally {
       setPathLoading(false);
     }

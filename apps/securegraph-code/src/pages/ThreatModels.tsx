@@ -466,7 +466,7 @@ function ThreatModelDrawer({ modelId, onClose }: { modelId: number; onClose: () 
         // Contract: 202 pending:true means nothing was delivered yet.
         toast("info", "Sent for approval", "The push is parked for an authorizer — approve it from Authorizations for the tickets to be created.");
       } else if (r.ok === false || (typeof r.failed === "number" && r.failed > 0)) {
-        toast("warning", "Partly delivered", (r.detail as string) ?? "Some issues were rejected by the tracker.");
+        toast("warning", "Partly delivered", "Some issues were rejected by the tracker.");
       } else {
         toast("success", "Delivered", "Threats were sent to your connected tracker.");
       }

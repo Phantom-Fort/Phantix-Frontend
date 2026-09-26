@@ -6,7 +6,7 @@ import {
   ShieldCheck, TestTube, Trash2, Webhook,
 } from "lucide-react";
 import { PageHeader, Card, CardHeader, EmptyState, Tabs, CardListSkeleton } from "@sg/ui";
-import { API_BASE, api, isPendingApproval } from "@sg/api";
+import { API_BASE, api, isPendingApproval, publicErrorMessage } from "@sg/api";
 import { loadGithubInstallation } from "@sg/codeOps";
 import {
   loadHubCatalog,
@@ -165,7 +165,7 @@ export default function ProviderConnect() {
       await load();
     } catch (e: unknown) {
       const err = e as { message?: string; detail?: { message?: string } };
-      toast("error", "Connect failed", err?.message || err?.detail?.message || "Could not connect provider.");
+      toast("error", "Connect failed", publicErrorMessage(err, "Could not connect provider."));
     } finally {
       setBusy(false);
     }

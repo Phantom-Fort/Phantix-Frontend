@@ -7,7 +7,7 @@ import DocLink from "@sg/components/DocLink";
 import ReportSolutions from "@sg/components/ReportSolutions";
 import { loadReportsBundle, loadReportTypes } from "@sg/data";
 import type { ReportTypeEntry } from "@sg/types";
-import { api, ApiError } from "@sg/api";
+import { api, ApiError, publicErrorMessage } from "@sg/api";
 import { useResource } from "@sg/useResource";
 import { timeAgo, formatBytes, titleCase, cx, normalizeReportRow, extractReportFindings } from "@sg/utils";
 import { useStore } from "@sg/store";
@@ -377,7 +377,7 @@ export default function Reports() {
         setAckOpen(true);
         return;
       }
-      toast("error", "Failed", err.message ?? "Report generation failed");
+      toast("error", "Failed", publicErrorMessage(err, "Report generation failed"));
     } finally {
       setGenSubmitting(false);
     }
@@ -396,7 +396,7 @@ export default function Reports() {
         setAckOpen(true);
         return;
       }
-      toast("error", "Failed", err.message ?? "Report generation failed");
+      toast("error", "Failed", publicErrorMessage(err, "Report generation failed"));
     } finally {
       setGenSubmitting(false);
     }

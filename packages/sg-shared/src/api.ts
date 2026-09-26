@@ -67,15 +67,42 @@ function detailMessage(detail: unknown): string {
   return "Request failed";
 }
 
+/** Generic, backend-free text for a status — safe for toasts and logs. */
+export function publicStatusMessage(status: number): string {
+  if (status === 400) return "That request could not be processed.";
+  if (status === 401) return "Your session is no longer valid. Please sign in again.";
+  if (status === 403) return "This action is not permitted for your account.";
+  if (status === 404) return "The requested item could not be found.";
+  if (status === 409) return "That conflicts with something that already exists.";
+  if (status === 422) return "Some of the details need attention.";
+  if (status === 429) return "Too many requests — please try again shortly.";
+  if (status >= 500) return "Something went wrong on our side. Please try again.";
+  return "Something went wrong. Please try again.";
+}
+
+/** Safe message for any thrown value; a raw server message is never returned. */
+export function publicErrorMessage(
+  err: unknown,
+  fallback = "Something went wrong. Please try again.",
+): string {
+  return err instanceof ApiError ? err.message : fallback;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
+  /** The raw server message — for triage/logs, never for a toast. */
+  serverMessage: string;
   /** Server correlation id (X-Correlation-ID) for support/triage. */
   correlationId?: string;
   constructor(status: number, detail: unknown, correlationId?: string) {
-    super(detailMessage(detail));
+    // `message` is deliberately generic: every toast that echoes
+    // `error.message` must not surface a backend route, header or runbook.
+    // The real detail stays on `serverMessage` for the console/triage trail.
+    super(publicStatusMessage(status));
     this.status = status;
     this.detail = detail;
+    this.serverMessage = detailMessage(detail);
     this.correlationId = correlationId;
   }
 }
@@ -87,7 +114,7 @@ export class ApiError extends Error {
  */
 export function throttleSeconds(err: unknown): number | null {
   if (!(err instanceof ApiError) || err.status !== 429) return null;
-  const msg = typeof err.message === "string" ? err.message : "";
+  const msg = typeof err.serverMessage === "string" ? err.serverMessage : "";
   const m = msg.match(/(\d+)\s*seconds?/i);
   return m ? Math.max(1, parseInt(m[1], 10)) : null;
 }

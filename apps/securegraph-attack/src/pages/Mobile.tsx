@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Smartphone, Upload, Loader2, ShieldCheck, FileWarning, ScanSearch } from "lucide-react";
 import { PageHeader, Card, CardHeader } from "@sg/ui";
-import { api } from "@sg/api";
+import { api, publicErrorMessage } from "@sg/api";
 import { sanitizeSingleLine, validateUploadFile } from "@sg/uploadValidation";
 import { useStore } from "@sg/store";
 import { cx } from "@sg/utils";
@@ -66,7 +66,7 @@ export default function Mobile() {
       toast("success", "Package analyzed", "A mobile_apk asset was created or updated.");
     } catch (e: unknown) {
       const err = e as { message?: string; detail?: { message?: string } };
-      toast("error", "Upload failed", err?.detail?.message || err?.message || "Could not analyze the package.");
+      toast("error", "Upload failed", publicErrorMessage(err, "Could not analyze the package."));
     } finally {
       setBusy(false);
     }
@@ -88,7 +88,7 @@ export default function Mobile() {
       toast("success", "Analysis complete", "Static mobile analysis finished.");
     } catch (e: unknown) {
       const err = e as { message?: string; detail?: { message?: string } };
-      toast("error", "Analysis failed", err?.detail?.message || err?.message || "Could not analyze the stored package.");
+      toast("error", "Analysis failed", publicErrorMessage(err, "Could not analyze the stored package."));
     } finally {
       setAnalyzeBusy(false);
     }

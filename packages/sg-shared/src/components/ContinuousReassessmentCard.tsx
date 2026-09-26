@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, GitBranch, Loader2, Play, RefreshCw, CalendarClock } from "lucide-react";
 import { Card, CardHeader, EmptyState, CardListSkeleton } from "../ui";
-import { api } from "../api";
+import { api, publicErrorMessage } from "../api";
 import { useStore } from "../store";
 import { cx, timeAgo } from "../utils";
 import {
@@ -47,7 +47,7 @@ export default function ContinuousReassessmentCard() {
       setProjectId((prev) => prev ?? items[0]?.id ?? null);
     } catch (e: any) {
       setRows([]);
-      setError(e?.detail?.message || e?.message || "Continuous reassessment schedules unavailable.");
+      setError(publicErrorMessage(e, "Continuous reassessment schedules unavailable."));
     } finally {
       setLoading(false);
     }
