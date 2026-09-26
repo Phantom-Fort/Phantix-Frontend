@@ -46,7 +46,7 @@ export function BrandMark({
   surface?: Surface;
 }) {
   const dark = useDark(surface);
-  const tone = dark ? "white" : "navy";
+  const tone = dark ? "white" : "black";
   const { src, next } = useSourceChain([
     `/mark-${tone}.svg`,
     `/mark-${tone}.png`,
