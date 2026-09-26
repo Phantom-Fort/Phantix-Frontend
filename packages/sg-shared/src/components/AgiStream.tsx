@@ -353,6 +353,17 @@ export function ToolGroupCard({
   const totalText = useMemo(() => runs.map((r) => r.content).join("\n"), [runs]);
   const totalMs = useMemo(() => runs.reduce((s, r) => s + (runDurationMs(r) ?? 0), 0), [runs]);
   const anyTimed = useMemo(() => runs.some((r) => runDurationMs(r) != null), [runs]);
+  // Runs with neither a command nor a body render nothing inside the card, so a
+  // group of them is only a header claiming a call that was never emitted.
+  const hasPayload = useMemo(
+    () =>
+      runs.some((r) => {
+        const { command, body } = splitToolContent(r.content);
+        return Boolean(command || body);
+      }),
+    [runs],
+  );
+  if (!hasPayload) return null;
   return (
     <div className="group relative min-w-0 overflow-hidden rounded-xl border border-phantix-700/40 bg-phantix-950/70">
       <button
@@ -896,6 +907,9 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   }
 
   if (t.role === "system") {
+    // An engine row that carried no payload and no known event kind has nothing
+    // to show; the card would only claim an event that never arrived with data.
+    if (!t.content.trim() && !EVENT_CARD[String(t.meta?.kind ?? "")]) return null;
     return (
       <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18, ease: "easeOut" }}>
         <SystemEventCard t={t} dense={dense} />
@@ -939,6 +953,10 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   // assistant (default)
   const persona = PERSONA_META[personaForChunk(t)];
   const kind = String(t.meta?.kind ?? "").toLowerCase();
+  // A row with nothing to say must not draw chrome: the backend opens an
+  // assistant row per turn and sometimes never fills it, and each one rendered
+  // as an empty bordered bubble with avatar and label.
+  const hasText = Boolean(t.content.trim());
 
   // Loop-progress turn briefs render as a compact status card instead of a raw
   // markdown wall ("Turn X of 100. Loop phase: recon…").
@@ -959,6 +977,8 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   // message — render them as a slim status line that says what is happening now.
   if (kind === "turn_start") {
     const working = String(t.meta?.working_on ?? "").replace(/^Working on:\s*/i, "").trim() || t.content.trim();
+    // Nothing to announce — the slim status line would be empty.
+    if (!working) return null;
     return (
       <motion.div
         initial={{ opacity: 0, y: 4 }}
@@ -980,6 +1000,7 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
   // Model reasoning streams (meta.kind === "reasoning") are ephemeral garnish —
   // collapsible, muted, never competing with the answer.
   if (kind === "reasoning") {
+    if (!hasText) return null;
     return (
       <motion.div
         initial={{ opacity: 0, y: 4 }}
@@ -1005,6 +1026,7 @@ export const StreamMessage = memo(function StreamMessage({ t, last = false, dens
     );
   }
 
+  if (!hasText) return null;
   return (
     <motion.div
       initial={{ opacity: 0, y: 6 }}
