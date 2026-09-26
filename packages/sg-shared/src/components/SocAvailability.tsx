@@ -175,7 +175,15 @@ export default function SocAvailability() {
     try {
       const res = await runAvailabilityCheck(c.id);
       const label = String(res?.probe?.status_label ?? res?.check?.last_status ?? "done");
-      toast("success", `Run now · ${label}`, res?.probe?.error ? String(res.probe.error) : res?.probe?.latency_ms ? `${res.probe.latency_ms}ms` : "");
+      // A probe that came back with an error is not a success: say so in our own
+      // words instead of echoing the probe's raw reason into a success toast.
+      const probeError = res?.probe?.error ? String(res.probe.error) : "";
+      if (probeError) {
+        console.warn("[soc] availability probe failed", probeError);
+        toast("warning", `Run now · ${label}`, "The probe could not reach the target. Check the endpoint and try again.");
+      } else {
+        toast("success", `Run now · ${label}`, res?.probe?.latency_ms ? `${res.probe.latency_ms}ms` : "");
+      }
       await refresh();
     } catch (e: any) {
       if (e?.status === 409) setSecBlocked(true);

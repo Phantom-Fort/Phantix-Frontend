@@ -220,7 +220,7 @@ function FindingDetail({
       setExplanation(detail.ai_explanation ?? null);
     } catch (e: any) {
       setFinding(null);
-      toast("error", "Finding unavailable", e?.message || e?.detail?.message);
+      toast("error", "Finding unavailable", e?.message);
     } finally {
       setLoading(false);
     }
@@ -244,8 +244,9 @@ function FindingDetail({
       setExplanation(res.explanation);
       if (res.cached) toast("info", "Showing the saved narrative for this finding");
     } catch (e: any) {
-      const detail = e?.detail ?? {};
-      toast("error", "Narrative unavailable", detail.message || e?.message);
+      // The backend's own wording is logged by the API layer; the operator gets
+      // the generic copy, so `e.message` is the only thing worth showing.
+      toast("error", "Narrative unavailable", e?.message);
     } finally {
       setExplaining(false);
     }
@@ -263,11 +264,11 @@ function FindingDetail({
     } catch (e: any) {
       const detail = e?.detail ?? {};
       if (detail?.error === "continuous_pr_not_enabled") {
-        toast("error", "Continuous PR is off", detail.message);
+        toast("error", "Continuous PR is off", e?.message);
       } else if (detail?.error === "permission_required") {
-        toast("error", "GitHub write access needed", detail.message);
+        toast("error", "GitHub write access needed", e?.message);
       } else {
-        toast("error", "Could not open AutoFix PR", detail.message || e?.message);
+        toast("error", "Could not open AutoFix PR", e?.message);
       }
     } finally {
       setAutofixBusy(false);
@@ -284,7 +285,7 @@ function FindingDetail({
       toast("success", next === "dismissed" ? "Finding dismissed" : "Finding re-opened");
       onChanged();
     } catch (e: any) {
-      toast("error", "Could not change status", e?.detail?.message || e?.message);
+      toast("error", "Could not change status", e?.message);
     } finally {
       setStatusBusy(false);
     }
@@ -518,7 +519,7 @@ export default function CodeReview({ repos }: { repos: Repo[] }) {
       setSelectedId((prev) => (prev && items.some((f) => f.id === prev) ? prev : items[0]?.id ?? null));
     } catch (e: any) {
       setPathFindings([]);
-      toast("error", "Findings unavailable", e?.detail?.message || e?.message);
+      toast("error", "Findings unavailable", e?.message);
     } finally {
       setPathLoading(false);
     }

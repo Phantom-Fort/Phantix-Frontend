@@ -166,7 +166,9 @@ async function softList<T>(path: string, meta?: LoadMeta): Promise<T[]> {
   } catch (err) {
     if (meta && isSecurityDbBlocked(err)) {
       meta.securityDbBlocked = true;
-      meta.error = err instanceof Error ? err.message : "Security database not ready";
+      // App-authored copy: the backend's message (which names the schema and the
+      // connection) is logged by the API layer, not repeated in the banner.
+      meta.error = SECURITY_DB_NOT_READY;
     } else if (meta && err instanceof ApiError && err.status !== 404) {
       meta.error = err.message;
     }
@@ -180,11 +182,15 @@ async function softOne<T>(path: string, meta?: LoadMeta): Promise<T | null> {
   } catch (err) {
     if (meta && isSecurityDbBlocked(err)) {
       meta.securityDbBlocked = true;
-      meta.error = err instanceof Error ? err.message : "Security database not ready";
+      meta.error = SECURITY_DB_NOT_READY;
     }
     return null;
   }
 }
+
+/** Banner copy for a 409 that means security storage is not bootstrapped. */
+const SECURITY_DB_NOT_READY =
+  "Security storage for this organization is not ready yet. Connect and bootstrap it in Platform settings.";
 
 /** Backend page ceiling for list endpoints (`/assets`, prioritized, …). */
 const LIST_PAGE_SIZE = 200;
