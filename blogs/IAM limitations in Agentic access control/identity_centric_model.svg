@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="200" viewBox="0 0 360 200">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <text x="180" y="28" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Identity-Centric Model</text>
+  
+  <g font-family="Inter, system-ui, sans-serif" font-size="13">
+    <rect x="55" y="50" width="250" height="42" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+    <text x="180" y="76" text-anchor="middle" font-weight="600" fill="#1e40af">Who are you?</text>
+    <line x1="180" y1="92" x2="180" y2="110" stroke="#64748b" stroke-width="2"/>
+    <polygon points="180,117 174,107 186,107" fill="#64748b"/>
+    
+    <rect x="55" y="117" width="250" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="180" y="143" text-anchor="middle" fill="#1e293b">What can you access?</text>
+  </g>
+</svg>

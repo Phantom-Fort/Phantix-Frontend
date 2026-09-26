@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="520" viewBox="0 0 480 520">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <text x="240" y="28" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Authorized Agency Model</text>
+  
+  <g font-family="Inter, system-ui, sans-serif" font-size="13">
+    <rect x="90" y="45" width="300" height="42" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+    <text x="240" y="71" text-anchor="middle" font-weight="600" fill="#1e40af">Who are you?</text>
+    <line x1="240" y1="87" x2="240" y2="105" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,112 234,102 246,102" fill="#64748b"/>
+    
+    <rect x="90" y="112" width="300" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="240" y="138" text-anchor="middle" fill="#1e293b">Who authorized you?</text>
+    <line x1="240" y1="154" x2="240" y2="172" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,179 234,169 246,169" fill="#64748b"/>
+    
+    <rect x="90" y="179" width="300" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="240" y="205" text-anchor="middle" fill="#1e293b">For what objective?</text>
+    <line x1="240" y1="221" x2="240" y2="239" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,246 234,236 246,236" fill="#64748b"/>
+    
+    <rect x="90" y="246" width="300" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="240" y="272" text-anchor="middle" fill="#1e293b">What context influenced this action?</text>
+    <line x1="240" y1="288" x2="240" y2="306" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,313 234,303 246,303" fill="#64748b"/>
+    
+    <rect x="90" y="313" width="300" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="240" y="339" text-anchor="middle" fill="#1e293b">What capability is required?</text>
+    <line x1="240" y1="355" x2="240" y2="373" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,380 234,370 246,370" fill="#64748b"/>
+    
+    <rect x="90" y="380" width="300" height="42" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="240" y="406" text-anchor="middle" fill="#1e293b">Under what conditions?</text>
+    <line x1="240" y1="422" x2="240" y2="440" stroke="#64748b" stroke-width="2"/>
+    <polygon points="240,447 234,437 246,437" fill="#64748b"/>
+    
+    <rect x="90" y="447" width="300" height="42" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="240" y="473" text-anchor="middle" font-weight="600" fill="#166534">Is this action still authorized now?</text>
+  </g>
+</svg>

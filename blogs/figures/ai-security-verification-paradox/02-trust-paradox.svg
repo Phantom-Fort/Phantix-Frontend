@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="430" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">The Trust Problem in One Picture</text>
+  <text x="450" y="63" text-anchor="middle" font-size="13" fill="#5A6579">The tool does not just add mistakes. It also makes people less likely to notice them.</text>
+
+  <text x="60" y="104" font-size="13" font-weight="700" fill="#1E40AF">How a flaw survives</text>
+
+  <rect x="60" y="120" width="360" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="240" y="158" text-anchor="middle" font-size="13" fill="#1E293B">AI help writes the code</text>
+
+  <line x1="240" y1="184" x2="240" y2="204" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="60" y="208" width="360" height="64" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="240" y="246" text-anchor="middle" font-size="13" fill="#92400E">The developer trusts it more, not less</text>
+
+  <line x1="240" y1="272" x2="240" y2="292" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="60" y="296" width="360" height="64" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="240" y="334" text-anchor="middle" font-size="13" fill="#991B1B">The flaw is more likely to reach production</text>
+
+  <rect x="490" y="120" width="360" height="240" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" filter="url(#shadow)"/>
+  <text x="510" y="150" font-size="14" font-weight="700" fill="#1E293B">What the study found</text>
+
+  <circle cx="514" cy="180" r="3.5" fill="#2563EB"/>
+  <text x="528" y="184" font-size="12.5" fill="#1E293B">Developers using AI help wrote code</text>
+  <text x="528" y="200" font-size="12.5" fill="#1E293B">that was actually less secure.</text>
+
+  <circle cx="514" cy="228" r="3.5" fill="#2563EB"/>
+  <text x="528" y="232" font-size="12.5" fill="#1E293B">They were also more likely to believe</text>
+  <text x="528" y="248" font-size="12.5" fill="#1E293B">their own flawed code was safe.</text>
+
+  <circle cx="514" cy="276" r="3.5" fill="#2563EB"/>
+  <text x="528" y="280" font-size="12.5" fill="#1E293B">Measured against developers who did</text>
+  <text x="528" y="296" font-size="12.5" fill="#1E293B">not use AI help at all.</text>
+
+  <text x="510" y="336" font-size="11.5" fill="#5A6579">One study, comparing two groups on the same task.</text>
+
+  <rect x="60" y="382" width="790" height="36" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="455" y="406" text-anchor="middle" font-size="12.5" fill="#1E293B">The instinct that something feels wrong about letting AI grade its own homework turns out to be measurable.</text>
+</svg>

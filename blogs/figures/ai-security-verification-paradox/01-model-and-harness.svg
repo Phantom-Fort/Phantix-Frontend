@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="470" viewBox="0 0 900 470" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="470" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">The Model and the Harness</text>
+  <text x="450" y="63" text-anchor="middle" font-size="13" fill="#5A6579">If the model is the brain, the harness is the body that carries out what the brain decides</text>
+
+  <text x="215" y="134" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">The Model</text>
+  <rect x="50" y="146" width="330" height="104" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="215" y="176" text-anchor="middle" font-size="15" font-weight="700" fill="#1E40AF">Decides what to do</text>
+  <text x="215" y="200" text-anchor="middle" font-size="12" fill="#1E293B">Trained on material that already existed.</text>
+  <text x="215" y="218" text-anchor="middle" font-size="12" fill="#1E293B">It does not think from scratch. It spots</text>
+  <text x="215" y="236" text-anchor="middle" font-size="12" fill="#1E293B">patterns and answers the prompt.</text>
+
+  <line x1="384" y1="198" x2="512" y2="198" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="520" y="112" width="330" height="208" rx="10" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="6 5"/>
+  <text x="685" y="134" text-anchor="middle" font-size="13" font-weight="700" fill="#1E40AF">The Harness</text>
+  <text x="685" y="152" text-anchor="middle" font-size="11.5" fill="#5A6579">Everything around the model that lets it act</text>
+
+  <rect x="536" y="166" width="144" height="44" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="608" y="193" text-anchor="middle" font-size="13" fill="#1E293B">Tools</text>
+
+  <rect x="690" y="166" width="144" height="44" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="762" y="193" text-anchor="middle" font-size="13" fill="#1E293B">Memory</text>
+
+  <rect x="536" y="220" width="144" height="44" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="608" y="247" text-anchor="middle" font-size="13" fill="#1E293B">File access</text>
+
+  <rect x="690" y="220" width="144" height="44" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="762" y="247" text-anchor="middle" font-size="13" fill="#1E293B">Runs code</text>
+
+  <rect x="50" y="336" width="800" height="104" rx="8" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5"/>
+  <text x="70" y="364" font-size="14" font-weight="700" fill="#92400E">Where the risk actually lives</text>
+  <text x="70" y="388" font-size="12.5" fill="#78350F">What tools has the harness been given? What is it allowed to touch or run?</text>
+  <text x="70" y="410" font-size="12.5" fill="#78350F">Did anyone check that setup before switching it on? Most of the real danger</text>
+  <text x="70" y="432" font-size="12.5" fill="#78350F">comes from the harness, not from the model's training.</text>
+</svg>

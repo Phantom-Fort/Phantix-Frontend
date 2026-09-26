@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="480" viewBox="0 0 900 480" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="480" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">The Double Job</text>
+  <text x="450" y="63" text-anchor="middle" font-size="13" fill="#5A6579">Two things now need checking: the AI tool, and whatever that tool built</text>
+
+  <rect x="60" y="110" width="380" height="96" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="80" y="142" font-size="13.5" font-weight="700" fill="#1E40AF">Job 1 — is the tool itself safe?</text>
+  <text x="80" y="166" font-size="12" fill="#1E293B">Its harness, the tools it holds, and the</text>
+  <text x="80" y="184" font-size="12" fill="#1E293B">permissions it was handed.</text>
+
+  <rect x="460" y="110" width="380" height="96" rx="8" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" filter="url(#shadow)"/>
+  <text x="480" y="142" font-size="13.5" font-weight="700" fill="#1E40AF">Job 2 — is what it built safe?</text>
+  <text x="480" y="166" font-size="12" fill="#1E293B">The code that actually ships, checked</text>
+  <text x="480" y="184" font-size="12" fill="#1E293B">against what it was supposed to do.</text>
+
+  <line x1="250" y1="206" x2="392" y2="248" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="650" y1="206" x2="508" y2="248" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="200" y="252" width="500" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="450" y="280" text-anchor="middle" font-size="13.5" font-weight="600" fill="#1E293B">Automated checks that run continuously</text>
+  <text x="450" y="300" text-anchor="middle" font-size="12" fill="#5A6579">not one big review every few months</text>
+
+  <line x1="450" y1="316" x2="450" y2="348" stroke="#41506B" stroke-width="1.8" marker-end="url(#arrow)"/>
+
+  <rect x="200" y="352" width="500" height="64" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="450" y="380" text-anchor="middle" font-size="13.5" font-weight="700" fill="#166534">A human standing in the gap</text>
+  <text x="450" y="400" text-anchor="middle" font-size="12" fill="#166534">verifying what the automation says instead of trusting it</text>
+
+  <rect x="60" y="432" width="780" height="38" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="450" y="457" text-anchor="middle" font-size="12.5" fill="#1E293B">Better is not the same as good enough yet, so a person still belongs in the gap between the two.</text>
+</svg>

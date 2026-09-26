@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="520" viewBox="0 0 420 520">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Title -->
+  <text x="210" y="28" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="600" fill="#1e293b">Traditional IAM Model</text>
+
+  <g font-family="Inter, system-ui, sans-serif" font-size="13">
+
+    <!-- Principal -->
+    <rect x="95" y="50" width="230" height="44" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+    <text x="210" y="77" text-anchor="middle" font-weight="600" fill="#1e40af">Principal</text>
+
+    <!-- Arrow down + label -->
+    <line x1="210" y1="94" x2="210" y2="118" stroke="#64748b" stroke-width="2"/>
+    <polygon points="210,126 204,116 216,116" fill="#64748b"/>
+    <text x="250" y="112" font-size="11" fill="#64748b">Authenticate</text>
+
+    <!-- Identity Provider -->
+    <rect x="95" y="130" width="230" height="44" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="210" y="157" text-anchor="middle" fill="#1e293b">Identity Provider</text>
+
+    <!-- Arrow down + label -->
+    <line x1="210" y1="174" x2="210" y2="198" stroke="#64748b" stroke-width="2"/>
+    <polygon points="210,206 204,196 216,196" fill="#64748b"/>
+    <text x="265" y="192" font-size="11" fill="#64748b">Token / Credential</text>
+
+    <!-- Authorization System -->
+    <rect x="95" y="210" width="230" height="44" rx="8" fill="url(#boxGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+    <text x="210" y="237" text-anchor="middle" fill="#1e293b">Authorization System</text>
+
+    <!-- Vertical stem -->
+    <line x1="210" y1="254" x2="210" y2="300" stroke="#64748b" stroke-width="2"/>
+
+    <!-- Branch left (Permit) -->
+    <line x1="210" y1="300" x2="120" y2="300" stroke="#64748b" stroke-width="2"/>
+    <line x1="120" y1="300" x2="120" y2="330" stroke="#64748b" stroke-width="2"/>
+    <polygon points="120,338 114,328 126,328" fill="#16a34a"/>
+
+    <!-- Branch right (Deny) -->
+    <line x1="210" y1="300" x2="300" y2="300" stroke="#64748b" stroke-width="2"/>
+    <line x1="300" y1="300" x2="300" y2="330" stroke="#64748b" stroke-width="2"/>
+    <polygon points="300,338 294,328 306,328" fill="#dc2626"/>
+
+    <!-- Permit box -->
+    <rect x="40" y="342" width="160" height="42" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-width="2" filter="url(#shadow)"/>
+    <text x="120" y="368" text-anchor="middle" font-weight="600" fill="#166534">Permit</text>
+
+    <!-- Deny box -->
+    <rect x="220" y="342" width="160" height="42" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2" filter="url(#shadow)"/>
+    <text x="300" y="368" text-anchor="middle" font-weight="600" fill="#991b1b">Deny</text>
+
+  </g>
+</svg>

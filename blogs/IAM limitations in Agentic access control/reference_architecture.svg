@@ -1,0 +1,64 @@
+<svg viewBox="0 0 820 980" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <marker id="arr6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+  <rect width="820" height="980" fill="#F8F9FB"/>
+  <text x="410" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">Reference Architecture</text>
+  <text x="410" y="60" text-anchor="middle" font-size="12.5" fill="#5A6579">End-to-end path from delegated authority to enforced action</text>
+
+  <g font-size="13">
+    <rect x="270" y="82" width="280" height="46" rx="9" fill="#FFFFFF" stroke="#2D5F8A" stroke-width="1.8"/>
+    <text x="410" y="110" text-anchor="middle" fill="#1A2333" font-weight="700">Human / Organization</text>
+
+    <line x1="410" y1="128" x2="410" y2="160" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+    <text x="440" y="148" font-size="11" fill="#5A6579">delegation</text>
+
+    <rect x="270" y="160" width="280" height="46" rx="9" fill="#FFFFFF" stroke="#375A78" stroke-width="1.8"/>
+    <text x="410" y="188" text-anchor="middle" fill="#1A2333" font-weight="700">Agent Identity</text>
+
+    <line x1="410" y1="206" x2="410" y2="238" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+    <text x="440" y="226" font-size="11" fill="#5A6579">start run</text>
+
+    <rect x="240" y="238" width="340" height="86" rx="10" fill="#EFF3F8" stroke="#375A78" stroke-width="1.8"/>
+    <text x="410" y="262" text-anchor="middle" fill="#1A2333" font-weight="700">Agent Run Identity</text>
+    <text x="410" y="282" text-anchor="middle" fill="#3D4658" font-size="11.5">objective_id &#183; tenant_id &#183; risk_budget</text>
+    <text x="410" y="300" text-anchor="middle" fill="#3D4658" font-size="11" font-style="italic">an ephemeral, first-class security subject</text>
+
+    <line x1="410" y1="324" x2="410" y2="356" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+    <text x="470" y="344" font-size="11" fill="#5A6579">proposed action</text>
+
+    <rect x="150" y="356" width="520" height="220" rx="12" fill="#FBF4EA" stroke="#8A5A2D" stroke-width="2"/>
+    <text x="410" y="384" text-anchor="middle" fill="#1A2333" font-weight="700" font-size="14.5">Agent Policy Decision Engine</text>
+    <g font-size="12.5" fill="#3D4658">
+      <text x="185" y="412">&#8226; Identity</text>
+      <text x="185" y="436">&#8226; Delegation</text>
+      <text x="185" y="460">&#8226; Objective alignment</text>
+      <text x="185" y="484">&#8226; Context provenance</text>
+      <text x="450" y="412">&#8226; Sequence state</text>
+      <text x="450" y="436">&#8226; Risk</text>
+      <text x="450" y="460">&#8226; Approval</text>
+    </g>
+    <rect x="185" y="520" width="450" height="40" rx="8" fill="#FFFFFF" stroke="#8A5A2D" stroke-width="1.4"/>
+    <text x="410" y="545" text-anchor="middle" fill="#1A2333" font-size="12.5" font-weight="600">Allow &#8226; Deny &#8226; Step-Up</text>
+
+    <line x1="410" y1="576" x2="410" y2="608" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+
+    <rect x="240" y="608" width="340" height="70" rx="10" fill="#EEF6F1" stroke="#3F7D5C" stroke-width="1.8"/>
+    <text x="410" y="636" text-anchor="middle" fill="#1A2333" font-weight="700">Capability Broker</text>
+    <text x="410" y="656" text-anchor="middle" fill="#3D4658" font-size="11.5">issues narrow, expiring authority</text>
+
+    <line x1="410" y1="678" x2="410" y2="710" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+
+    <rect x="240" y="710" width="340" height="56" rx="10" fill="#FFFFFF" stroke="#5C6A78" stroke-width="1.8"/>
+    <text x="410" y="744" text-anchor="middle" fill="#1A2333" font-weight="700">MCP / API Policy Enforcement Point</text>
+
+    <line x1="410" y1="766" x2="410" y2="798" stroke="#41506B" stroke-width="1.6" marker-end="url(#arr6)"/>
+
+    <rect x="290" y="798" width="240" height="52" rx="10" fill="#1A2333" stroke="#1A2333" stroke-width="1.8"/>
+    <text x="410" y="830" text-anchor="middle" fill="#FFFFFF" font-weight="700">Resource</text>
+  </g>
+
+  <text x="410" y="900" text-anchor="middle" font-size="12" fill="#5A6579" font-style="italic">Each stage narrows authority further; evidence is captured at every transition for post-hoc verification.</text>
+</svg>
