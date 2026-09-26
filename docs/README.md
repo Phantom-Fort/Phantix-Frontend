@@ -60,6 +60,21 @@ These documents are **client-facing**. Use them for:
 
 ---
 
+## C. Brand & social
+
+**File:** [brand/social-profiles.md](./brand/social-profiles.md) — profile copy for LinkedIn, X,
+Instagram, Facebook, YouTube and GitHub (name, tagline, About, bio), the handle plan, an asset
+matrix mapping the repo's logos, scene renders and screenshots to each platform slot, the
+`sameAs` patch for `landing/index.html`, governance rules and the launch checklist.
+
+Drafts are length-checked against real platform field limits:
+
+```bash
+npm run validate:social
+```
+
+---
+
 ## Brand lines (locked)
 
 - **Tagline:** PROTECT. PREVENT. PERFORM.
