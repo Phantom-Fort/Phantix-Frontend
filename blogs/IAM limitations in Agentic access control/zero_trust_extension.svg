@@ -1,0 +1,82 @@
+<svg viewBox="0 0 900 760" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica Neue, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+  <rect width="900" height="760" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">Extending Zero Trust for Autonomous Agents</text>
+  <text x="450" y="62" text-anchor="middle" font-size="12.5" fill="#5A6579">Conventional PEP/PDP model (left) vs. the proposed Agent Policy Decision Point (right)</text>
+
+  <!-- Left column: conventional Zero Trust -->
+  <text x="185" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#2D5F8A">Conventional Zero Trust</text>
+
+  <g font-size="13.5">
+    <rect x="90" y="120" width="190" height="46" rx="8" fill="#FFFFFF" stroke="#2D5F8A" stroke-width="1.6"/>
+    <text x="185" y="148" text-anchor="middle" fill="#1A2333">Subject</text>
+
+    <line x1="185" y1="166" x2="185" y2="200" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="90" y="200" width="190" height="46" rx="8" fill="#FFFFFF" stroke="#2D5F8A" stroke-width="1.6"/>
+    <text x="185" y="228" text-anchor="middle" fill="#1A2333">Policy Enforcement Point</text>
+
+    <line x1="185" y1="246" x2="185" y2="280" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="90" y="280" width="190" height="46" rx="8" fill="#FFFFFF" stroke="#2D5F8A" stroke-width="1.6"/>
+    <text x="185" y="308" text-anchor="middle" fill="#1A2333">Policy Decision Point</text>
+
+    <line x1="185" y1="326" x2="185" y2="360" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="90" y="360" width="190" height="46" rx="8" fill="#EFF3F8" stroke="#2D5F8A" stroke-width="1.6"/>
+    <text x="185" y="388" text-anchor="middle" fill="#1A2333">Resource</text>
+  </g>
+
+  <!-- divider -->
+  <line x1="410" y1="90" x2="410" y2="720" stroke="#D8DEE9" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Right column: extended model -->
+  <text x="655" y="100" text-anchor="middle" font-size="13" font-weight="700" fill="#8A5A2D">Proposed Extension for Agents</text>
+
+  <g font-size="13">
+    <rect x="545" y="118" width="220" height="42" rx="8" fill="#FFFFFF" stroke="#8A5A2D" stroke-width="1.6"/>
+    <text x="655" y="144" text-anchor="middle" fill="#1A2333">Agent Run</text>
+
+    <line x1="655" y1="160" x2="655" y2="190" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="545" y="190" width="220" height="42" rx="8" fill="#FFFFFF" stroke="#8A5A2D" stroke-width="1.6"/>
+    <text x="655" y="216" text-anchor="middle" fill="#1A2333">Action Request</text>
+
+    <line x1="655" y1="232" x2="655" y2="262" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <!-- PDP box with sub-considerations -->
+    <rect x="500" y="262" width="310" height="200" rx="10" fill="#FBF4EA" stroke="#8A5A2D" stroke-width="1.8"/>
+    <text x="655" y="286" text-anchor="middle" font-weight="700" fill="#1A2333">Agent Policy Decision Point</text>
+    <g font-size="12.5" fill="#3D4658">
+      <text x="530" y="310">&#8226; Identity</text>
+      <text x="530" y="331">&#8226; Delegation</text>
+      <text x="530" y="352">&#8226; Objective</text>
+      <text x="530" y="373">&#8226; Context provenance</text>
+      <text x="530" y="394">&#8226; Risk</text>
+      <text x="530" y="415">&#8226; Sequence history</text>
+      <text x="530" y="436">&#8226; Approval state</text>
+    </g>
+
+    <line x1="655" y1="462" x2="655" y2="492" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="545" y="492" width="220" height="42" rx="8" fill="#FFFFFF" stroke="#8A5A2D" stroke-width="1.6"/>
+    <text x="655" y="518" text-anchor="middle" fill="#1A2333">Capability Broker</text>
+
+    <line x1="655" y1="534" x2="655" y2="564" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="545" y="564" width="220" height="42" rx="8" fill="#FFFFFF" stroke="#8A5A2D" stroke-width="1.6"/>
+    <text x="655" y="590" text-anchor="middle" fill="#1A2333">Policy Enforcement Gateway</text>
+
+    <line x1="655" y1="606" x2="655" y2="636" stroke="#41506B" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+    <rect x="545" y="636" width="220" height="42" rx="8" fill="#EFF3F8" stroke="#8A5A2D" stroke-width="1.6"/>
+    <text x="655" y="662" text-anchor="middle" fill="#1A2333">MCP / API / Resource</text>
+  </g>
+
+  <text x="450" y="742" text-anchor="middle" font-size="12" fill="#5A6579" font-style="italic">The contribution is not a replacement for Zero Trust — it redefines the subject as an Agent Run acting under delegation, for an objective, within bounded context.</text>
+</svg>

@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-  ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight, Boxes, ChevronRight, EyeOff, Radar, ShieldAlert, ShieldCheck, X,
+  ArrowDown, ArrowUp, ArrowUpDown, Boxes, EyeOff, Radar, ShieldAlert, ShieldCheck, X,
 } from "lucide-react";
 import { EmptyState, SeverityBadge, StatusBadge } from "../ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "./Pagination";
-
-const LIST_PAGE_SIZES = [10, 20, 50, 100, 200] as const;
+import { Pagination, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS as LIST_PAGE_SIZES } from "./Pagination";
 import { cx, timeAgo, titleCase } from "../utils";
 import type { Asset } from "../types";
 
@@ -36,14 +34,47 @@ const SORTERS: Record<SortKey, (a: Asset, b: Asset) => number> = {
   last_seen: (a, b) => new Date(a.last_seen_at || 0).getTime() - new Date(b.last_seen_at || 0).getTime(),
 };
 
-const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
-  { key: "asset", label: "Asset" },
-  { key: "type", label: "Type", className: "hidden lg:table-cell" },
-  { key: "risk", label: "Risk" },
-  { key: "criticality", label: "Criticality", className: "hidden xl:table-cell" },
-  { key: "verified", label: "Ownership" },
-  { key: "last_seen", label: "Last seen", className: "hidden lg:table-cell" },
+type Column = { key: SortKey | "parent" | "tags" | "source"; label: string; className?: string; sortable?: boolean };
+const COLUMNS: Column[] = [
+  { key: "asset", label: "Asset", sortable: true },
+  { key: "type", label: "Type", sortable: true },
+  { key: "parent", label: "Parent", className: "hidden 2xl:table-cell" },
+  { key: "risk", label: "Risk", sortable: true },
+  { key: "criticality", label: "Criticality", className: "hidden lg:table-cell", sortable: true },
+  { key: "verified", label: "Ownership", sortable: true },
+  { key: "tags", label: "Tags", className: "hidden 2xl:table-cell" },
+  { key: "source", label: "Source", className: "hidden 2xl:table-cell" },
+  { key: "last_seen", label: "Last seen", className: "hidden lg:table-cell", sortable: true },
 ];
+
+/**
+ * Splits a value into the part that identifies it and the context it lives in,
+ * so a dense list reads like a DNS console: `app` bright, `.example.com` dim;
+ * for a path, `/robots.txt` bright and the host dim.
+ */
+function splitValue(value: string): [dim: string, bright: string, dimAfter: string] {
+  const m = value.match(/^([a-z][a-z0-9+.-]*:\/\/)?([^/\s]+)(\/.*)?$/i);
+  if (!m) return ["", value, ""];
+  const [, scheme = "", host, path = ""] = m;
+  if (path && path !== "/") return [scheme + host, path, ""];
+  const isIp = /^[\d.:]+$/.test(host);
+  const labels = host.split(".");
+  if (!isIp && labels.length >= 3) return [scheme, labels[0], "." + labels.slice(1).join(".") + path];
+  return [scheme, host, path];
+}
+
+function AssetValue({ value, term }: { value: string; term: string }) {
+  const [before, main, after] = splitValue(value);
+  return (
+    <>
+      {before && <span className="text-slate-500"><Highlight text={before} term={term} /></span>}
+      <span className="font-medium text-slate-100"><Highlight text={main} term={term} /></span>
+      {after && <span className="text-slate-500"><Highlight text={after} term={term} /></span>}
+    </>
+  );
+}
+
+const Dash = () => <span className="text-slate-600" aria-label="none">—</span>;
 
 /** Wraps each case-insensitive occurrence of ``term`` in a <mark>. */
 function Highlight({ text, term }: { text: string; term: string }) {
@@ -71,9 +102,9 @@ function Highlight({ text, term }: { text: string; term: string }) {
 function RiskCell({ a }: { a: Asset }) {
   const level = String(a.risk_level ?? "").toLowerCase();
   const open = Number(a.open_findings ?? 0);
-  if (!level && !open) return <span className="text-xs text-slate-600">Not assessed</span>;
+  if (!level && !open) return <span className="text-[13px] text-slate-500">Not assessed</span>;
   return (
-    <span className="flex flex-wrap items-center gap-1.5">
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
       {level ? <SeverityBadge severity={level as never} /> : null}
       <span className={cx("font-mono text-xs", open ? "text-slate-300" : "text-slate-500")}>
         {open} open
@@ -87,16 +118,16 @@ function OwnershipCell({ a }: { a: Asset }) {
   return (
     <span className="flex flex-wrap items-center gap-1.5">
       {v === "unverified" ? (
-        <span className="inline-flex items-center gap-1 text-xs text-severity-medium">
+        <span className="inline-flex items-center gap-1 text-[13px] text-severity-medium">
           <ShieldAlert size={13} /> Unverified
         </span>
       ) : (
-        <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+        <span className="inline-flex items-center gap-1 text-[13px] text-emerald-400">
           <ShieldCheck size={13} /> {v === "inherited" ? "Inherited" : "Verified"}
         </span>
       )}
       {a.chain_scope_excluded && (
-        <span className="inline-flex items-center gap-1 text-xs text-slate-400" title="Not included when its parent is scoped">
+        <span className="inline-flex items-center gap-1 text-[13px] text-slate-400" title="Not included when its parent is scoped">
           <EyeOff size={12} /> Excluded
         </span>
       )}
@@ -274,12 +305,12 @@ export default function AssetListView({
     findings: filtered.reduce((n, a) => n + Number(a.open_findings ?? 0), 0),
   };
 
-  const selectCls = "input !w-auto !py-1.5 !pr-8 text-[13px]";
+  const selectCls = "input !w-auto !py-1 !pr-8 text-[13px]";
 
   return (
     <div ref={top} className="scroll-mt-24">
       {/* Facets */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-phantix-700/40 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-phantix-700/40 px-3 py-2">
         <label className="sr-only" htmlFor="asset-crit">Criticality</label>
         <select id="asset-crit" className={selectCls} value={crit} onChange={(e) => update({ crit: e.target.value })}>
           <option value="all">Any criticality</option>
@@ -391,23 +422,23 @@ export default function AssetListView({
           {/* Phones: one card per asset */}
           <ul className="divide-y divide-phantix-800/50 md:hidden">
             {pageItems.map((a) => (
-              <li key={a.id} className="flex items-start gap-3 px-4 py-3">
+              <li key={a.id} className="flex items-start gap-3 px-3 py-2.5">
                 <input
                   type="checkbox"
                   checked={checked.has(a.id)}
                   onChange={() => toggleOne(a.id)}
-                  className="mt-2 accent-gold-400"
+                  className="mt-1 accent-gold-400"
                   aria-label={`Select ${a.value}`}
                 />
                 <button type="button" onClick={() => onSelect(a)} className="min-w-0 flex-1 text-left">
                   <span className="flex items-center gap-2">
                     <span className="text-phantix-300">{typeIcon[a.asset_type] ?? <Boxes size={15} />}</span>
-                    <span className="truncate font-medium text-slate-100"><Highlight text={a.value} term={q} /></span>
+                    <span className="truncate"><AssetValue value={a.value} term={q} /></span>
                   </span>
                   {a.parent_asset_id != null && breadcrumb(a) && (
                     <span className="mt-0.5 block truncate text-[12px] text-slate-500">in {breadcrumb(a)}</span>
                   )}
-                  <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span>
                     <RiskCell a={a} />
                     <OwnershipCell a={a} />
@@ -433,18 +464,22 @@ export default function AssetListView({
                     />
                   </th>
                   {COLUMNS.map((c) => {
-                    const active = sortKey === c.key;
+                    if (!c.sortable) {
+                      return <th key={c.key} className={cx("th whitespace-nowrap", c.className)}>{c.label}</th>;
+                    }
+                    const key = c.key as SortKey;
+                    const active = sortKey === key;
                     return (
                       <th
                         key={c.key}
-                        className={cx("th", c.className)}
+                        className={cx("th whitespace-nowrap", c.className)}
                         aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                       >
                         <button
                           type="button"
-                          onClick={() => toggleSort(c.key)}
+                          onClick={() => toggleSort(key)}
                           className={cx(
-                            "-mx-1.5 inline-flex items-center gap-1.5 rounded px-1.5 py-1 uppercase tracking-wider transition-colors hover:text-slate-200",
+                            "-mx-1.5 inline-flex items-center gap-1.5 rounded px-1.5 py-0.5 transition-colors hover:text-slate-100",
                             active && "text-gold-300",
                           )}
                         >
@@ -454,7 +489,7 @@ export default function AssetListView({
                       </th>
                     );
                   })}
-                  <th className="th w-24 text-right">
+                  <th className="th w-28 text-right">
                     <span className="sr-only">Actions</span>
                   </th>
                 </tr>
@@ -465,7 +500,7 @@ export default function AssetListView({
                     key={a.id}
                     onClick={() => onSelect(a)}
                     className={cx(
-                      "group cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35",
+                      "group h-10 cursor-pointer border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35",
                       checked.has(a.id) && "bg-gold-400/[0.04]",
                     )}
                   >
@@ -478,71 +513,64 @@ export default function AssetListView({
                         aria-label={`Select ${a.value}`}
                       />
                     </td>
-                    <td className="td max-w-[28rem]">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-phantix-800/70 text-phantix-300">
+                    <td className="td max-w-[26rem]">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0 text-phantix-300 [&>svg]:h-[15px] [&>svg]:w-[15px]" aria-hidden="true">
                           {typeIcon[a.asset_type] ?? <Boxes size={15} />}
                         </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-200" title={a.value}>
-                            <Highlight text={a.value} term={q} />
-                          </p>
-                          <p className="flex min-w-0 items-center gap-2 text-xs text-slate-500">
-                            <span className="truncate">
-                              {a.name && a.name !== a.value ? <Highlight text={a.name} term={q} /> : titleCase(a.asset_type)}
-                            </span>
-                            <DiscoveryDot status={a.discoveryStatus} />
-                          </p>
-                          {a.parent_asset_id != null && breadcrumb(a) && (
-                            <p className="mt-0.5 flex min-w-0 items-center gap-1 truncate text-[12px] text-slate-500" title={breadcrumb(a)}>
-                              <ChevronRight size={11} className="shrink-0" /> in {breadcrumb(a)}
-                            </p>
-                          )}
-                          {(a.tags?.length ?? 0) > 0 && (
-                            <p className="mt-1 flex flex-wrap gap-1">
-                              {a.tags!.slice(0, 2).map((t) => (
-                                <span key={t.id} className="rounded px-1.5 py-0.5 text-[12px] font-medium" style={{ background: `${t.color}22`, color: t.color }}>
-                                  {t.name}
-                                </span>
-                              ))}
-                              {a.tags!.length > 2 && <span className="text-[12px] text-slate-500">+{a.tags!.length - 2}</span>}
-                            </p>
-                          )}
-                        </div>
+                        <span className="truncate" title={a.name && a.name !== a.value ? `${a.value} — ${a.name}` : a.value}>
+                          <AssetValue value={a.value} term={q} />
+                        </span>
+                        <DiscoveryDot status={a.discoveryStatus} />
                       </div>
                     </td>
-                    <td className="td hidden whitespace-nowrap lg:table-cell"><span className="text-xs text-slate-400">{titleCase(a.asset_type)}</span></td>
+                    <td className="td whitespace-nowrap text-slate-400">{titleCase(a.asset_type)}</td>
+                    <td className="td hidden max-w-[14rem] 2xl:table-cell">
+                      {a.parent_asset_id != null && breadcrumb(a) ? (
+                        <span className="block truncate text-[13px] text-slate-400" title={breadcrumb(a)}>{breadcrumb(a)}</span>
+                      ) : <Dash />}
+                    </td>
                     <td className="td whitespace-nowrap"><RiskCell a={a} /></td>
-                    <td className="td hidden whitespace-nowrap xl:table-cell">
-                      <span className={cx("text-xs font-semibold capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
+                    <td className="td hidden whitespace-nowrap lg:table-cell">
+                      <span className={cx("text-[13px] font-medium capitalize", a.criticality === "critical" ? "text-severity-critical" : a.criticality === "high" ? "text-severity-high" : a.criticality === "medium" ? "text-severity-medium" : "text-slate-400")}>
                         {a.criticality}
                       </span>
                     </td>
                     <td className="td whitespace-nowrap"><OwnershipCell a={a} /></td>
-                    <td className="td hidden whitespace-nowrap lg:table-cell">
-                      <span className="text-xs text-slate-400" title={a.last_seen_at}>{timeAgo(a.last_seen_at)}</span>
+                    <td className="td hidden whitespace-nowrap 2xl:table-cell">
+                      {(a.tags?.length ?? 0) > 0 ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="max-w-[8rem] truncate rounded px-1.5 py-0.5 text-[12px] font-medium" style={{ background: `${a.tags![0].color}22`, color: a.tags![0].color }}>
+                            {a.tags![0].name}
+                          </span>
+                          {a.tags!.length > 1 && <span className="text-[12px] text-slate-500" title={a.tags!.slice(1).map((t) => t.name).join(", ")}>+{a.tags!.length - 1}</span>}
+                        </span>
+                      ) : <Dash />}
                     </td>
-                    <td className="td w-24 text-right" onClick={(e) => e.stopPropagation()}>
-                      <span className="inline-flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <td className="td hidden whitespace-nowrap text-slate-400 2xl:table-cell">{a.source ? titleCase(a.source) : <Dash />}</td>
+                    <td className="td hidden whitespace-nowrap lg:table-cell">
+                      <span className="text-[13px] text-slate-400" title={a.last_seen_at}>{timeAgo(a.last_seen_at)}</span>
+                    </td>
+                    <td className="td w-28 text-right" onClick={(e) => e.stopPropagation()}>
+                      <span className="inline-flex items-center justify-end gap-0.5">
                         {DISCOVERABLE.has(a.asset_type) && (
                           <button
                             type="button"
                             onClick={() => onRunDiscovery([a])}
-                            className="rounded-md p-2 text-slate-400 hover:bg-phantix-800 hover:text-gold-300"
+                            className="rounded p-0.5 text-slate-500 opacity-0 transition-opacity hover:bg-phantix-800 hover:text-gold-300 focus-visible:opacity-100 group-hover:opacity-100"
                             aria-label={`Run discovery on ${a.value}`}
                             title="Run discovery"
                           >
-                            <Radar size={15} />
+                            <Radar size={14} />
                           </button>
                         )}
                         <button
                           type="button"
                           onClick={() => onSelect(a)}
-                          className="rounded-md p-2 text-slate-400 hover:bg-phantix-800 hover:text-slate-100"
+                          className="rounded px-2 py-0 text-[13px] font-medium leading-5 text-slate-300 hover:bg-phantix-800 hover:text-white"
                           aria-label={`Open ${a.value}`}
-                          title="Open details"
                         >
-                          <ArrowUpRight size={15} />
+                          Open
                         </button>
                       </span>
                     </td>

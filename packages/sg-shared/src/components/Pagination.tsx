@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { cx } from "../utils";
 
-export const PAGE_SIZE_OPTIONS = [20, 50, 100, 200] as const;
-export const DEFAULT_PAGE_SIZE = 20;
+/** Dense tables fit 25 rows on a laptop screen without scrolling far. */
+export const PAGE_SIZE_OPTIONS = [25, 50, 100, 200] as const;
+export const DEFAULT_PAGE_SIZE = 25;
 
 export interface PaginationProps {
   totalItems: number;
@@ -103,13 +104,13 @@ export function Pagination({
     }
   }
 
-  const arrow = "inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-phantix-700 bg-phantix-900 px-2 text-slate-300 transition-colors hover:border-phantix-600 hover:text-white disabled:pointer-events-none disabled:opacity-40";
+  const arrow = "inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-phantix-700 bg-phantix-900 px-2 text-slate-300 transition-colors hover:border-phantix-600 hover:text-white disabled:pointer-events-none disabled:opacity-40";
 
   return (
     <nav
       aria-label="Pagination"
       className={cx(
-        "flex flex-col gap-3 border-t border-phantix-800/40 px-4 py-3 md:flex-row md:items-center md:justify-between",
+        "flex flex-col gap-2 border-t border-phantix-800/40 px-3 py-2 md:flex-row md:items-center md:justify-between",
         className,
       )}
     >
@@ -121,7 +122,7 @@ export function Pagination({
         <label className="flex items-center gap-2">
           <span>Rows</span>
           <select
-            className="input !w-auto !py-1.5 !pr-8 text-[13px]"
+            className="input !w-auto !py-1 !pr-8 text-[13px]"
             value={String(pageSize)}
             onChange={(e) => changeSize(e.target.value)}
             aria-label="Rows per page"
@@ -161,7 +162,7 @@ export function Pagination({
                     aria-current={item === safePage ? "page" : undefined}
                     aria-label={`Page ${item}`}
                     className={cx(
-                      "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2.5 font-mono text-[13px] transition-colors",
+                      "inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 font-mono text-[13px] transition-colors",
                       item === safePage
                         ? "border-gold-400/60 bg-gold-400/10 font-semibold text-gold-300"
                         : "border-transparent text-slate-300 hover:border-phantix-600 hover:bg-phantix-900",
@@ -195,7 +196,7 @@ export function Pagination({
               <input
                 id="pagination-jump"
                 inputMode="numeric"
-                className="input !w-16 !py-1.5 text-center font-mono text-[13px]"
+                className="input !w-16 !py-1 text-center font-mono text-[13px]"
                 placeholder={String(safePage)}
                 value={jump}
                 onChange={(e) => setJump(e.target.value.replace(/\D/g, ""))}
@@ -210,3 +211,34 @@ export function Pagination({
 }
 
 export default Pagination;
+
+/**
+ * Client-side paging for a list already in memory. The page size is remembered
+ * per list (`storageKey`), and the page resets to 1 when `resetKey` changes
+ * (pass the search/filter state), so a filtered list never opens on an empty
+ * page. Spread `pagination` straight into <Pagination />.
+ */
+export function usePaged<T>(items: readonly T[], storageKey: string, resetKey: unknown = null) {
+  const [pageSize, setPageSizeState] = useState<number>(() => {
+    try {
+      const saved = Number(localStorage.getItem(`sg_page_size:${storageKey}`));
+      if ((PAGE_SIZE_OPTIONS as readonly number[]).includes(saved)) return saved;
+    } catch { /* storage unavailable */ }
+    return DEFAULT_PAGE_SIZE;
+  });
+  const [page, setPage] = useState(1);
+  const resetSig = JSON.stringify(resetKey ?? null);
+  useEffect(() => setPage(1), [resetSig]);
+
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = items.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const setPageSize = (n: number) => {
+    setPageSizeState(n);
+    try { localStorage.setItem(`sg_page_size:${storageKey}`, String(n)); } catch { /* storage unavailable */ }
+  };
+  return {
+    pageItems,
+    pagination: { totalItems: items.length, page: safePage, pageSize, onPageChange: setPage, onPageSizeChange: setPageSize },
+  };
+}

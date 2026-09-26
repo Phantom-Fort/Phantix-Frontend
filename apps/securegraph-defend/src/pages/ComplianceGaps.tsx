@@ -6,6 +6,7 @@ import { EMPTY_GAPS, loadGapAnalysis, type ControlGap, type GapAnalysis } from "
 import { useStore } from "@sg/store";
 import { cx } from "@sg/utils";
 import DocLink from "@sg/components/DocLink";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 
 // ── Compliance gap analysis ──────────────────────────────────────────────────
 // GET /compliance/gaps maps the org's current findings onto framework controls
@@ -64,6 +65,7 @@ export default function ComplianceGaps() {
     () => (framework === "all" ? data.gaps : data.gaps.filter((g) => String(g.framework_id) === framework)),
     [data.gaps, framework],
   );
+  const { pageItems: gapPageItems, pagination: gapPagination } = usePaged(visible, "defend-compliance-gaps", framework);
 
   const byRisk = useMemo(() => {
     const out: Record<string, number> = {};
@@ -200,8 +202,24 @@ export default function ComplianceGaps() {
                 }
               />
             ) : (
-              <div className="space-y-2">
-                {visible.map((g, i) => <GapRow key={`${g.framework_id}-${g.control_id}-${i}`} gap={g} />)}
+              <div className="-mx-5 -mb-5 border-t border-phantix-700/40">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-phantix-700/40">
+                        <th className="th">Control</th>
+                        <th className="th">Framework</th>
+                        <th className="th">Reference</th>
+                        <th className="th hidden md:table-cell">Category</th>
+                        <th className="th">Risk</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gapPageItems.map((g, i) => <GapRow key={`${g.framework_id}-${g.control_id}-${i}`} gap={g} />)}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination {...gapPagination} itemLabel="controls" />
               </div>
             )}
           </Card>
@@ -235,16 +253,18 @@ export default function ComplianceGaps() {
 function GapRow({ gap }: { gap: ControlGap }) {
   const risk = String(gap.risk ?? "").toLowerCase();
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
-      <div className="min-w-0 flex-1">
-        <p className="text-sm text-slate-200">{text(gap.title ?? gap.control_id, "Untitled control")}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          {gap.framework_id && <span className="chip border-phantix-700 uppercase text-phantix-300">{String(gap.framework_id)}</span>}
-          {gap.control_id && <span className="chip border-phantix-700 font-mono text-slate-400">{String(gap.control_id)}</span>}
-          {gap.category && <span className="chip border-phantix-700 text-slate-400">{String(gap.category)}</span>}
-        </div>
-      </div>
-      {risk && <span className={cx("chip shrink-0 capitalize", RISK_TONE[risk] ?? "border-phantix-700 text-slate-400")}>{risk}</span>}
-    </div>
+    <tr className="h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35">
+      <td className="td max-w-[26rem]">
+        <span className="block truncate font-medium text-slate-100" title={text(gap.title ?? gap.control_id, "Untitled control")}>
+          {text(gap.title ?? gap.control_id, "Untitled control")}
+        </span>
+      </td>
+      <td className="td whitespace-nowrap text-[13px] uppercase text-phantix-300">{gap.framework_id ? String(gap.framework_id) : "—"}</td>
+      <td className="td whitespace-nowrap font-mono text-[13px] text-slate-400">{gap.control_id ? String(gap.control_id) : "—"}</td>
+      <td className="td hidden whitespace-nowrap text-[13px] text-slate-400 md:table-cell">{gap.category ? String(gap.category) : "—"}</td>
+      <td className="td whitespace-nowrap">
+        {risk ? <span className={cx("chip capitalize", RISK_TONE[risk] ?? "border-phantix-700 text-slate-400")}>{risk}</span> : <span className="text-slate-600">—</span>}
+      </td>
+    </tr>
   );
 }

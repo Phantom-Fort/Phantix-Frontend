@@ -175,7 +175,15 @@ export default function SocAvailability() {
     try {
       const res = await runAvailabilityCheck(c.id);
       const label = String(res?.probe?.status_label ?? res?.check?.last_status ?? "done");
-      toast("success", `Run now · ${label}`, res?.probe?.error ? String(res.probe.error) : res?.probe?.latency_ms ? `${res.probe.latency_ms}ms` : "");
+      // A probe that came back with an error is not a success: say so in our own
+      // words instead of echoing the probe's raw reason into a success toast.
+      const probeError = res?.probe?.error ? String(res.probe.error) : "";
+      if (probeError) {
+        console.warn("[soc] availability probe failed", probeError);
+        toast("warning", `Run now · ${label}`, "The probe could not reach the target. Check the endpoint and try again.");
+      } else {
+        toast("success", `Run now · ${label}`, res?.probe?.latency_ms ? `${res.probe.latency_ms}ms` : "");
+      }
       await refresh();
     } catch (e: any) {
       if (e?.status === 409) setSecBlocked(true);
@@ -331,7 +339,7 @@ export default function SocAvailability() {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-phantix-700/40 text-[13px] uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-phantix-700/40 text-[13px] text-slate-300">
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Name</th>
                   <th className="px-3 py-2 font-medium">Type</th>

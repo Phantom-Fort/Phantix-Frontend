@@ -609,12 +609,50 @@ p {
     @apply inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium border;
   }
 
+  /* Dense data tables: ~37px rows so 25+ records fit on one screen. Headers
+
+     are sentence case, like the column titles people scan in DNS or
+
+     billing consoles, not shouted labels. */
+
   .th {
-    @apply px-4 py-3 text-left text-[12px] font-semibold uppercase tracking-wider text-slate-400;
+    @apply h-10 px-3 py-2 text-left align-middle text-[13px] font-semibold text-slate-300;
+    /* Visible row dividers: the header rule is the strongest line, each row
+       gets its own hairline, so a dense list scans like a spreadsheet. */
+    border-bottom: 1px solid rgb(var(--border-strong) / 0.7);
   }
 
   .td {
-    @apply px-4 py-3.5 text-sm text-slate-300;
+    @apply px-3 py-2 align-middle text-sm text-slate-300;
+    border-bottom: 1px solid rgb(var(--border-subtle) / 0.85);
+  }
+
+  /* Badges inside a table row stay short so they never set the row height. */
+  .td .chip {
+    @apply py-0.5;
+  }
+
+  /* Inside a data row, controls and icon tiles shrink to the row: buttons and
+     selects to 28px, icon tiles to 24px, so a row stays ~40px on every list. */
+  .td .btn-primary,
+  .td .btn-secondary,
+  .td .btn-ghost,
+  .td .btn-danger {
+    min-height: 1.75rem !important;
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+  }
+  .td select.input,
+  .td input.input {
+    height: 1.75rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .td .h-8.w-8,
+  .td .h-9.w-9,
+  .td .h-10.w-10 {
+    height: 1.5rem !important;
+    width: 1.5rem !important;
   }
 
   .skeleton {
@@ -974,6 +1012,19 @@ p {
   transition: width 150ms ease;
 }
 .sg-sidebar[data-collapsed] .sg-hide-collapsed {
+  display: none !important;
+}
+
+/* The brand mark stands in for the horizontal lockup only while the rail is
+   collapsed; hovering or focusing the rail widens it and brings the lockup back. */
+.sg-show-collapsed {
+  display: none !important;
+}
+.sg-sidebar[data-collapsed] .sg-show-collapsed {
+  display: revert !important;
+}
+.sg-sidebar[data-collapsed]:hover .sg-show-collapsed,
+.sg-sidebar[data-collapsed]:focus-within .sg-show-collapsed {
   display: none !important;
 }
 .sg-sidebar[data-collapsed] .nav-item {

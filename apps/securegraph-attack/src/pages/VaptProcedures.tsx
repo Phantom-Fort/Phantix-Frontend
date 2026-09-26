@@ -148,11 +148,11 @@ export default function VaptProcedures() {
                   </thead>
                   <tbody>
                     {visibleProcedures.map((p) => (
-                      <tr key={procedureKey(p)} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                      <tr key={procedureKey(p)} className="h-10 border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
                         <td className="td">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-slate-200">{procedureName(p)}</span>
-                            {p.required_role && <span className="chip w-fit border-gold-400/30 text-[12px] text-gold-200">needs {text(p.required_role)}</span>}
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-medium text-slate-100">{procedureName(p)}</span>
+                            {p.required_role && <span className="chip shrink-0 border-gold-400/30 text-[12px] text-gold-200">needs {text(p.required_role)}</span>}
                           </div>
                         </td>
                         <td className="td font-mono text-[13px] text-slate-500">{procedureKey(p)}</td>
@@ -194,14 +194,14 @@ export default function VaptProcedures() {
                   </thead>
                   <tbody>
                     {visibleRules.map((r, i) => (
-                      <tr key={String(r.id ?? r.rule_key ?? i)} className="border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
+                      <tr key={String(r.id ?? r.rule_key ?? i)} className="h-10 border-b border-phantix-800/40 transition-colors hover:bg-phantix-800/35">
                         <td className="td">
-                          <div className="flex flex-col gap-1">
-                            <span className="font-medium text-slate-200">{text(r.name ?? r.title ?? r.rule_key, "Rule")}</span>
-                            {r.rule_key && <span className="font-mono text-[13px] text-slate-500">{text(r.rule_key)}</span>}
+                          <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+                            <span className="font-medium text-slate-100">{text(r.name ?? r.title ?? r.rule_key, "Rule")}</span>
+                            {r.rule_key && <span className="font-mono text-[12px] text-slate-500">{text(r.rule_key)}</span>}
                           </div>
                         </td>
-                        <td className="td text-xs leading-5 text-slate-400">{r.description ? text(r.description) : <span className="text-slate-600">—</span>}</td>
+                        <td className="td max-w-[28rem] text-[13px] text-slate-400">{r.description ? <span className="block truncate" title={text(r.description)}>{text(r.description)}</span> : <span className="text-slate-600">—</span>}</td>
                         <td className="td">{r.severity ? <SeverityBadge severity={sevOf(r.severity)} /> : <span className="text-slate-600">—</span>}</td>
                         <td className="td">{r.source ? <span className="chip border-phantix-700 text-slate-500">{text(r.source)}</span> : <span className="text-slate-600">—</span>}</td>
                       </tr>

@@ -206,40 +206,57 @@ export default function ThreatModels() {
               );
             })()
           ) : (
-            <Card>
-              <CardHeader title="Products" subtitle="Pick a product, then generate its model" />
-              <div className="space-y-2">
-                {projects.map((p) => {
-                  const summary = summaries[p.id];
-                  const notReady = summary != null && !summary.ready;
-                  return (
-                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-phantix-700 bg-phantix-900/60 p-3">
-                      <div className="min-w-0">
-                        <p className="text-sm text-slate-200">{p.name}</p>
-                        <p className="mt-0.5 text-[13px] text-slate-500">#{p.id} · {humanize(p.stage)}</p>
-                        <ReadinessChips summary={summary} />
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <button
-                          onClick={() => setInputsFor(p)}
-                          className={cx("btn-ghost text-xs !py-1.5", notReady && "text-gold-200")}
-                          title="Add product information, a diagram or requirements"
-                        >
-                          <FileText size={12} className="mr-1.5 inline" /> Inputs
-                        </button>
-                        <button
-                          onClick={() => void generate(p)}
-                          disabled={generating === p.id}
-                          className="btn-secondary text-xs !py-1.5 disabled:opacity-40"
-                          title={notReady ? "Add an input first so the model has something to reason over" : undefined}
-                        >
-                          {generating === p.id ? <Loader2 size={12} className="mr-1.5 inline animate-spin" /> : <Sparkles size={12} className="mr-1.5 inline" />}
-                          Generate
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+            <Card className="!p-0 overflow-hidden">
+              <div className="px-5 pt-5"><CardHeader title="Products" subtitle="Pick a product, then generate its model" /></div>
+              <div className="overflow-x-auto border-t border-phantix-700/40">
+                <table className="w-full min-w-[720px]">
+                  <thead>
+                    <tr className="border-b border-phantix-700/40">
+                      <th className="th">Product</th>
+                      <th className="th">Stage</th>
+                      <th className="th">Inputs</th>
+                      <th className="th text-right"><span className="sr-only">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.map((p) => {
+                      const summary = summaries[p.id];
+                      const notReady = summary != null && !summary.ready;
+                      return (
+                        <tr key={p.id} className="h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                          <td className="td max-w-[22rem]">
+                            <span className="block truncate" title={p.name}>
+                              <span className="font-medium text-slate-100">{p.name}</span>
+                              <span className="ml-2 font-mono text-[12px] text-slate-500">#{p.id}</span>
+                            </span>
+                          </td>
+                          <td className="td whitespace-nowrap text-[13px] text-slate-400">{humanize(p.stage)}</td>
+                          <td className="td"><ReadinessDots summary={summary} /></td>
+                          <td className="td whitespace-nowrap text-right">
+                            <span className="inline-flex items-center gap-1">
+                              <button
+                                onClick={() => setInputsFor(p)}
+                                className={cx("inline-flex items-center gap-1 rounded px-2 py-0 text-[13px] leading-6 hover:bg-phantix-800", notReady ? "text-gold-200" : "text-slate-300")}
+                                title="Add product information, a diagram or requirements"
+                              >
+                                <FileText size={12} /> Inputs
+                              </button>
+                              <button
+                                onClick={() => void generate(p)}
+                                disabled={generating === p.id}
+                                className="inline-flex items-center gap-1 rounded px-2 py-0 text-[13px] font-medium leading-6 text-gold-300 hover:bg-gold-400/10 disabled:opacity-40"
+                                title={notReady ? "Add an input first so the model has something to reason over" : undefined}
+                              >
+                                {generating === p.id ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                Generate
+                              </button>
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </Card>
           )}
@@ -323,6 +340,29 @@ export default function ThreatModels() {
         />
       )}
     </div>
+  );
+}
+
+/** One-line readiness: a marker per input (hover for its name) and "3 of 5". */
+function ReadinessDots({ summary }: { summary?: ProductContextSummary | null }) {
+  if (!summary) return <span className="text-[13px] text-slate-500">No inputs yet</span>;
+  const met = summary.inputs.filter((i) => i.met).length;
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span className="inline-flex items-center gap-1">
+        {summary.inputs.map((item) => (
+          <span
+            key={item.key}
+            title={`${item.label}: ${item.met ? "present" : "missing"}`}
+            aria-label={`${item.label}: ${item.met ? "present" : "missing"}`}
+            className={cx("h-2 w-2 rounded-full", item.met ? "bg-emerald-400" : "bg-phantix-700")}
+          />
+        ))}
+      </span>
+      <span className={cx("text-[13px]", met === summary.inputs.length ? "text-emerald-400" : "text-slate-400")}>
+        {met} of {summary.inputs.length}
+      </span>
+    </span>
   );
 }
 

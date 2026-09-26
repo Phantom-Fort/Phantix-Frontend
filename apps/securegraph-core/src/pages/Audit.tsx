@@ -10,6 +10,7 @@ import { useStore } from "@sg/store";
 import { api } from "@sg/api";
 import type { AuditEvent } from "@sg/types";
 import DocLink from "@sg/components/DocLink";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 
 // The trail reads by application, the way the operator uses the product —
 // engines are how the backend is built and mean nothing to the reader. The
@@ -70,6 +71,7 @@ export default function Audit() {
       return true;
     });
   }, [auditEvents, appFilter, actionFilter]);
+  const { pageItems, pagination } = usePaged(filtered, "core-audit", [appFilter, actionFilter]);
 
   if (loading) {
     return <PageSkeleton variant="table" rows={8} cols={5} actions />;
@@ -142,7 +144,7 @@ export default function Audit() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e, i) => {
+                {pageItems.map((e, i) => {
                   // The description is written for the person reading it; the
                   // route and method that produced it stay in the staff trail.
                   const desc = describeEndpoint(
@@ -155,8 +157,8 @@ export default function Audit() {
                       key={e.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      transition={{ delay: i * 0.02 }}
-                      className="border-b border-phantix-800/40 hover:bg-phantix-800/35 group"
+                      transition={{ delay: Math.min(i, 12) * 0.02 }}
+                      className="h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35 group"
                     >
                       <td className="td text-center">
                         <span className={cx(
@@ -166,9 +168,11 @@ export default function Audit() {
                           {e.details?.passive !== false ? "V" : "C"}
                         </span>
                       </td>
-                      <td className="td max-w-[340px]">
-                        <p className="font-medium text-slate-200">{(desc?.label ?? e.action_label) || "Activity"}</p>
-                        <p className="text-[13px] leading-5 text-slate-400">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</p>
+                      <td className="td max-w-[30rem]">
+                        <span className="block truncate" title={(desc?.detail ?? e.summary) || undefined}>
+                          <span className="font-medium text-slate-100">{(desc?.label ?? e.action_label) || "Activity"}</span>
+                          <span className="ml-2 text-[13px] text-slate-500">{(desc?.detail ?? e.summary) || "An action was performed on the platform."}</span>
+                        </span>
                       </td>
                       <td className="td">
                         <span className={cx("text-[13px] font-medium", am.color)}>{am.label}</span>
@@ -178,10 +182,10 @@ export default function Audit() {
                           <span className="flex h-5 w-5 items-center justify-center rounded-md bg-phantix-700/60 text-[12px] font-bold text-phantix-200">
                             {(e.initiator_name ?? "?").slice(0, 1)}
                           </span>
-                          <div>
-                            <p className="text-[13px] text-slate-300">{e.initiator_name ?? "---"}</p>
-                            <p className="text-[12px] text-slate-600">{e.initiator_title ?? ""}</p>
-                          </div>
+                          <span className="whitespace-nowrap text-[13px] text-slate-300">
+                            {e.initiator_name ?? "—"}
+                            {e.initiator_title && <span className="ml-1.5 text-slate-500">{e.initiator_title}</span>}
+                          </span>
                         </div>
                       </td>
                       <td className="td">
@@ -190,22 +194,23 @@ export default function Audit() {
                             <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gold-400/20 text-[12px] font-bold text-gold-300">
                               {e.authorizer_name.slice(0, 1)}
                             </span>
-                            <div>
-                              <p className="text-[13px] text-slate-300">{e.authorizer_name}</p>
-                              <p className="text-[12px] text-slate-600">{e.authorizer_title ?? ""}</p>
-                            </div>
+                            <span className="whitespace-nowrap text-[13px] text-slate-300">
+                              {e.authorizer_name}
+                              {e.authorizer_title && <span className="ml-1.5 text-slate-500">{e.authorizer_title}</span>}
+                            </span>
                           </div>
                         ) : (
-                          <span className="text-[13px] text-slate-600">---</span>
+                          <span className="text-[13px] text-slate-600">—</span>
                         )}
                       </td>
-                      <td className="td font-mono text-[12px] text-slate-500">{e.ip_address ?? "---"}</td>
+                      <td className="td font-mono text-[12px] text-slate-500">{e.ip_address ?? "—"}</td>
                       <td className="td text-[13px] text-slate-500 whitespace-nowrap">{timeAgo(e.created_at)}</td>
                     </motion.tr>
                   );
                 })}
               </tbody>
             </table>
+            <Pagination {...pagination} itemLabel="events" keyboard />
           </Card>
       </motion.div>
     </div>

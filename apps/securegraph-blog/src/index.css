@@ -63,14 +63,27 @@ p { text-wrap: pretty; }
   -webkit-backdrop-filter: blur(10px);
 }
 .site-brand {
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
   text-decoration: none;
   color: var(--ink);
 }
-.site-brand span { color: var(--accent); }
+/* Shared brand lockup (same asset the operator apps render on dark surfaces). */
+.site-brand-logo {
+  display: block;
+  height: 1.7rem;
+  width: auto;
+}
+.site-brand-issue {
+  padding-left: 0.7rem;
+  border-left: 1px solid var(--hairline);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
 .site-nav { display: flex; align-items: center; gap: 1.25rem; }
 .site-nav-link {
   font-family: var(--mono);

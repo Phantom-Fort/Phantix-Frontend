@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { BellRing, Mail, MessageSquare, Send, FlaskConical, Info, Cable, ExternalLink } from "lucide-react";
 import { PageHeader, Card, CardHeader, StatusBadge, SeverityBadge, Tabs, PageSkeleton, ErrorState } from "@sg/ui";
 import DocLink from "@sg/components/DocLink";
+import { Pagination, usePaged } from "@sg/components/Pagination";
 import { CrossAppLink } from "@sg/components/CrossAppLink";
 import { loadAlertsBundle } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -25,6 +26,7 @@ export default function Alerts() {
   const navigate = useNavigate();
   const { data, loading, error, reload } = useResource(loadAlertsBundle, { events: [], settings: emptySettings }, "alerts");
   const alertEvents = data.events;
+  const { pageItems: alertPageItems, pagination: alertPagination } = usePaged(alertEvents, "defend-alert-log");
   const s = data.settings;
   const [tab, setTab] = useState("events");
 
@@ -89,19 +91,17 @@ export default function Alerts() {
                   </tr>
                 </thead>
                 <tbody>
-                  {alertEvents.map((a) => (
-                    <tr key={a.id} className="border-b border-phantix-800/40 hover:bg-phantix-800/35">
+                  {alertPageItems.map((a) => (
+                    <tr key={a.id} className="h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35">
                       <td className="td">
-                        <div className="flex items-center gap-2.5">
-                          <span className={cx("flex h-7 w-7 shrink-0 items-center justify-center rounded-lg", a.severity === "critical" ? "bg-severity-critical/15 text-severity-critical" : "bg-phantix-800/70 text-phantix-300")}>
-                            <BellRing size={13} />
-                          </span>
-                          <span className="font-medium text-slate-200">{a.title}</span>
+                        <div className="flex max-w-[26rem] min-w-0 items-center gap-2">
+                          <BellRing size={14} aria-hidden="true" className={cx("shrink-0", a.severity === "critical" ? "text-severity-critical" : "text-phantix-300")} />
+                          <span className="truncate font-medium text-slate-100" title={a.title}>{a.title}</span>
                         </div>
                       </td>
-                      <td className="td font-mono text-xs text-slate-500">{humanize(a.event_type)}</td>
+                      <td className="td whitespace-nowrap font-mono text-xs text-slate-400">{humanize(a.event_type)}</td>
                       <td className="td">
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-nowrap gap-1.5">
                           {(a.channels ?? []).map((c) => (
                             <span key={c} className="rounded-md bg-phantix-800/80 px-2 py-0.5 text-[12px] font-medium text-slate-400">{c}</span>
                           ))}
@@ -115,6 +115,7 @@ export default function Alerts() {
                 </tbody>
               </table>
             </div>
+            <Pagination {...alertPagination} itemLabel="alerts" />
           </Card>
         </motion.div>
       )}

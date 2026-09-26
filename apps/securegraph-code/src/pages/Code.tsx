@@ -602,7 +602,7 @@ function ScmConnectModal({ connector, onClose, onDone }: { connector: Integratio
       onDone();
     } catch (e: unknown) {
       const err = e as { message?: string; detail?: { message?: string } };
-      toast("error", "Connect failed", publicErrorMessage(err, "Could not connect provider."));
+      toast("error", "Connect failed", err?.message || "Could not connect provider.");
     } finally {
       setBusy(false);
     }

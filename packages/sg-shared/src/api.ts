@@ -67,43 +67,60 @@ function detailMessage(detail: unknown): string {
   return "Request failed";
 }
 
-/** Generic, backend-free text for a status — safe for toasts and logs. */
-export function publicStatusMessage(status: number): string {
-  if (status === 400) return "That request could not be processed.";
-  if (status === 401) return "Your session is no longer valid. Please sign in again.";
-  if (status === 403) return "This action is not permitted for your account.";
-  if (status === 404) return "The requested item could not be found.";
-  if (status === 409) return "That conflicts with something that already exists.";
-  if (status === 422) return "Some of the details need attention.";
-  if (status === 429) return "Too many requests — please try again shortly.";
-  if (status >= 500) return "Something went wrong on our side. Please try again.";
-  return "Something went wrong. Please try again.";
+/**
+ * What a failed request is allowed to say to the operator.
+ *
+ * The backend writes its detail for an engineer reading logs: it names
+ * endpoints, headers (`X-Dual-Control-Session`), internal codes and doc paths.
+ * That text is logged (see `logRequestFailure`) and the UI gets this instead.
+ */
+export function errorCopyFor(status: number): string {
+  if (status === 0) return "We couldn't reach the server. Check your connection and try again.";
+  if (status === 401) return "Your session has expired. Sign in again to continue.";
+  if (status === 402) return "That needs an upgrade on your plan.";
+  if (status === 403) return "You don't have permission to do that.";
+  if (status === 404) return "That item no longer exists.";
+  if (status === 408) return "The request timed out. Try again.";
+  if (status === 409) return "That conflicts with the current state. Refresh and try again.";
+  if (status === 429) return "Too many attempts. Wait a moment and try again.";
+  if (status >= 500) return "The server couldn't complete that request. Try again shortly.";
+  if (status >= 400) return "That request was rejected. Check the details and try again.";
+  return "Something went wrong. Try again.";
 }
 
-/** Safe message for any thrown value; a raw server message is never returned. */
-export function publicErrorMessage(
-  err: unknown,
-  fallback = "Something went wrong. Please try again.",
-): string {
-  return err instanceof ApiError ? err.message : fallback;
+/**
+ * Keep the server's own words in the error log, where they can be triaged.
+ * Server faults log as errors; client-side rejections (validation, permissions,
+ * conflicts) log as warnings so they do not drown the real failures.
+ */
+function logRequestFailure(
+  status: number,
+  serverMessage: string,
+  detail: unknown,
+  correlationId?: string,
+): void {
+  const line = `[api] ${status || "network"} · ${serverMessage}`;
+  const context = correlationId ? `${line} · correlation-id=${correlationId}` : line;
+  const write = status >= 500 || status === 0 || status === 408 ? console.error : console.warn;
+  write(context, detail);
 }
 
 export class ApiError extends Error {
   status: number;
   detail: unknown;
-  /** The raw server message — for triage/logs, never for a toast. */
+  /** The backend's own message: logged for triage, never shown to the operator. */
   serverMessage: string;
   /** Server correlation id (X-Correlation-ID) for support/triage. */
   correlationId?: string;
   constructor(status: number, detail: unknown, correlationId?: string) {
-    // `message` is deliberately generic: every toast that echoes
-    // `error.message` must not surface a backend route, header or runbook.
-    // The real detail stays on `serverMessage` for the console/triage trail.
-    super(publicStatusMessage(status));
+    const serverMessage = detailMessage(detail);
+    super(errorCopyFor(status));
+    this.name = "ApiError";
     this.status = status;
     this.detail = detail;
-    this.serverMessage = detailMessage(detail);
+    this.serverMessage = serverMessage;
     this.correlationId = correlationId;
+    logRequestFailure(status, serverMessage, detail, correlationId);
   }
 }
 
@@ -114,6 +131,8 @@ export class ApiError extends Error {
  */
 export function throttleSeconds(err: unknown): number | null {
   if (!(err instanceof ApiError) || err.status !== 429) return null;
+  // The wait is carried in the server's own words, which no longer reach
+  // `Error.message` — read the retained copy.
   const msg = typeof err.serverMessage === "string" ? err.serverMessage : "";
   const m = msg.match(/(\d+)\s*seconds?/i);
   return m ? Math.max(1, parseInt(m[1], 10)) : null;

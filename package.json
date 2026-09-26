@@ -19,7 +19,8 @@
     "dev:code": "npm run dev --workspace @phantix/securegraph-code",
     "build:blog": "npm run build --workspace @phantix/securegraph-blog",
     "dev:blog": "npm run dev --workspace @phantix/securegraph-blog",
-    "typecheck:all": "npm run typecheck --workspaces --if-present"
+    "typecheck:all": "npm run typecheck --workspaces --if-present",
+    "validate:social": "node scripts/validate-social-profiles.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

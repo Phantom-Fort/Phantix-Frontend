@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#64748b" flood-opacity="0.25"/>
+    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#41506B"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="520" fill="#F8F9FB"/>
+
+  <text x="450" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#1A2333">The Security Scope Has Expanded</text>
+  <text x="450" y="63" text-anchor="middle" font-size="13" fill="#5A6579">We are no longer securing only the application</text>
+
+  <line x1="240" y1="174" x2="392" y2="234" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="660" y1="174" x2="508" y2="234" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="292" y1="322" x2="336" y2="272" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="608" y1="322" x2="564" y2="272" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="450" y1="388" x2="450" y2="314" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <rect x="80" y="110" width="250" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="205" y="138" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1E293B">The AI model</text>
+  <text x="205" y="158" text-anchor="middle" font-size="11" fill="#5A6579">what it was trained on</text>
+
+  <rect x="570" y="110" width="250" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="695" y="138" text-anchor="middle" font-size="12.5" font-weight="600" fill="#1E293B">The agent</text>
+  <text x="695" y="158" text-anchor="middle" font-size="11" fill="#5A6579">what it is allowed to do</text>
+
+  <rect x="60" y="290" width="230" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="175" y="328" text-anchor="middle" font-size="12.5" fill="#1E293B">The tools it can access</text>
+
+  <rect x="610" y="290" width="230" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="725" y="328" text-anchor="middle" font-size="12.5" fill="#1E293B">The data it can reach</text>
+
+  <rect x="340" y="230" width="220" height="80" rx="10" fill="#DBEAFE" stroke="#2563EB" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="450" y="264" text-anchor="middle" font-size="14" font-weight="700" fill="#1E40AF">The application</text>
+  <text x="450" y="286" text-anchor="middle" font-size="11" fill="#1E293B">what we always secured</text>
+
+  <rect x="340" y="390" width="220" height="64" rx="8" fill="url(#boxGrad)" stroke="#3B82F6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="450" y="428" text-anchor="middle" font-size="12.5" fill="#1E293B">The actions it can perform</text>
+
+  <rect x="60" y="462" width="780" height="56" rx="8" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="80" y="486" font-size="12" fill="#1E293B">OWASP names the risks that come with this: prompt injection, sensitive information disclosure,</text>
+  <text x="80" y="506" font-size="12" fill="#1E293B">supply chain weaknesses, improper output handling and excessive agency.</text>
+</svg>

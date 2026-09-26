@@ -6,7 +6,7 @@ import {
   Search, ShieldAlert, Timer, UserX, X,
 } from "lucide-react";
 import { EmptyState, ErrorState, Modal, PageHeader, PageSkeleton, SeverityBadge, Spinner, VerificationBadge, Card } from "@sg/ui";
-import { Pagination, DEFAULT_PAGE_SIZE } from "@sg/components/Pagination";
+import { Pagination, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS as PAGE_SIZES } from "@sg/components/Pagination";
 import DocLink from "@sg/components/DocLink";
 import { loadTrackerBundle, patchTrackerFinding, retestTrackerFinding } from "@sg/data";
 import { useResource } from "@sg/useResource";
@@ -14,7 +14,6 @@ import { useStore } from "@sg/store";
 import { cx, humanize, normalizeTrackerVerification, timeAgo, titleCase, TRACKER_STATUSES } from "@sg/utils";
 import type { TrackerFinding, TrackerSummary, TrackerVerification } from "@sg/types";
 
-const PAGE_SIZES = [10, 20, 50, 100, 200] as const;
 const SEV_RANK: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1, info: 0 };
 const CLOSED = new Set(["fixed", "accepted"]);
 
@@ -242,7 +241,7 @@ export default function Tracker() {
     const active = sortKey === k;
     return (
       <th className={cx("th", className)} aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-        <button type="button" onClick={() => toggleSort(k)} className={cx("-mx-1.5 inline-flex items-center gap-1.5 rounded px-1.5 py-1 uppercase tracking-wider hover:text-slate-200", active && "text-gold-300")}>
+        <button type="button" onClick={() => toggleSort(k)} className={cx("-mx-1.5 inline-flex items-center gap-1.5 whitespace-nowrap rounded px-1.5 py-0.5 hover:text-slate-100", active && "text-gold-300")}>
           {children}
           {active ? sortDir === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} /> : <ArrowUpDown size={12} className="opacity-40" />}
         </button>
@@ -375,12 +374,15 @@ export default function Tracker() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-[980px]">
                 <thead>
                   <tr className="border-b border-phantix-700/40">
-                    <SortHeader k="key">Finding</SortHeader>
+                    <SortHeader k="key" className="w-28">Key</SortHeader>
+                    <th className="th">Finding</th>
                     <SortHeader k="severity">Severity</SortHeader>
-                    <th className="th">Asset · owner</th>
+                    <th className="th">Asset</th>
+                    <th className="th hidden xl:table-cell">Owner</th>
+                    <th className="th hidden 2xl:table-cell">Due</th>
                     <th className="th">Evidence</th>
                     <SortHeader k="status">Status</SortHeader>
                     <SortHeader k="age">Age</SortHeader>
@@ -394,35 +396,44 @@ export default function Tracker() {
                       <tr
                         key={f.finding_key}
                         id={`tracker-${f.finding_key}`}
-                        className={cx("border-b border-phantix-800/40 hover:bg-phantix-800/35", highlightKey === f.finding_key && "bg-gold-400/10 ring-1 ring-inset ring-gold-400/30")}
+                        className={cx("h-10 border-b border-phantix-800/40 hover:bg-phantix-800/35", highlightKey === f.finding_key && "bg-gold-400/10 ring-1 ring-inset ring-gold-400/30")}
                       >
-                        <td className="td max-w-[340px]">
-                          <p className="truncate font-mono text-[12px] font-semibold text-gold-300" title={f.finding_key}>{f.finding_key}</p>
-                          <p className="truncate font-medium text-slate-200" title={f.title}>{f.title}</p>
-                          <p className="truncate text-xs text-slate-500">
-                            {[f.campaign_name, f.priority, f.surface ? humanize(f.surface) : ""].filter(Boolean).join(" · ")}
-                          </p>
+                        <td className="td w-28 whitespace-nowrap">
+                          <span className="font-mono text-[13px] font-semibold text-gold-300" title={f.finding_key}>{f.finding_key}</span>
                         </td>
-                        <td className="td"><SeverityBadge severity={f.severity} /></td>
-                        <td className="td max-w-[220px] text-xs">
-                          <span className="block truncate font-mono text-slate-400" title={f.asset_value}>
+                        <td className="td max-w-[22rem]">
+                          <span
+                            className="block truncate font-medium text-slate-100"
+                            title={[f.title, f.campaign_name, f.priority, f.surface ? humanize(f.surface) : ""].filter(Boolean).join(" · ")}
+                          >
+                            {f.title}
+                            {f.campaign_name && <span className="ml-2 font-normal text-slate-500">{f.campaign_name}</span>}
+                          </span>
+                        </td>
+                        <td className="td whitespace-nowrap"><SeverityBadge severity={f.severity} /></td>
+                        <td className="td max-w-[14rem]">
+                          <span className="block truncate font-mono text-[13px] text-slate-400" title={f.asset_value}>
                             {f.asset_id != null ? <Link to={`/assets?q=${encodeURIComponent(f.asset_value || "")}`} className="hover:text-gold-300">{f.asset_value}</Link> : f.asset_value}
                           </span>
-                          {f.owner ? <span className="block truncate text-slate-300">{f.owner}</span> : <span className="block text-slate-500">Unassigned</span>}
-                          {f.target_fix_date && (
-                            <span className={cx("block text-[12px]", overdue ? "font-medium text-severity-high" : "text-slate-500")}>
-                              {overdue ? "Overdue · " : "Due "}{new Date(f.target_fix_date).toLocaleDateString()}
-                            </span>
-                          )}
                         </td>
-                        <td className="td"><VerificationBadge status={normalizeTrackerVerification(f.verification_status)} /></td>
-                        <td className="td">
+                        <td className="td hidden max-w-[12rem] xl:table-cell">
+                          {f.owner ? <span className="block truncate text-[13px] text-slate-300" title={f.owner}>{f.owner}</span> : <span className="text-[13px] text-slate-500">Unassigned</span>}
+                        </td>
+                        <td className="td hidden whitespace-nowrap 2xl:table-cell">
+                          {f.target_fix_date ? (
+                            <span className={cx("text-[13px]", overdue ? "font-medium text-severity-high" : "text-slate-400")}>
+                              {overdue ? "Overdue · " : ""}{new Date(f.target_fix_date).toLocaleDateString()}
+                            </span>
+                          ) : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="td whitespace-nowrap"><VerificationBadge status={normalizeTrackerVerification(f.verification_status)} /></td>
+                        <td className="td whitespace-nowrap">
                           <div className="flex items-center gap-1.5">
                             <select
                               value={(TRACKER_STATUSES as readonly string[]).includes(String(f.status)) ? String(f.status) : "open"}
                               onChange={(e) => void changeStatus(f, e.target.value)}
                               aria-label={`Status of ${f.finding_key}`}
-                              className={cx("input !w-auto !py-1 !pr-8 text-xs", f.status === "regressed" && "!border-severity-critical/50 text-severity-critical")}
+                              className={cx("input !h-7 !w-auto !py-0 !pr-8 text-xs", f.status === "regressed" && "!border-severity-critical/50 text-severity-critical")}
                             >
                               {TRACKER_STATUSES.map((s) => (
                                 <option key={s} value={s}>{titleCase(s)}</option>
@@ -432,11 +443,11 @@ export default function Tracker() {
                               type="button"
                               title="Retest just this finding's asset; closes it automatically when the fix is confirmed"
                               aria-label={`Retest ${f.finding_key}`}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gold-400/30 bg-gold-400/10 text-gold-300 hover:bg-gold-400/20 disabled:opacity-40"
                               disabled={CLOSED.has(String(f.status))}
                               onClick={() => { setRetestTarget(f); setRetestForm({ tool: "", note: "" }); }}
                             >
-                              <RefreshCw size={14} />
+                              <RefreshCw size={13} />
                             </button>
                             {f.retest_status && (
                               <span className={cx("chip text-[12px]", f.retest_status === "confirmed" ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300" : f.retest_status === "failed" ? "border-severity-critical/40 bg-severity-critical/10 text-severity-critical" : "border-slate-500/40 bg-slate-500/10 text-slate-400")}>
@@ -445,9 +456,8 @@ export default function Tracker() {
                             )}
                           </div>
                         </td>
-                        <td className="td whitespace-nowrap text-xs">
-                          <span className="block text-slate-300">{days == null ? "—" : days === 0 ? "New today" : `${days} days`}</span>
-                          <span className="block text-[12px] text-slate-500">updated {timeAgo(f.updated_at)}</span>
+                        <td className="td whitespace-nowrap" title={`Updated ${timeAgo(f.updated_at)}`}>
+                          <span className="text-[13px] text-slate-300">{days == null ? "—" : days === 0 ? "Today" : `${days}d`}</span>
                         </td>
                       </tr>
                     );
